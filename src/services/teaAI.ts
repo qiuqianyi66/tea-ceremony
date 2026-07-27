@@ -22,9 +22,12 @@ async function callLLM(systemPrompt: string, userPrompt: string): Promise<string
   lastCallTime = Date.now()
 
   try {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 8000)
     const res = await fetch(POLLINATIONS_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
       body: JSON.stringify({
         model: 'deepseek',
         messages: [
@@ -33,6 +36,7 @@ async function callLLM(systemPrompt: string, userPrompt: string): Promise<string
         ],
       }),
     })
+    clearTimeout(timeout)
     if (!res.ok) return null
     const data = await res.json()
     return data.choices?.[0]?.message?.content || null
@@ -303,6 +307,7 @@ export async function askTeaMaster(question: string, history: ChatMessage[] = []
     const res = await fetch(POLLINATIONS_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(8000),
       body: JSON.stringify({ model: 'deepseek', messages }),
     })
     lastCallTime = Date.now()
