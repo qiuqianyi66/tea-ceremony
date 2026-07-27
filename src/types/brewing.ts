@@ -2,12 +2,14 @@
  * 冲泡相关类型定义
  */
 
-/** 冲泡阶段 */
+/** 冲泡阶段 — 工夫茶完整流程 */
 export enum BrewPhase {
-  IDLE = 'idle',           // 空闲
-  HEATING = 'heating',     // 烧水中
-  READY = 'ready',         // 水已沸
-  STEEPING = 'steeping',   // 浸泡中
+  IDLE = 'idle',           // 初始：选择茶器 + 设定温度
+  HEATING = 'heating',     // 烧水中（温度可调）
+  WARMING = 'warming',     // 温杯（热水入器→倒出）
+  RINSING = 'rinsing',     // 醒茶（洗茶：注水→5s→倒出）
+  READY = 'ready',         // 准备就绪
+  STEEPING = 'steeping',   // 浸泡中（计时）
   DONE = 'done',           // 已出汤
 }
 

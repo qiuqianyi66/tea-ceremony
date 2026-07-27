@@ -4,7 +4,7 @@
 @theme {
   --color-wood: #5D4E37;
   --color-wood-light: #8B7355;
-  --color-tea-gold: #C9A96E;
+  --color-tea-gold: #9E8050;
   --color-paper: #F5F0E8;
   --color-ink: #3D3225;
   --color-cream: #FAF6F0;
@@ -36,6 +36,11 @@ body {
   100% { transform: scale(2); opacity: 0; }
 }
 
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
 .animate-steam {
   animation: steam 2s ease-out infinite;
 }
@@ -46,6 +51,14 @@ body {
 
 .animate-ripple {
   animation: ripple 1.5s ease-out infinite;
+}
+
+/* 毛玻璃效果 */
+.glass-panel {
+  background: rgba(250, 246, 240, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(158, 128, 80, 0.15);
 }
 
 /* 滚动条美化 */

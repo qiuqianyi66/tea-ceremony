@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="64" fill="#5D4E37"/>
+  <g transform="translate(256,260)">
+    <!-- 茶杯体 -->
+    <path d="M-80,-20 C-80,-80 80,-80 80,-20 L70,100 C70,130 40,140 0,140 C-40,140 -70,130 -70,100 Z" fill="#F5F0E8" stroke="#8B7355" stroke-width="4"/>
+    <!-- 茶汤 -->
+    <path d="M-65,-10 C-65,-55 65,-55 65,-10 L58,90 C58,115 32,125 0,125 C-32,125 -58,115 -58,90 Z" fill="#C9A96E" opacity="0.7"/>
+    <!-- 蒸汽 -->
+    <path d="M-20,-85 C-25,-110 -15,-120 -20,-140" stroke="#C9A96E" stroke-width="6" fill="none" stroke-linecap="round" opacity="0.4"/>
+    <path d="M0,-80 C5,-105 -5,-115 0,-135" stroke="#C9A96E" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.3"/>
+    <path d="M20,-85 C25,-110 15,-120 20,-140" stroke="#C9A96E" stroke-width="6" fill="none" stroke-linecap="round" opacity="0.4"/>
+    <!-- 茶叶 -->
+    <ellipse cx="-15" cy="50" rx="8" ry="3" fill="#4A7C59" transform="rotate(-20,-15,50)"/>
+    <ellipse cx="10" cy="60" rx="6" ry="2.5" fill="#4A7C59" transform="rotate(15,10,60)"/>
+  </g>
+</svg>

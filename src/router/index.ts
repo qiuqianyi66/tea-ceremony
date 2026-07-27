@@ -24,6 +24,46 @@ const router = createRouter({
       component: () => import('../views/TasteView.vue'),
     },
     {
+      path: '/tools',
+      name: 'tools',
+      component: () => import('../views/ToolSelect.vue'),
+    },
+    {
+      path: '/login',
+      name: 'login',
+      component: () => import('../views/LoginView.vue'),
+    },
+    {
+      path: '/collection',
+      name: 'collection',
+      component: () => import('../views/CollectionView.vue'),
+    },
+    {
+      path: '/ai',
+      name: 'ai',
+      component: () => import('../views/AIAsk.vue'),
+    },
+    {
+      path: '/map',
+      name: 'map',
+      component: () => import('../views/MapView.vue'),
+    },
+    {
+      path: '/graph',
+      name: 'graph',
+      component: () => import('../views/TeaGraph.vue'),
+    },
+    {
+      path: '/tearoom',
+      name: 'tearoom',
+      component: () => import('../views/TeaRoom.vue'),
+    },
+    {
+      path: '/profile',
+      name: 'profile',
+      component: () => import('../views/TeaProfile.vue'),
+    },
+    {
       path: '/history',
       name: 'history',
       component: () => import('../views/HistoryView.vue'),

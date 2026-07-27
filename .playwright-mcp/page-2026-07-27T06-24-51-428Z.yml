@@ -1,0 +1,426 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - link [ref=e6]:
+      - /url: https://opencode.ai
+    - generic [ref=e10]:
+      - link [ref=e11]:
+        - /url: https://github.com/anomalyco/opencode
+      - link [ref=e15]:
+        - /url: https://opencode.ai/discord
+  - generic [ref=e21]:
+    - generic [ref=e23]:
+      - generic [ref=e24]:
+        - generic [ref=e25]: vlocal
+        - generic [ref=e30]:
+          - generic [ref=e31]: Big Pickle
+          - generic [ref=e34]: 27 Jul 2026, 13:33
+      - generic [ref=e35]: 有趣的 GitHub 软件开发 agent 项目
+    - generic [ref=e36]:
+      - link [ref=e37]:
+        - list [ref=e38]:
+          - listitem [ref=e39]:
+            - button [ref=e40]
+          - listitem [ref=e42]:
+            - button [ref=e43]
+          - listitem [ref=e45]:
+            - button [ref=e46]
+          - listitem [ref=e48]:
+            - button [ref=e49]
+          - listitem [ref=e51]:
+            - button [ref=e52]
+          - listitem [ref=e54]:
+            - button [ref=e55]
+          - listitem [ref=e57]:
+            - button [ref=e58]
+          - listitem [ref=e60]:
+            - button [ref=e61]
+          - listitem [ref=e63]:
+            - button [ref=e64]
+          - listitem [ref=e66]:
+            - button [ref=e67]
+          - listitem [ref=e69]:
+            - button [ref=e70]
+          - listitem [ref=e72]:
+            - button [ref=e73]
+          - listitem [ref=e75]:
+            - button [ref=e76]
+          - listitem [ref=e78]:
+            - button [ref=e79]
+      - generic [ref=e84]:
+        - generic [ref=e86]:
+          - generic [ref=e87]: 最近github上面有没有有趣的项目 我自己想玩玩 顺带学习一下 软件开发 agent这类的
+          - generic:
+            - generic:
+              - generic: Build · big-pickle
+              - generic: ·
+              - generic: 13:33
+            - generic:
+              - button "复制消息"
+        - generic [ref=e89]:
+          - paragraph [ref=e93]: The user wants to find interesting GitHub projects related to software development agents that they can play with and learn from. This matches the agent-reach skill description for searching GitHub. Let me use that skill.
+          - paragraph [ref=e98]: Using agent-reach to search GitHub for interesting software development agent projects.
+          - button [ref=e101]:
+            - generic "agent-reach" [ref=e108]:
+              - generic [ref=e109]:
+                - generic [ref=e110]: agent-reach
+                - generic [ref=e111]: agent-reach
+          - paragraph [ref=e115]: Now let me read the dev.md for GitHub-specific commands.
+          - button "已探索 , 1 次读取 , 0 次搜索 , 0 个列表" [ref=e117]:
+            - generic [ref=e119]:
+              - generic "已探索" [ref=e121]:
+                - generic "已探索" [ref=e124]:
+                  - generic [ref=e125]:
+                    - generic [ref=e126]: 已探索
+                    - generic [ref=e127]: 已探索
+              - generic [ref=e129]:
+                - generic: ","
+                - generic [ref=e132]:
+                  - generic "1" [ref=e133]:
+                    - generic [ref=e136]:
+                      - generic [ref=e137]: "0"
+                      - generic [ref=e138]: "1"
+                      - generic [ref=e139]: "2"
+                      - generic [ref=e140]: "3"
+                      - generic [ref=e141]: "4"
+                      - generic [ref=e142]: "5"
+                      - generic [ref=e143]: "6"
+                      - generic [ref=e144]: "7"
+                      - generic [ref=e145]: "8"
+                      - generic [ref=e146]: "9"
+                      - generic [ref=e147]: "0"
+                      - generic [ref=e148]: "1"
+                      - generic [ref=e149]: "2"
+                      - generic [ref=e150]: "3"
+                      - generic [ref=e151]: "4"
+                      - generic [ref=e152]: "5"
+                      - generic [ref=e153]: "6"
+                      - generic [ref=e154]: "7"
+                      - generic [ref=e155]: "8"
+                      - generic [ref=e156]: "9"
+                      - generic [ref=e157]: "0"
+                      - generic [ref=e158]: "1"
+                      - generic [ref=e159]: "2"
+                      - generic [ref=e160]: "3"
+                      - generic [ref=e161]: "4"
+                      - generic [ref=e162]: "5"
+                      - generic [ref=e163]: "6"
+                      - generic [ref=e164]: "7"
+                      - generic [ref=e165]: "8"
+                      - generic [ref=e166]: "9"
+                  - generic [ref=e167]: 次读取
+                - generic: ","
+                - generic [ref=e169]:
+                  - generic "0" [ref=e170]:
+                    - generic [ref=e173]:
+                      - generic [ref=e174]: "0"
+                      - generic [ref=e175]: "1"
+                      - generic [ref=e176]: "2"
+                      - generic [ref=e177]: "3"
+                      - generic [ref=e178]: "4"
+                      - generic [ref=e179]: "5"
+                      - generic [ref=e180]: "6"
+                      - generic [ref=e181]: "7"
+                      - generic [ref=e182]: "8"
+                      - generic [ref=e183]: "9"
+                      - generic [ref=e184]: "0"
+                      - generic [ref=e185]: "1"
+                      - generic [ref=e186]: "2"
+                      - generic [ref=e187]: "3"
+                      - generic [ref=e188]: "4"
+                      - generic [ref=e189]: "5"
+                      - generic [ref=e190]: "6"
+                      - generic [ref=e191]: "7"
+                      - generic [ref=e192]: "8"
+                      - generic [ref=e193]: "9"
+                      - generic [ref=e194]: "0"
+                      - generic [ref=e195]: "1"
+                      - generic [ref=e196]: "2"
+                      - generic [ref=e197]: "3"
+                      - generic [ref=e198]: "4"
+                      - generic [ref=e199]: "5"
+                      - generic [ref=e200]: "6"
+                      - generic [ref=e201]: "7"
+                      - generic [ref=e202]: "8"
+                      - generic [ref=e203]: "9"
+                  - generic [ref=e204]: 次搜索
+                - generic: ","
+                - generic [ref=e206]:
+                  - generic "0" [ref=e207]:
+                    - generic [ref=e210]:
+                      - generic [ref=e211]: "0"
+                      - generic [ref=e212]: "1"
+                      - generic [ref=e213]: "2"
+                      - generic [ref=e214]: "3"
+                      - generic [ref=e215]: "4"
+                      - generic [ref=e216]: "5"
+                      - generic [ref=e217]: "6"
+                      - generic [ref=e218]: "7"
+                      - generic [ref=e219]: "8"
+                      - generic [ref=e220]: "9"
+                      - generic [ref=e221]: "0"
+                      - generic [ref=e222]: "1"
+                      - generic [ref=e223]: "2"
+                      - generic [ref=e224]: "3"
+                      - generic [ref=e225]: "4"
+                      - generic [ref=e226]: "5"
+                      - generic [ref=e227]: "6"
+                      - generic [ref=e228]: "7"
+                      - generic [ref=e229]: "8"
+                      - generic [ref=e230]: "9"
+                      - generic [ref=e231]: "0"
+                      - generic [ref=e232]: "1"
+                      - generic [ref=e233]: "2"
+                      - generic [ref=e234]: "3"
+                      - generic [ref=e235]: "4"
+                      - generic [ref=e236]: "5"
+                      - generic [ref=e237]: "6"
+                      - generic [ref=e238]: "7"
+                      - generic [ref=e239]: "8"
+                      - generic [ref=e240]: "9"
+                  - generic [ref=e241]: 个列表
+          - paragraph [ref=e251]: The user wants to find interesting GitHub projects related to software development agents. Let me search GitHub using gh CLI for trending repos about coding agents and AI agents.
+          - button "Shell gh search repos \"coding agent\" --sort stars --limit 10 --json name,owner,description,stargazersCount,url 2>&1" [ref=e254]:
+            - generic [ref=e259]:
+              - generic "Shell" [ref=e261]:
+                - generic [ref=e262]:
+                  - generic [ref=e263]: Shell
+                  - generic [ref=e264]: Shell
+              - generic [ref=e265]: gh search repos "coding agent" --sort stars --limit 10 --json name,owner,description,stargazersCount,url 2>&1
+          - button "Shell gh search repos \"AI agent software development\" --sort stars --limit 10 --json name,owner,description,stargazersCount,url 2>&1" [ref=e276]:
+            - generic [ref=e281]:
+              - generic "Shell" [ref=e283]:
+                - generic [ref=e284]:
+                  - generic [ref=e285]: Shell
+                  - generic [ref=e286]: Shell
+              - generic [ref=e287]: gh search repos "AI agent software development" --sort stars --limit 10 --json name,owner,description,stargazersCount,url 2>&1
+          - button "Shell gh search repos \"autonomous coding\" --sort stars --limit 10 --json name,owner,description,stargazersCount,url 2>&1" [ref=e298]:
+            - generic [ref=e303]:
+              - generic "Shell" [ref=e305]:
+                - generic [ref=e306]:
+                  - generic [ref=e307]: Shell
+                  - generic [ref=e308]: Shell
+              - generic [ref=e309]: gh search repos "autonomous coding" --sort stars --limit 10 --json name,owner,description,stargazersCount,url 2>&1
+          - paragraph [ref=e321]: Let me also search for some trending and interesting repos more specifically about agent frameworks and multi-agent systems.
+          - button "Shell gh search repos \"multi-agent\" --sort stars --limit 10 --json name,owner,description,stargazersCount,url 2>&1" [ref=e324]:
+            - generic [ref=e329]:
+              - generic "Shell" [ref=e331]:
+                - generic [ref=e332]:
+                  - generic [ref=e333]: Shell
+                  - generic [ref=e334]: Shell
+              - generic [ref=e335]: gh search repos "multi-agent" --sort stars --limit 10 --json name,owner,description,stargazersCount,url 2>&1
+          - button "Shell gh search repos \"agent framework LLM\" --sort stars --limit 10 --json name,owner,description,stargazersCount,url 2>&1" [ref=e346]:
+            - generic [ref=e351]:
+              - generic "Shell" [ref=e353]:
+                - generic [ref=e354]:
+                  - generic [ref=e355]: Shell
+                  - generic [ref=e356]: Shell
+              - generic [ref=e357]: gh search repos "agent framework LLM" --sort stars --limit 10 --json name,owner,description,stargazersCount,url 2>&1
+          - paragraph [ref=e369]: Let me compile a summary of the most interesting projects found.
+          - generic [ref=e370]:
+            - generic [ref=e373]:
+              - paragraph [ref=e374]: 搜到不少好东西。按学习价值和可玩性帮你筛了一下：
+              - separator
+              - heading "🏆 Top 热门（学架构 + 实际使用）" [level=2] [ref=e375]
+              - table [ref=e376]:
+                - rowgroup [ref=e377]:
+                  - row [ref=e378]:
+                    - columnheader "项目" [ref=e379]
+                    - columnheader "⭐" [ref=e380]
+                    - columnheader "一句话" [ref=e381]
+                    - columnheader "链接" [ref=e382]
+                - rowgroup [ref=e383]:
+                  - row [ref=e384]:
+                    - cell [ref=e385]:
+                      - strong [ref=e386]: opencode
+                    - cell "190K" [ref=e387]
+                    - cell "开源 coding agent，你现在用的就是" [ref=e388]
+                    - cell [ref=e389]:
+                      - link "https://github.com/anomalyco/opencode" [ref=e390]:
+                        - /url: https://github.com/anomalyco/opencode
+                  - row [ref=e391]:
+                    - cell [ref=e392]:
+                      - strong [ref=e393]: codex
+                    - cell "101K" [ref=e394]
+                    - cell "OpenAI 官方终端轻量 coding agent" [ref=e395]
+                    - cell [ref=e396]:
+                      - link "https://github.com/openai/codex" [ref=e397]:
+                        - /url: https://github.com/openai/codex
+                  - row [ref=e398]:
+                    - cell [ref=e399]:
+                      - strong [ref=e400]: cline
+                    - cell "65K" [ref=e401]
+                    - cell "自主 coding agent，IDE 扩展 + CLI" [ref=e402]
+                    - cell [ref=e403]:
+                      - link "https://github.com/cline/cline" [ref=e404]:
+                        - /url: https://github.com/cline/cline
+                  - row [ref=e405]:
+                    - cell [ref=e406]:
+                      - strong [ref=e407]: Pi
+                    - cell "78K" [ref=e408]
+                    - cell "AI agent toolkit，统一 LLM API + agent loop + TUI" [ref=e409]
+                    - cell [ref=e410]:
+                      - link "https://github.com/earendil-works/pi" [ref=e411]:
+                        - /url: https://github.com/earendil-works/pi
+              - heading "🧠 多 Agent 框架（学协作模式）" [level=2] [ref=e412]
+              - table [ref=e413]:
+                - rowgroup [ref=e414]:
+                  - row [ref=e415]:
+                    - columnheader "项目" [ref=e416]
+                    - columnheader "⭐" [ref=e417]
+                    - columnheader "一句话" [ref=e418]
+                    - columnheader "链接" [ref=e419]
+                - rowgroup [ref=e420]:
+                  - row [ref=e421]:
+                    - cell [ref=e422]:
+                      - strong [ref=e423]: MetaGPT
+                    - cell "69K" [ref=e424]
+                    - cell "模拟软件公司，多 agent 协作写代码" [ref=e425]
+                    - cell [ref=e426]:
+                      - link "https://github.com/FoundationAgents/MetaGPT" [ref=e427]:
+                        - /url: https://github.com/FoundationAgents/MetaGPT
+                  - row [ref=e428]:
+                    - cell [ref=e429]:
+                      - strong [ref=e430]: ChatDev
+                    - cell "33K" [ref=e431]
+                    - cell "LLM 多 agent 协作开发现场" [ref=e432]
+                    - cell [ref=e433]:
+                      - link "https://github.com/OpenBMB/ChatDev" [ref=e434]:
+                        - /url: https://github.com/OpenBMB/ChatDev
+                  - row [ref=e435]:
+                    - cell [ref=e436]:
+                      - strong [ref=e437]: agentscope
+                    - cell "28K" [ref=e438]
+                    - cell "可视化 agent 框架，看得见摸得着" [ref=e439]
+                    - cell [ref=e440]:
+                      - link "https://github.com/agentscope-ai/agentscope" [ref=e441]:
+                        - /url: https://github.com/agentscope-ai/agentscope
+                  - row [ref=e442]:
+                    - cell [ref=e443]:
+                      - strong [ref=e444]: oh-my-claudecode
+                    - cell "38K" [ref=e445]
+                    - cell "Claude Code 多 agent 编排框架" [ref=e446]
+                    - cell [ref=e447]:
+                      - link "https://github.com/Yeachan-Heo/oh-my-claudecode" [ref=e448]:
+                        - /url: https://github.com/Yeachan-Heo/oh-my-claudecode
+              - heading "🔧 Agent 工具链 / 基础设施（学如何造 agent）" [level=2] [ref=e449]
+              - table [ref=e450]:
+                - rowgroup [ref=e451]:
+                  - row [ref=e452]:
+                    - columnheader "项目" [ref=e453]
+                    - columnheader "⭐" [ref=e454]
+                    - columnheader "一句话" [ref=e455]
+                    - columnheader "链接" [ref=e456]
+                - rowgroup [ref=e457]:
+                  - row [ref=e458]:
+                    - cell [ref=e459]:
+                      - strong [ref=e460]: agent-skills
+                    - cell "80K" [ref=e461]
+                    - cell "生产级 agent 编码技能集合" [ref=e462]
+                    - cell [ref=e463]:
+                      - link "https://github.com/addyosmani/agent-skills" [ref=e464]:
+                        - /url: https://github.com/addyosmani/agent-skills
+                  - row [ref=e465]:
+                    - cell [ref=e466]:
+                      - strong [ref=e467]: headroom
+                    - cell "62K" [ref=e468]
+                    - cell "压缩 agent token 消耗，省 20-95%" [ref=e469]
+                    - cell [ref=e470]:
+                      - link "https://github.com/headroomlabs-ai/headroom" [ref=e471]:
+                        - /url: https://github.com/headroomlabs-ai/headroom
+                  - row [ref=e472]:
+                    - cell [ref=e473]:
+                      - strong [ref=e474]: ralph
+                    - cell "936" [ref=e475]
+                    - cell "极简文件驱动 agent loop，适合学原理" [ref=e476]
+                    - cell [ref=e477]:
+                      - link "https://github.com/iannuttall/ralph" [ref=e478]:
+                        - /url: https://github.com/iannuttall/ralph
+                  - row [ref=e479]:
+                    - cell [ref=e480]:
+                      - strong [ref=e481]: ByteRover CLI
+                    - cell "4.9K" [ref=e482]
+                    - cell "agent 记忆层，跨 session 保持上下文" [ref=e483]
+                    - cell [ref=e484]:
+                      - link "https://github.com/campfirein/byterover-cli" [ref=e485]:
+                        - /url: https://github.com/campfirein/byterover-cli
+              - heading "🎯 有趣可玩项目" [level=2] [ref=e486]
+              - table [ref=e487]:
+                - rowgroup [ref=e488]:
+                  - row [ref=e489]:
+                    - columnheader "项目" [ref=e490]
+                    - columnheader "⭐" [ref=e491]
+                    - columnheader "一句话" [ref=e492]
+                    - columnheader "链接" [ref=e493]
+                - rowgroup [ref=e494]:
+                  - row [ref=e495]:
+                    - cell [ref=e496]:
+                      - strong [ref=e497]: TradingAgents
+                    - cell "94K" [ref=e498]
+                    - cell "多 agent LLM 金融交易框架" [ref=e499]
+                    - cell [ref=e500]:
+                      - link "https://github.com/TauricResearch/TradingAgents" [ref=e501]:
+                        - /url: https://github.com/TauricResearch/TradingAgents
+                  - row [ref=e502]:
+                    - cell [ref=e503]:
+                      - strong [ref=e504]: deer-flow
+                    - cell "77K" [ref=e505]
+                    - cell "字节开源的超级 agent，能研究+写代码+创作" [ref=e506]
+                    - cell [ref=e507]:
+                      - link "https://github.com/bytedance/deer-flow" [ref=e508]:
+                        - /url: https://github.com/bytedance/deer-flow
+                  - row [ref=e509]:
+                    - cell [ref=e510]:
+                      - strong [ref=e511]: OpenAlpha_Evolve
+                    - cell "1K" [ref=e512]
+                    - cell "仿 DeepMind AlphaEvolve 的开源版" [ref=e513]
+                    - cell [ref=e514]:
+                      - link "https://github.com/shyamsaktawat/OpenAlpha_Evolve" [ref=e515]:
+                        - /url: https://github.com/shyamsaktawat/OpenAlpha_Evolve
+                  - row [ref=e516]:
+                    - cell [ref=e517]:
+                      - strong [ref=e518]: LibreChat
+                    - cell "41K" [ref=e519]
+                    - cell "多模型 agent 聊天框架，自己部署" [ref=e520]
+                    - cell [ref=e521]:
+                      - link "https://github.com/danny-avila/LibreChat" [ref=e522]:
+                        - /url: https://github.com/danny-avila/LibreChat
+              - separator
+              - heading "我的推荐" [level=2] [ref=e523]
+              - paragraph [ref=e524]:
+                - text: 想
+                - strong [ref=e525]: 学 agent 架构
+                - text: ：
+              - list [ref=e526]:
+                - listitem [ref=e527]:
+                  - strong [ref=e528]: ralph
+                  - text: — 极简，代码量小，一看就懂 agent loop 怎么跑
+                - listitem [ref=e529]:
+                  - strong [ref=e530]: agentscope
+                  - text: — 可视化调试，直观理解多 agent 协作
+              - paragraph [ref=e531]:
+                - text: 想
+                - strong [ref=e532]: 实际玩 coding agent
+                - text: ：
+              - list [ref=e533]:
+                - listitem [ref=e534]:
+                  - strong [ref=e535]: cline
+                  - text: — VSCode 里直接用，体验最完整
+                - listitem [ref=e536]:
+                  - strong [ref=e537]: codex
+                  - text: — OpenAI 官方，CLI 轻量
+              - paragraph [ref=e538]:
+                - text: 想
+                - strong [ref=e539]: 搞多 agent 系统
+                - text: ：
+              - list [ref=e540]:
+                - listitem [ref=e541]:
+                  - strong [ref=e542]: MetaGPT
+                  - text: — 模拟真实软件公司分工，学习价值最高
+                - listitem [ref=e543]:
+                  - strong [ref=e544]: oh-my-claudecode
+                  - text: — Claude Code 生态，跟你的 opencode 技能栈互补
+              - paragraph [ref=e545]: 要不要挑几个深入看看源码或者文档？
+            - generic:
+              - generic:
+                - button "复制回复"
+              - generic: Build · big-pickle · 1分 16秒

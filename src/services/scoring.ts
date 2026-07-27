@@ -3,6 +3,7 @@
  */
 
 import type { TasteDimensions, TastingRecord } from '@/types/tasting'
+import type { TeaWare } from '@/types/teaware'
 
 /** 计算工艺系数 */
 export function calculateProcessFactor(
@@ -10,6 +11,8 @@ export function calculateProcessFactor(
   bestTemp: number,
   actualTime: number,
   bestTime: number,
+  teaWare?: TeaWare | null,
+  waterFactor: number = 1.0,
 ): number {
   // 温度偏差系数：偏差越大，扣分越多
   const tempDiff = Math.abs(actualTemp - bestTemp)
@@ -17,10 +20,20 @@ export function calculateProcessFactor(
 
   // 时间偏差系数：允许±50%的偏差
   const timeDiff = Math.abs(actualTime - bestTime)
-  const timeFactor = Math.max(0, 1 - timeDiff / (bestTime * 0.5))
+  const maxTimeDev = Math.max(bestTime * 0.5, 1)  // 防止除零
+  const timeFactor = Math.max(0, 1 - timeDiff / maxTimeDev)
 
-  // 取平均
-  return (tempFactor + timeFactor) / 2
+  // 基础工艺系数 = 温度 + 时间 取平均
+  const baseFactor = (tempFactor + timeFactor) / 2
+
+  // 茶器匹配加成
+  if (teaWare) {
+    const wareBonus = (teaWare.bonus.heatRetention + teaWare.bonus.visual) / 2
+    const compensation = (1 - baseFactor) * (wareBonus - 0.8) * 0.5
+    return Math.min(1, (baseFactor + Math.max(0, compensation)) * waterFactor)
+  }
+
+  return Math.min(1, baseFactor * waterFactor)
 }
 
 /** 计算综合评分（1-10分） */
@@ -28,10 +41,10 @@ export function calculateOverallScore(
   dimensions: TasteDimensions,
   processFactor: number,
 ): number {
-  const { bitterness, sweetness, aftertaste, body, aroma } = dimensions
+  const { bitterness, sweetness, aftertaste, body, aroma, rhyme, shape, mind } = dimensions
 
-  // 五维平均分（1-5）
-  const baseScore = (bitterness + sweetness + aftertaste + body + aroma) / 5
+  // 八维平均分（1-5）
+  const baseScore = (bitterness + sweetness + aftertaste + body + aroma + rhyme + shape + mind) / 8
 
   // 归一化到 1-10 分
   const normalizedScore = baseScore * 2

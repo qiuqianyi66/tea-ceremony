@@ -9,6 +9,9 @@ export interface TasteDimensions {
   aftertaste: number   // 回甘
   body: number         // 醇厚度
   aroma: number        // 香气持久度
+  rhyme: number        // 茶韵（余韵）
+  shape: number        // 叶底（茶叶形态）
+  mind: number         // 心境（品茶时的心境感受）
 }
 
 /** 品鉴记录 */
@@ -23,6 +26,10 @@ export interface TastingRecord {
   dimensions: TasteDimensions
   overallScore: number       // 综合评分（1-10）
   processFactor: number      // 工艺系数（0-1）
+  aromaType?: string         // 闻香选择的香气类型
+  notes?: string             // 品鉴笔记
+  weather?: string           // 天气
+  mood?: string              // 心情
 }
 
 /** 成就定义 */

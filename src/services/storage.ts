@@ -1,10 +1,12 @@
 /**
  * 本地存储服务
  * 封装 localStorage，提供类型安全的数据读写
+ * 支持 API 优先 + localStorage 降级
  */
 
 import type { TastingRecord } from '@/types/tasting'
 import type { Achievement } from '@/types/tasting'
+import { recordsApi } from './api'
 
 const KEYS = {
   HISTORY: 'tea-history',
@@ -44,6 +46,8 @@ export const historyStorage = {
     const records = this.load()
     records.unshift(record)
     this.save(records)
+    // 尝试同步到后端（静默失败，不影响本地体验）
+    recordsApi.create(record).catch(() => {})
     return records
   },
 

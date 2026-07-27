@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { teas, getAllTypes, getTeasByType } from '@/data/teas'
 import { useTeaStore } from '@/stores/tea'
 import { TeaType, type Tea } from '@/types/tea'
+import { getTeaMastersForTea } from '@/data/teaMasters'
 
 const router = useRouter()
 const store = useTeaStore()
@@ -20,10 +21,14 @@ function selectTea(tea: Tea) {
   selectedTea.value = tea
 }
 
+function teaMasters(tea: Tea) {
+  return getTeaMastersForTea(tea.id)
+}
+
 function confirm() {
   if (selectedTea.value) {
     store.selectTea(selectedTea.value)
-    router.push('/brew')
+    router.push('/tools')
   }
 }
 
@@ -59,6 +64,17 @@ const types = getAllTypes()
         <p class="text-sm text-[var(--color-wood-light)] opacity-80">{{ tea.description }}</p>
         <div class="flex flex-wrap gap-2 mt-3">
           <span v-for="f in tea.flavor" :key="f" class="px-2 py-1 text-xs bg-[var(--color-paper)] text-[var(--color-wood)] rounded">{{ f }}</span>
+        </div>
+        <!-- 相关茶人 -->
+        <div v-if="selectedTea?.id === tea.id" class="mt-3 pt-3 border-t border-[var(--color-paper)]">
+          <div v-for="master in teaMasters(tea)" :key="master.id"
+            class="flex items-center gap-2 mb-1">
+            <span>{{ master.avatar }}</span>
+            <div>
+              <p class="text-xs font-bold text-[var(--color-wood)]">{{ master.name }}（{{ master.dynasty }}）· {{ master.title }}</p>
+              <p class="text-[10px] text-[var(--color-wood-light)] italic">"{{ master.quote.slice(0, 20) }}…"</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
