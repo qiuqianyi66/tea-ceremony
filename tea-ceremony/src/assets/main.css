@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+/* 茶道配色 */
+@theme {
+  --color-wood: #5D4E37;
+  --color-wood-light: #8B7355;
+  --color-tea-gold: #C9A96E;
+  --color-paper: #F5F0E8;
+  --color-ink: #3D3225;
+  --color-cream: #FAF6F0;
+}
+
+/* 全局样式 */
+body {
+  background-color: #FAF6F0;
+  color: #3D3225;
+  font-family: 'Noto Serif SC', 'Source Han Serif CN', 'SimSun', serif;
+}
+
+/* 自定义动画 */
+@keyframes steam {
+  0% { transform: translateY(0) scaleX(1); opacity: 0.4; }
+  50% { transform: translateY(-20px) scaleX(1.2); opacity: 0.2; }
+  100% { transform: translateY(-40px) scaleX(0.8); opacity: 0; }
+}
+
+@keyframes flame {
+  0%, 100% { transform: scaleY(1) scaleX(1); }
+  25% { transform: scaleY(1.1) scaleX(0.95); }
+  50% { transform: scaleY(0.95) scaleX(1.05); }
+  75% { transform: scaleY(1.05) scaleX(0.98); }
+}
+
+@keyframes ripple {
+  0% { transform: scale(0); opacity: 0.6; }
+  100% { transform: scale(2); opacity: 0; }
+}
+
+.animate-steam {
+  animation: steam 2s ease-out infinite;
+}
+
+.animate-flame {
+  animation: flame 0.3s ease-in-out infinite;
+}
+
+.animate-ripple {
+  animation: ripple 1.5s ease-out infinite;
+}
+
+/* 滚动条美化 */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F5F0E8;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #8B7355;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #5D4E37;
+}
