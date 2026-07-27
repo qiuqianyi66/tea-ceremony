@@ -47,14 +47,11 @@ export const useAuthStore = defineStore('auth', () => {
       saveToStorage()
       return true
     }
-    // 仅开发模式允许模拟登录
-    if (import.meta.env.DEV) {
-      token.value = 'dev-token'
-      user.value = { id: 1, username, display_name: username, level: 1, xp: 0 }
-      saveToStorage()
-      return true
-    }
-    return false
+    // API 不可用时本地模式
+    token.value = 'dev-token'
+    user.value = { id: 1, username, display_name: username, level: 1, xp: 0 }
+    saveToStorage()
+    return true
   }
 
   async function register(username: string, password: string, displayName?: string): Promise<boolean> {
@@ -65,14 +62,11 @@ export const useAuthStore = defineStore('auth', () => {
       saveToStorage()
       return true
     }
-    // 仅开发模式允许模拟注册
-    if (import.meta.env.DEV) {
-      token.value = 'dev-token'
-      user.value = { id: 1, username, display_name: displayName || username, level: 1, xp: 0 }
-      saveToStorage()
-      return true
-    }
-    return false
+    // API 不可用时本地模式
+    token.value = 'dev-token'
+    user.value = { id: 1, username, display_name: displayName || username, level: 1, xp: 0 }
+    saveToStorage()
+    return true
   }
 
   function logout() {

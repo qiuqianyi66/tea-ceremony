@@ -3,19 +3,20 @@
  */
 
 import { defineStore } from 'pinia'
-import { ref, watch } from 'vue'
-import { TEA_ROOM_THEMES, getThemeById, type TeaRoomTheme } from '@/data/themes'
+import { ref } from 'vue'
+import { getThemeById, type TeaRoomTheme } from '@/data/themes'
 
 export const useThemeStore = defineStore('theme', () => {
-  const currentThemeId = ref<string>(
-    localStorage.getItem('tea-theme') || 'ming',
-  )
+  function loadSavedTheme(): string {
+    try { return localStorage.getItem('tea-theme') || 'ming' } catch { return 'ming' }
+  }
+  const currentThemeId = ref<string>(loadSavedTheme())
   const currentTheme = ref<TeaRoomTheme>(getThemeById(currentThemeId.value))
 
   function setTheme(id: string) {
     currentThemeId.value = id
     currentTheme.value = getThemeById(id)
-    localStorage.setItem('tea-theme', id)
+    try { localStorage.setItem('tea-theme', id) } catch {}
     applyTheme(currentTheme.value)
   }
 
