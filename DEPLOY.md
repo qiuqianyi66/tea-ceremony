@@ -42,11 +42,13 @@ cd tea
 ```
 
 ### 5. 配置环境变量
-创建 `backend/.env` 文件：
+在项目根目录创建 `.env` 文件（可由 `.env.example` 复制）：
 
 ```env
-DATABASE_URL=postgresql://tea_user:tea_pass@db:5432/tea_ceremony
-SECRET_KEY=你的随机密钥
+POSTGRES_USER=tea_user
+POSTGRES_PASSWORD=替换为强密码
+POSTGRES_DB=tea_ceremony
+SECRET_KEY=替换为随机密钥
 ```
 
 生成密钥：
