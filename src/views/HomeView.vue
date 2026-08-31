@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useThemeStore } from '@/stores/theme'
@@ -14,6 +14,19 @@ const currentTerm = getCurrentSolarTerm()
 const sceneVisible = ref(false)
 const showContent = ref(false)
 const showQuote = ref(false)
+const pointerX = ref(0)
+const pointerY = ref(0)
+const sceneStyle = computed(() => ({
+  '--scene-x': `${pointerX.value}px`,
+  '--scene-y': `${pointerY.value}px`,
+}))
+const timeOfDay = computed(() => {
+  const hour = new Date().getHours()
+  if (hour >= 5 && hour < 11) return 'morning'
+  if (hour >= 11 && hour < 17) return 'day'
+  if (hour >= 17 && hour < 21) return 'dusk'
+  return 'night'
+})
 
 // 第一幕：茶语
 const teaQuote = ref('')
@@ -52,6 +65,7 @@ onMounted(() => {
 
   // 2. 尝试启动音效（需要用户交互，加一个兜底）
   tryStartAudio()
+  window.addEventListener('pointermove', handleScenePointerMove, { passive: true })
 
   // 3. 全部渐显后展示内容 (2.5s)
   setTimeout(() => {
@@ -61,7 +75,13 @@ onMounted(() => {
 
 onUnmounted(() => {
   // 离开首页时不停音乐，让其他页面继续播放
+  window.removeEventListener('pointermove', handleScenePointerMove)
 })
+
+function handleScenePointerMove(event: PointerEvent) {
+  pointerX.value = (event.clientX / window.innerWidth - 0.5) * 10
+  pointerY.value = (event.clientY / window.innerHeight - 0.5) * 6
+}
 </script>
 
 <template>
@@ -80,7 +100,21 @@ onUnmounted(() => {
   </div>
 
   <!-- 主场景 -->
-  <div class="min-h-screen bg-[var(--color-cream)] flex flex-col items-center justify-center overflow-hidden relative">
+  <div class="min-h-screen bg-[var(--color-cream)] flex flex-col items-center justify-center overflow-hidden relative" :class="`time-${timeOfDay}`" :style="sceneStyle">
+    <!-- 茶室空间层：墙面、窗、地面和晨雾，先建立真实空间再放置茶席 -->
+    <div class="tea-room-wall" :class="sceneVisible ? 'scene-layer-visible' : ''"></div>
+    <div class="tea-room-window" :class="sceneVisible ? 'scene-layer-visible' : ''">
+      <div class="window-glow"></div>
+      <div class="window-muntin window-muntin-v"></div>
+      <div class="window-muntin window-muntin-h"></div>
+      <div class="window-branch"></div>
+    </div>
+    <div class="room-light-pool" aria-hidden="true"></div>
+    <div class="tea-room-floor" :class="sceneVisible ? 'scene-layer-visible' : ''"></div>
+    <div class="tea-room-dust" aria-hidden="true">
+      <i v-for="i in 10" :key="i" :style="{ left: `${8 + i * 9}%`, top: `${25 + (i * 13) % 42}%`, animationDelay: `${i * .6}s` }"></i>
+    </div>
+
     <!-- 竹影（背景层）-->
     <div class="absolute inset-0 overflow-hidden opacity-0 transition-opacity duration-2000"
       :class="sceneVisible ? 'opacity-30' : ''">
@@ -298,6 +332,44 @@ onUnmounted(() => {
 .delay-500 { transition-delay: 500ms; }
 .delay-700 { transition-delay: 700ms; }
 .delay-900 { transition-delay: 900ms; }
+
+/* 茶室空间背景 */
+.tea-room-wall { position: absolute; inset: 0; opacity: 0; background: radial-gradient(ellipse at 50% 35%, rgba(255,252,242,.96), rgba(225,213,194,.72) 70%, rgba(184,164,139,.55)); transition: opacity 2.4s ease; }
+.time-night .tea-room-wall { background: radial-gradient(ellipse at 50% 35%, rgba(68,80,91,.92), rgba(35,45,54,.93) 70%, rgba(18,25,31,.97)); }
+.tea-room-wall.scene-layer-visible { opacity: 1; }
+.tea-room-window { position: absolute; top: 8%; left: 50%; width: min(62vw, 330px); height: min(52vh, 360px); transform: translate(calc(-50% + var(--scene-x, 0px)), var(--scene-y, 0px)); overflow: hidden; border: 8px solid rgba(93,78,55,.48); border-radius: 8px 8px 42% 42%; opacity: 0; box-shadow: 0 12px 40px rgba(93,78,55,.12), inset 0 0 30px rgba(255,245,203,.3); transition: opacity 2.4s ease 350ms, transform 1.2s ease-out; }
+.tea-room-window.scene-layer-visible { opacity: .72; }
+.window-glow { position: absolute; inset: 0; background: linear-gradient(145deg, rgba(250,244,213,.8), rgba(177,202,191,.42) 55%, rgba(101,126,110,.38)); }
+.time-morning .window-glow { background: linear-gradient(145deg, rgba(255,248,210,.82), rgba(187,211,204,.5) 55%, rgba(110,137,124,.32)); }
+.time-day .window-glow { background: linear-gradient(145deg, rgba(255,253,226,.95), rgba(190,219,205,.62) 55%, rgba(119,153,132,.35)); }
+.time-dusk .window-glow { background: linear-gradient(145deg, rgba(255,208,135,.85), rgba(190,150,126,.5) 55%, rgba(87,92,103,.4)); }
+.time-night .window-glow { background: radial-gradient(circle at 65% 28%, rgba(224,230,202,.8) 0 3%, transparent 4%), linear-gradient(145deg, rgba(40,57,72,.9), rgba(76,99,111,.42) 55%, rgba(19,29,39,.8)); }
+.window-muntin { position: absolute; background: rgba(93,78,55,.38); }
+.window-muntin-v { top: 0; bottom: 0; left: 50%; width: 5px; transform: translateX(-50%); }
+.window-muntin-h { left: 0; right: 0; top: 51%; height: 5px; transform: translateY(-50%); }
+.window-branch { position: absolute; left: 23%; bottom: 4%; width: 58%; height: 68%; border-left: 4px solid rgba(61,50,37,.32); border-radius: 50%; transform: rotate(24deg); }
+.window-branch::after { content: '✦  ❧  ✦'; position: absolute; top: 12%; left: 8px; color: rgba(74,110,73,.48); font-size: 24px; transform: rotate(-22deg); }
+.tea-room-floor { position: absolute; right: -12%; bottom: -12%; left: -12%; height: 39%; opacity: 0; background: repeating-linear-gradient(90deg, rgba(125,96,65,.12) 0 2px, transparent 2px 72px), linear-gradient(rgba(130,101,68,.12), rgba(93,78,55,.27)); transform: perspective(360px) rotateX(48deg); transform-origin: bottom; transition: opacity 2.4s ease 500ms; }
+.tea-room-floor.scene-layer-visible { opacity: .85; }
+.tea-table { transform: translate(calc(var(--scene-x, 0px) * .35), calc(var(--scene-y, 0px) * .35)); transition: transform 1.2s ease-out; }
+.tea-room-dust { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+.tea-room-dust i { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: rgba(255,250,218,.72); box-shadow: 0 0 5px rgba(255,248,200,.8); animation: dustFloat 7s ease-in-out infinite; }
+@keyframes dustFloat { 0%, 100% { transform: translate3d(0, 12px, 0); opacity: 0; } 25% { opacity: .8; } 70% { opacity: .45; } 100% { transform: translate3d(18px, -42px, 0); } }
+.room-light-pool { position: absolute; z-index: 1; bottom: 10%; left: 50%; width: min(72vw, 540px); height: 170px; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(ellipse, rgba(255,226,160,.22), transparent 68%); opacity: 0; animation: roomLightBreath 6s ease-in-out infinite; transition: opacity 2s ease; pointer-events: none; }
+.tea-room-wall.scene-layer-visible ~ .room-light-pool { opacity: .9; }
+.time-night .room-light-pool { background: radial-gradient(ellipse, rgba(205,157,87,.28), transparent 68%); }
+@keyframes roomLightBreath { 0%, 100% { transform: translateX(-50%) scale(.96); } 50% { transform: translateX(-50%) scale(1.04); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .tea-room-dust i, .room-light-pool, .bamboo-stalk, .leaf, .incense-smoke { animation: none; }
+  .tea-room-window, .tea-table { transform: none; transition: none; }
+}
+
+@media (max-width: 640px) {
+  .tea-room-window { top: 7%; width: 68vw; height: 38vh; border-width: 6px; }
+  .tea-table { transform: scale(.86) translateY(8px); transform-origin: center bottom; }
+  .tea-room-floor { height: 31%; }
+}
 
 /* 竹竿摇摆 */
 .bamboo-stalk {

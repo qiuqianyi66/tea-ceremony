@@ -174,6 +174,18 @@ CREATE TABLE IF NOT EXISTS tea_person_relations (
     person_id INTEGER REFERENCES tea_people(id)
 );
 
+-- ============ 14. 文化文档（AI 知识库）============
+CREATE TABLE IF NOT EXISTS culture_documents (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(200),
+    category VARCHAR(50),
+    content TEXT,
+    source_type VARCHAR(50),
+    chunk_index INTEGER DEFAULT 0,
+    embedding JSONB,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
 -- ============ 索引 ============
 CREATE INDEX idx_teas_name ON teas(name);
 CREATE INDEX idx_teas_category ON teas(category);
@@ -184,3 +196,4 @@ CREATE INDEX idx_tea_poems_author ON tea_poems(author);
 CREATE INDEX idx_tasting_records_user ON tasting_records_v2(user_id);
 CREATE INDEX idx_tea_relations_source ON tea_relations(source_type, source_id);
 CREATE INDEX idx_tea_relations_target ON tea_relations(target_type, target_id);
+CREATE INDEX idx_culture_documents_category ON culture_documents(category);

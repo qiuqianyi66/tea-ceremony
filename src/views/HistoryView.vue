@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTeaStore } from '@/stores/tea'
+import { historyStorage } from '@/services/storage'
 
 const router = useRouter()
 const store = useTeaStore()
+const isSyncing = ref(false)
+const syncMessage = ref('')
 
 const aromaLabels: Record<string, string> = {
   floral: '花香', fruity: '果香', honey: '蜜香',
@@ -15,14 +18,40 @@ const aromaLabels: Record<string, string> = {
 onMounted(() => {
   store.loadHistory()
 })
+
+async function retrySync() {
+  if (isSyncing.value) return
+  isSyncing.value = true
+  syncMessage.value = ''
+  try {
+    const result = await historyStorage.syncPending()
+    await store.loadHistory()
+    syncMessage.value = result.failed > 0
+      ? `已同步 ${result.synced} 条，仍有 ${result.failed} 条待重试`
+      : result.synced > 0 ? `已同步 ${result.synced} 条记录` : '暂无需要同步的记录'
+  } catch (error) {
+    syncMessage.value = error instanceof Error ? error.message : '同步服务暂时不可用'
+  } finally {
+    isSyncing.value = false
+  }
+}
 </script>
 
 <template>
   <div class="min-h-screen p-8">
     <div class="flex items-center justify-between mb-8">
       <h2 class="text-3xl font-bold text-[var(--color-wood)]">品鉴历史</h2>
-      <button @click="router.push('/')" class="text-[var(--color-wood-light)] hover:text-[var(--color-wood)]">返回</button>
+      <div class="flex items-center gap-4">
+        <button
+          class="text-xs px-3 py-1.5 rounded-full border border-[var(--color-wood-light)]/30 text-[var(--color-wood-light)] hover:bg-white/60 disabled:opacity-50"
+          :disabled="isSyncing"
+          @click="retrySync"
+        >{{ isSyncing ? '同步中…' : '重试同步' }}</button>
+        <button @click="router.push('/')" class="text-[var(--color-wood-light)] hover:text-[var(--color-wood)]">返回</button>
+      </div>
     </div>
+
+    <p v-if="syncMessage" class="text-xs text-[var(--color-wood-light)] mb-4">{{ syncMessage }}</p>
 
     <!-- 成就展示 -->
     <div class="mb-8">
@@ -87,6 +116,13 @@ onMounted(() => {
             </div>
             <p class="text-sm text-[var(--color-wood-light)]">
               {{ new Date(record.date).toLocaleDateString() }} · 第 {{ record.infusions }} 泡 · {{ record.brewTemp }}°C · {{ record.brewTime }}s
+            </p>
+            <p v-if="record.syncStatus" class="text-[11px] mt-1" :class="{
+              'text-emerald-700': record.syncStatus === 'synced',
+              'text-amber-700': record.syncStatus === 'pending',
+              'text-red-700': record.syncStatus === 'failed'
+            }">
+              {{ record.syncStatus === 'synced' ? '✓ 已同步' : record.syncStatus === 'pending' ? '◷ 等待同步' : `! 同步失败：${record.syncError || '请重试'}` }}
             </p>
           </div>
           <span class="text-2xl font-bold" :style="{ color: record.overallScore >= 7.5 ? '#4A7C59' : record.overallScore >= 6 ? '#5D4E37' : '#8B7355' }">{{ record.overallScore }}</span>

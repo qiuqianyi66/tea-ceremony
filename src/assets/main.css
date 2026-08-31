@@ -41,6 +41,88 @@ body {
   50% { transform: translateY(-8px); }
 }
 
+@keyframes water-stream {
+  0% { transform: scaleY(0.75); opacity: 0.45; }
+  50% { transform: scaleY(1.04); opacity: 0.95; }
+  100% { transform: scaleY(0.85); opacity: 0.62; }
+}
+
+@keyframes water-splash {
+  0%, 100% { transform: translateY(0) scale(0.8); opacity: 0; }
+  35% { opacity: 0.8; }
+  75% { transform: translateY(-14px) scale(1); opacity: 0; }
+}
+
+@keyframes tea-ripple {
+  0% { transform: translate(-50%, -50%) scale(0.25); opacity: 0.55; }
+  100% { transform: translate(-50%, -50%) scale(1.8); opacity: 0; }
+}
+
+@keyframes tea-leaf-drift {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(-12deg); opacity: 0.35; }
+  50% { transform: translate3d(8px, -4px, 0) rotate(16deg); opacity: 0.85; }
+}
+
+@keyframes outflow-tilt {
+  0% { transform: rotate(-18deg) translateY(0); }
+  25% { transform: rotate(16deg) translateY(2px); }
+  75% { transform: rotate(16deg) translateY(2px); }
+  100% { transform: rotate(-18deg) translateY(0); }
+}
+@keyframes outflow-liquid {
+  0% { transform: scaleY(.2); transform-origin: bottom; opacity: .5; }
+  45% { transform: scaleY(1); opacity: 1; }
+  100% { transform: scaleY(1); opacity: 1; }
+}
+@keyframes outflow-stream {
+  0% { transform: scaleY(0); transform-origin: top; opacity: 0; }
+  25% { transform: scaleY(1); opacity: .85; }
+  78% { transform: scaleY(1); opacity: .85; }
+  100% { transform: scaleY(0); transform-origin: bottom; opacity: 0; }
+}
+@keyframes outflow-drop {
+  0%, 28% { transform: translateY(-8px) scale(.5); opacity: 0; }
+  55% { opacity: .9; }
+  100% { transform: translateY(16px) scale(1.8); opacity: 0; }
+}
+.outflow-scene { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
+.outflow-kettle { position: absolute; top: 70px; left: 36px; color: #8B7355; font-size: 38px; animation: outflow-tilt 1.8s ease-in-out both; }
+.outflow-stream { position: absolute; top: 96px; left: 68px; width: 5px; height: 92px; border-radius: 999px; background: linear-gradient(90deg, rgba(200,155,60,.25), rgba(255,255,255,.95), rgba(200,155,60,.35)); box-shadow: 0 0 9px rgba(200,155,60,.55); animation: outflow-stream 1.8s ease-in-out both; }
+.outflow-cup { position: absolute; right: 23px; bottom: 23px; width: 54px; height: 42px; overflow: hidden; border: 2px solid rgba(139,115,85,.65); border-radius: 8px 8px 18px 18px; background: rgba(255,255,255,.38); box-shadow: 0 5px 12px rgba(61,50,37,.15); }
+.outflow-liquid { position: absolute; inset: auto 0 0; height: 85%; border-radius: 50% 50% 10px 10px; animation: outflow-liquid 1.8s ease-out both; box-shadow: inset 0 6px 8px rgba(255,255,255,.2); }
+.outflow-cup-shine { position: absolute; top: 6px; left: 9px; width: 9px; height: 23px; border-radius: 99px; background: rgba(255,255,255,.45); transform: rotate(10deg); }
+.outflow-drop { position: absolute; right: 45px; bottom: 61px; width: 14px; height: 7px; border: 2px solid rgba(255,255,255,.8); border-radius: 50%; animation: outflow-drop 1.8s ease-out both; }
+.outflow-label { position: absolute; right: 4px; bottom: 1px; width: 95px; color: #8B7355; font-size: 10px; text-align: center; }
+
+.pouring-scene { position: absolute; inset: 0; pointer-events: none; }
+.pouring-kettle {
+  position: absolute; top: 70px; left: 30px; color: #8B7355; font-size: 34px;
+  transform: rotate(-25deg); opacity: 0.8; touch-action: none; cursor: grab; z-index: 4;
+  transition: transform .22s ease, color .22s ease;
+}
+.pouring-kettle:active, .pouring-kettle-active { cursor: grabbing; color: #C89B3C; }
+.gesture-ready .pouring-kettle { animation: kettle-invite 1.8s ease-in-out infinite; }
+.pour-hint { position: absolute; top: 112px; left: 56px; width: 130px; color: #8B7355; font-size: 11px; text-align: center; animation: hint-pulse 1.8s ease-in-out infinite; }
+@keyframes kettle-invite { 0%, 100% { margin-left: 0; } 50% { margin-left: 7px; } }
+@keyframes hint-pulse { 0%, 100% { opacity: .45; } 50% { opacity: 1; } }
+.water-stream {
+  position: absolute; top: 94px; left: 58px; width: 5px; height: 82px;
+  border-radius: 999px; transform: rotate(-9deg); overflow: hidden;
+  background: linear-gradient(90deg, rgba(183, 220, 224, .3), rgba(255,255,255,.9), rgba(126, 188, 198, .35));
+  box-shadow: 0 0 8px rgba(170, 214, 220, .7); animation: water-stream .8s ease-in-out infinite;
+}
+.water-stream span { display: block; width: 2px; height: 100%; margin-left: 1px; background: rgba(255,255,255,.75); animation: water-stream .55s linear infinite reverse; }
+.water-splash { position: absolute; top: 165px; left: 62px; width: 52px; height: 24px; }
+.water-splash i { position: absolute; width: 4px; height: 9px; border-radius: 50%; background: #D6EFF0; animation: water-splash 1s ease-out infinite; }
+.water-splash i:nth-child(1) { left: 8px; animation-delay: .05s; }
+.water-splash i:nth-child(2) { left: 20px; animation-delay: .18s; }
+.water-splash i:nth-child(3) { left: 32px; animation-delay: .3s; }
+.water-splash i:nth-child(4) { left: 43px; animation-delay: .12s; }
+.tea-ripple { position: absolute; top: 178px; left: 88px; width: 48px; height: 17px; border: 2px solid rgba(230, 245, 239, .7); border-radius: 50%; animation: tea-ripple 1.6s ease-out infinite; }
+.tea-ripple-two { animation-delay: .8s; }
+.tea-leaves { position: absolute; left: 92px; top: 176px; display: flex; gap: 5px; font-size: 15px; }
+.tea-leaves span { animation: tea-leaf-drift 2.4s ease-in-out infinite; }
+
 .animate-steam {
   animation: steam 2s ease-out infinite;
 }
@@ -52,6 +134,24 @@ body {
 .animate-ripple {
   animation: ripple 1.5s ease-out infinite;
 }
+
+/* 工夫茶仪式进度 */
+.ceremony-progress { display: flex; align-items: flex-start; width: min(100%, 560px); margin: 0 auto 24px; overflow-x: auto; padding: 0 4px 6px; }
+.ceremony-step { position: relative; display: flex; min-width: 60px; flex: 1; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; white-space: nowrap; }
+.ceremony-dot { display: grid; place-items: center; width: 23px; height: 23px; border: 1px solid rgba(139,115,85,.3); border-radius: 50%; color: #8B7355; background: rgba(255,255,255,.45); transition: all .35s ease; }
+.ceremony-dot.active { color: #FAF6F0; background: #5D4E37; border-color: #5D4E37; box-shadow: 0 0 0 5px rgba(158,128,80,.12); }
+.ceremony-dot.done { color: #fff; background: #9E8050; border-color: #9E8050; }
+.ceremony-line { position: absolute; top: 11px; left: calc(50% + 13px); width: calc(100% - 26px); height: 1px; background: rgba(139,115,85,.2); transition: background .35s ease; }
+.ceremony-line.filled { background: #C89B3C; }
+
+/* 茶壶场景 */
+.tea-stove { width: 134px; height: 106px; }
+.tea-stove::after { content: ''; position: absolute; bottom: 0; left: 13px; width: 108px; height: 18px; border-radius: 6px 6px 14px 14px; background: linear-gradient(#6f5a42, #3d3025); box-shadow: 0 8px 12px rgba(61,50,37,.2); }
+.tea-kettle-body { position: absolute; z-index: 2; bottom: 17px; left: 30px; width: 76px; height: 56px; border-radius: 12px 12px 22px 22px; background: #5D4E37; box-shadow: inset 0 -10px 14px rgba(35,25,18,.22), inset 8px 0 12px rgba(255,255,255,.08), 0 5px 10px rgba(61,50,37,.2); }
+.tea-kettle-lid { position: absolute; z-index: 3; bottom: 69px; left: 25px; width: 86px; height: 12px; border-radius: 50%; background: linear-gradient(#8B7355, #5D4E37); box-shadow: 0 -3px 5px rgba(255,255,255,.16); }
+.tea-kettle-lid::after { content: ''; position: absolute; top: -6px; left: 37px; width: 12px; height: 7px; border-radius: 50%; background: #8B7355; }
+.tea-kettle-handle { position: absolute; z-index: 1; bottom: 31px; left: 17px; width: 102px; height: 46px; border: 7px solid #6b5740; border-right-color: transparent; border-radius: 50%; opacity: .8; }
+.tea-kettle-spout { position: absolute; z-index: 2; bottom: 50px; right: 6px; width: 34px; height: 13px; border-radius: 0 100% 100% 0; background: #6f5a42; transform: rotate(-24deg); transform-origin: left center; }
 
 /* 毛玻璃效果 */
 .glass-panel {

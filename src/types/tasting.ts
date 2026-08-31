@@ -30,6 +30,8 @@ export interface TastingRecord {
   notes?: string             // 品鉴笔记
   weather?: string           // 天气
   mood?: string              // 心情
+  syncStatus?: 'pending' | 'synced' | 'failed'
+  syncError?: string
 }
 
 /** 成就定义 */

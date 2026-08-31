@@ -41,7 +41,7 @@ def search_tea_knowledge(query: str, limit: int = 5) -> list[dict]:
             results.append({
                 "type": "茶人",
                 "title": p.name,
-                "content": f"{p.name}（{p.dynasty}），{p.identity or ''}。{p.biography or p.description or ''}",
+                "content": f"{p.name}（{p.dynasty}），{p.identity or ''}。{p.description or ''}",
                 "score": 0.9,
             })
 

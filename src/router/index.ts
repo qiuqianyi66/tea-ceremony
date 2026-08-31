@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { useTeaStore } from '@/stores/tea'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -69,6 +70,13 @@ const router = createRouter({
       component: () => import('../views/HistoryView.vue'),
     },
   ],
+})
+
+router.beforeEach((to) => {
+  const teaStore = useTeaStore()
+  if ((to.name === 'brew' || to.name === 'taste') && !teaStore.currentTea) {
+    return { name: 'select' }
+  }
 })
 
 export default router

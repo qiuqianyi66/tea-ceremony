@@ -1,16 +1,16 @@
 /**
- * 茶叶状态管理
+ * 茶叶状态管理 - 基于 Dexie.js (IndexedDB) 异步存储
  */
 
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { Tea } from '@/types/tea'
 import type { TeaWare } from '@/types/teaware'
-import type { BrewState, BrewConfig } from '@/types/brewing'
+import type { BrewState } from '@/types/brewing'
 import type { TasteDimensions, TastingRecord, Achievement } from '@/types/tasting'
 import { BrewPhase } from '@/types/brewing'
 import { calculateProcessFactor, calculateOverallScore, generateRecordId } from '@/services/scoring'
-import { historyStorage, achievementStorage } from '@/services/storage'
+import { historyStorage, achievementStorage, xpStorage, collectedWareStorage } from '@/services/storage'
 import { ACHIEVEMENTS, WATER_TYPES, TEA_LEVELS } from '@/data/constants'
 import { getAllTypes, getTeaById } from '@/data/teas'
 import { TeaType } from '@/types/tea'
@@ -21,7 +21,7 @@ export const useTeaStore = defineStore('tea', () => {
 
   // ============ 当前茶器 ============
   const selectedTeaWare = ref<TeaWare | null>(null)
-  const collectedTeaWareIds = ref<Set<string>>(new Set(['gaiwan', 'yixing', 'glass']))  // 初始解锁3款
+  const collectedTeaWareIds = ref<Set<string>>(new Set(['gaiwan', 'yixing', 'glass']))
 
   // ============ 茶修等级 ============
   const userXp = ref(0)
@@ -39,16 +39,13 @@ export const useTeaStore = defineStore('tea', () => {
   })
   const xpForNextLevel = computed(() => nextLevel.value?.minXp ?? userXp.value)
 
-  function addXp(amount: number) {
+  async function addXp(amount: number) {
     userXp.value += amount
-    try { localStorage.setItem('tea-xp', String(userXp.value)) } catch {}
+    await xpStorage.save(userXp.value)
   }
 
-  function loadXp() {
-    try {
-      const saved = localStorage.getItem('tea-xp')
-      if (saved) userXp.value = parseInt(saved, 10) || 0
-    } catch {}
+  async function loadXp() {
+    userXp.value = await xpStorage.load()
   }
 
   // ============ 冲泡状态 ============
@@ -81,12 +78,11 @@ export const useTeaStore = defineStore('tea', () => {
 
   // ============ 成就系统 ============
   const achievements = ref<Achievement[]>([])
-  const newAchievement = ref<string | null>(null)  // 刚解锁的成就ID，用于弹窗提示
+  const newAchievement = ref<string | null>(null)
 
-  function initAchievements() {
-    const saved = achievementStorage.load()
+  async function initAchievements() {
+    const saved = await achievementStorage.load()
     if (saved.length === 0) {
-      // 首次初始化：从常量创建成就列表
       const initial = ACHIEVEMENTS.map(a => ({
         id: a.id,
         name: a.name,
@@ -94,14 +90,14 @@ export const useTeaStore = defineStore('tea', () => {
         icon: a.icon,
         unlocked: false,
       }))
-      achievementStorage.save(initial)
+      await achievementStorage.save(initial)
       achievements.value = initial
     } else {
       achievements.value = saved
     }
   }
 
-  function checkAchievements(record: TastingRecord) {
+  async function checkAchievements(record: TastingRecord) {
     const all = [...achievements.value]
     let unlocked = false
 
@@ -119,7 +115,6 @@ export const useTeaStore = defineStore('tea', () => {
           break
         }
         case 'all_types': {
-          // 检查历史记录中是否覆盖了全部6大茶类
           const typesInHistory = new Set(history.value.map(r => {
             const tea = getTeaById(r.teaId)
             return tea?.type
@@ -133,7 +128,6 @@ export const useTeaStore = defineStore('tea', () => {
           break
         }
         case 'temp_accuracy': {
-          // 检查最近5条记录的温度偏差是否都<5°C
           if (history.value.length >= 5) {
             const recent5 = history.value.slice(0, 5)
             const allAccurate = recent5.every(r => {
@@ -172,7 +166,7 @@ export const useTeaStore = defineStore('tea', () => {
     }
 
     if (unlocked) {
-      achievementStorage.save(all)
+      await achievementStorage.save(all)
       achievements.value = all
     }
   }
@@ -186,7 +180,7 @@ export const useTeaStore = defineStore('tea', () => {
     return collectedTeaWareIds.value.has(wareId)
   }
 
-  function checkTeaWareUnlock() {
+  async function checkTeaWareUnlock() {
     const historyCount = history.value.length
     const greenTeaCount = history.value.filter(r => {
       const tea = getTeaById(r.teaId)
@@ -194,17 +188,26 @@ export const useTeaStore = defineStore('tea', () => {
     }).length
     const highScoreStreak = getHighScoreStreak()
 
+    let changed = false
+
     // 青瓷盖碗：品鉴 3 款绿茶后解锁
     if (!collectedTeaWareIds.value.has('celadon') && greenTeaCount >= 3) {
       collectedTeaWareIds.value = new Set([...collectedTeaWareIds.value, 'celadon'])
+      changed = true
     }
     // 段泥石瓢壶：累计品鉴 5 次
     if (!collectedTeaWareIds.value.has('duanning') && historyCount >= 5) {
       collectedTeaWareIds.value = new Set([...collectedTeaWareIds.value, 'duanning'])
+      changed = true
     }
     // 建盏天目杯：连续 3 次评分 8 分以上
     if (!collectedTeaWareIds.value.has('jianzhan') && highScoreStreak >= 3) {
       collectedTeaWareIds.value = new Set([...collectedTeaWareIds.value, 'jianzhan'])
+      changed = true
+    }
+
+    if (changed) {
+      await collectedWareStorage.save(collectedTeaWareIds.value)
     }
   }
 
@@ -233,7 +236,7 @@ export const useTeaStore = defineStore('tea', () => {
   // ============ 动作 ============
   function selectTea(tea: Tea) {
     currentTea.value = tea
-    selectedTeaWare.value = null  // 选新茶时重置茶器
+    selectedTeaWare.value = null
     brewState.value = {
       phase: BrewPhase.IDLE,
       currentTemp: 20,
@@ -264,16 +267,16 @@ export const useTeaStore = defineStore('tea', () => {
   function updateTemp(temp: number) {
     brewState.value.currentTemp = Math.min(temp, brewState.value.targetTemp)
     if (brewState.value.currentTemp >= brewState.value.targetTemp) {
-      brewState.value.phase = BrewPhase.WARMING  // 水沸后先温杯
+      brewState.value.phase = BrewPhase.WARMING
     }
   }
 
   function completeWarming() {
-    brewState.value.phase = BrewPhase.RINSING  // 温杯后醒茶
+    brewState.value.phase = BrewPhase.RINSING
   }
 
   function completeRinsing() {
-    brewState.value.phase = BrewPhase.READY  // 醒茶后准备冲泡
+    brewState.value.phase = BrewPhase.READY
     brewState.value.steepTime = 0
   }
 
@@ -319,11 +322,15 @@ export const useTeaStore = defineStore('tea', () => {
     return calculateOverallScore(tasteDimensions.value, processFactor.value)
   }
 
-  function saveRecord(aromaType?: string, notes?: string, weather?: string, mood?: string): TastingRecord {
+  async function saveRecord(aromaType?: string, notes?: string, weather?: string, mood?: string): Promise<TastingRecord> {
+    if (!currentTea.value) {
+      console.error('[saveRecord] currentTea is null, cannot save record')
+      throw new Error('未选择茶叶，无法保存品鉴记录')
+    }
     const record: TastingRecord = {
       id: generateRecordId(),
-      teaId: currentTea.value!.id,
-      teaName: currentTea.value!.name,
+      teaId: currentTea.value.id,
+      teaName: currentTea.value.name,
       date: new Date().toISOString(),
       brewTemp: brewState.value.currentTemp,
       brewTime: brewState.value.steepTime,
@@ -336,19 +343,20 @@ export const useTeaStore = defineStore('tea', () => {
       weather,
       mood,
     }
-    history.value = historyStorage.add(record)
-    // 品鉴获得经验：基础 10 + 评分加成（最高 +20）
+    history.value = await historyStorage.add(record)
+
     const xpGain = 10 + Math.round(Math.max(0, record.overallScore - 5) * 4)
-    addXp(xpGain)
-    checkAchievements(record)  // 保存后检查成就解锁
-    checkTeaWareUnlock()  // 检查茶器解锁
+    await addXp(xpGain)
+    await checkAchievements(record)
+    await checkTeaWareUnlock()
     return record
   }
 
-  function loadHistory() {
-    history.value = historyStorage.load()
-    initAchievements()
-    loadXp()
+  async function loadHistory() {
+    history.value = await historyStorage.load()
+    await initAchievements()
+    await loadXp()
+    collectedTeaWareIds.value = await collectedWareStorage.load()
   }
 
   return {

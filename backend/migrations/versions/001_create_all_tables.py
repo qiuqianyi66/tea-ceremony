@@ -204,6 +204,19 @@ def upgrade() -> None:
         sa.Column("person_id", sa.Integer(), sa.ForeignKey("tea_people.id")),
     )
 
+    # ============ 14. 文化文档（AI 知识库）============
+    op.create_table(
+        "culture_documents",
+        sa.Column("id", sa.Integer(), primary_key=True),
+        sa.Column("title", sa.String(200)),
+        sa.Column("category", sa.String(50)),
+        sa.Column("content", sa.Text()),
+        sa.Column("source_type", sa.String(50)),
+        sa.Column("chunk_index", sa.Integer(), default=0),
+        sa.Column("embedding", JSONB(), nullable=True),
+        sa.Column("created_at", sa.DateTime(), default=sa.func.now()),
+    )
+
     # ============ 索引 ============
     op.create_index("idx_teas_name", "teas", ["name"])
     op.create_index("idx_teas_category", "teas", ["category"])
@@ -212,9 +225,11 @@ def upgrade() -> None:
     op.create_index("idx_tea_people_dynasty", "tea_people", ["dynasty"])
     op.create_index("idx_tea_poems_author", "tea_poems", ["author"])
     op.create_index("idx_tasting_records_user", "tasting_records_v2", ["user_id"])
+    op.create_index("idx_culture_documents_category", "culture_documents", ["category"])
 
 
 def downgrade() -> None:
+    op.drop_table("culture_documents")
     op.drop_table("tea_person_relations")
     op.drop_table("tea_journeys")
     op.drop_table("water_sources")

@@ -5,6 +5,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { authApi } from '@/services/api'
+import { historyStorage } from '@/services/storage'
 
 export interface UserInfo {
   id: number
@@ -45,6 +46,7 @@ export const useAuthStore = defineStore('auth', () => {
       token.value = result.access_token as string
       user.value = result.user as UserInfo
       saveToStorage()
+      await historyStorage.syncPending()
       return true
     }
     // API 不可用时本地模式
@@ -60,6 +62,7 @@ export const useAuthStore = defineStore('auth', () => {
       token.value = result.access_token as string
       user.value = result.user as UserInfo
       saveToStorage()
+      await historyStorage.syncPending()
       return true
     }
     // API 不可用时本地模式

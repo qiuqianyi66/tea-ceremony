@@ -14,7 +14,7 @@ router = APIRouter()
 def list_teas(type: str = None, db: Session = Depends(get_db)):
     query = db.query(Tea)
     if type:
-        query = query.filter(Tea.type == type)
+        query = query.filter(Tea.category == type)
     return query.all()
 
 

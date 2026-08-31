@@ -80,7 +80,11 @@ function startBrew() {
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col">
+  <div class="tea-room-page min-h-screen flex flex-col">
+    <div class="room-mist room-mist-a" aria-hidden="true"></div>
+    <div class="room-mist room-mist-b" aria-hidden="true"></div>
+    <div class="room-lantern" aria-hidden="true"><span></span></div>
+    <div class="room-window-shadow" aria-hidden="true"></div>
     <!-- 顶栏 -->
     <div class="flex items-center justify-between p-4 z-10">
       <div class="flex items-center gap-2">
@@ -140,8 +144,8 @@ function startBrew() {
       </div>
 
       <!-- 当前步骤展示 -->
-      <div class="glass-panel rounded-2xl p-8 w-full max-w-lg text-center mb-6">
-        <p class="text-6xl mb-4">{{ teaSteps[currentStep]!.icon }}</p>
+      <div class="glass-panel room-step-card rounded-2xl p-8 w-full max-w-lg text-center mb-6">
+        <div class="step-breath"><p class="text-6xl mb-4">{{ teaSteps[currentStep]!.icon }}</p></div>
         <h3 class="text-2xl font-bold text-[var(--color-wood)] mb-2">{{ teaSteps[currentStep]!.name }}</h3>
         <p class="text-[var(--color-wood-light)]">{{ teaSteps[currentStep]!.desc }}</p>
       </div>
@@ -172,8 +176,58 @@ function startBrew() {
 </template>
 
 <style scoped>
+.tea-room-page {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 38%, rgba(255, 250, 231, .9), transparent 32%),
+    linear-gradient(145deg, var(--color-cream), var(--color-paper));
+}
+.tea-room-page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: .26;
+  background: repeating-linear-gradient(90deg, transparent 0 46px, rgba(93,78,55,.035) 47px 48px);
+}
+.room-window-shadow {
+  position: absolute;
+  top: 5%;
+  left: 50%;
+  width: min(75vw, 430px);
+  height: 42vh;
+  transform: translateX(-50%);
+  border: 1px solid rgba(93,78,55,.16);
+  border-radius: 50% 50% 10px 10px;
+  background: linear-gradient(135deg, rgba(255,255,255,.24), rgba(109,145,128,.12));
+  box-shadow: inset 0 0 60px rgba(255,248,207,.35), 0 20px 80px rgba(93,78,55,.08);
+  pointer-events: none;
+}
+.room-window-shadow::before, .room-window-shadow::after { content: ''; position: absolute; background: rgba(93,78,55,.12); }
+.room-window-shadow::before { top: 0; bottom: 0; left: 50%; width: 2px; }
+.room-window-shadow::after { left: 0; right: 0; top: 52%; height: 2px; }
+.room-lantern { position: absolute; top: 10%; right: 12%; width: 34px; height: 48px; border: 2px solid rgba(158,128,80,.38); border-radius: 8px; background: rgba(200,155,60,.12); box-shadow: 0 0 30px rgba(200,155,60,.22); animation: lanternBreath 4s ease-in-out infinite; pointer-events: none; }
+.room-lantern::before, .room-lantern::after { content: ''; position: absolute; left: 50%; width: 16px; height: 2px; transform: translateX(-50%); background: rgba(158,128,80,.5); }
+.room-lantern::before { top: -7px; } .room-lantern::after { bottom: -7px; }
+.room-lantern span { position: absolute; inset: 10px; border-radius: 50%; background: rgba(255,210,100,.35); filter: blur(4px); }
+.room-mist { position: absolute; z-index: 0; border-radius: 50%; pointer-events: none; filter: blur(18px); opacity: .28; animation: mistDrift 12s ease-in-out infinite; }
+.room-mist-a { top: 32%; left: 8%; width: 180px; height: 65px; background: rgba(255,255,255,.8); }
+.room-mist-b { right: 5%; bottom: 25%; width: 220px; height: 75px; background: rgba(200,155,60,.14); animation-delay: -5s; }
+.room-step-card { position: relative; z-index: 1; box-shadow: 0 20px 50px rgba(93,78,55,.1); backdrop-filter: blur(12px); }
+.step-breath { animation: stepBreath 3.2s ease-in-out infinite; transform-origin: center; }
+@keyframes lanternBreath { 0%, 100% { opacity: .58; transform: translateY(0); } 50% { opacity: .95; transform: translateY(4px); } }
+@keyframes mistDrift { 0%, 100% { transform: translateX(-12px) scale(.95); } 50% { transform: translateX(20px) scale(1.08); } }
+@keyframes stepBreath { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.045); } }
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .room-lantern, .room-mist, .step-breath { animation: none; }
+}
+@media (max-width: 640px) {
+  .room-window-shadow { top: 9%; height: 32vh; width: 76vw; }
+  .room-lantern { top: 9%; right: 8%; transform: scale(.8); }
 }
 </style>

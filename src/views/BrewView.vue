@@ -8,10 +8,11 @@ import { teawares } from '@/data/teawares'
 import { BrewPhase } from '@/types/brewing'
 import type { TeaWare } from '@/types/teaware'
 import { useParticleSystem } from '@/composables/useParticles'
-import { startAmbient, stopAmbient, startBoiling, stopBoiling, startCrackle, stopCrackle, playPourWater, playPourTea, stopAll } from '@/composables/useAudio'
+import { useAudio } from '@/composables/useAudio'
 
 const router = useRouter()
 const store = useTeaStore()
+const audio = useAudio()
 
 // ============ Canvas 粒子系统 ============
 const particleCanvas = useParticleSystem({ width: 256, height: 256 })
@@ -25,15 +26,15 @@ function syncParticlesToPhase(phase: BrewPhase) {
   particleCanvas.stopFire()
   particleCanvas.stopSteam()
   particleCanvas.stopRipple()
-  stopAmbient()
-  stopBoiling()
-  stopCrackle()
+  audio.stopAmbient()
+  audio.stopBoiling()
+  audio.stopCrackle()
 
   switch (phase) {
     case BrewPhase.HEATING:
       particleCanvas.startFire()
-      startBoiling()
-      startCrackle()
+      audio.startBoiling()
+      audio.startCrackle()
       if (store.brewState.currentTemp > 60) {
         particleCanvas.startSteam()
       }
@@ -41,20 +42,20 @@ function syncParticlesToPhase(phase: BrewPhase) {
     case BrewPhase.WARMING:
     case BrewPhase.RINSING:
       particleCanvas.startSteam()
-      startAmbient()
+      audio.startAmbient()
       break
     case BrewPhase.READY:
       particleCanvas.startSteam()
-      startAmbient()
+      audio.startAmbient()
       break
     case BrewPhase.STEEPING:
       particleCanvas.startSteam()
       particleCanvas.startRipple()
-      startAmbient()
+      audio.startAmbient()
       break
     case BrewPhase.DONE:
       particleCanvas.startSteam()
-      startAmbient()
+      audio.startAmbient()
       break
   }
 }
@@ -80,9 +81,8 @@ watch(() => store.brewState.currentTemp, (temp) => {
 let mountedTimer: ReturnType<typeof setTimeout> | null = null
 
 onMounted(() => {
-  // 给 canvas 一点时间挂载
+  // 给 container 一点时间挂载
   mountedTimer = setTimeout(() => {
-    particleCanvas.start()
     particlesStarted = true
     syncParticlesToPhase(store.brewState.phase)
   }, 100)
@@ -94,10 +94,11 @@ onUnmounted(() => {
     clearTimeout(mountedTimer)
     mountedTimer = null
   }
-  particleCanvas.stop()
-  stopAll()
+  particleCanvas.destroy()
+  audio.stopAll()
   stopHeating()
   if (warmTimer) clearTimeout(warmTimer)
+  if (outflowTimer) clearTimeout(outflowTimer)
   if (steepInterval) clearInterval(steepInterval)
   if (rinseInterval) clearInterval(rinseInterval)
 })
@@ -108,11 +109,42 @@ let heatInterval: ReturnType<typeof setInterval> | null = null
 let steepInterval: ReturnType<typeof setInterval> | null = null
 let rinseInterval: ReturnType<typeof setInterval> | null = null
 const rinseCountdown = ref(0)
+const pourGestureProgress = ref(0)
+const isPourGestureActive = ref(false)
+const isPouringOut = ref(false)
+const pourSpeed = ref(0.5)
+let pourPointerStartX = 0
+let pourPointerStartedAt = 0
+let outflowTimer: ReturnType<typeof setTimeout> | null = null
+
+const canGesturePour = computed(() => store.brewState.phase === BrewPhase.READY)
+const pourGestureStyle = computed(() => ({
+  transform: `translateX(${pourGestureProgress.value * 0.18}px) rotate(${-25 - pourGestureProgress.value * 0.12}deg)`,
+}))
+const streamStyle = computed(() => ({
+  animationDuration: `${1.2 - pourSpeed.value * 0.55}s`,
+}))
+const teaStrength = computed(() => Math.round((0.8 + pourSpeed.value * 0.4) * 100))
+const ceremonySteps = [
+  { phase: BrewPhase.IDLE, label: '备器' },
+  { phase: BrewPhase.HEATING, label: '煮水' },
+  { phase: BrewPhase.WARMING, label: '温杯' },
+  { phase: BrewPhase.RINSING, label: '醒茶' },
+  { phase: BrewPhase.STEEPING, label: '浸泡' },
+  { phase: BrewPhase.DONE, label: '出汤' },
+] as const
+const ceremonyStepIndex = computed(() => {
+  const phase = store.brewState.phase
+  if (phase === BrewPhase.READY) return 4
+  return Math.max(0, ceremonySteps.findIndex(step => step.phase === phase))
+})
 
 // ============ 计算属性 ============
 const soupColor = computed(() => {
   if (!store.currentTea) return '#F5F0E8'
-  return getSoupColor(store.currentTea, store.brewState.steepTime)
+  // 注水越急，茶叶翻动越明显，显色略快；这是视觉反馈，不改变实际计时。
+  const visualSteepTime = store.brewState.steepTime * (0.8 + pourSpeed.value * 0.4)
+  return getSoupColor(store.currentTea, visualSteepTime)
 })
 
 const flameHeight = computed(() => {
@@ -131,6 +163,7 @@ const recommendedSteepTime = computed(() => {
 // 当前阶段是否为 IDLE
 const isIdle = computed(() => store.brewState.phase === BrewPhase.IDLE)
 const hasTeaWare = computed(() => store.selectedTeaWare !== null)
+const isPouring = computed(() => [BrewPhase.WARMING, BrewPhase.RINSING, BrewPhase.STEEPING].includes(store.brewState.phase))
 
 // ============ 温度控制 ============
 function onTempSlider(value: string) {
@@ -171,7 +204,7 @@ function selectWare(ware: TeaWare) {
 
 // ============ 冲泡阶段控制 ============
 function handleWarming() {
-  playPourWater(1.0)  // 先播音效
+  audio.playPourWater(1.0)  // 先播音效
   store.completeWarming()  // 再切换阶段
   if (warmTimer) clearTimeout(warmTimer)
   warmTimer = setTimeout(() => startRinsing(), 800)
@@ -193,10 +226,39 @@ function startRinsing() {
 }
 
 function startSteeping() {
+  if (steepInterval) clearInterval(steepInterval)
   store.startSteeping()
   steepInterval = window.setInterval(() => {
     store.updateSteepTime(store.brewState.steepTime + 1)
   }, 1000)
+}
+
+function beginPourGesture(event: PointerEvent) {
+  if (!canGesturePour.value) return
+  pourPointerStartX = event.clientX
+  pourPointerStartedAt = performance.now()
+  pourGestureProgress.value = 0
+  isPourGestureActive.value = true
+  ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
+}
+
+function movePourGesture(event: PointerEvent) {
+  if (!isPourGestureActive.value) return
+  // 向右拖动代表壶嘴向茶器倾斜，限制在 0~100 之间
+  pourGestureProgress.value = Math.max(0, Math.min(100, event.clientX - pourPointerStartX))
+}
+
+function endPourGesture(event: PointerEvent) {
+  if (!isPourGestureActive.value) return
+  isPourGestureActive.value = false
+  ;(event.currentTarget as HTMLElement).releasePointerCapture?.(event.pointerId)
+  if (pourGestureProgress.value >= 60) {
+    const elapsed = Math.max(performance.now() - pourPointerStartedAt, 120)
+    pourSpeed.value = Math.max(0.1, Math.min(1, pourGestureProgress.value / elapsed * 4))
+    audio.playPourWater(1 + pourGestureProgress.value / 100)
+    startSteeping()
+  }
+  pourGestureProgress.value = 0
 }
 
 function stopSteeping() {
@@ -205,7 +267,10 @@ function stopSteeping() {
     steepInterval = null
   }
   store.stopSteeping()
-  playPourTea(1.5)  // 出汤声
+  audio.playPourTea(1.5)  // 出汤声
+  isPouringOut.value = true
+  if (outflowTimer) clearTimeout(outflowTimer)
+  outflowTimer = setTimeout(() => { isPouringOut.value = false }, 1800)
 }
 
 function handleMainAction() {
@@ -221,6 +286,7 @@ function handleMainAction() {
     stopSteeping()
   } else if (phase === BrewPhase.DONE) {
     if (store.brewState.infusionsDone < (store.currentTea?.infusions ?? 0)) {
+      isPouringOut.value = false
       store.nextInfusion()
       startSteeping()
     } else {
@@ -280,6 +346,18 @@ const phaseDescription = computed(() => {
       {{ store.currentTea.name }}
     </p>
     <p class="text-sm text-[var(--color-wood-light)] mb-6">{{ phaseDescription }}</p>
+
+    <!-- 工夫茶仪式进度 -->
+    <div class="ceremony-progress" aria-label="冲泡流程进度">
+      <div v-for="(step, index) in ceremonySteps" :key="step.phase" class="ceremony-step">
+        <div class="ceremony-dot" :class="{ active: index === ceremonyStepIndex, done: index < ceremonyStepIndex }">
+          <span v-if="index < ceremonyStepIndex">✓</span>
+          <span v-else>{{ index + 1 }}</span>
+        </div>
+        <span :class="index <= ceremonyStepIndex ? 'text-[var(--color-wood)]' : 'text-[var(--color-wood-light)]/50'">{{ step.label }}</span>
+        <div v-if="index < ceremonySteps.length - 1" class="ceremony-line" :class="{ filled: index < ceremonyStepIndex }"></div>
+      </div>
+    </div>
 
     <!-- ======== IDLE：茶器选择 + 参数设定 ======== -->
     <div v-if="isIdle" class="w-full max-w-lg mb-6">
@@ -378,14 +456,12 @@ const phaseDescription = computed(() => {
 
     <!-- ======== 冲泡动画区域（非 IDLE）======== -->
     <div v-if="!isIdle" class="relative w-64 h-64 mb-6">
-      <!-- Canvas 粒子层 -->
-      <canvas
-        ref="(el) => { particleCanvas.canvasRef!.value = el as HTMLCanvasElement | null }"
+      <!-- tsParticles 容器 -->
+      <div
+        :ref="particleCanvas.containerRef"
         class="absolute inset-0 w-full h-full pointer-events-none z-10"
-        :width="256"
-        :height="256"
-      ></canvas>
-      <!-- 火焰粒子 -->
+      ></div>
+      <!-- 火焰粒子 (CSS 备用) -->
       <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-16 h-14">
         <div
           v-for="i in 5" :key="i"
@@ -402,10 +478,12 @@ const phaseDescription = computed(() => {
         ></div>
       </div>
 
-      <!-- 炉 + 壶 -->
-      <div class="absolute bottom-10 left-1/2 -translate-x-1/2 w-24 h-16 bg-[var(--color-wood)] rounded-t-lg">
+      <!-- 炉 + 茶壶：用 CSS 分层表现壶身、壶盖、把手和茶汤 -->
+      <div class="tea-stove absolute bottom-5 left-1/2 -translate-x-1/2">
+        <div class="tea-kettle-handle"></div>
+        <div class="tea-kettle-lid"></div>
         <div
-          class="absolute inset-x-2 bottom-2 top-3 rounded-t-sm transition-all duration-500 overflow-hidden"
+          class="tea-kettle-body transition-all duration-500 overflow-hidden"
           :style="{
             backgroundColor: store.brewState.phase === BrewPhase.STEEPING || store.brewState.phase === BrewPhase.DONE
               ? soupColor
@@ -425,6 +503,7 @@ const phaseDescription = computed(() => {
             }"
           ></div>
         </div>
+        <div class="tea-kettle-spout"></div>
       </div>
 
       <!-- 蒸汽 -->
@@ -434,6 +513,44 @@ const phaseDescription = computed(() => {
           class="w-1 h-8 rounded-full bg-[var(--color-wood-light)]"
           :style="{ opacity: 0.2, animation: `steam 2s ease-out infinite`, animationDelay: `${i * 0.4}s` }"
         ></div>
+      </div>
+
+      <!-- 注水水流：用分层 CSS 模拟壶嘴、水柱、飞溅和茶面涟漪 -->
+      <div v-if="isPouring || canGesturePour" class="pouring-scene" :class="{ 'gesture-ready': canGesturePour }">
+        <div
+          class="pouring-kettle"
+          :style="pourGestureStyle"
+          :class="{ 'pouring-kettle-active': isPourGestureActive }"
+          role="button"
+          tabindex="0"
+          title="向右拖动壶嘴注水"
+          @pointerdown="beginPourGesture"
+          @pointermove="movePourGesture"
+          @pointerup="endPourGesture"
+          @pointercancel="endPourGesture"
+        >◒</div>
+        <div v-if="isPouring || isPourGestureActive" class="water-stream" :style="streamStyle"><span></span><span></span><span></span></div>
+        <div v-if="isPouring || isPourGestureActive" class="water-splash"><i></i><i></i><i></i><i></i></div>
+        <div v-if="isPouring || isPourGestureActive" class="tea-ripple tea-ripple-one"></div>
+        <div v-if="isPouring || isPourGestureActive" class="tea-ripple tea-ripple-two"></div>
+        <p v-if="canGesturePour && !isPourGestureActive" class="pour-hint">向右拖动壶嘴注水</p>
+      </div>
+
+      <!-- 浸泡时茶叶缓慢舒展，让等待本身成为体验的一部分 -->
+      <div v-if="store.brewState.phase === BrewPhase.STEEPING" class="tea-leaves" aria-hidden="true">
+        <span v-for="i in 4" :key="i" :style="{ animationDelay: `${i * 0.35}s` }">🍃</span>
+      </div>
+
+      <!-- 出汤：倾壶、流线、杯中液面与落点涟漪 -->
+      <div v-if="isPouringOut" class="outflow-scene" aria-live="polite">
+        <div class="outflow-kettle">◒</div>
+        <div class="outflow-stream"></div>
+        <div class="outflow-cup">
+          <div class="outflow-liquid" :style="{ backgroundColor: soupColor }"></div>
+          <div class="outflow-cup-shine"></div>
+        </div>
+        <div class="outflow-drop"></div>
+        <p class="outflow-label">出汤 · 第 {{ currentInfusion }} 泡</p>
       </div>
 
       <!-- 茶汤色展示（浸泡/出汤时）-->
@@ -465,7 +582,7 @@ const phaseDescription = computed(() => {
         <template v-if="store.brewState.phase === BrewPhase.WARMING">点击按钮用热水温润茶器</template>
         <template v-else-if="store.brewState.phase === BrewPhase.RINSING">醒茶中，倒去第一泡</template>
         <template v-else-if="store.brewState.phase === BrewPhase.STEEPING">
-          目标 {{ recommendedSteepTime }}s · 投茶 {{ store.brewState.teaWeight }}g
+          目标 {{ recommendedSteepTime }}s · 投茶 {{ store.brewState.teaWeight }}g · 茶汤显色 {{ teaStrength }}%
         </template>
         <template v-else-if="store.brewState.phase === BrewPhase.DONE">
           实际浸泡 {{ store.brewState.steepTime }}s

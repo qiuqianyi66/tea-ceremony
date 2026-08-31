@@ -1,5 +1,5 @@
 /**
- * 茶叶类型定义
+ * 茶叶类型定义 — 与后端 Pydantic TeaResponse 保持一致
  * 六大茶类：绿茶、白茶、黄茶、青茶（乌龙）、红茶、黑茶
  */
 
@@ -13,23 +13,34 @@ export enum TeaType {
   DARK = '黑茶',
 }
 
-/** 茶叶数据结构 */
+/**
+ * 茶叶数据结构。
+ *
+ * 页面和本地品茶流程使用稳定的 camelCase + 字符串业务 ID。
+ * 后端 DTO 在 services/api.ts 中单独转换，避免把两套数据模型混在一个接口里。
+ */
 export interface Tea {
   id: string
   name: string
   type: TeaType
   origin: string
-  altitude: string
-  process: string          // 工艺
-  bestTemp: number         // 最佳水温 °C
-  bestTime: number         // 最佳浸泡时间 秒
-  infusions: number        // 可冲泡次数
-  flavor: string[]         // 风味标签
-  story: string            // 茶叶故事
-  description: string      // 简介
-  dryTeaColor: string      // 干茶颜色
-  soupColorMin: string     // 茶汤颜色（淡）
-  soupColorMax: string     // 茶汤颜色（浓）
+  altitude?: string
+  process?: string
+  bestTemp: number
+  bestTime: number
+  infusions: number
+  flavor: string[]
+  story: string
+  description: string
+  dryTeaColor: string
+  soupColorMin: string
+  soupColorMax: string
+
+  /** API 关联信息，页面可按需使用 */
+  regionId?: number
+  processId?: number
+  historicalPeriod?: string
+  waterRequirement?: string
 }
 
 /** 茶叶展示选项 */

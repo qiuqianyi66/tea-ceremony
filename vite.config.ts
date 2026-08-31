@@ -31,9 +31,27 @@ export default defineConfig({
             purpose: 'any maskable',
           },
         ],
+        screenshots: [],
+        categories: ['lifestyle', 'education', 'entertainment'],
+        shortcuts: [
+          {
+            name: '开始冲泡',
+            short_name: '冲泡',
+            description: '进入冲泡页面开始泡茶',
+            url: '/brew',
+            icons: [{ src: 'pwa-icon.svg', sizes: '192x192' }],
+          },
+          {
+            name: '品鉴记录',
+            short_name: '记录',
+            description: '查看历史品鉴笔记',
+            url: '/history',
+            icons: [{ src: 'pwa-icon.svg', sizes: '192x192' }],
+          },
+        ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,svg}'],
+        globPatterns: ['**/*.{js,css,html,ico,svg,webm,mp3,woff2}'],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -43,7 +61,30 @@ export default defineConfig({
               expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
             },
           },
+          {
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts-webfonts',
+              expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 365 },
+            },
+          },
+          {
+            urlPattern: /\.(?:webm|mp3|ogg)$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'audio-cache',
+              expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 * 30 },
+            },
+          },
         ],
+        cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true,
+      },
+      devOptions: {
+        enabled: true,
+        type: 'module',
       },
     }),
   ],

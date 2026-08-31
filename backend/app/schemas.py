@@ -3,7 +3,7 @@ Pydantic 数据验证模型 — V2.0
 """
 
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 
 
@@ -74,13 +74,15 @@ class PoemResponse(PoemBase):
 
 class RecordCreate(BaseModel):
     tea_name: str
-    tea_id: Optional[str] = None
+    tea_id: Optional[int] = None
     brew_temp: Optional[int] = None
     brew_time: Optional[int] = None
+    infusions: Optional[int] = None
     water_type: Optional[str] = None
     ware_id: Optional[int] = None
-    dimensions: dict = {}
+    dimensions: dict = Field(default_factory=dict)
     overall_score: Optional[float] = None
+    process_factor: Optional[float] = None
     aroma_type: Optional[str] = None
     notes: Optional[str] = None
     weather: Optional[str] = None

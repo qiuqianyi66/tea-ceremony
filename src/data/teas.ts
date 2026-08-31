@@ -517,7 +517,7 @@ export function interpolateColor(c1: string, c2: string, t: number): string {
 
 /** 根据浸泡时间计算茶汤颜色 */
 export function getSoupColor(tea: Tea, steepTime: number): string {
-  const maxSteep = tea.bestTime * 2
+  const maxSteep = Math.max(tea.bestTime * 2, 1)
   const progress = Math.min(steepTime / maxSteep, 1)
   return interpolateColor(tea.soupColorMin, tea.soupColorMax, progress)
 }

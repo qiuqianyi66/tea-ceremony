@@ -5,21 +5,14 @@ from sqlalchemy.orm import Session
 from passlib.hash import bcrypt
 from jose import jwt
 from datetime import datetime, timedelta
-import os
 
 from app.database import get_db
 from app.models import User
 from app.schemas import UserCreate, UserLogin, UserResponse, TokenResponse
+from app.config import SECRET_KEY
 
 router = APIRouter()
 
-SECRET_KEY = os.environ.get("SECRET_KEY", "")
-if not SECRET_KEY:
-    raise RuntimeError(
-        "SECRET_KEY 环境变量未设置！"
-        "请设置一个安全的随机字符串作为 JWT 签名密钥。"
-        "生成方法：python3 -c \"import secrets; print(secrets.token_hex(32))\""
-    )
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_DAYS = 30
 

@@ -1,16 +1,45 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { teas, getAllTypes, getTeasByType } from '@/data/teas'
+import { teas, getAllTypes } from '@/data/teas'
 import { useTeaStore } from '@/stores/tea'
 import { TeaType, type Tea } from '@/types/tea'
 import { getTeaMastersForTea } from '@/data/teaMasters'
+import { teasApi } from '@/services/api'
 
 const router = useRouter()
 const store = useTeaStore()
 
 const selectedType = ref<TeaType | null>(null)
 const selectedTea = ref<Tea | null>(null)
+const catalog = ref<Tea[]>(teas)
+const isLoading = ref(false)
+
+const visibleTeas = computed(() => selectedType.value
+  ? catalog.value.filter(tea => tea.type === selectedType.value)
+  : catalog.value)
+
+onMounted(async () => {
+  isLoading.value = true
+  try {
+    const remoteTeas = await teasApi.list()
+    if (remoteTeas.length > 0) {
+      // 远程数据负责更新数据库字段，本地资料保留视觉细节、故事和茶人关联。
+      const localByName = new Map(teas.map(tea => [tea.name, tea]))
+      catalog.value = remoteTeas.map(remoteTea => {
+        const localTea = localByName.get(remoteTea.name)
+        return localTea
+          ? { ...localTea, ...remoteTea, id: localTea.id }
+          : remoteTea
+      })
+    }
+  } catch (error) {
+    // API 不可用时保留内置目录，保证离线仍可开始品茶。
+    console.warn('[SelectView] 茶叶目录同步失败，使用本地目录:', error)
+  } finally {
+    isLoading.value = false
+  }
+})
 
 function filterTeas(type: TeaType | null) {
   selectedType.value = type
@@ -53,7 +82,7 @@ const types = getAllTypes()
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div v-for="tea in (selectedType ? getTeasByType(selectedType) : teas)" :key="tea.id"
+      <div v-for="tea in visibleTeas" :key="tea.id"
         @click="selectTea(tea)"
         class="p-6 rounded-xl cursor-pointer transition-all duration-300 border-2"
         :class="selectedTea?.id === tea.id ? 'border-[var(--color-tea-gold)] shadow-lg scale-105' : 'border-transparent bg-white hover:shadow-md'">
@@ -78,6 +107,7 @@ const types = getAllTypes()
         </div>
       </div>
     </div>
+    <p v-if="isLoading" class="text-center text-sm text-[var(--color-wood-light)] mt-6">正在同步茶叶目录…</p>
 
     <div class="fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-sm border-t">
       <button @click="confirm" :disabled="!selectedTea"
