@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTeaStore } from '@/stores/tea'
 import { TEA_LEVELS } from '@/data/constants'
@@ -13,14 +13,13 @@ onMounted(() => {
   store.loadHistory()
 })
 
-const tastedTypes = new Set(store.history.map(r => {
+const tastedTypes = computed(() => new Set(store.history.map(r => {
   const t = teas.find(tt => tt.id === r.teaId)
   return t?.type
-}).filter(Boolean))
-
-const totalTastings = store.history.length
-const unlockedWareCount = teawares.filter(w => store.isTeaWareUnlocked(w.id)).length
-const typeCoverage = Math.round((tastedTypes.size / 6) * 100)
+}).filter(Boolean)))
+const totalTastings = computed(() => store.history.length)
+const unlockedWareCount = computed(() => teawares.filter(w => store.isTeaWareUnlocked(w.id)).length)
+const typeCoverage = computed(() => Math.round((tastedTypes.value.size / 6) * 100))
 </script>
 
 <template>
@@ -34,7 +33,7 @@ const typeCoverage = Math.round((tastedTypes.size / 6) * 100)
     <div class="glass-panel rounded-2xl p-6 mb-6 text-center">
       <p class="text-5xl mb-2">{{ store.currentLevel.icon }}</p>
       <p class="text-2xl font-bold text-[var(--color-wood)] mb-1">{{ store.currentLevel.name }}</p>
-      <p class="text-sm text-[var(--color-wood-light)] mb-4">{{ (store.currentLevel as any).desc }}</p>
+      <p class="text-sm text-[var(--color-wood-light)] mb-4">{{ store.currentLevel.desc }}</p>
       <p class="text-xs text-[var(--color-wood-light)]">茶修经验 {{ store.userXp }}</p>
       <div v-if="store.nextLevel" class="mt-3">
         <div class="w-full h-2 bg-[var(--color-paper)] rounded-full overflow-hidden">

@@ -48,6 +48,7 @@ function toLocalTea(dto: TeaResponseDto): Tea {
     : TeaType.GREEN
   return {
     id: `server-${dto.id}`,
+    apiId: dto.id,
     name: dto.name,
     type,
     origin: dto.origin ?? '未知产地',
@@ -67,7 +68,7 @@ function toLocalTea(dto: TeaResponseDto): Tea {
 
 export function toRecordDto(record: Partial<TastingRecord>): RecordCreateDto {
   const dto: RecordCreateDto = { tea_name: record.teaName ?? '未命名茶' }
-  const teaId = Number(record.teaId)
+  const teaId = record.teaApiId ?? Number(record.teaId)
   if (Number.isInteger(teaId)) dto.tea_id = teaId
   if (record.brewTemp !== undefined) dto.brew_temp = record.brewTemp
   if (record.brewTime !== undefined) dto.brew_time = record.brewTime
@@ -88,6 +89,7 @@ function fromRecordDto(dto: RecordResponseDto): TastingRecord {
   return {
     id: `server-${dto.id}`,
     teaId: dto.tea_id == null ? '' : String(dto.tea_id),
+    teaApiId: dto.tea_id ?? undefined,
     teaName: dto.tea_name,
     date: dto.created_at,
     brewTemp: dto.brew_temp ?? 0,

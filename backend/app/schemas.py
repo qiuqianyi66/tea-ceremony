@@ -17,7 +17,7 @@ class TeaBase(BaseModel):
     grade: Optional[str] = None
     best_temp: Optional[int] = None
     best_time: Optional[int] = None
-    flavor: list[str] = []
+    flavor: list[str] = Field(default_factory=list)
     story: Optional[str] = None
     description: Optional[str] = None
 
@@ -35,7 +35,7 @@ class RegionBase(BaseModel):
     climate: Optional[str] = None
     soil: Optional[str] = None
     history: Optional[str] = None
-    famous_for: list[str] = []
+    famous_for: list[str] = Field(default_factory=list)
 
 
 class RegionResponse(RegionBase):
@@ -50,7 +50,7 @@ class PersonBase(BaseModel):
     description: Optional[str] = None
     contribution: Optional[str] = None
     quote: Optional[str] = None
-    related_tea_ids: list[str] = []
+    related_tea_ids: list[str] = Field(default_factory=list)
 
 
 class PersonResponse(PersonBase):
@@ -63,7 +63,7 @@ class PoemBase(BaseModel):
     author: str
     dynasty: Optional[str] = None
     content: str
-    related_tea_ids: list[str] = []
+    related_tea_ids: list[str] = Field(default_factory=list)
     description: Optional[str] = None
 
 

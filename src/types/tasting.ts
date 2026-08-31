@@ -18,6 +18,8 @@ export interface TasteDimensions {
 export interface TastingRecord {
   id: string
   teaId: string
+  /** 服务端茶叶 ID，避免把数据库整数混入本地业务 ID */
+  teaApiId?: number
   teaName: string
   date: string               // ISO 日期
   brewTemp: number           // 冲泡时水温

@@ -21,6 +21,8 @@ export enum TeaType {
  */
 export interface Tea {
   id: string
+  /** 后端数据库 ID，与本地业务 ID 分离 */
+  apiId?: number
   name: string
   type: TeaType
   origin: string

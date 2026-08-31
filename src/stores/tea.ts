@@ -330,6 +330,7 @@ export const useTeaStore = defineStore('tea', () => {
     const record: TastingRecord = {
       id: generateRecordId(),
       teaId: currentTea.value.id,
+      teaApiId: currentTea.value.apiId,
       teaName: currentTea.value.name,
       date: new Date().toISOString(),
       brewTemp: brewState.value.currentTemp,

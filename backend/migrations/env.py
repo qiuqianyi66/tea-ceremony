@@ -14,6 +14,11 @@ if config.config_file_name is not None:
 # 导入所有模型（让 Alembic 自动检测）
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+database_url = os.environ.get("DATABASE_URL")
+if not database_url:
+    raise RuntimeError("DATABASE_URL 环境变量未设置，无法运行 Alembic 迁移")
+# Alembic 使用 ConfigParser，百分号需要转义；这样密码中的特殊字符也能正常工作。
+config.set_main_option("sqlalchemy.url", database_url.replace("%", "%%"))
 from app.database import Base
 from app.models import (
     Tea, TeaRegion, TeaProcess, TeaPerson, TeaPoem,
