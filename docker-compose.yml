@@ -13,7 +13,7 @@ services:
       - pgdata:/var/lib/postgresql/data
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U tea_user -d tea_ceremony"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -25,7 +25,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-tea_user}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-tea_ceremony}
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL must be set}
       SECRET_KEY: ${SECRET_KEY:?SECRET_KEY must be set}
     depends_on:
       db:
