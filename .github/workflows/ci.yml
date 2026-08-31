@@ -51,4 +51,5 @@ jobs:
         env:
           SECRET_KEY: ci-validation-secret
           POSTGRES_PASSWORD: ci-validation-password
+          DATABASE_URL: postgresql://tea_user:ci-validation-password@db:5432/tea_ceremony
         run: docker compose config --quiet
