@@ -14,6 +14,13 @@ router = APIRouter()
 
 @router.post("/", response_model=RecordResponse)
 def create_record(data: RecordCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    if data.client_id:
+        existing = db.query(TastingRecord).filter(
+            TastingRecord.user_id == user.id,
+            TastingRecord.client_id == data.client_id,
+        ).first()
+        if existing:
+            return existing
     record = TastingRecord(**data.model_dump(), user_id=user.id)
     db.add(record)
     db.commit()

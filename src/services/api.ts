@@ -7,6 +7,7 @@ import type { TasteDimensions, TastingRecord } from '@/types/tasting'
 import { TeaType, type Tea } from '@/types/tea'
 
 export interface RecordCreateDto {
+  client_id?: string
   tea_name: string
   tea_id?: number
   brew_temp?: number
@@ -67,7 +68,10 @@ function toLocalTea(dto: TeaResponseDto): Tea {
 }
 
 export function toRecordDto(record: Partial<TastingRecord>): RecordCreateDto {
-  const dto: RecordCreateDto = { tea_name: record.teaName ?? '未命名茶' }
+  const dto: RecordCreateDto = {
+    client_id: record.id,
+    tea_name: record.teaName ?? '未命名茶',
+  }
   const teaId = record.teaApiId ?? Number(record.teaId)
   if (Number.isInteger(teaId)) dto.tea_id = teaId
   if (record.brewTemp !== undefined) dto.brew_temp = record.brewTemp
@@ -87,7 +91,7 @@ export function toRecordDto(record: Partial<TastingRecord>): RecordCreateDto {
 function fromRecordDto(dto: RecordResponseDto): TastingRecord {
   const dimensions = dto.dimensions ?? {} as TasteDimensions
   return {
-    id: `server-${dto.id}`,
+    id: dto.client_id ?? `server-${dto.id}`,
     teaId: dto.tea_id == null ? '' : String(dto.tea_id),
     teaApiId: dto.tea_id ?? undefined,
     teaName: dto.tea_name,

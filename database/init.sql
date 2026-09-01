@@ -129,6 +129,7 @@ CREATE TABLE IF NOT EXISTS users_v2 (
 CREATE TABLE IF NOT EXISTS tasting_records_v2 (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users_v2(id),
+    client_id VARCHAR(64),
     tea_id INTEGER REFERENCES teas(id),
     tea_name VARCHAR(100) NOT NULL,
     brew_temp INTEGER,
@@ -194,6 +195,7 @@ CREATE INDEX idx_teas_process ON teas(process_id);
 CREATE INDEX idx_tea_people_dynasty ON tea_people(dynasty);
 CREATE INDEX idx_tea_poems_author ON tea_poems(author);
 CREATE INDEX idx_tasting_records_user ON tasting_records_v2(user_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_tasting_records_client ON tasting_records_v2(user_id, client_id) WHERE client_id IS NOT NULL;
 CREATE INDEX idx_tea_relations_source ON tea_relations(source_type, source_id);
 CREATE INDEX idx_tea_relations_target ON tea_relations(target_type, target_id);
 CREATE INDEX idx_culture_documents_category ON culture_documents(category);

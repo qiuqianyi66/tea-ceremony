@@ -173,6 +173,7 @@ class TastingRecordV2(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users_v2.id"), nullable=True)
+    client_id = Column(String(64), nullable=True, comment="客户端记录 ID，用于幂等同步")
     tea_id = Column(Integer, ForeignKey("teas.id"), nullable=True, comment="茶叶 ID")
     tea_name = Column(String(100), nullable=False)
     brew_temp = Column(Integer, comment="实际水温")

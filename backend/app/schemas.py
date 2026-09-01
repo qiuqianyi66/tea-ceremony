@@ -73,6 +73,7 @@ class PoemResponse(PoemBase):
 
 
 class RecordCreate(BaseModel):
+    client_id: Optional[str] = None
     tea_name: str
     tea_id: Optional[int] = None
     brew_temp: Optional[int] = None
