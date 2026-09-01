@@ -271,10 +271,10 @@ function handleScenePointerMove(event: PointerEvent) {
     <div class="fixed inset-0 z-0 cursor-default" @click="tryStartAudio"></div>
 
     <!-- 用户菜单 -->
-    <div class="fixed top-4 right-4 z-20 flex gap-2">
+    <div class="fixed top-4 left-4 right-4 z-20 flex flex-wrap justify-end gap-2">
       <!-- 主题切换 -->
       <div class="relative">
-        <button @click="showThemePicker = !showThemePicker"
+        <button @click="showThemePicker = !showThemePicker" aria-label="切换茶室主题" :aria-expanded="showThemePicker"
           class="glass-panel px-3 py-2 rounded-lg text-sm text-[var(--color-wood)] hover:bg-white/80 transition-all">
           {{ theme.currentTheme.icon }}
         </button>

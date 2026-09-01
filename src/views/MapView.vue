@@ -96,7 +96,7 @@ function selectRegion(r: TeaRegion) {
         <div class="glass-panel rounded-2xl p-6 max-w-md mx-4 max-h-[80vh] overflow-y-auto">
           <div class="flex justify-between items-start mb-4">
             <h3 class="text-xl font-bold text-[var(--color-wood)]">{{ selectedRegion.name }}</h3>
-            <button @click="selectedRegion = null" class="text-[var(--color-wood-light)]">✕</button>
+            <button @click="selectedRegion = null" aria-label="关闭产区详情" class="text-[var(--color-wood-light)]">✕</button>
           </div>
           <div class="space-y-3 text-sm">
             <div class="grid grid-cols-2 gap-2">

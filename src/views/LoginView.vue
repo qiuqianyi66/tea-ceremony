@@ -51,15 +51,18 @@ async function submit() {
 
       <form @submit.prevent="submit" class="space-y-4">
         <div>
-          <input v-model="username" placeholder="用户名"
+          <label for="login-username" class="sr-only">用户名</label>
+          <input id="login-username" v-model="username" autocomplete="username" placeholder="用户名"
             class="w-full px-4 py-3 rounded-lg bg-white border border-[var(--color-paper)] text-[var(--color-ink)] focus:outline-none focus:border-[var(--color-tea-gold)] transition-colors" />
         </div>
         <div>
-          <input v-model="password" type="password" placeholder="密码"
+          <label for="login-password" class="sr-only">密码</label>
+          <input id="login-password" v-model="password" autocomplete="current-password" type="password" placeholder="密码"
             class="w-full px-4 py-3 rounded-lg bg-white border border-[var(--color-paper)] text-[var(--color-ink)] focus:outline-none focus:border-[var(--color-tea-gold)] transition-colors" />
         </div>
         <div v-if="!isLogin">
-          <input v-model="displayName" placeholder="昵称（可选）"
+          <label for="register-display-name" class="sr-only">昵称（可选）</label>
+          <input id="register-display-name" v-model="displayName" autocomplete="nickname" placeholder="昵称（可选）"
             class="w-full px-4 py-3 rounded-lg bg-white border border-[var(--color-paper)] text-[var(--color-ink)] focus:outline-none focus:border-[var(--color-tea-gold)] transition-colors" />
         </div>
 
@@ -78,7 +81,7 @@ async function submit() {
         </button>
       </p>
 
-      <button @click="auth.login('茶客', ''); router.push('/')"
+      <button @click="auth.enterGuest(); router.push('/')"
         class="w-full mt-4 py-2 text-sm text-[var(--color-wood-light)] hover:text-[var(--color-wood)] transition-colors">
         先逛逛，不登录 →
       </button>

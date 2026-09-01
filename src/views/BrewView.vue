@@ -108,6 +108,7 @@ let warmTimer: ReturnType<typeof setTimeout> | null = null
 let heatInterval: ReturnType<typeof setInterval> | null = null
 let steepInterval: ReturnType<typeof setInterval> | null = null
 let rinseInterval: ReturnType<typeof setInterval> | null = null
+let steepStartedAt: number | null = null
 const rinseCountdown = ref(0)
 const pourGestureProgress = ref(0)
 const isPourGestureActive = ref(false)
@@ -228,9 +229,11 @@ function startRinsing() {
 function startSteeping() {
   if (steepInterval) clearInterval(steepInterval)
   store.startSteeping()
+  steepStartedAt = performance.now()
   steepInterval = window.setInterval(() => {
-    store.updateSteepTime(store.brewState.steepTime + 1)
-  }, 1000)
+    if (steepStartedAt === null) return
+    store.updateSteepTime(Math.floor((performance.now() - steepStartedAt) / 1000))
+  }, 250)
 }
 
 function beginPourGesture(event: PointerEvent) {
@@ -265,6 +268,10 @@ function stopSteeping() {
   if (steepInterval) {
     clearInterval(steepInterval)
     steepInterval = null
+  }
+  if (steepStartedAt !== null) {
+    store.updateSteepTime(Math.max(store.brewState.steepTime, Math.floor((performance.now() - steepStartedAt) / 1000)))
+    steepStartedAt = null
   }
   store.stopSteeping()
   audio.playPourTea(1.5)  // 出汤声
@@ -362,7 +369,7 @@ const phaseDescription = computed(() => {
     <!-- ======== IDLE：茶器选择 + 参数设定 ======== -->
     <div v-if="isIdle" class="w-full max-w-lg mb-6">
       <p class="text-sm text-[var(--color-wood)] mb-3">选择茶器：</p>
-      <div class="grid grid-cols-3 gap-3">
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <button
           v-for="ware in teawares" :key="ware.id"
           @click="selectWare(ware)"
@@ -412,7 +419,7 @@ const phaseDescription = computed(() => {
       <!-- 水源选择 -->
       <div class="mt-4">
         <label class="block text-sm text-[var(--color-wood)] mb-2">水源：</label>
-        <div class="grid grid-cols-3 gap-2">
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
           <button
             v-for="w in WATER_TYPES" :key="w.id"
             @click="store.waterType = w.id"

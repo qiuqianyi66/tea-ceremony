@@ -65,7 +65,7 @@ const types = getAllTypes()
 </script>
 
 <template>
-  <div class="min-h-screen p-8">
+  <div class="min-h-screen p-4 sm:p-8 pb-28">
     <h2 class="text-3xl font-bold text-[var(--color-wood)] mb-8">选茶</h2>
 
     <div class="flex flex-wrap gap-3 mb-8">

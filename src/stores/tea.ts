@@ -16,12 +16,14 @@ import { getAllTypes, getTeaById } from '@/data/teas'
 import { TeaType } from '@/types/tea'
 
 export const useTeaStore = defineStore('tea', () => {
+  const DEFAULT_COLLECTED_WARE_IDS = new Set(['gaiwan', 'yixing', 'glass'])
+
   // ============ 当前茶叶 ============
   const currentTea = ref<Tea | null>(null)
 
   // ============ 当前茶器 ============
   const selectedTeaWare = ref<TeaWare | null>(null)
-  const collectedTeaWareIds = ref<Set<string>>(new Set(['gaiwan', 'yixing', 'glass']))
+  const collectedTeaWareIds = ref<Set<string>>(new Set(DEFAULT_COLLECTED_WARE_IDS))
 
   // ============ 茶修等级 ============
   const userXp = ref(0)
@@ -357,7 +359,14 @@ export const useTeaStore = defineStore('tea', () => {
     history.value = await historyStorage.load()
     await initAchievements()
     await loadXp()
-    collectedTeaWareIds.value = await collectedWareStorage.load()
+    const savedWareIds = await collectedWareStorage.load()
+    // 首次运行时 IndexedDB 为空，但三件基础茶器应默认解锁。
+    if (savedWareIds.size === 0) {
+      collectedTeaWareIds.value = new Set(DEFAULT_COLLECTED_WARE_IDS)
+      await collectedWareStorage.save(collectedTeaWareIds.value)
+    } else {
+      collectedTeaWareIds.value = savedWareIds
+    }
   }
 
   return {

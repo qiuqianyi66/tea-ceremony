@@ -94,7 +94,7 @@ function startBrew() {
         <span class="text-xs text-[var(--color-wood-light)]">｜</span>
         <!-- 茶室选择 -->
         <div class="relative">
-          <button @click="showRoomPicker = !showRoomPicker"
+          <button @click="showRoomPicker = !showRoomPicker" aria-label="选择茶室" :aria-expanded="showRoomPicker"
             class="text-sm text-[var(--color-wood)] hover:text-[var(--color-wood-light)]">
                         {{ theme.currentTheme.icon }} {{ room.currentRoom.name }}
           </button>
@@ -118,12 +118,15 @@ function startBrew() {
     <!-- 迎宾引导 -->
     <Teleport to="body">
       <div v-if="showGreeting"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 transition-opacity duration-700"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/20 transition-opacity duration-700 pointer-events-none"
         @click="showGreeting = false">
-        <div class="glass-panel rounded-2xl p-8 max-w-sm text-center animate-[fadeIn_0.5s_ease-out]">
+        <div class="glass-panel rounded-2xl p-8 max-w-sm text-center animate-[fadeIn_0.5s_ease-out] pointer-events-auto" @click.stop>
           <p class="text-4xl mb-4">🍵</p>
           <p class="text-lg text-[var(--color-wood)] leading-relaxed">{{ greeting }}</p>
-          <p class="text-xs text-[var(--color-wood-light)] mt-4">轻触屏幕继续</p>
+          <button
+            class="mt-5 px-5 py-2 rounded-full bg-[var(--color-wood)] text-[var(--color-cream)] text-sm hover:bg-[var(--color-wood-light)] transition-colors"
+            @click="showGreeting = false"
+          >进入茶席</button>
         </div>
       </div>
     </Teleport>

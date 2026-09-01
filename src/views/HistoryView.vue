@@ -38,7 +38,7 @@ async function retrySync() {
 </script>
 
 <template>
-  <div class="min-h-screen p-8">
+  <div class="min-h-screen p-4 sm:p-8">
     <div class="flex items-center justify-between mb-8">
       <h2 class="text-3xl font-bold text-[var(--color-wood)]">品鉴历史</h2>
       <div class="flex items-center gap-4">
@@ -84,7 +84,7 @@ async function retrySync() {
           （{{ store.achievements.filter(a => a.unlocked).length }}/{{ store.achievements.length }}）
         </span>
       </h3>
-      <div class="grid grid-cols-5 gap-2">
+      <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
         <div
           v-for="ach in store.achievements" :key="ach.id"
           class="p-3 rounded-xl text-center transition-all"

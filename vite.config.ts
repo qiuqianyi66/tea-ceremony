@@ -6,6 +6,8 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  // GitHub Pages 使用项目子路径，本地和 Docker 部署保持根路径。
+  base: process.env.GITHUB_ACTIONS === 'true' ? '/tea-ceremony/' : '/',
   plugins: [
     vue(),
     tailwindcss(),

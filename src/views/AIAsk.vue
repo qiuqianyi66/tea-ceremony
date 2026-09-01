@@ -52,7 +52,7 @@ function useSuggestion(text: string) {
           <p class="text-xs text-[var(--color-wood-light)]">你的私人茶道师傅</p>
         </div>
       </div>
-      <button @click="router.push('/')" class="text-[var(--color-wood-light)] hover:text-[var(--color-wood)]">✕</button>
+      <button @click="router.push('/')" aria-label="关闭茶灵" class="text-[var(--color-wood-light)] hover:text-[var(--color-wood)]">✕</button>
     </div>
 
     <!-- 对话区域 -->
@@ -97,7 +97,8 @@ function useSuggestion(text: string) {
     <!-- 输入框 -->
     <div class="p-4 border-t border-[var(--color-paper)]">
       <form @submit.prevent="sendMessage()" class="flex gap-2">
-        <input v-model="input" placeholder="问茶灵 AI 一个问题..."
+        <label for="tea-ai-question" class="sr-only">向茶灵提问</label>
+        <input id="tea-ai-question" v-model="input" autocomplete="off" placeholder="问茶灵 AI 一个问题..."
           class="flex-1 px-4 py-3 rounded-xl bg-white border border-[var(--color-paper)] text-[var(--color-ink)] focus:outline-none focus:border-[var(--color-tea-gold)] transition-colors" />
         <button type="submit" :disabled="loading || !input.trim()"
           class="px-6 py-3 bg-[var(--color-wood)] text-[var(--color-cream)] rounded-xl hover:bg-[var(--color-wood-light)] transition-colors disabled:opacity-50">

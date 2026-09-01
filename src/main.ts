@@ -16,7 +16,7 @@ app.use(createPinia())
 app.use(router)
 app.use(registerIcons)
 
-// 初始化数据库并加载历史数据
+// 初始化数据库并加载历史数据。页面先挂载，避免 IndexedDB 异常或升级时白屏。
 async function initializeApp() {
   try {
     await initDB()
@@ -37,11 +37,11 @@ async function initializeApp() {
   }
 }
 
-initializeApp().then(() => {
-  app.mount('#app')
+app.mount('#app')
 
-  // 网络恢复时自动重试，不打断用户当前的品茶流程。
-  window.addEventListener('online', () => {
-    void historyStorage.syncPending()
-  })
+void initializeApp()
+
+// 网络恢复时自动重试，不打断用户当前的品茶流程。
+window.addEventListener('online', () => {
+  void historyStorage.syncPending()
 })

@@ -7,6 +7,8 @@ import { getScoreLevel } from '@/services/scoring'
 import { generateTastingNote } from '@/services/teaAI'
 import TasteRadarChart from '@/components/tasting/TasteRadarChart.vue'
 import TasteTrendChart from '@/components/tasting/TasteTrendChart.vue'
+import TastingCard from '@/components/tasting/TastingCard.vue'
+import type { TastingRecord } from '@/types/tasting'
 
 const router = useRouter()
 const store = useTeaStore()
@@ -64,19 +66,35 @@ const moodOptions = ['愉悦', '安静', '禅定', '沉思', '悠然']
 const finalScore = computed(() => store.calculateScore())
 const scoreLevel = computed(() => getScoreLevel(finalScore.value))
 const aiComment = ref('')
+const isSaving = ref(false)
+const saveError = ref('')
+const savedRecord = ref<TastingRecord | null>(null)
+const shareMessage = ref('')
 
-function submit() {
+async function submit() {
+  if (isSaving.value) return
   if (!store.currentTea) {
     alert('未选择茶叶，无法保存品鉴记录')
     return
   }
-  store.saveRecord(
-    selectedAroma.value ?? undefined,
-    tastingNotes.value || undefined,
-    weather.value || undefined,
-    mood.value || undefined,
-  )
-  step.value = 'result'
+
+  isSaving.value = true
+  saveError.value = ''
+  try {
+    savedRecord.value = await store.saveRecord(
+      selectedAroma.value ?? undefined,
+      tastingNotes.value || undefined,
+      weather.value || undefined,
+      mood.value || undefined,
+    )
+    step.value = 'result'
+  } catch {
+    saveError.value = '保存失败，请检查浏览器存储权限后重试'
+    return
+  } finally {
+    isSaving.value = false
+  }
+
   // AI 生成茶记
   generateTastingNote(
     store.currentTea?.name || '',
@@ -128,7 +146,7 @@ const averageDimensions = computed(() => {
 </script>
 
 <template>
-  <div class="min-h-screen p-8 flex flex-col items-center">
+  <div class="min-h-screen p-4 sm:p-8 flex flex-col items-center">
     <h2 class="text-3xl font-bold text-[var(--color-wood)] mb-2">品鉴</h2>
 
     <p class="text-lg text-[var(--color-wood)] mb-1">
@@ -294,10 +312,11 @@ const averageDimensions = computed(() => {
         </div>
       </div>
 
-      <button @click="submit"
-        class="w-full py-4 bg-[var(--color-wood)] text-[var(--color-cream)] text-xl rounded-lg hover:bg-[var(--color-wood-light)] transition-colors flex items-center justify-center gap-2">
+      <p v-if="saveError" class="text-sm text-red-600 text-center mb-3">{{ saveError }}</p>
+      <button @click="submit" :disabled="isSaving"
+        class="w-full py-4 bg-[var(--color-wood)] text-[var(--color-cream)] text-xl rounded-lg hover:bg-[var(--color-wood-light)] transition-colors disabled:opacity-50 disabled:cursor-wait flex items-center justify-center gap-2">
         <IconCheckCircle class="w-5 h-5" />
-        完成品鉴
+        {{ isSaving ? '保存中...' : '完成品鉴' }}
       </button>
     </div>
 
@@ -318,6 +337,11 @@ const averageDimensions = computed(() => {
             </span>
           </template>
         </p>
+      </div>
+
+      <div v-if="savedRecord" class="mb-6 w-full">
+        <TastingCard :record="savedRecord" @shared="shareMessage = '品鉴内容已复制或交给系统分享'" />
+        <p v-if="shareMessage" class="mt-2 text-xs text-[var(--color-tea-gold)]">{{ shareMessage }}</p>
       </div>
 
       <!-- 结果详情 + 雷达图 + 趋势图 -->
@@ -346,7 +370,7 @@ const averageDimensions = computed(() => {
             <IconWind class="w-4 h-4" />
             <strong>香气：</strong>{{ aromaTypes.find(a => a.id === selectedAroma)?.label }}
           </p>
-          <div class="mt-2 grid grid-cols-8 gap-1">
+          <div class="mt-2 grid grid-cols-4 sm:grid-cols-8 gap-1">
             <div v-for="d in dimensions" :key="d.key" class="text-center">
               <component
                 :is="`Icon${d.icon}`"

@@ -36,7 +36,7 @@ function confirm() {
     <!-- 茶器选择 -->
     <div class="w-full max-w-lg mb-8">
       <h3 class="text-base font-bold text-[var(--color-wood)] mb-3">🫖 茶器</h3>
-      <div class="grid grid-cols-3 gap-3">
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <button
           v-for="ware in teawares" :key="ware.id"
           @click="selectWare(ware)"
@@ -66,7 +66,7 @@ function confirm() {
     <!-- 水源选择 -->
     <div class="w-full max-w-lg mb-8">
       <h3 class="text-base font-bold text-[var(--color-wood)] mb-3">💧 水源</h3>
-      <div class="grid grid-cols-3 gap-3">
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <button
           v-for="w in WATER_TYPES" :key="w.id"
           @click="store.waterType = w.id"

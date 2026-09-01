@@ -271,7 +271,8 @@ export const achievementStorage = {
 
   async unlock(achievementId: string): Promise<Achievement[]> {
     await initDB()
-    const achievement = await db.achievements.get(achievementId)
+    // id 是业务字段，表的自增主键不是业务 ID。
+    const achievement = await db.achievements.where('id').equals(achievementId).first()
     if (achievement && !achievement.unlocked) {
       achievement.unlocked = true
       achievement.unlockedAt = new Date().toISOString()
@@ -327,7 +328,9 @@ export const collectedWareStorage = {
 
   async remove(wareId: string): Promise<Set<string>> {
     await initDB()
-    await db.collectedWare.delete(wareId)
+    // collectedWare 使用自增主键，按业务 id 找到记录后再删除。
+    const record = await db.collectedWare.where('id').equals(wareId).first()
+    if (record) await db.collectedWare.delete(record.id)
     return this.load()
   },
 }

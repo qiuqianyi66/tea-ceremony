@@ -72,6 +72,13 @@ export const useAuthStore = defineStore('auth', () => {
     return true
   }
 
+  // 游客入口不应调用真实登录接口，否则后端在线时会因空密码返回 401。
+  function enterGuest() {
+    token.value = 'dev-token'
+    user.value = { id: 0, username: 'guest', display_name: '茶客', level: 1, xp: 0 }
+    saveToStorage()
+  }
+
   function logout() {
     token.value = null
     user.value = null
@@ -81,5 +88,5 @@ export const useAuthStore = defineStore('auth', () => {
   // 初始化时加载
   loadFromStorage()
 
-  return { user, token, isLoggedIn, login, register, logout }
+  return { user, token, isLoggedIn, login, register, enterGuest, logout }
 })

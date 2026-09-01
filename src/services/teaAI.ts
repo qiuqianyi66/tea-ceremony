@@ -254,7 +254,7 @@ const FALLBACK_REPLIES = [
 
 // ============ RAG 知识库检索 ============
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api'
+const API_BASE = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
 
 async function fetchRAGContext(question: string): Promise<string> {
   try {

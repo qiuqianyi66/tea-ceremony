@@ -121,7 +121,9 @@ function fromRecordDto(dto: RecordResponseDto): TastingRecord {
 
 // ============ 配置 ============
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api'
+// 生产环境通过 Nginx 代理到 /api；开发环境可通过 VITE_API_URL 指向后端。
+// 统一补齐 /api，避免把 http://localhost:8000 配置成不带前缀的错误地址。
+const API_BASE = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
 const DEV_MODE = import.meta.env.DEV && import.meta.env.VITE_DEV_MODE === 'true'
 const REQUEST_TIMEOUT_MS = 15_000
 
@@ -139,8 +141,8 @@ export class ApiError extends Error {
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-  const controller = new AbortController()
-  const timeoutId = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+  const controller = options?.signal ? null : new AbortController()
+  const timeoutId = window.setTimeout(() => controller?.abort(), REQUEST_TIMEOUT_MS)
 
   // 附加认证 token
   try {
@@ -159,7 +161,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     const res = await fetch(`${API_BASE}${path}`, {
       headers: { ...headers, ...options?.headers as Record<string, string> },
       ...options,
-      signal: options?.signal ?? controller.signal,
+      signal: options?.signal ?? controller?.signal,
     })
 
     if (!res.ok) {
