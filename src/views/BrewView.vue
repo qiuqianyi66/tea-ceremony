@@ -154,6 +154,7 @@ const flameHeight = computed(() => {
 })
 
 const currentInfusion = computed(() => store.brewState.infusionsDone + 1)
+const completedInfusion = computed(() => Math.max(1, store.brewState.infusionsDone))
 const totalInfusions = computed(() => store.currentTea?.infusions ?? 1)
 
 const recommendedSteepTime = computed(() => {
@@ -278,6 +279,15 @@ function stopSteeping() {
   isPouringOut.value = true
   if (outflowTimer) clearTimeout(outflowTimer)
   outflowTimer = setTimeout(() => { isPouringOut.value = false }, 1800)
+}
+
+function finishOutflow() {
+  if (outflowTimer) {
+    clearTimeout(outflowTimer)
+    outflowTimer = null
+  }
+  isPouringOut.value = false
+  handleMainAction()
 }
 
 function handleMainAction() {
@@ -557,7 +567,10 @@ const phaseDescription = computed(() => {
           <div class="outflow-cup-shine"></div>
         </div>
         <div class="outflow-drop"></div>
-        <p class="outflow-label">出汤 · 第 {{ currentInfusion }} 泡</p>
+        <p class="outflow-label">出汤 · 第 {{ completedInfusion }} 泡</p>
+        <button type="button" class="outflow-next" @click="finishOutflow">
+          {{ store.brewState.infusionsDone < totalInfusions ? '出汤完成 · 下一泡' : '出汤完成 · 开始品鉴' }}
+        </button>
       </div>
 
       <!-- 茶汤色展示（浸泡/出汤时）-->
