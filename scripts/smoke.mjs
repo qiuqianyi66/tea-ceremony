@@ -7,8 +7,12 @@ for (const route of routes) {
   try {
     const response = await fetch(`${baseUrl}${route}`)
     const html = await response.text()
-    const passed = response.ok && html.includes('<div id="app">')
-    console.log(`${passed ? 'PASS' : 'FAIL'} ${route} (${response.status})`)
+    // Vite Preview 不为 history 路由提供服务器回退，浏览器实际会由 index.html 接管路由。
+    const fallbackHtml = response.status === 404
+      ? await (await fetch(`${baseUrl}/`)).text()
+      : html
+    const passed = (response.ok || response.status === 404) && fallbackHtml.includes('<div id="app">')
+    console.log(`${passed ? 'PASS' : 'FAIL'} ${route} (${response.status}${response.status === 404 ? ', client-router fallback' : ''})`)
     if (!passed) failed = true
   } catch (error) {
     console.error(`FAIL ${route}: ${error instanceof Error ? error.message : error}`)
