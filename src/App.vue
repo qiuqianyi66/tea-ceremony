@@ -5,7 +5,7 @@ import { RouterView } from 'vue-router'
 <template>
   <div class="min-h-screen bg-[var(--color-cream)]">
     <RouterView v-slot="{ Component, route }">
-      <Transition name="page" mode="out-in">
+      <Transition name="page">
         <component :is="Component" :key="route.fullPath" />
       </Transition>
     </RouterView>

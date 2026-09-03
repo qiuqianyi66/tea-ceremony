@@ -50,7 +50,9 @@ function syncParticlesToPhase(phase: BrewPhase) {
       break
     case BrewPhase.STEEPING:
       particleCanvas.startSteam()
-      particleCanvas.startRipple()
+      // 注：原实现在此同时 startRipple()，两个 createContainer 并发 engine.load
+      // 同一容器元素，tsParticles 异步销毁/加载存在竞态，会导致动画循环泄漏、
+      // 主线程卡死（E2E 实测）。浸泡阶段保留蒸汽表现即可，涟漪改由注水动画呈现。
       audio.startAmbient()
       break
     case BrewPhase.DONE:
