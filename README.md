@@ -42,7 +42,11 @@
 GitHub Actions 会在 push 和 Pull Request 时执行：
 
 - Vue/TypeScript 类型检查
+- 前端单元测试（Vitest + fake-indexeddb，评分与离线存储闭环）
+- Playwright 端到端测试（完整冲泡流程：首页 → 入席 → 选茶 → 选器 → 冲泡 → 品鉴 → 保存）
 - 生产构建
+- 后端 API 测试（pytest，SQLite 内存库）
+- 数据库迁移测试（真实 PostgreSQL，Alembic 往返升级/回滚）
 - Python 源码编译检查
 - Docker Compose 配置校验
 
@@ -102,7 +106,20 @@ npm run type-check   # Vue/TypeScript 类型检查
 npm run build        # 类型检查 + 生产构建
 npm run preview      # 预览生产构建
 npm run smoke        # 检查生产预览下的主要路由
+npm run test         # 前端单元测试（Vitest）
+npm run test:e2e     # Playwright 端到端测试（需先安装浏览器：npx playwright install chromium）
 ```
+
+后端测试（Python 3.12）：
+
+```bash
+cd backend
+pip install -r requirements-dev.txt
+python -m pytest tests -q                    # API 测试（SQLite 内存库）
+TEST_DATABASE_URL=postgresql://... python -m pytest tests/test_migrations.py -q  # 迁移测试（真实 Postgres，未配置自动跳过）
+```
+
+> 迁移测试会对 `TEST_DATABASE_URL` 指向的库执行 `alembic downgrade base`，请务必使用专用测试库。
 
 欢迎通过 Issue 反馈问题或提出茶文化体验相关的改进建议，贡献流程见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 

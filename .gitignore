@@ -44,3 +44,11 @@ __screenshots__/
 .reasonix/
 __pycache__/
 *.py[cod]
+
+# Python virtualenv
+.venv/
+
+# Playwright
+test-results/
+playwright-report/
+blob-report/
