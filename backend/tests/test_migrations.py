@@ -49,6 +49,12 @@ def migration_db():
     if not TEST_DATABASE_URL:
         pytest.skip("未设置 TEST_DATABASE_URL，跳过迁移测试（CI 中会强制运行）")
 
+    # conftest 会把未配置的 DATABASE_URL 兜底为 SQLite（API 测试用）；
+    # 而 Alembic 的 env.py 强制从 DATABASE_URL 读取连接串，因此迁移测试
+    # 必须显式把 DATABASE_URL 指向真实 Postgres 测试库，否则会用 SQLite
+    # 编译器渲染 JSONB 而失败。
+    os.environ["DATABASE_URL"] = TEST_DATABASE_URL
+
     engine = create_engine(TEST_DATABASE_URL)
     try:
         with engine.connect() as conn:
