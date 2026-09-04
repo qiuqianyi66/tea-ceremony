@@ -9,6 +9,7 @@ import { BrewPhase } from '@/types/brewing'
 import type { TeaWare } from '@/types/teaware'
 import { useParticleSystem } from '@/composables/useParticles'
 import { useAudio } from '@/composables/useAudio'
+import TeaBrewScene3D from '@/components/three/TeaBrewScene3D.vue'
 
 const router = useRouter()
 const store = useTeaStore()
@@ -361,7 +362,16 @@ const phaseDescription = computed(() => {
 </script>
 
 <template>
-  <div class="min-h-screen p-4 sm:p-8 flex flex-col items-center">
+  <div class="min-h-screen p-4 sm:p-8 flex flex-col items-center relative overflow-hidden">
+    <!-- 3D 真实感茶席背景（状态机 / 手势 / 音频不受影响） -->
+    <TeaBrewScene3D
+      :phase="store.brewState.phase"
+      :soup-color="soupColor"
+      :current-temp="store.brewState.currentTemp"
+      :target-temp="store.brewState.targetTemp"
+      :is-pouring-out="isPouringOut"
+      :infusion="currentInfusion"
+    />
     <h2 class="text-3xl font-bold text-[var(--color-wood)] mb-2">冲泡</h2>
     <p v-if="store.currentTea" class="text-lg text-[var(--color-wood)] mb-1">
       {{ store.currentTea.name }}
@@ -477,13 +487,14 @@ const phaseDescription = computed(() => {
 
     <!-- ======== 冲泡动画区域（非 IDLE）======== -->
     <div v-if="!isIdle" class="relative w-64 h-64 mb-6">
-      <!-- tsParticles 容器 -->
+      <!-- tsParticles 容器（3D 场景接管视觉，保留 DOM 以便回退）-->
       <div
         :ref="particleCanvas.containerRef"
         class="absolute inset-0 w-full h-full pointer-events-none z-10"
+        v-show="false"
       ></div>
-      <!-- 火焰粒子 (CSS 备用) -->
-      <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-16 h-14">
+      <!-- 火焰粒子 (CSS 备用，3D 接管) -->
+      <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-16 h-14" v-show="false">
         <div
           v-for="i in 5" :key="i"
           class="absolute bottom-0 rounded-full"
@@ -499,8 +510,8 @@ const phaseDescription = computed(() => {
         ></div>
       </div>
 
-      <!-- 炉 + 茶壶：用 CSS 分层表现壶身、壶盖、把手和茶汤 -->
-      <div class="tea-stove absolute bottom-5 left-1/2 -translate-x-1/2">
+      <!-- 炉 + 茶壶：CSS 版（3D 场景接管视觉，保留 DOM 以便回退）-->
+      <div class="tea-stove absolute bottom-5 left-1/2 -translate-x-1/2" v-show="false">
         <div class="tea-kettle-handle"></div>
         <div class="tea-kettle-lid"></div>
         <div
@@ -527,8 +538,8 @@ const phaseDescription = computed(() => {
         <div class="tea-kettle-spout"></div>
       </div>
 
-      <!-- 蒸汽 -->
-      <div class="absolute bottom-24 left-1/2 -translate-x-1/2 flex gap-1">
+      <!-- 蒸汽：CSS 版（3D 场景接管）-->
+      <div class="absolute bottom-24 left-1/2 -translate-x-1/2 flex gap-1" v-show="false">
         <div
           v-for="i in 3" :key="i"
           class="w-1 h-8 rounded-full bg-[var(--color-wood-light)]"
