@@ -1,6 +1,6 @@
 {
   "name": "tea-ceremony",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "private": true,
   "description": "沉浸式在线茶道体验：选茶、备器、冲泡与品鉴记录",
   "type": "module",
