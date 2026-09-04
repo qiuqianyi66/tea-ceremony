@@ -362,7 +362,7 @@ const phaseDescription = computed(() => {
 </script>
 
 <template>
-  <div class="min-h-screen p-4 sm:p-8 flex flex-col items-center relative overflow-hidden">
+  <div class="min-h-screen p-4 sm:p-8 flex flex-col items-center relative overflow-hidden z-0">
     <!-- 3D 真实感茶席背景（状态机 / 手势 / 音频不受影响） -->
     <TeaBrewScene3D
       :phase="store.brewState.phase"
