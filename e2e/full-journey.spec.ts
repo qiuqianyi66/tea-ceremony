@@ -7,8 +7,9 @@
 import { test, expect, type Page } from '@playwright/test'
 
 test.beforeEach(async ({ page }) => {
-  // 拦截第三方 AI 请求，让茶记生成快速走本地规则降级，保证测试稳定且不依赖外网。
-  await page.route('**/*pollinations*', route => route.abort())
+  // 拦截后端 AI 代理请求（同源 /api/ai），让茶记/茶灵快速走本地规则降级，
+  // 保证测试稳定且不依赖后端服务。
+  await page.route('**/api/ai/*', route => route.abort())
   // 渲染崩溃时打印错误栈，便于 CI 排障
   page.on('pageerror', err => console.log('[PAGEERROR]', err.stack || err.message))
 })

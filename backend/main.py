@@ -3,11 +3,22 @@
 FastAPI + SQLAlchemy + PostgreSQL
 """
 
+import logging
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
 from app.config import SECRET_KEY, DATABASE_URL, CORS_ORIGINS, DEV_MODE
+from app.errors import register_error_handlers
+from app.middleware import AccessLogMiddleware, RateLimitMiddleware
+
+# ============ 日志 ============
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
+)
+logger = logging.getLogger("tea.main")
 
 # ============ 环境变量校验 ============
 if not SECRET_KEY:
@@ -22,7 +33,7 @@ if not DATABASE_URL:
 
 # 配置校验通过后再创建数据库引擎和加载路由。
 from app.database import engine
-from app.routers import teas, teawares, records, auth, culture
+from app.routers import teas, teawares, records, auth, culture, ai
 
 # CORS 来源
 # ============ FastAPI 应用 ============
@@ -32,7 +43,7 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# CORS 配置
+# CORS 配置（生产默认仅同源，Nginx 负责 /api 代理；开发默认放行 Vite）
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
@@ -41,12 +52,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# 请求日志（外层）→ 限流（内层），最后 add 的最先执行
+app.add_middleware(AccessLogMiddleware)
+app.add_middleware(RateLimitMiddleware)
+
+# 统一错误格式
+register_error_handlers(app)
+
 # 注册路由
 app.include_router(auth.router, prefix="/api/auth", tags=["认证"])
 app.include_router(teas.router, prefix="/api/teas", tags=["茶叶"])
 app.include_router(teawares.router, prefix="/api/teawares", tags=["茶器"])
 app.include_router(records.router, prefix="/api/records", tags=["品鉴记录"])
 app.include_router(culture.router, prefix="/api/culture", tags=["茶文化"])
+app.include_router(ai.router, prefix="/api/ai", tags=["茶灵 AI"])
 
 
 @app.get("/")

@@ -74,6 +74,11 @@ const router = createRouter({
       name: 'share',
       component: () => import('../views/ShareView.vue'),
     },
+    {
+      path: '/health',
+      name: 'health',
+      component: () => import('../views/HealthView.vue'),
+    },
   ],
 })
 

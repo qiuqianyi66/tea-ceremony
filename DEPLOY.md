@@ -134,11 +134,66 @@ docker compose exec backend python -m app.seeds.run
 | 停止服务 | `docker compose down` |
 | 重启服务 | `docker compose restart` |
 | 更新代码 | `git pull && docker compose up -d --build` |
-| 备份数据库 | `docker compose exec db pg_dump -U tea_user tea_ceremony > backup.sql` |
+
+### 数据库备份与恢复
+
+> 建议定期（如每日）备份，保留最近 N 份。
+
+```powershell
+# 备份到本地文件
+docker compose exec -T db pg_dump -U tea_user tea_ceremony > backup-$(Get-Date -Format yyyyMMdd).sql
+
+# 恢复（先停止写入，或恢复到空库）
+Get-Content backup.sql | docker compose exec -T db psql -U tea_user tea_ceremony
+```
+
+### 健康检查
+
+- 后端健康检查：`http://<服务器>/api/health`（返回 `{"status":"ok","database":"ok"}`，DB 不可达时 503）
+- 前端健康检查页：`http://<服务器>/health`（可视化展示后端与数据库状态）
+- Docker Compose 已配置 backend healthcheck，后端异常会自动重启
 
 ---
 
-## 六、域名和 HTTPS
+## 六、生产安全配置
+
+### CORS
+
+- 生产环境默认**仅允许同源**（Nginx 同源代理 `/api`），无需跨域。
+- 若前端与后端不同域，通过 `.env` 显式配置：
+  ```env
+  CORS_ORIGINS=https://你的前端域名.com
+  ```
+- 生产模式（`DEV_MODE=false`）下不建议配置 `*`。
+
+### API 限流
+
+后端内置基于 IP + 路径的内存滑动窗口限流，超限返回 `429`：
+
+```env
+RATE_LIMIT_MAX=300     # 每 IP 每窗口最大请求数
+RATE_LIMIT_WINDOW=60   # 窗口秒数
+```
+
+> 单实例内存实现；多实例部署建议后续接入 Redis。
+
+### AI 代理
+
+浏览器不直连第三方 LLM，统一经后端 `/api/ai/*` 转发（超时 8s，失败返回 502，前端自动降级到本地规则引擎）。无需额外配置即可工作；可通过环境变量调整上游：
+
+```env
+AI_PROXY_URL=https://text.pollinations.ai/openai
+AI_PROXY_MODEL=deepseek
+AI_PROXY_TIMEOUT=8
+```
+
+### 统一错误格式
+
+所有 API 错误统一为 `{ "detail": 信息, "code": 机器码, "status": 状态码 }`，便于前端统一处理与排障。
+
+---
+
+## 七、域名和 HTTPS
 
 建议后续配置：
 1. 购买域名（如 chadao.你的域名.com）
