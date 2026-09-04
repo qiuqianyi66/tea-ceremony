@@ -126,14 +126,14 @@ TEST_DATABASE_URL=postgresql://... python -m pytest tests/test_migrations.py -q 
 
 ## 简历项目描述
 
-> 独立设计并开发「一盏茶」沉浸式茶道体验应用，使用 Vue 3、TypeScript、Pinia、Dexie.js、FastAPI、PostgreSQL 和 Docker 构建完整的选茶—冲泡—品鉴闭环；实现 IndexedDB 离线优先存储与失败重试、基于规则的可解释评分模型、茶文化 RAG 检索与 AI 降级策略，并通过 GitHub Actions 自动完成类型检查、生产构建和 Compose 校验。
+> 独立设计并开发「一盏茶」沉浸式茶道体验应用，使用 Vue 3、TypeScript、Pinia、Dexie.js、FastAPI、PostgreSQL 和 Docker 构建完整的选茶—冲泡—品鉴闭环；实现 IndexedDB 离线优先存储与失败重试、基于规则的可解释评分模型、可分享品鉴卡片、茶文化 RAG 检索与 AI 降级策略；AI 请求收敛到后端代理转发，配套 API 限流、统一错误格式、服务端日志与健康检查；通过 GitHub Actions 自动完成类型检查、单元测试、Playwright E2E、后端测试与 Compose 校验。
 
 ## 后续路线图
 
 - 增加真实茶汤与茶器图片，补充项目演示截图和短视频
-- 增加自动化端到端测试，覆盖完整冲泡流程
-- 将 AI 第三方请求收敛到后端代理，避免浏览器直连外部服务
-- 增加用户公开品鉴卡片和可分享的茶席链接
+- 发布 v1.0.0 Release，补充英文 README 与项目 License
+- 品鉴记录可视化数据看板（个人成长曲线）
+- 生产环境接入 Redis 分布式限流与外部错误追踪（Sentry）
 
 ## License
 

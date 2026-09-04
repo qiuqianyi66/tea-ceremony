@@ -1,6 +1,6 @@
 /**
  * 茶灵 AI 服务
- * LLM 优先（Pollinations.ai 免费 API），规则引擎降级
+ * LLM 优先（经后端 /api/ai 代理转发），规则引擎降级
  */
 
 import type { Tea } from '@/types/tea'
@@ -10,7 +10,8 @@ import { getCurrentSolarTerm } from '@/data/solarTerms'
 
 // ============ LLM 调用 ============
 
-const POLLINATIONS_URL = 'https://text.pollinations.ai/openai'
+// 统一走后端 AI 代理（浏览器不直连第三方服务）；后端不可用时降级到规则引擎。
+const API_BASE = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
 
 let lastCallTime = 0
 const MIN_INTERVAL = 15000  // 15秒间隔（免费版限制）
@@ -24,12 +25,11 @@ async function callLLM(systemPrompt: string, userPrompt: string): Promise<string
   try {
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 8000)
-    const res = await fetch(POLLINATIONS_URL, {
+    const res = await fetch(`${API_BASE}/ai/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: controller.signal,
       body: JSON.stringify({
-        model: 'deepseek',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
@@ -39,7 +39,7 @@ async function callLLM(systemPrompt: string, userPrompt: string): Promise<string
     clearTimeout(timeout)
     if (!res.ok) return null
     const data = await res.json()
-    return data.choices?.[0]?.message?.content || null
+    return data.content || null
   } catch {
     return null
   }
@@ -254,8 +254,6 @@ const FALLBACK_REPLIES = [
 
 // ============ RAG 知识库检索 ============
 
-const API_BASE = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
-
 async function fetchRAGContext(question: string): Promise<string> {
   try {
     const res = await fetch(`${API_BASE}/culture/search?q=${encodeURIComponent(question)}`)
@@ -304,17 +302,17 @@ export async function askTeaMaster(question: string, history: ChatMessage[] = []
     const wait = Math.max(0, 15000 - (now - lastCallTime))
     if (wait > 0) await new Promise(r => setTimeout(r, wait))
 
-    const res = await fetch(POLLINATIONS_URL, {
+    const res = await fetch(`${API_BASE}/ai/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: AbortSignal.timeout(8000),
-      body: JSON.stringify({ model: 'deepseek', messages }),
+      body: JSON.stringify({ messages }),
     })
     lastCallTime = Date.now()
 
     if (!res.ok) return FALLBACK_REPLIES[Math.floor(Math.random() * FALLBACK_REPLIES.length)]!
     const data = await res.json()
-    return data.choices?.[0]?.message?.content || FALLBACK_REPLIES[Math.floor(Math.random() * FALLBACK_REPLIES.length)]!
+    return data.content || FALLBACK_REPLIES[Math.floor(Math.random() * FALLBACK_REPLIES.length)]!
   } catch {
     return FALLBACK_REPLIES[Math.floor(Math.random() * FALLBACK_REPLIES.length)]!
   }

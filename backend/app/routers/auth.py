@@ -1,5 +1,6 @@
 """认证相关 API"""
 
+import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from passlib.hash import bcrypt
@@ -10,6 +11,8 @@ from app.database import get_db
 from app.models import User
 from app.schemas import UserCreate, UserLogin, UserResponse, TokenResponse
 from app.config import SECRET_KEY
+
+logger = logging.getLogger("tea.auth")
 
 router = APIRouter()
 
@@ -50,6 +53,8 @@ def register(data: UserCreate, db: Session = Depends(get_db)):
 def login(data: UserLogin, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == data.username).first()
     if not user or not bcrypt.verify(data.password, user.hashed_password):
+        # 统一文案避免用户枚举；记录失败以便排查异常登录尝试
+        logger.info("登录失败: username=%s", data.username)
         raise HTTPException(status_code=401, detail="用户名或密码错误")
 
     token = create_access_token(user.id)
