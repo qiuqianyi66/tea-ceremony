@@ -3,7 +3,7 @@
  */
 
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, toRaw } from 'vue'
 import type { Tea } from '@/types/tea'
 import type { TeaWare } from '@/types/teaware'
 import type { BrewState } from '@/types/brewing'
@@ -168,7 +168,9 @@ export const useTeaStore = defineStore('tea', () => {
     }
 
     if (unlocked) {
-      await achievementStorage.save(all)
+      // Vue reactive 数组的元素是 Proxy，Proxy 无法被 IndexedDB 结构化克隆，
+      // 写入前必须 toRaw 还原为普通对象，否则品鉴保存会抛 DataCloneError。
+      await achievementStorage.save(all.map(ach => toRaw(ach)))
       achievements.value = all
     }
   }

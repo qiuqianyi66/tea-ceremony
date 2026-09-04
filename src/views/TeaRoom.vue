@@ -75,7 +75,9 @@ function prevStep() {
 }
 
 function startBrew() {
-  router.push('/tools')
+  // 茶席「直接选茶」应进入选茶页；原先误跳 /tools（选器页依赖已选茶叶），
+  // 会导致空选器页再被路由守卫弹回选茶页，流程断裂。
+  router.push('/select')
 }
 </script>
 

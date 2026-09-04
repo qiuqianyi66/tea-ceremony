@@ -24,7 +24,10 @@ class TeaCeremonyDB extends Dexie {
 
     // 版本 1：基础表结构
     this.version(1).stores({
-      tastings: '++id, teaId, date, overallScore, *[teaId+date]', // 复合索引防重复
+      // 复合索引去 multiEntry：数组 keyPath 配 multiEntry 在 Chromium/Firefox
+      // 会抛 InvalidAccessError，导致整库打开失败（离线历史不可用）。历史查重
+      // 实际用 filter，无需 multiEntry 语义。
+      tastings: '++id, teaId, date, overallScore, [teaId+date]',
       achievements: '++id, id, unlocked',
       settings: '++id, key',
       userXp: '++id, key',
@@ -33,7 +36,7 @@ class TeaCeremonyDB extends Dexie {
 
     // 版本 2：添加更多索引优化查询
     this.version(2).stores({
-      tastings: '++id, teaId, date, overallScore, *[teaId+date], brewTemp, steepTime',
+      tastings: '++id, teaId, date, overallScore, [teaId+date], brewTemp, steepTime',
       achievements: '++id, id, unlocked',
       settings: '++id, key',
       userXp: '++id, key',
@@ -44,6 +47,15 @@ class TeaCeremonyDB extends Dexie {
         // 确保 date 字段存在且格式正确
         if (!record.date) record.date = new Date().toISOString()
       })
+    })
+
+    // 版本 3：以合法复合索引重建（兼容已用 v1/v2 建过库的旧浏览器）
+    this.version(3).stores({
+      tastings: '++id, teaId, date, overallScore, [teaId+date], brewTemp, steepTime',
+      achievements: '++id, id, unlocked',
+      settings: '++id, key',
+      userXp: '++id, key',
+      collectedWare: '++id, id, unlockedAt',
     })
   }
 }

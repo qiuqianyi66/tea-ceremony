@@ -32,6 +32,47 @@ jobs:
       - name: Smoke test routes
         run: sleep 3 && npm run smoke
 
+  frontend-unit:
+    name: Frontend unit tests (Vitest)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Run unit tests
+        run: npm run test
+
+  e2e:
+    name: E2E full journey (Playwright)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run E2E tests
+        run: npm run test:e2e
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: test-results/
+          retention-days: 7
+
   backend:
     name: Backend syntax check
     runs-on: ubuntu-latest
@@ -44,6 +85,60 @@ jobs:
           python-version: '3.12'
       - name: Compile Python sources
         run: python -m compileall -q backend
+
+  backend-test:
+    name: Backend API tests (pytest)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+      - name: Run API tests
+        working-directory: backend
+        run: python -m pytest tests -q
+
+  migration-test:
+    name: Database migration tests (Postgres)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: tea_test
+          POSTGRES_PASSWORD: tea_test
+          POSTGRES_DB: tea_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U tea_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+      - name: Run migration tests
+        working-directory: backend
+        env:
+          TEST_DATABASE_URL: postgresql://tea_test:tea_test@localhost:5432/tea_test
+        run: python -m pytest tests/test_migrations.py -q
 
   compose:
     name: Validate Docker Compose
