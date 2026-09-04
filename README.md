@@ -2,12 +2,16 @@
 
 沉浸式在线茶道体验应用：从入席、选茶、备器、煮水、冲泡，到品鉴记录，完整模拟一场东方茶席。
 
+**中文** | [English](README.en.md)
+
 [![CI](https://github.com/qiuqianyi66/tea-ceremony/actions/workflows/ci.yml/badge.svg)](https://github.com/qiuqianyi66/tea-ceremony/actions/workflows/ci.yml)
 [![Vue 3](https://img.shields.io/badge/Vue-3-42b883?logo=vuedotjs&logoColor=white)](https://vuejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ed?logo=docker&logoColor=white)](docker-compose.yml)
 
 在线静态 Demo（启用 GitHub Pages 后）：[qiuqianyi66.github.io/tea-ceremony](https://qiuqianyi66.github.io/tea-ceremony/)
+
+![首页](docs/screenshots/home.png)
 
 ## 为什么做这个项目
 
@@ -23,6 +27,8 @@
 - 个人成长：IndexedDB 离线历史、XP、成就和茶器收藏
 - AI 茶灵：茶文化 RAG 检索 + LLM，网络不可用时自动降级到规则回复
 - PWA 与部署：可安装、离线可用，Docker Compose 一键启动前后端和 PostgreSQL
+
+![品鉴分享卡](docs/screenshots/share.png)
 
 ## 技术亮点
 
@@ -130,11 +136,10 @@ TEST_DATABASE_URL=postgresql://... python -m pytest tests/test_migrations.py -q 
 
 ## 后续路线图
 
-- 增加真实茶汤与茶器图片，补充项目演示截图和短视频
-- 发布 v1.0.0 Release，补充英文 README 与项目 License
+- 增加真实茶汤与茶器图片，补充项目演示短视频
 - 品鉴记录可视化数据看板（个人成长曲线）
 - 生产环境接入 Redis 分布式限流与外部错误追踪（Sentry）
 
 ## License
 
-当前项目用于个人作品集与学习展示。
+[MIT](LICENSE) © 2026 严恒（qiuqianyi66）
