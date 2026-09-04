@@ -1,8 +1,15 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+import QRCode from 'qrcode'
 import type { TastingRecord } from '@/types/tasting'
 import { getScoreLevel } from '@/services/scoring'
+import { toShareData, encodeShareData, buildShareUrl } from '@/services/share'
 
-const props = defineProps<{ record: TastingRecord }>()
+const props = defineProps<{
+  record: TastingRecord
+  /** 只读模式（分享页）：隐藏下载 / 分享 / 二维码按钮 */
+  standalone?: boolean
+}>()
 const emit = defineEmits<{ shared: [] }>()
 
 const scoreLevel = getScoreLevel(props.record.overallScore)
@@ -11,6 +18,40 @@ const dimensions = [
   ['苦', 'bitterness'], ['甜', 'sweetness'], ['甘', 'aftertaste'], ['醇', 'body'],
   ['香', 'aroma'], ['韵', 'rhyme'], ['形', 'shape'], ['心', 'mind'],
 ] as const
+
+// ---------- 分享链接与二维码 ----------
+const shareOpen = ref(false)
+const shareUrl = ref('')
+const qrDataUrl = ref('')
+const copied = ref(false)
+
+/** 生成分享 URL 与二维码并展开面板（首次生成后复用）。 */
+async function toggleSharePanel() {
+  if (shareOpen.value) {
+    shareOpen.value = false
+    return
+  }
+  if (!shareUrl.value) {
+    shareUrl.value = buildShareUrl(encodeShareData(toShareData(props.record)))
+    qrDataUrl.value = await QRCode.toDataURL(shareUrl.value, {
+      width: 240,
+      margin: 1,
+      errorCorrectionLevel: 'M',
+    })
+  }
+  shareOpen.value = true
+}
+
+async function copyShareUrl() {
+  if (!shareUrl.value) return
+  try {
+    await navigator.clipboard.writeText(shareUrl.value)
+    copied.value = true
+    setTimeout(() => (copied.value = false), 2000)
+  } catch {
+    // 无剪贴板权限时静默，二维码仍可扫码
+  }
+}
 
 async function shareCard() {
   const text = [
@@ -41,7 +82,7 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: n
   ctx.closePath()
 }
 
-function downloadCard() {
+async function downloadCard() {
   const canvas = document.createElement('canvas')
   canvas.width = 900
   canvas.height = 1120
@@ -98,20 +139,39 @@ function downloadCard() {
   ctx.fillStyle = '#8B7355'
   ctx.font = '24px sans-serif'
   ctx.fillText(`水温 ${props.record.brewTemp}°C    浸泡 ${props.record.brewTime}s`, 78, 680)
+  if (props.record.weather || props.record.mood) {
+    const meta = [props.record.weather, props.record.mood && `心情 ${props.record.mood}`].filter(Boolean).join('   ')
+    ctx.fillText(meta, 78, 725)
+  }
   if (props.record.notes) {
     ctx.strokeStyle = 'rgba(158,128,80,.35)'
     ctx.beginPath()
-    ctx.moveTo(78, 720)
-    ctx.lineTo(822, 720)
+    ctx.moveTo(78, 760)
+    ctx.lineTo(822, 760)
     ctx.stroke()
     ctx.fillStyle = '#8B7355'
     ctx.font = 'italic 24px serif'
-    ctx.fillText(`“${props.record.notes.slice(0, 42)}”`, 78, 775)
+    ctx.fillText(`“${props.record.notes.slice(0, 42)}”`, 78, 815)
+  }
+
+  // 右下角绘制分享二维码（失败不影响主卡片下载）
+  try {
+    const url = buildShareUrl(encodeShareData(toShareData(props.record)))
+    const dataUrl = await QRCode.toDataURL(url, { width: 200, margin: 0, errorCorrectionLevel: 'M' })
+    const img = new Image()
+    img.src = dataUrl
+    await img.decode()
+    ctx.fillStyle = '#FFFFFF'
+    roundRect(ctx, 636, 890, 210, 210, 16)
+    ctx.fill()
+    ctx.drawImage(img, 646, 900, 190, 190)
+  } catch {
+    // 二维码渲染失败时仍交付无二维码版本
   }
 
   ctx.fillStyle = '#9E8050'
   ctx.font = '20px sans-serif'
-  ctx.fillText('一席茶，一方天地，一念清心', 78, 1015)
+  ctx.fillText('一席茶，一方天地，一念清心', 78, 1065)
 
   const filename = `一盏茶-${props.record.teaName}-品鉴卡.png`
   const link = document.createElement('a')
@@ -147,22 +207,41 @@ function downloadCard() {
     <div class="mt-4 flex flex-wrap gap-2 text-xs text-[var(--color-wood-light)]">
       <span class="rounded-full bg-white/60 px-3 py-1">{{ record.brewTemp }}°C</span>
       <span class="rounded-full bg-white/60 px-3 py-1">浸泡 {{ record.brewTime }}s</span>
+      <span class="rounded-full bg-white/60 px-3 py-1">工艺 ×{{ record.processFactor }}</span>
       <span v-if="record.aromaType" class="rounded-full bg-white/60 px-3 py-1">{{ record.aromaType }}</span>
+      <span v-if="record.weather" class="rounded-full bg-white/60 px-3 py-1">天气 · {{ record.weather }}</span>
+      <span v-if="record.mood" class="rounded-full bg-white/60 px-3 py-1">心情 · {{ record.mood }}</span>
     </div>
 
     <p v-if="record.notes" class="mt-4 border-t border-[var(--color-tea-gold)]/20 pt-3 text-sm italic text-[var(--color-wood-light)]">
       “{{ record.notes }}”
     </p>
 
-    <div class="mt-5 grid grid-cols-2 gap-2">
+    <div v-if="!standalone" class="mt-5 grid grid-cols-3 gap-2">
       <button type="button" @click="downloadCard"
         class="rounded-lg border border-[var(--color-tea-gold)] py-2 text-sm text-[var(--color-wood)] transition-colors hover:bg-white/70">
         下载 PNG
       </button>
       <button type="button" @click="shareCard"
-        class="rounded-lg bg-[var(--color-wood)] py-2 text-sm text-[var(--color-cream)] transition-colors hover:bg-[var(--color-wood-light)]">
-        分享品鉴卡
+        class="rounded-lg border border-[var(--color-tea-gold)] py-2 text-sm text-[var(--color-wood)] transition-colors hover:bg-white/70">
+        分享文字
       </button>
+      <button type="button" @click="toggleSharePanel"
+        class="rounded-lg bg-[var(--color-wood)] py-2 text-sm text-[var(--color-cream)] transition-colors hover:bg-[var(--color-wood-light)]">
+        {{ shareOpen ? '收起' : '分享链接' }}
+      </button>
+    </div>
+
+    <div v-if="shareOpen && !standalone" class="mt-3 flex items-start gap-4 rounded-xl bg-white/70 p-4">
+      <img v-if="qrDataUrl" :src="qrDataUrl" alt="品鉴卡分享二维码" class="h-28 w-28 shrink-0 rounded-lg" />
+      <div class="min-w-0 flex-1">
+        <p class="text-xs text-[var(--color-wood-light)]">扫描二维码，或复制链接分享这席茶</p>
+        <p class="mt-1 break-all text-xs text-[var(--color-wood)]">{{ shareUrl }}</p>
+        <button type="button" @click="copyShareUrl"
+          class="mt-2 rounded-lg bg-[var(--color-tea-gold)] px-3 py-1.5 text-xs text-[var(--color-cream)] transition-colors hover:opacity-90">
+          {{ copied ? '已复制' : '复制链接' }}
+        </button>
+      </div>
     </div>
   </article>
 </template>

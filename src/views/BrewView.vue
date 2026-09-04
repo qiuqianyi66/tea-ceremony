@@ -107,9 +107,11 @@ onUnmounted(() => {
 
 // ============ 定时器 ============
 let warmTimer: ReturnType<typeof setTimeout> | null = null
-let heatInterval: ReturnType<typeof setInterval> | null = null
-let steepInterval: ReturnType<typeof setInterval> | null = null
-let rinseInterval: ReturnType<typeof setInterval> | null = null
+// window.setInterval 返回 number；显式声明避免依赖全局 setTimeout/setInterval
+// 的类型解析（@types/node 会将其覆盖为 NodeJS.Timeout）。
+let heatInterval: number | null = null
+let steepInterval: number | null = null
+let rinseInterval: number | null = null
 let steepStartedAt: number | null = null
 const rinseCountdown = ref(0)
 const pourGestureProgress = ref(0)

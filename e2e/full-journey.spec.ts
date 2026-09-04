@@ -90,6 +90,10 @@ test('完整品鉴流程：首页→入席→选茶→选器→冲泡→品鉴�
   // 品鉴卡片渲染茶名与评分
   await expect(page.getByText('西湖龙井').first()).toBeVisible()
 
+  // 分享链接：生成二维码面板
+  await page.getByRole('button', { name: '分享链接' }).click()
+  await expect(page.getByAltText('品鉴卡分享二维码')).toBeVisible()
+
   // ============ 8. 历史记录可查 ============
   await page.goto('history')
   await expect(page.getByText('西湖龙井').first()).toBeVisible()
