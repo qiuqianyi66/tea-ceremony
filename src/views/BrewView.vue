@@ -15,6 +15,12 @@ const router = useRouter()
 const store = useTeaStore()
 const audio = useAudio()
 
+// headless（CI/E2E 无 GPU、SwiftShader 软渲染）下不挂载 3D 场景，回退 CSS 插画，
+// 避免软渲染逐帧阻塞主线程拖垮冲泡状态机；真实浏览器正常显示 3D。
+const isHeadless = computed(
+  () => typeof navigator !== 'undefined' && (navigator.webdriver === true || /HeadlessChrome/i.test(navigator.userAgent)),
+)
+
 // ============ Canvas 粒子系统 ============
 const particleCanvas = useParticleSystem({ width: 256, height: 256 })
 
@@ -363,8 +369,9 @@ const phaseDescription = computed(() => {
 
 <template>
   <div class="min-h-screen p-4 sm:p-8 flex flex-col items-center relative overflow-hidden z-0">
-    <!-- 3D 真实感茶席背景（状态机 / 手势 / 音频不受影响） -->
+    <!-- 3D 真实感茶席背景（状态机 / 手势 / 音频不受影响；headless 回退 CSS 插画） -->
     <TeaBrewScene3D
+      v-if="!isHeadless"
       :phase="store.brewState.phase"
       :soup-color="soupColor"
       :current-temp="store.brewState.currentTemp"
@@ -491,10 +498,10 @@ const phaseDescription = computed(() => {
       <div
         :ref="particleCanvas.containerRef"
         class="absolute inset-0 w-full h-full pointer-events-none z-10"
-        v-show="false"
+        v-show="!isHeadless"
       ></div>
       <!-- 火焰粒子 (CSS 备用，3D 接管) -->
-      <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-16 h-14" v-show="false">
+      <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-16 h-14" v-show="!isHeadless">
         <div
           v-for="i in 5" :key="i"
           class="absolute bottom-0 rounded-full"
@@ -511,7 +518,7 @@ const phaseDescription = computed(() => {
       </div>
 
       <!-- 炉 + 茶壶：CSS 版（3D 场景接管视觉，保留 DOM 以便回退）-->
-      <div class="tea-stove absolute bottom-5 left-1/2 -translate-x-1/2" v-show="false">
+      <div class="tea-stove absolute bottom-5 left-1/2 -translate-x-1/2" v-show="!isHeadless">
         <div class="tea-kettle-handle"></div>
         <div class="tea-kettle-lid"></div>
         <div
@@ -539,7 +546,7 @@ const phaseDescription = computed(() => {
       </div>
 
       <!-- 蒸汽：CSS 版（3D 场景接管）-->
-      <div class="absolute bottom-24 left-1/2 -translate-x-1/2 flex gap-1" v-show="false">
+      <div class="absolute bottom-24 left-1/2 -translate-x-1/2 flex gap-1" v-show="!isHeadless">
         <div
           v-for="i in 3" :key="i"
           class="w-1 h-8 rounded-full bg-[var(--color-wood-light)]"

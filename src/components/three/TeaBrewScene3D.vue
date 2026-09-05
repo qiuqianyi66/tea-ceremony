@@ -13,7 +13,12 @@ import { TresCanvas } from '@tresjs/core'
 import { BrewPhase } from '@/types/brewing'
 import TeaBrewSceneInner from './TeaBrewSceneInner.vue'
 
-const isHeadless = computed(() => typeof navigator !== 'undefined' && /HeadlessChrome/i.test(navigator.userAgent))
+const isHeadless = computed(() => {
+  if (typeof navigator === 'undefined') return false
+  // Playwright/CI 无 GPU 软渲染：用 on-demand 静态渲染避免阻塞。新版 headless
+  // Chrome UA 已不含 "HeadlessChrome"，需结合 navigator.webdriver 检测。
+  return navigator.webdriver === true || /HeadlessChrome/i.test(navigator.userAgent)
+})
 
 defineProps<{
   phase: BrewPhase
