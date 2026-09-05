@@ -501,7 +501,7 @@ const phaseDescription = computed(() => {
         v-show="!isHeadless"
       ></div>
       <!-- 火焰粒子 (CSS 备用，3D 接管) -->
-      <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-16 h-14" v-show="!isHeadless">
+      <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-16 h-14" v-show="isHeadless">
         <div
           v-for="i in 5" :key="i"
           class="absolute bottom-0 rounded-full"
@@ -518,7 +518,7 @@ const phaseDescription = computed(() => {
       </div>
 
       <!-- 炉 + 茶壶：CSS 版（3D 场景接管视觉，保留 DOM 以便回退）-->
-      <div class="tea-stove absolute bottom-5 left-1/2 -translate-x-1/2" v-show="!isHeadless">
+      <div class="tea-stove absolute bottom-5 left-1/2 -translate-x-1/2" v-show="isHeadless">
         <div class="tea-kettle-handle"></div>
         <div class="tea-kettle-lid"></div>
         <div
@@ -546,7 +546,7 @@ const phaseDescription = computed(() => {
       </div>
 
       <!-- 蒸汽：CSS 版（3D 场景接管）-->
-      <div class="absolute bottom-24 left-1/2 -translate-x-1/2 flex gap-1" v-show="!isHeadless">
+      <div class="absolute bottom-24 left-1/2 -translate-x-1/2 flex gap-1" v-show="isHeadless">
         <div
           v-for="i in 3" :key="i"
           class="w-1 h-8 rounded-full bg-[var(--color-wood-light)]"
