@@ -224,14 +224,22 @@ export function getCurrentSolarTerm(): SolarTerm {
   const month = now.getMonth() + 1
   const day = now.getDate()
 
-  // 按日期查找当前节气
-  for (let i = SOLAR_TERMS.length - 1; i >= 0; i--) {
-    const term = SOLAR_TERMS[i]!
-    if (month > term.month || (month === term.month && day >= term.day)) {
-      return term
+  // 节气年从立春（2 月）起，到大寒（次年 1 月）止。
+  // 将 1 月的小寒、大寒折算到 12 月之后（13xx），保证跨年比较单调有序，
+  // 修复旧实现倒序遍历导致「9 月误判为大寒」的跨年 bug。
+  const ordOf = (m: number, d: number): number => (m === 1 ? (m + 12) * 100 + d : m * 100 + d)
+  const current = ordOf(month, day)
+
+  // 立春之前（1/1 ~ 2/3）无已到来节气，默认上一节气年的大寒
+  let result: SolarTerm = SOLAR_TERMS[SOLAR_TERMS.length - 1]!
+  for (const term of SOLAR_TERMS) {
+    if (ordOf(term.month, term.day) <= current) {
+      result = term
+    } else {
+      break
     }
   }
-  return SOLAR_TERMS[SOLAR_TERMS.length - 1]!
+  return result
 }
 
 /** 获取季节名称 */
