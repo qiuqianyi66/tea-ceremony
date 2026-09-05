@@ -31,15 +31,10 @@ const { chromium } = require('@playwright/test')
   await page.route('**/api/ai/*', route => route.abort())
   const base = 'http://localhost:5174'
 
-  // 首页：固定等待仪式感动画完成
+  // 首页：固定等待仪式感动画完成（#11 首页重做后「入席」直达 /select，不再经过 /tearoom）
   await page.goto(base + '/')
   await page.waitForTimeout(4600)
   await page.getByRole('button', { name: /入\s*席/ }).click()
-  await page.waitForURL('**/tearoom')
-
-  // 入席 → 直接选茶
-  await page.getByRole('button', { name: '进入茶席' }).click({ timeout: 5000 }).catch(() => {})
-  await page.getByRole('button', { name: /直接选茶/ }).click()
   await page.waitForURL('**/select')
 
   // 选茶：西湖龙井
