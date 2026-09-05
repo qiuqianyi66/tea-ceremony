@@ -7,9 +7,36 @@
  * "Cannot assign to read only property 'rotation'" 海量报错 → 必须传 [x,y,z] 数组字面量。
  */
 import { ref, watch } from 'vue'
-import { useLoop } from '@tresjs/core'
+import { useLoop, useTresContext } from '@tresjs/core'
 import * as THREE from 'three'
 import { BrewPhase } from '@/types/brewing'
+import bgUrl from '@/assets/tearoom-bg.jpg'
+
+// 场景背景：夜色暖光茶室实景（程序生成，贴合「夜色暖光·炭火煮茶」基调）。
+// 作为 scene.background 铺满视口，3D 桌面/茶具位于其前，露出远景暖光，消除"浮空"感。
+// 注意：直接在 setup 赋值 scene.background 不生效，需在 onRender 每帧强制设置（TresJS 渲染循环持有 scene）。
+const sceneCtx = useTresContext()
+let bgTex: THREE.Texture | null = null
+{
+  const img = new Image()
+  img.onload = () => {
+    const canvas = document.createElement('canvas')
+    canvas.width = img.width
+    canvas.height = img.height
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    ctx.drawImage(img, 0, 0)
+    const tex = new THREE.CanvasTexture(canvas)
+    tex.colorSpace = THREE.SRGBColorSpace
+    bgTex = tex
+    const scene = sceneCtx.scene.value
+    if (scene) {
+      scene.background = tex
+    }
+  }
+  img.onerror = () => console.warn('[TeaBrewScene] 背景图加载失败，回退纯色背景')
+  img.src = bgUrl
+}
 
 const props = defineProps<{
   phase: BrewPhase
@@ -25,7 +52,6 @@ const camPos = new THREE.Vector3(0, 2.4, 5.6)
 const camLook = new THREE.Vector3(0, 1.35, 0)
 const keyLightPos = new THREE.Vector3(3.2, 5.5, 4)
 const rimLightPos = new THREE.Vector3(-3, 2, -2)
-const wallPos = new THREE.Vector3(0, 3.4, -2.6)
 const floorPos = new THREE.Vector3(0, -0.001, 1.5)
 const tablePos = new THREE.Vector3(0, 1.1, 0)
 const clothPos = new THREE.Vector3(0, 1.19, 0)
@@ -49,6 +75,11 @@ const stovePos = new THREE.Vector3(-1.15, 0.98, 0)
 const stoveBasePos = new THREE.Vector3(0, 0.27, 0)
 const flameLightPos = new THREE.Vector3(0, 0.9, 0)
 const streamPos = new THREE.Vector3(0.1, 1.0, 0)
+// 空间纵深元素（茶柜 / 挂轴 / 炭火暖光斑）
+const cabinetPos = new THREE.Vector3(-3.2, 1.55, -2.2)
+const shelfPos = new THREE.Vector3(0, 1.75, -2.15)
+const scrollPos = new THREE.Vector3(2.4, 2.6, -2.35)
+const glowPos = new THREE.Vector3(-1.15, 0.012, 0)
 
 // 火焰片布局（位置 + 绕 Z 旋转；rotation 用数组字面量）
 const flameSlots: { pos: THREE.Vector3; rot: [number, number, number] }[] = [
@@ -90,6 +121,148 @@ function makeSoftCircleTexture(): THREE.CanvasTexture {
   return new THREE.CanvasTexture(canvas)
 }
 const softCircleTex = makeSoftCircleTexture()
+
+// ==================== 程序化资源：茶席质感与空间纵深纹理 ====================
+// 全部 Canvas 2D 程序化生成（零外部素材）：木纹 / 布褶高度图 / 陶土颗粒 / 挂轴 / 暖光斑
+function makeWoodTexture(): THREE.CanvasTexture {
+  const size = 512
+  const canvas = document.createElement('canvas')
+  canvas.width = size
+  canvas.height = size
+  const ctx = canvas.getContext('2d')!
+  // 底色：深胡桃木
+  ctx.fillStyle = '#4a3626'
+  ctx.fillRect(0, 0, size, size)
+  // 木纹年轮条纹（水平）
+  let y = 0
+  while (y < size) {
+    const l = 24 + Math.random() * 60
+    const g = ctx.createLinearGradient(0, y, 0, y + l)
+    g.addColorStop(0, 'rgba(255,235,200,0.10)')
+    g.addColorStop(0.5, 'rgba(255,235,200,0.20)')
+    g.addColorStop(1, 'rgba(40,26,16,0.25)')
+    ctx.fillStyle = g
+    ctx.fillRect(0, y, size, l)
+    y += l + Math.random() * 26
+  }
+  // 纵向细丝 + 噪点
+  for (let i = 0; i < 240; i++) {
+    ctx.fillStyle = `rgba(${40 + Math.random() * 60},${28 + Math.random() * 30},${14 + Math.random() * 20},${0.04 + Math.random() * 0.08})`
+    ctx.fillRect(Math.random() * size, Math.random() * size, 1.5, 6 + Math.random() * 26)
+  }
+  const tex = new THREE.CanvasTexture(canvas)
+  tex.wrapS = THREE.RepeatWrapping
+  tex.wrapT = THREE.RepeatWrapping
+  tex.colorSpace = THREE.SRGBColorSpace
+  return tex
+}
+
+function makeFabricBumpTexture(): THREE.CanvasTexture {
+  const size = 256
+  const canvas = document.createElement('canvas')
+  canvas.width = size
+  canvas.height = size
+  const ctx = canvas.getContext('2d')!
+  ctx.fillStyle = '#808080'
+  ctx.fillRect(0, 0, size, size)
+  // 随机皱纹（深浅灰模拟高度）
+  for (let i = 0; i < 60; i++) {
+    const x = Math.random() * size
+    const y = Math.random() * size
+    const len = 20 + Math.random() * 80
+    const v = 90 + Math.random() * 90
+    ctx.strokeStyle = `rgba(${v},${v},${v},0.5)`
+    ctx.lineWidth = 1.5 + Math.random() * 3
+    ctx.beginPath()
+    const x2 = x + (Math.random() - 0.5) * len
+    const y2 = y + (Math.random() - 0.5) * len * 0.4
+    ctx.moveTo(x, y)
+    ctx.quadraticCurveTo(x + (Math.random() - 0.5) * len, y + (Math.random() - 0.5) * len * 0.4, x2, y2)
+    ctx.stroke()
+  }
+  const tex = new THREE.CanvasTexture(canvas)
+  tex.wrapS = THREE.RepeatWrapping
+  tex.wrapT = THREE.RepeatWrapping
+  return tex
+}
+
+function makePotBumpTexture(): THREE.CanvasTexture {
+  const size = 256
+  const canvas = document.createElement('canvas')
+  canvas.width = size
+  canvas.height = size
+  const ctx = canvas.getContext('2d')!
+  ctx.fillStyle = '#808080'
+  ctx.fillRect(0, 0, size, size)
+  for (let i = 0; i < 1600; i++) {
+    const v = 110 + Math.random() * 110
+    ctx.fillStyle = `rgba(${v},${v},${v},0.25)`
+    ctx.beginPath()
+    ctx.arc(Math.random() * size, Math.random() * size, 0.6 + Math.random() * 1.6, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  const tex = new THREE.CanvasTexture(canvas)
+  tex.wrapS = THREE.RepeatWrapping
+  tex.wrapT = THREE.RepeatWrapping
+  return tex
+}
+
+function makeScrollTexture(): THREE.CanvasTexture {
+  const w = 256
+  const h = 512
+  const canvas = document.createElement('canvas')
+  canvas.width = w
+  canvas.height = h
+  const ctx = canvas.getContext('2d')!
+  // 绢布底
+  const g = ctx.createLinearGradient(0, 0, w, 0)
+  g.addColorStop(0, '#d8cdb2')
+  g.addColorStop(0.5, '#efe6cf')
+  g.addColorStop(1, '#d3c7a8')
+  ctx.fillStyle = g
+  ctx.fillRect(0, 0, w, h)
+  // 绢纹噪点
+  for (let i = 0; i < 900; i++) {
+    ctx.fillStyle = `rgba(${160 + Math.random() * 60},${150 + Math.random() * 50},${120 + Math.random() * 40},${0.05})`
+    ctx.fillRect(Math.random() * w, Math.random() * h, 1, 1)
+  }
+  // 上下轴杆
+  ctx.fillStyle = '#4a2f1a'
+  ctx.fillRect(8, 0, w - 16, 18)
+  ctx.fillRect(8, h - 18, w - 16, 18)
+  // 竖排题字「一盏茶」
+  ctx.fillStyle = '#2e2418'
+  ctx.font = 'bold 64px "KaiTi","STKaiti","SimSun",serif'
+  ctx.textAlign = 'center'
+  ctx.fillText('一盏茶', w / 2, 150)
+  ctx.font = '28px "KaiTi","STKaiti","SimSun",serif'
+  ctx.fillStyle = '#4a3a28'
+  ctx.fillText('· 茶 室 ·', w / 2, 230)
+  const tex = new THREE.CanvasTexture(canvas)
+  tex.colorSpace = THREE.SRGBColorSpace
+  return tex
+}
+
+function makeWarmGlowTexture(): THREE.CanvasTexture {
+  const size = 128
+  const canvas = document.createElement('canvas')
+  canvas.width = size
+  canvas.height = size
+  const ctx = canvas.getContext('2d')!
+  const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2)
+  g.addColorStop(0, 'rgba(255,150,70,0.55)')
+  g.addColorStop(0.4, 'rgba(255,110,40,0.22)')
+  g.addColorStop(1, 'rgba(255,90,30,0)')
+  ctx.fillStyle = g
+  ctx.fillRect(0, 0, size, size)
+  return new THREE.CanvasTexture(canvas)
+}
+
+const woodTex = makeWoodTexture()
+const fabricBump = makeFabricBumpTexture()
+const potBump = makePotBumpTexture()
+const scrollTex = makeScrollTexture()
+const warmGlowTex = makeWarmGlowTexture()
 
 // ==================== 程序化资源：蒸汽粒子系统 ====================
 const STEAM_COUNT = 60
@@ -181,6 +354,10 @@ watch(
 // ==================== 主渲染循环 ====================
 const { onRender } = useLoop()
 onRender(({ delta, elapsed }) => {
+  // 每帧强制设置场景背景（TresJS 渲染循环持有 scene，直接 setup 赋值不生效）
+  if (bgTex && sceneCtx.scene.value && sceneCtx.scene.value.background !== bgTex) {
+    sceneCtx.scene.value.background = bgTex
+  }
   // 蒸汽：平滑透明度 + 上飘循环
   if (steamMat.value) {
     steamMat.value.opacity += (steamTargetOpacity - steamMat.value.opacity) * Math.min(1, delta * 3)
@@ -227,11 +404,8 @@ onRender(({ delta, elapsed }) => {
   <TresDirectionalLight :position="keyLightPos" :color="'#fff0dd'" :intensity="1.3" />
   <TresDirectionalLight :position="rimLightPos" :color="'#8a7a66'" :intensity="0.5" />
 
-  <!-- 茶室环境：墙面 + 地面 -->
-  <TresMesh :position="wallPos">
-    <TresPlaneGeometry :args="[12, 7]" />
-    <TresMeshStandardMaterial :color="'#241a12'" :roughness="0.9" />
-  </TresMesh>
+  <!-- 茶室环境：背景由 scene.background 提供（夜色暖光茶室实景图），不再需要 3D 墙。
+       仅保留地面承接茶席光影。 -->
   <TresMesh :position="floorPos" :rotation="[-Math.PI / 2, 0, 0]">
     <TresPlaneGeometry :args="[12, 8]" />
     <TresMeshStandardMaterial :color="'#1a140f'" :roughness="0.95" />
@@ -240,11 +414,11 @@ onRender(({ delta, elapsed }) => {
   <!-- 木桌 + 茶席布 + 桌腿 -->
   <TresMesh :position="tablePos">
     <TresBoxGeometry :args="[4.4, 0.16, 2.2]" />
-    <TresMeshStandardMaterial :color="'#5a442e'" :roughness="0.75" :metalness="0.02" />
+    <TresMeshStandardMaterial :color="'#4a3626'" :map="woodTex" :roughness="0.65" :metalness="0.02" />
   </TresMesh>
   <TresMesh :position="clothPos" :rotation="[-Math.PI / 2, 0, 0]">
     <TresPlaneGeometry :args="[3, 1.3]" />
-    <TresMeshStandardMaterial :color="'#cbb68a'" :roughness="0.95" :side="THREE.DoubleSide" />
+    <TresMeshStandardMaterial :color="'#cbb68a'" :roughness="0.9" :bump-map="fabricBump" :bump-scale="0.06" :side="THREE.DoubleSide" />
   </TresMesh>
   <TresMesh v-for="(leg, i) in legPositions" :key="i" :position="leg">
     <TresBoxGeometry :args="[0.14, 1.1, 0.14]" />
@@ -278,23 +452,23 @@ onRender(({ delta, elapsed }) => {
   <TresGroup ref="kettleGroup" :position="kettlePos" :scale="kettleScale">
     <TresMesh>
       <TresLatheGeometry :args="[potPts, 48]" />
-      <TresMeshStandardMaterial :color="'#8a6b48'" :roughness="0.55" :metalness="0.05" />
+      <TresMeshStandardMaterial :color="'#8a6b48'" :roughness="0.55" :metalness="0.05" :bump-map="potBump" :bump-scale="0.05" />
     </TresMesh>
     <TresMesh :position="kettleLidPos">
       <TresSphereGeometry :args="[0.62, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2.6]" />
-      <TresMeshStandardMaterial :color="'#8a6b48'" :roughness="0.55" :metalness="0.05" />
+      <TresMeshStandardMaterial :color="'#8a6b48'" :roughness="0.55" :metalness="0.05" :bump-map="potBump" :bump-scale="0.05" />
     </TresMesh>
     <TresMesh :position="knobPos">
       <TresSphereGeometry :args="[0.16, 16, 12]" />
-      <TresMeshStandardMaterial :color="'#8a6b48'" :roughness="0.55" :metalness="0.05" />
+      <TresMeshStandardMaterial :color="'#8a6b48'" :roughness="0.55" :metalness="0.05" :bump-map="potBump" :bump-scale="0.05" />
     </TresMesh>
     <TresMesh :position="spoutPos" :rotation="[0, 0, -Math.PI / 5]">
       <TresCylinderGeometry :args="[0.16, 0.3, 1.1, 16]" />
-      <TresMeshStandardMaterial :color="'#8a6b48'" :roughness="0.55" :metalness="0.05" />
+      <TresMeshStandardMaterial :color="'#8a6b48'" :roughness="0.55" :metalness="0.05" :bump-map="potBump" :bump-scale="0.05" />
     </TresMesh>
     <TresMesh :position="handlePos" :rotation="[0, 0, Math.PI / 2.3]">
       <TresTorusGeometry :args="[0.55, 0.13, 12, 24, Math.PI * 1.1]" />
-      <TresMeshStandardMaterial :color="'#8a6b48'" :roughness="0.55" :metalness="0.05" />
+      <TresMeshStandardMaterial :color="'#8a6b48'" :roughness="0.55" :metalness="0.05" :bump-map="potBump" :bump-scale="0.05" />
     </TresMesh>
   </TresGroup>
 
