@@ -24,6 +24,7 @@
     "@types/three": "^0.185.4",
     "chart.js": "^4.5.1",
     "dexie": "^4.4.5",
+    "echarts": "^6.1.0",
     "howler": "^2.2.4",
     "lucide-vue-next": "^0.577.0",
     "pinia": "^4.0.2",
