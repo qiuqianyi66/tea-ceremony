@@ -36,6 +36,7 @@ defineProps<{
       :clear-color="'#1c1612'"
       :antialias="true"
       :alpha="false"
+      :shadows="true"
       :render-mode="isHeadless ? 'on-demand' : 'always'"
     >
       <TeaBrewSceneInner

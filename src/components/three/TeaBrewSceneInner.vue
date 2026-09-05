@@ -9,6 +9,7 @@
 import { computed, onMounted, ref, shallowRef, toRef, watch } from 'vue'
 import { useLoop, useTresContext } from '@tresjs/core'
 import * as THREE from 'three'
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import { BrewPhase } from '@/types/brewing'
 import { useBrewAnimation, smoothstep } from '@/composables/useBrewAnimation'
 import bgUrl from '@/assets/tearoom-bg.jpg'
@@ -120,30 +121,36 @@ const props = defineProps<{
 const anim = useBrewAnimation(toRef(props, 'phase'), toRef(props, 'isPouringOut'))
 
 // ==================== 坐标常量（position/scale 用 Vector3 实例；rotation 一律用数组） ====================
-const camPos = new THREE.Vector3(0, 2.4, 5.6)
-const camLook = new THREE.Vector3(0, 1.35, 0)
+// 构图：整套茶席沿 z 后移 SET_Z，远离相机，露出近景桌面边缘，
+// 形成「前景桌面 → 中景器具 → 远景茶室」三层纵深（近大远小更协调，也给上方 UI 让出空间）。
+const SET_Z = -0.7
+// 相机配合小幅拉高拉远，视线中心落在后移后的茶席重心；fov 保持 40 不引入额外变量。
+const camPos = new THREE.Vector3(0, 2.5, 7.4)
+const camLook = new THREE.Vector3(0, 1.28, -0.5)
 const keyLightPos = new THREE.Vector3(3.2, 5.5, 4)
 const rimLightPos = new THREE.Vector3(-3, 2, -2)
 const floorPos = new THREE.Vector3(0, -0.001, 1.5)
-const tablePos = new THREE.Vector3(0, 1.1, 0)
-const clothPos = new THREE.Vector3(0, 1.19, 0)
+const tablePos = new THREE.Vector3(0, 1.1, SET_Z)
+const clothPos = new THREE.Vector3(0, 1.19, SET_Z)
 const legPositions: THREE.Vector3[] = [
-  new THREE.Vector3(-2, 0.55, -0.9),
-  new THREE.Vector3(2, 0.55, -0.9),
-  new THREE.Vector3(-2, 0.55, 0.9),
-  new THREE.Vector3(2, 0.55, 0.9),
+  new THREE.Vector3(-2, 0.55, -0.9 + SET_Z),
+  new THREE.Vector3(2, 0.55, -0.9 + SET_Z),
+  new THREE.Vector3(-2, 0.55, 0.9 + SET_Z),
+  new THREE.Vector3(2, 0.55, 0.9 + SET_Z),
 ]
-const gaiwanPos = new THREE.Vector3(-0.15, 1.19, 0)
+const gaiwanPos = new THREE.Vector3(-0.1, 1.19, SET_Z)
 const gaiwanScale = new THREE.Vector3(0.24, 0.24, 0.24)
 const liquidPos = new THREE.Vector3(0, 0.68, 0)
-// 盖碗盖子位置（闷泡时下移盖上碗口）
+// 盖碗盖子位置（闷泡时下移盖上碗口）。开盖只微抬、合盖盖沿与碗口齐平，
+// 避免旧值 0.98→0.68 的大行程让盖子悬空/合盖时像一颗大白球。
 const lidPosition = computed(() =>
-  new THREE.Vector3(0, 0.98 - 0.3 * smoothstep(anim.steep.value), 0),
+  new THREE.Vector3(0, 0.92 - 0.18 * smoothstep(anim.steep.value), 0),
 )
 
 // ==================== 公道杯（茶海，玻璃材质，出汤→分茶用） ====================
-const fairnessPos = new THREE.Vector3(0.55, 1.19, 0.25)
-const fairnessScale = new THREE.Vector3(0.28, 0.28, 0.28)
+// 比例修正：旧 scale 0.28 世界半径仅 0.126，远小于盖碗 0.288；真实公道杯与盖碗体量接近
+const fairnessPos = new THREE.Vector3(0.68, 1.19, 0.22 + SET_Z)
+const fairnessScale = new THREE.Vector3(0.4, 0.4, 0.4)
 const fairnessPts = [
   new THREE.Vector2(0, 0),
   new THREE.Vector2(0.3, 0.02),
@@ -170,7 +177,8 @@ const fairnessRotation = computed<[number, number, number]>(() => [
 ])
 
 // ==================== 品茗杯×3（黑釉，公道杯前方一字排开） ====================
-const teacupScale = new THREE.Vector3(0.3, 0.3, 0.3)
+// 比例修正：scale 0.3→0.37，与盖碗/公道杯体量更协调
+const teacupScale = new THREE.Vector3(0.37, 0.37, 0.37)
 const teacupPts = [
   new THREE.Vector2(0, 0),
   new THREE.Vector2(0.28, 0.02),
@@ -180,9 +188,9 @@ const teacupPts = [
   new THREE.Vector2(0.25, 0.42),
 ]
 const teacupPositions: THREE.Vector3[] = [
-  new THREE.Vector3(1.1, 1.19, 0.5),
-  new THREE.Vector3(1.35, 1.19, 0.05),
-  new THREE.Vector3(1.1, 1.19, -0.4),
+  new THREE.Vector3(1.2, 1.19, 0.55 + SET_Z),
+  new THREE.Vector3(1.5, 1.19, 0.05 + SET_Z),
+  new THREE.Vector3(1.2, 1.19, -0.42 + SET_Z),
 ]
 const teacupLiquidPos = new THREE.Vector3(0, 0.2, 0)
 // 品茗杯液面（分茶时上升，喝茶时减少）
@@ -219,15 +227,16 @@ const fairnessStreamPos = computed(() => {
   const teacupCenter = teacupPositions[1]!.clone().add(new THREE.Vector3(0, 0.15, 0))
   return fairnessSpout.clone().add(teacupCenter).multiplyScalar(0.5)
 })
-const kettlePos = new THREE.Vector3(-1.15, 1.465, 0)
+const kettlePos = new THREE.Vector3(-1.25, 1.465, SET_Z)
 const kettleScale = new THREE.Vector3(0.24, 0.24, 0.24)
 const kettleLidPos = new THREE.Vector3(0, 1.62, 0)
 const knobPos = new THREE.Vector3(0, 1.78, 0)
 const spoutPos = new THREE.Vector3(1.35, 1.05, 0)
 const handlePos = new THREE.Vector3(-1.35, 0.95, 0)
-const stovePos = new THREE.Vector3(-1.15, 1.19, 0)
+const stovePos = new THREE.Vector3(-1.25, 1.19, SET_Z)
 const stoveBasePos = new THREE.Vector3(0, 0.1375, 0)
 const flameLightPos = new THREE.Vector3(0, 0.45, 0)
+const stoveGlowScale = new THREE.Vector3(1.1, 1.1, 1)
 const streamPos = new THREE.Vector3(0.1, 1.0, 0)
 // 注水流位置：壶嘴到盖碗中心的中点（入水动画用）
 const waterStreamPos = computed(() => {
@@ -245,7 +254,7 @@ const liquidScale = computed(() =>
 )
 // 茶则位置（从旁侧移入盖碗上方，放茶动画）
 const teaScoopPos = computed(() => {
-  const start = new THREE.Vector3(1.8, 1.6, 0)
+  const start = new THREE.Vector3(1.8, 1.6, SET_Z)
   const end = new THREE.Vector3(gaiwanPos.x + 0.2, gaiwanPos.y + 0.8, gaiwanPos.z)
   return start.clone().lerp(end, smoothstep(anim.addLeaves.value))
 })
@@ -259,7 +268,7 @@ function initTeaLeaves() {
   for (let i = 0; i < TEA_LEAVES_COUNT; i++) {
     positions[i * 3] = gaiwanPos.x + 0.2 + (Math.random() - 0.5) * 0.3
     positions[i * 3 + 1] = gaiwanPos.y + 0.8 + Math.random() * 0.1
-    positions[i * 3 + 2] = (Math.random() - 0.5) * 0.2
+    positions[i * 3 + 2] = SET_Z + (Math.random() - 0.5) * 0.2
     teaLeavesVelocities.push(
       new THREE.Vector3(
         (Math.random() - 0.5) * 0.3,
@@ -282,27 +291,78 @@ function initTeaLeaves() {
 
 onMounted(() => {
   initTeaLeaves()
+  setupRenderPipeline()
 })
+
+// ==================== 渲染管线：ACES 色调映射 + 软阴影 + 程序化 IBL ====================
+// 命令式设置（规避 TresJS 模板 prop 名差异）；只在真实浏览器挂载 3D 时执行。
+function setupRenderPipeline() {
+  // TresJS v5：useTresContext().renderer 是渲染器管理器（manager），真正的 WebGLRenderer
+  // 在 manager.instance 上（manager 创建时同步构造，onMounted 时已存在）。
+  // 若误把 manager 当渲染器：toneMapping/IBL 会设到空对象上完全不生效，
+  // 且 manager.shadowMap 为 undefined，访问 .type 会抛 TypeError（mounted hook 报错）。
+  const renderer = (sceneCtx.renderer as { instance?: THREE.WebGLRenderer }).instance
+  const scene = sceneCtx.scene.value
+  if (!scene) return
+  if (renderer) {
+    // 电影级 ACES 色调映射：暖光不过曝、暗部有层次；曝光补偿背景图被压暗的部分
+    renderer.toneMapping = THREE.ACESFilmicToneMapping
+    renderer.toneMappingExposure = 1.08
+    // three r185 起 PCFSoftShadowMap 已废弃（内部强制回退 PCFShadowMap 并告警），显式用 PCFShadowMap
+    renderer.shadowMap.type = THREE.PCFShadowMap
+    renderer.shadowMap.needsUpdate = true
+    // 程序化环境反射（IBL）：RoomEnvironment 是中性影棚环境，零外部素材；
+    // 经 PMREM 预滤波后赋给 scene.environment，所有 PBR 材质自动获得环境反光，
+    // 白瓷釉面/玻璃/紫砂不再是死面。暖调由灯光承担。
+    const pmrem = new THREE.PMREMGenerator(renderer)
+    const envScene = new RoomEnvironment()
+    const envTex = pmrem.fromScene(envScene, 0.04).texture
+    scene.environment = envTex
+    scene.environmentIntensity = 0.55
+    pmrem.dispose()
+  }
+  // 主方向光阴影相机：必须手动收紧，默认视锥覆盖范围与分辨率对本场景都不合适
+  const key = keyLight.value
+  if (key) {
+    key.target.position.set(0, 1.2, SET_Z)
+    scene.add(key.target)
+    const cam = key.shadow.camera
+    cam.near = 0.5
+    cam.far = 18
+    cam.left = -3
+    cam.right = 3
+    cam.top = 3
+    cam.bottom = -3
+    cam.updateProjectionMatrix()
+    key.shadow.mapSize.set(2048, 2048)
+    key.shadow.bias = -0.0002
+    key.shadow.normalBias = 0.02
+  }
+}
 // 空间纵深元素（茶柜 / 挂轴 / 炭火暖光斑）
 const cabinetPos = new THREE.Vector3(-3.2, 1.55, -2.2)
 const shelfPos = new THREE.Vector3(0, 1.75, -2.15)
 const scrollPos = new THREE.Vector3(2.4, 2.6, -2.35)
-const glowPos = new THREE.Vector3(-1.15, 0.012, 0)
+// 炉下桌面暖光斑（旧值 y0.012 在地面上不可见；应贴桌面 1.192，x 随炉位）
+const glowPos = new THREE.Vector3(-1.25, 1.192, SET_Z)
 
-// 火焰片布局（位置 + 绕 Z 旋转；rotation 用数组字面量）
-const flameSlots: { pos: THREE.Vector3; rot: [number, number, number] }[] = [
-  { pos: new THREE.Vector3(-0.32, 0.3, 0.05), rot: [0, 0, -0.12] },
-  { pos: new THREE.Vector3(-0.16, 0.3, -0.05), rot: [0, 0, 0.06] },
-  { pos: new THREE.Vector3(0, 0.3, 0), rot: [0, 0, 0] },
-  { pos: new THREE.Vector3(0.16, 0.3, -0.05), rot: [0, 0, -0.06] },
-  { pos: new THREE.Vector3(0.32, 0.3, 0.05), rot: [0, 0, 0.12] },
+// 火焰片布局（位置 + 绕 Z 旋转；rotation 用数组字面量；innerPos 为内层焰心位置）
+const flameSlots: { pos: THREE.Vector3; innerPos: THREE.Vector3; rot: [number, number, number] }[] = [
+  { pos: new THREE.Vector3(-0.32, 0.3, 0.05), innerPos: new THREE.Vector3(-0.32, 0.32, 0.05), rot: [0, 0, -0.12] },
+  { pos: new THREE.Vector3(-0.16, 0.3, -0.05), innerPos: new THREE.Vector3(-0.16, 0.32, -0.05), rot: [0, 0, 0.06] },
+  { pos: new THREE.Vector3(0, 0.3, 0), innerPos: new THREE.Vector3(0, 0.32, 0), rot: [0, 0, 0] },
+  { pos: new THREE.Vector3(0.16, 0.3, -0.05), innerPos: new THREE.Vector3(0.16, 0.32, -0.05), rot: [0, 0, -0.06] },
+  { pos: new THREE.Vector3(0.32, 0.3, 0.05), innerPos: new THREE.Vector3(0.32, 0.32, 0.05), rot: [0, 0, 0.12] },
 ]
 const flameSeed: number[] = flameSlots.map(() => Math.random() * Math.PI * 2)
 
 // ==================== Three 对象引用（模板绑定） ====================
 const kettleGroup = ref<THREE.Group | null>(null)   // 茶壶组（出汤倾斜）
+const keyLight = ref<THREE.DirectionalLight | null>(null) // 主方向光（投影）
 const flameLight = ref<THREE.PointLight | null>(null) // 炉火光源
-const flameMeshes = ref<THREE.Mesh[]>([])           // 火焰片数组（v-for）
+const flameMeshes = ref<THREE.Mesh[]>([])           // 外焰片数组（v-for）
+const innerFlameMeshes = ref<THREE.Mesh[]>([])      // 内层焰心数组（v-for）
+const stoveGlow = ref<THREE.Sprite | null>(null)    // 炉火辉光精灵
 const teaLiquidMat = ref<THREE.MeshStandardMaterial | null>(null) // 碗内茶汤材质
 const pourStreamMat = ref<THREE.MeshBasicMaterial | null>(null)   // 水流细柱材质
 const pourStream = ref<THREE.Mesh | null>(null)      // 水流细柱
@@ -478,9 +538,10 @@ const steamPositions = new Float32Array(STEAM_COUNT * 3)
 const steamVel = new Float32Array(STEAM_COUNT)
 const steamTop = new Float32Array(STEAM_COUNT)
 for (let i = 0; i < STEAM_COUNT; i++) {
-  steamPositions[i * 3] = (Math.random() - 0.5) * 0.5
+  // 蒸汽源偏向盖碗/公道杯区域（世界 x ≈ -0.1~0.7）
+  steamPositions[i * 3] = 0.25 + (Math.random() - 0.5) * 0.7
   steamPositions[i * 3 + 1] = Math.random() * 1.2 + 2.4 // 起始在桌面附近
-  steamPositions[i * 3 + 2] = (Math.random() - 0.5) * 0.5
+  steamPositions[i * 3 + 2] = (Math.random() - 0.5) * 0.5 + SET_Z
   steamVel[i] = 0.4 + Math.random() * 0.5
   steamTop[i] = 3.4 + Math.random() * 1.6
 }
@@ -534,7 +595,10 @@ watch(
   () => props.phase,
   (v) => {
     setSteamTarget(v, props.currentTemp)
-    flameMeshes.value.forEach(m => (m.visible = v === BrewPhase.HEATING))
+    const heating = v === BrewPhase.HEATING
+    flameMeshes.value.forEach(m => (m.visible = heating))
+    innerFlameMeshes.value.forEach(m => (m.visible = heating))
+    if (stoveGlow.value) stoveGlow.value.visible = heating
   },
   { immediate: true },
 )
@@ -586,8 +650,8 @@ onRender(({ delta, elapsed }) => {
       steamPositions[i * 3 + 2] = (steamPositions[i * 3 + 2] ?? 0) + Math.cos(elapsed * 0.6 + i) * delta * 0.08
       if (y > top) {
         y = 2.4
-        steamPositions[i * 3] = (Math.random() - 0.5) * 0.5
-        steamPositions[i * 3 + 2] = (Math.random() - 0.5) * 0.5
+        steamPositions[i * 3] = 0.25 + (Math.random() - 0.5) * 0.7
+        steamPositions[i * 3 + 2] = (Math.random() - 0.5) * 0.5 + SET_Z
       }
       steamPositions[i * 3 + 1] = y
     }
@@ -595,12 +659,23 @@ onRender(({ delta, elapsed }) => {
     if (posAttr) posAttr.needsUpdate = true
   }
 
-  // 火焰：正弦脉动 + 炉火光强度
+  // 火焰：外焰正弦脉动 + 内层焰心更快脉动 + 炉火光强度 + 辉光精灵
   flameMeshes.value.forEach((m, i) => {
     const pulse = 0.7 + 0.5 * Math.sin(elapsed * 9 + (flameSeed[i] ?? 0))
     m.scale.set(1, 0.6 + flameTargetIntensity * pulse, 1)
   })
-  if (flameLight.value) flameLight.value.intensity = flameTargetIntensity * 2.2
+  innerFlameMeshes.value.forEach((m, i) => {
+    const pulse = 0.75 + 0.4 * Math.sin(elapsed * 13 + (flameSeed[i] ?? 0))
+    m.scale.set(1, 0.5 + flameTargetIntensity * pulse, 1)
+  })
+  if (flameLight.value) flameLight.value.intensity = flameTargetIntensity * 3.0
+  if (stoveGlow.value) {
+    const mat = stoveGlow.value.material as THREE.SpriteMaterial
+    const glow = 0.35 + flameTargetIntensity * (0.35 + 0.12 * Math.sin(elapsed * 9))
+    mat.opacity = glow
+    const s = 1.05 + flameTargetIntensity * (0.2 + 0.08 * Math.sin(elapsed * 9))
+    stoveGlow.value.scale.set(s, s, 1)
+  }
 
   // 茶叶粒子：放茶时重力下落，落入盖碗后停止
   if (teaLeavesPoints.value) {
@@ -640,82 +715,106 @@ onRender(({ delta, elapsed }) => {
 
 <template>
   <!-- 相机 -->
-  <TresPerspectiveCamera :position="camPos" :fov="42" :look-at="camLook" />
+  <TresPerspectiveCamera :position="camPos" :fov="40" :look-at="camLook" />
 
-  <!-- 灯光：夜色暖光氛围 -->
-  <TresAmbientLight :color="'#ffe8d0'" :intensity="0.55" />
-  <TresDirectionalLight :position="keyLightPos" :color="'#fff0dd'" :intensity="1.3" />
+  <!-- 灯光：夜色暖光氛围。环境光压低（0.22），环境反射由 scene.environment(IBL) 承担，
+       避免旧值 0.55 把明暗对比抹平；主方向光投影（唯一投影灯）。 -->
+  <TresAmbientLight :color="'#ffe8d0'" :intensity="0.22" />
+  <TresDirectionalLight
+    ref="keyLight"
+    :position="keyLightPos"
+    :color="'#fff0dd'"
+    :intensity="1.6"
+    :cast-shadow="true"
+  />
   <TresDirectionalLight :position="rimLightPos" :color="'#8a7a66'" :intensity="0.5" />
 
   <!-- 茶室环境：背景由 scene.background 提供（夜色暖光茶室实景图），不再需要 3D 墙。
        仅保留地面承接茶席光影。 -->
-  <TresMesh :position="floorPos" :rotation="[-Math.PI / 2, 0, 0]">
+  <TresMesh :position="floorPos" :rotation="[-Math.PI / 2, 0, 0]" :receive-shadow="true">
     <TresPlaneGeometry :args="[12, 8]" />
-    <TresMeshStandardMaterial :color="'#1a140f'" :roughness="0.95" />
+    <TresMeshStandardMaterial :color="'#1a140f'" :roughness="0.95" :env-map-intensity="0.2" />
   </TresMesh>
 
   <!-- 木桌 + 茶席布 + 桌腿 -->
-  <TresMesh :position="tablePos">
+  <TresMesh :position="tablePos" :cast-shadow="true" :receive-shadow="true">
     <TresBoxGeometry :args="[4.4, 0.16, 2.2]" />
-    <TresMeshStandardMaterial :color="'#4a3626'" :map="woodTex" :roughness="0.65" :metalness="0.02" />
+    <TresMeshStandardMaterial :color="'#4a3626'" :map="woodTex" :roughness="0.65" :metalness="0.02" :env-map-intensity="0.35" />
   </TresMesh>
-  <TresMesh :position="clothPos" :rotation="[-Math.PI / 2, 0, 0]">
+  <TresMesh :position="clothPos" :rotation="[-Math.PI / 2, 0, 0]" :receive-shadow="true">
     <TresPlaneGeometry :args="[3, 1.3]" />
-    <TresMeshStandardMaterial :color="'#cbb68a'" :roughness="0.9" :bump-map="fabricBump" :bump-scale="0.06" :side="THREE.DoubleSide" />
+    <TresMeshStandardMaterial :color="'#cbb68a'" :roughness="0.9" :bump-map="fabricBump" :bump-scale="0.06" :side="THREE.DoubleSide" :env-map-intensity="0.2" />
   </TresMesh>
-  <TresMesh v-for="(leg, i) in legPositions" :key="i" :position="leg">
+  <TresMesh v-for="(leg, i) in legPositions" :key="i" :position="leg" :cast-shadow="true">
     <TresBoxGeometry :args="[0.14, 1.1, 0.14]" />
     <TresMeshStandardMaterial :color="'#3f3020'" :roughness="0.8" />
   </TresMesh>
 
-  <!-- 盖碗（碗身 + 碗内茶汤 + 碗盖） -->
+  <!-- 盖碗（碗身 + 碗内茶汤 + 碗盖）。白瓷釉面：Physical clearcoat + IBL 反光 -->
   <TresGroup
     :position="gaiwanPos"
     :scale="gaiwanScale"
     :rotation="[0, 0, 0.52 * smoothstep(anim.pourOut.value)]"
   >
-    <TresMesh>
+    <TresMesh :cast-shadow="true">
       <TresLatheGeometry :args="[bowlPts, 48]" />
-      <TresMeshStandardMaterial :color="'#f5f1e8'" :roughness="0.35" :metalness="0.05" :map="porcelainTex" />
+      <TresMeshPhysicalMaterial
+        :color="'#f5f1e8'"
+        :roughness="0.24"
+        :metalness="0.02"
+        :clearcoat="0.9"
+        :clearcoat-roughness="0.18"
+        :env-map-intensity="0.9"
+        :map="porcelainTex"
+      />
     </TresMesh>
     <TresMesh :position="liquidPos" :scale="liquidScale">
       <TresCylinderGeometry :args="[0.98, 1.02, 0.12, 48]" />
       <TresMeshStandardMaterial
         ref="teaLiquidMat"
         :color="props.soupColor"
-        :roughness="0.2"
-        :metalness="0.05"
+        :roughness="0.06"
+        :metalness="0"
         :transparent="true"
-        :opacity="0.88"
+        :opacity="0.92"
+        :env-map-intensity="0.7"
       />
     </TresMesh>
-    <TresMesh :position="lidPosition">
-      <TresSphereGeometry :args="[1.0, 32, 16, 0, Math.PI * 2, 0, Math.PI / 3]" />
-      <TresMeshStandardMaterial :color="'#f5f1e8'" :roughness="0.35" :metalness="0.05" :map="porcelainTex" />
+    <TresMesh :position="lidPosition" :cast-shadow="true">
+      <TresSphereGeometry :args="[0.82, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2.4]" />
+      <TresMeshPhysicalMaterial
+        :color="'#f5f1e8'"
+        :roughness="0.24"
+        :metalness="0.02"
+        :clearcoat="0.9"
+        :clearcoat-roughness="0.18"
+        :env-map-intensity="0.9"
+        :map="porcelainTex"
+      />
     </TresMesh>
   </TresGroup>
 
-  <!-- 茶壶（壶身 + 盖 + 壶钮 + 嘴 + 把） -->
+  <!-- 茶壶（壶身 + 盖 + 壶钮 + 嘴 + 把）。紫砂：哑光颗粒 + 适度 IBL 提层次，不再死黑 -->
   <TresGroup ref="kettleGroup" :position="kettlePos" :scale="kettleScale">
-    <TresMesh>
+    <TresMesh :cast-shadow="true">
       <TresLatheGeometry :args="[potPts, 48]" />
-      <TresMeshStandardMaterial :color="'#8a6b48'" :roughness="0.55" :metalness="0.05" :map="zishaTex" :bump-map="potBump" :bump-scale="0.05" />
+      <TresMeshStandardMaterial :color="'#8a6b48'" :roughness="0.6" :metalness="0.05" :map="zishaTex" :bump-map="potBump" :bump-scale="0.05" :env-map-intensity="0.55" />
     </TresMesh>
-    <TresMesh :position="kettleLidPos">
+    <TresMesh :position="kettleLidPos" :cast-shadow="true">
       <TresSphereGeometry :args="[0.62, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2.6]" />
-      <TresMeshStandardMaterial :color="'#8a6b48'" :roughness="0.55" :metalness="0.05" :map="zishaTex" :bump-map="potBump" :bump-scale="0.05" />
+      <TresMeshStandardMaterial :color="'#8a6b48'" :roughness="0.6" :metalness="0.05" :map="zishaTex" :bump-map="potBump" :bump-scale="0.05" :env-map-intensity="0.55" />
     </TresMesh>
-    <TresMesh :position="knobPos">
+    <TresMesh :position="knobPos" :cast-shadow="true">
       <TresSphereGeometry :args="[0.16, 16, 12]" />
-      <TresMeshStandardMaterial :color="'#8a6b48'" :roughness="0.55" :metalness="0.05" :map="zishaTex" :bump-map="potBump" :bump-scale="0.05" />
+      <TresMeshStandardMaterial :color="'#8a6b48'" :roughness="0.6" :metalness="0.05" :map="zishaTex" :bump-map="potBump" :bump-scale="0.05" :env-map-intensity="0.55" />
     </TresMesh>
-    <TresMesh :position="spoutPos" :rotation="[0, 0, -Math.PI / 5]">
+    <TresMesh :position="spoutPos" :rotation="[0, 0, -Math.PI / 5]" :cast-shadow="true">
       <TresCylinderGeometry :args="[0.16, 0.3, 1.1, 16]" />
-      <TresMeshStandardMaterial :color="'#8a6b48'" :roughness="0.55" :metalness="0.05" :map="zishaTex" :bump-map="potBump" :bump-scale="0.05" />
+      <TresMeshStandardMaterial :color="'#8a6b48'" :roughness="0.6" :metalness="0.05" :map="zishaTex" :bump-map="potBump" :bump-scale="0.05" :env-map-intensity="0.55" />
     </TresMesh>
-    <TresMesh :position="handlePos" :rotation="[0, 0, Math.PI / 2.3]">
+    <TresMesh :position="handlePos" :rotation="[0, 0, Math.PI / 2.3]" :cast-shadow="true">
       <TresTorusGeometry :args="[0.55, 0.13, 12, 24, Math.PI * 1.1]" />
-      <TresMeshStandardMaterial :color="'#8a6b48'" :roughness="0.55" :metalness="0.05" :map="zishaTex" :bump-map="potBump" :bump-scale="0.05" />
+      <TresMeshStandardMaterial :color="'#8a6b48'" :roughness="0.6" :metalness="0.05" :map="zishaTex" :bump-map="potBump" :bump-scale="0.05" :env-map-intensity="0.55" />
     </TresMesh>
   </TresGroup>
 
@@ -733,15 +832,16 @@ onRender(({ delta, elapsed }) => {
     />
   </TresMesh>
 
-  <!-- 炉 + 火焰片 + 炉火光 -->
+  <!-- 炉 + 双层火焰 + 辉光精灵 + 炉火光 -->
   <TresGroup :position="stovePos">
-    <TresMesh :position="stoveBasePos">
+    <TresMesh :position="stoveBasePos" :cast-shadow="true">
       <TresCylinderGeometry :args="[0.55, 0.65, 0.275, 32]" />
-      <TresMeshStandardMaterial :color="'#2a2622'" :roughness="0.7" :metalness="0.4" />
+      <TresMeshStandardMaterial :color="'#2a2622'" :roughness="0.7" :metalness="0.4" :env-map-intensity="0.5" />
     </TresMesh>
+    <!-- 外焰 -->
     <TresMesh
       v-for="(slot, i) in flameSlots"
-      :key="i"
+      :key="'outer-' + i"
       ref="flameMeshes"
       :position="slot.pos"
       :rotation="slot.rot"
@@ -756,51 +856,100 @@ onRender(({ delta, elapsed }) => {
         :depth-write="false"
       />
     </TresMesh>
-    <TresPointLight ref="flameLight" :position="flameLightPos" :color="'#ff7a2a'" :intensity="0" :distance="6" />
+    <!-- 内层焰心（更亮更小、更快脉动） -->
+    <TresMesh
+      v-for="(slot, i) in flameSlots"
+      :key="'inner-' + i"
+      ref="innerFlameMeshes"
+      :position="slot.innerPos"
+      :rotation="slot.rot"
+      :visible="false"
+    >
+      <TresConeGeometry :args="[0.05, 0.24, 8]" />
+      <TresMeshBasicMaterial
+        :color="'#ffd28a'"
+        :transparent="true"
+        :opacity="0.95"
+        :blending="THREE.AdditiveBlending"
+        :depth-write="false"
+      />
+    </TresMesh>
+    <!-- 炉火辉光精灵（additive 柔光，随火力脉动，零后处理依赖） -->
+    <TresSprite ref="stoveGlow" :position="flameLightPos" :scale="stoveGlowScale" :visible="false">
+      <TresSpriteMaterial
+        :map="warmGlowTex"
+        :color="'#ff9a4a'"
+        :transparent="true"
+        :opacity="0.4"
+        :blending="THREE.AdditiveBlending"
+        :depth-write="false"
+      />
+    </TresSprite>
+    <TresPointLight ref="flameLight" :position="flameLightPos" :color="'#ff7a2a'" :intensity="0" :distance="6" :decay="1.5" />
   </TresGroup>
+
+  <!-- 炉下桌面暖光斑（炭火在桌面的反光） -->
+  <TresMesh :position="glowPos" :rotation="[-Math.PI / 2, 0, 0]">
+    <TresPlaneGeometry :args="[1.5, 1.5]" />
+    <TresMeshBasicMaterial
+      :map="warmGlowTex"
+      :transparent="true"
+      :opacity="0.5"
+      :depth-write="false"
+      :blending="THREE.AdditiveBlending"
+    />
+  </TresMesh>
 
   <!-- 茶则（放茶叶用，放茶动画） -->
   <TresMesh
     :position="teaScoopPos"
     :rotation="[0, 0, -0.2]"
+    :cast-shadow="true"
     :visible="anim.addLeaves.value > 0.05"
   >
     <TresBoxGeometry :args="[0.45, 0.02, 0.28]" />
-    <TresMeshStandardMaterial :color="'#8b6f47'" :roughness="0.6" />
+    <TresMeshStandardMaterial :color="'#8b6f47'" :roughness="0.6" :env-map-intensity="0.4" />
   </TresMesh>
 
-  <!-- 公道杯（茶海，玻璃材质，出汤→分茶用） -->
+  <!-- 公道杯（茶海，真玻璃 transmission，出汤→分茶用）。
+       不再用 opacity 0.35 假透明：transmission 走物理透射/折射，IBL 给玻璃边缘高光 -->
   <TresGroup :position="fairnessPos" :scale="fairnessScale" :rotation="fairnessRotation">
     <!-- 杯身（玻璃） -->
     <TresMesh>
       <TresLatheGeometry :args="[fairnessPts, 32]" />
-      <TresMeshStandardMaterial
-        :color="'#e8f0f5'"
-        :roughness="0.05"
-        :metalness="0.1"
-        :transparent="true"
-        :opacity="0.35"
+      <TresMeshPhysicalMaterial
+        :color="'#eef4f8'"
+        :roughness="0.06"
+        :metalness="0"
+        :transmission="0.95"
+        :thickness="0.25"
+        :ior="1.45"
+        :env-map-intensity="1.2"
         :side="THREE.DoubleSide"
       />
     </TresMesh>
     <!-- 壶嘴 -->
     <TresMesh :position="fairnessSpoutPos" :rotation="[0, 0, -0.5]">
       <TresCylinderGeometry :args="[0.06, 0.1, 0.4, 12]" />
-      <TresMeshStandardMaterial
-        :color="'#e8f0f5'"
-        :roughness="0.05"
-        :transparent="true"
-        :opacity="0.35"
+      <TresMeshPhysicalMaterial
+        :color="'#eef4f8'"
+        :roughness="0.06"
+        :transmission="0.95"
+        :thickness="0.2"
+        :ior="1.45"
+        :env-map-intensity="1.2"
       />
     </TresMesh>
     <!-- 把手 -->
     <TresMesh :position="fairnessHandlePos" :rotation="[0, 0, Math.PI / 2]">
       <TresTorusGeometry :args="[0.2, 0.04, 12, 24, Math.PI * 1.2]" />
-      <TresMeshStandardMaterial
-        :color="'#e8f0f5'"
-        :roughness="0.05"
-        :transparent="true"
-        :opacity="0.35"
+      <TresMeshPhysicalMaterial
+        :color="'#eef4f8'"
+        :roughness="0.06"
+        :transmission="0.95"
+        :thickness="0.2"
+        :ior="1.45"
+        :env-map-intensity="1.2"
       />
     </TresMesh>
     <!-- 杯内茶汤（出汤时上升，分茶时下降） -->
@@ -808,9 +957,10 @@ onRender(({ delta, elapsed }) => {
       <TresCylinderGeometry :args="[0.38, 0.4, 0.05, 32]" />
       <TresMeshStandardMaterial
         :color="props.soupColor"
-        :roughness="0.2"
+        :roughness="0.06"
         :transparent="true"
         :opacity="fairnessLiquidOpacity"
+        :env-map-intensity="0.7"
       />
     </TresMesh>
   </TresGroup>
@@ -823,13 +973,16 @@ onRender(({ delta, elapsed }) => {
     :scale="teacupScale"
     :rotation="teacupDrinkRotation"
   >
-    <!-- 杯身 -->
-    <TresMesh>
+    <!-- 杯身（黑釉：釉面 clearcoat + IBL 微光） -->
+    <TresMesh :cast-shadow="true">
       <TresLatheGeometry :args="[teacupPts, 32]" />
-      <TresMeshStandardMaterial
+      <TresMeshPhysicalMaterial
         :color="'#1a0f08'"
-        :roughness="0.12"
-        :metalness="0.15"
+        :roughness="0.16"
+        :metalness="0.1"
+        :clearcoat="0.7"
+        :clearcoat-roughness="0.3"
+        :env-map-intensity="1.0"
       />
     </TresMesh>
     <!-- 杯内茶汤（分茶时上升，喝茶时减少） -->
@@ -837,9 +990,10 @@ onRender(({ delta, elapsed }) => {
       <TresCylinderGeometry :args="[0.32, 0.34, 0.04, 32]" />
       <TresMeshStandardMaterial
         :color="props.soupColor"
-        :roughness="0.2"
+        :roughness="0.06"
         :transparent="true"
         :opacity="teacupLiquidOpacity"
+        :env-map-intensity="0.7"
       />
     </TresMesh>
   </TresGroup>
@@ -888,7 +1042,7 @@ onRender(({ delta, elapsed }) => {
   <TresPoints :geometry="steamGeometry">
     <TresPointsMaterial
       ref="steamMat"
-      :size="0.16"
+      :size="0.22"
       :map="softCircleTex"
       :color="'#fff4e0'"
       :transparent="true"
@@ -899,6 +1053,6 @@ onRender(({ delta, elapsed }) => {
     />
   </TresPoints>
 
-  <!-- 茶叶粒子（放茶动画） -->
-  <TresPrimitive v-if="teaLeavesPoints" :object="teaLeavesPoints" />
+  <!-- 茶叶粒子（放茶动画）。TresJS 5 原生对象用小写 primitive 标签（TresPrimitive 无法解析） -->
+  <primitive v-if="teaLeavesPoints" :object="teaLeavesPoints" />
 </template>
