@@ -368,7 +368,7 @@ const phaseDescription = computed(() => {
 </script>
 
 <template>
-  <div class="min-h-screen p-4 sm:p-8 flex flex-col items-center relative overflow-hidden z-0">
+  <div class="brew-dark min-h-screen p-4 sm:p-8 flex flex-col items-center relative overflow-hidden z-0">
     <!-- 3D 真实感茶席背景（状态机 / 手势 / 音频不受影响；headless 回退 CSS 插画） -->
     <TeaBrewScene3D
       v-if="!isHeadless"
@@ -670,3 +670,76 @@ const phaseDescription = computed(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+/* UI 方向 A：毛玻璃深色面板 + 琥珀描边 + 发光温度
+   与 3D 夜色暖光茶席背景协调 */
+.brew-dark {
+  --color-wood: #e8d5b0;
+  --color-wood-light: #b8a080;
+  --color-cream: #1a120a;
+  --color-paper: #2a1f15;
+  --color-tea-gold: #c9a96e;
+  --color-ink: #f5e6c8;
+  color: #e8d5b0;
+}
+
+.brew-dark :deep(.glass-panel) {
+  background: rgba(26, 18, 12, 0.72) !important;
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  border: 1px solid rgba(201, 169, 110, 0.25) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(201, 169, 110, 0.1);
+}
+
+.brew-dark h2 {
+  color: #f0e0c0 !important;
+  text-shadow: 0 0 30px rgba(232, 184, 96, 0.3);
+}
+
+.brew-dark .text-4xl {
+  color: #e8b860 !important;
+  text-shadow: 0 0 24px rgba(232, 184, 96, 0.55), 0 0 60px rgba(232, 184, 96, 0.2);
+  font-variant-numeric: tabular-nums;
+}
+
+.brew-dark button {
+  border-color: rgba(201, 169, 110, 0.4) !important;
+}
+.brew-dark button:not(:disabled):hover {
+  border-color: rgba(201, 169, 110, 0.8) !important;
+  box-shadow: 0 0 20px rgba(201, 169, 110, 0.25);
+}
+
+.brew-dark :deep(.ceremony-dot) {
+  background: rgba(42, 31, 21, 0.9) !important;
+  border: 2px solid rgba(201, 169, 110, 0.4);
+  color: #b8a080;
+}
+.brew-dark :deep(.ceremony-dot.active) {
+  background: linear-gradient(135deg, #c9a96e, #8b6b3a) !important;
+  border-color: #e8c87a;
+  color: #1a120a;
+  box-shadow: 0 0 16px rgba(201, 169, 110, 0.5);
+}
+.brew-dark :deep(.ceremony-dot.done) {
+  background: rgba(201, 169, 110, 0.3) !important;
+  border-color: rgba(201, 169, 110, 0.6);
+  color: #c9a96e;
+}
+.brew-dark :deep(.ceremony-line) {
+  background: rgba(201, 169, 110, 0.15);
+}
+.brew-dark :deep(.ceremony-line.filled) {
+  background: linear-gradient(90deg, #c9a96e, rgba(201, 169, 110, 0.3));
+}
+
+.brew-dark input[type="range"] {
+  background: rgba(42, 31, 21, 0.8) !important;
+}
+.brew-dark input[type="range"]::-webkit-slider-thumb {
+  background: linear-gradient(135deg, #e8c87a, #c9a96e) !important;
+  box-shadow: 0 0 12px rgba(232, 200, 122, 0.5);
+  border: none !important;
+}
+</style>
