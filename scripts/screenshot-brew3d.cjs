@@ -1,20 +1,35 @@
-﻿/**
+/**
  * 冲泡页 3D 场景截图（夜色暖光茶席）。
  * - brew-3d-heating.png：HEATING 阶段（炉火 + 蒸汽 + 夜色暖光）
  * - brew-3d-steeping.png：STEEPING 阶段（茶汤色 + 蒸汽）
  *
  * 用法：node scripts/screenshot-brew3d.cjs（需本地 preview :4173）
+ * 注：截图脚本用非 headless UA + webdriver=false 绕过 headless 检测，以捕获真实 3D 效果。
  */
 const { chromium } = require('@playwright/test')
 
 ;(async () => {
-  const browser = await chromium.launch({ channel: 'chromium' })
-  const page = await browser.newPage({
+  const HEADED = process.env.HEADED === '1'
+  const browser = await chromium.launch({
+    channel: 'chromium',
+    headless: !HEADED,
+    args: HEADED ? [] : ['--enable-unsafe-swiftshader', '--use-angle=swiftshader'],
+  })
+  // 截图需要真实浏览器视角（挂载 3D）：用非 headless UA + webdriver=false 绕过 headless 检测
+  const context = await browser.newContext({
     viewport: { width: 1280, height: 800 },
     deviceScaleFactor: 1, // 1x 避免合成层黑帧
+    userAgent:
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36',
   })
+  await context.addInitScript(() => {
+    Object.defineProperty(navigator, 'webdriver', { get: () => false })
+  })
+  const page = await context.newPage()
+  page.on('console', m => console.log(`[console.${m.type()}]`, m.text().slice(0, 250)))
+  page.on('pageerror', e => console.log('[pageerror]', e.message.slice(0, 250)))
   await page.route('**/api/ai/*', route => route.abort())
-  const base = 'http://localhost:4173'
+  const base = 'http://localhost:5174'
 
   // 首页：固定等待仪式感动画完成
   await page.goto(base + '/')
