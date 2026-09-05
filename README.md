@@ -140,6 +140,10 @@ TEST_DATABASE_URL=postgresql://... python -m pytest tests/test_migrations.py -q 
 - 品鉴记录可视化数据看板（个人成长曲线）
 - 生产环境接入 Redis 分布式限流与外部错误追踪（Sentry）
 
+## 素材致谢
+
+- 首页茶山背景 `src/assets/tea-mountain-hero.jpg`：摄影作者 Tanmoy281，来源 [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Darjeeling-tea-plantation.jpg)，以 [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/deed.zh) 授权；本项目仅做尺寸缩放与晨雾色调处理，相同方式共享。
+
 ## License
 
 [MIT](LICENSE) © 2026 严恒（qiuqianyi66）
