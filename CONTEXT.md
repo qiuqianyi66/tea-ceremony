@@ -10,13 +10,13 @@
 | 术语 | 定义 | 代码位置 |
 |------|------|----------|
 | 茶席 | 一次完整的茶道体验流程：入席→选茶→备器→煮水→冲泡→品鉴 | `src/views/` |
-| 冲泡 | 投茶、注水、浸泡、出汤的交互过程 | `src/views/Brewing.vue`、`src/components/brewing/` |
-| 品鉴 | 观色、闻香、品味三步评分流程 | `src/views/Tasting.vue` |
+| 冲泡 | 投茶、注水、浸泡、出汤的交互过程（3D 茶席视觉） | `src/views/BrewView.vue` |
+| 品鉴 | 观色、闻香、品味三步评分流程 | `src/views/TasteView.vue` |
 | 八维评分 | 汤色、香气、滋味、苦涩、生津、喉韵、耐泡度、协调性 | `src/services/scoring.ts` |
 | 工艺系数 | 水温、投茶量、时间、茶器、水源对评分的修正系数（0.8-1.2） | `src/services/scoring.ts` |
-| 离线优先 | 数据先写 IndexedDB，再异步同步后端 | `src/services/db.ts` |
+| 离线优先 | 数据先写 IndexedDB，再异步同步后端 | `src/services/storage.ts` |
 | 同步状态 | pending / synced / failed 三态 | `src/types/tasting.ts` |
-| AI 茶灵 | 茶文化 RAG 检索 + LLM 对话，网络不可用时降级规则回复 | `src/services/ai.ts` |
+| AI 茶灵 | 茶文化 RAG 检索 + LLM 对话（走后端代理），网络不可用时降级规则回复 | `src/services/teaAI.ts` |
 | 茶器 | 泡茶器具（盖碗、紫砂壶、玻璃杯等），影响工艺系数 | `src/data/teawares.ts` |
 | 水源 | 冲泡用水（纯净水、矿泉水、山泉水），影响工艺系数 | `src/data/waters.ts` |
 
@@ -86,6 +86,9 @@ backend/
 | 前端开发 | `npm run dev` |
 | 类型检查 | `npm run type-check` |
 | 生产构建 | `npm run build` |
+| 前端单测 | `npm run test` |
+| E2E 测试 | `npm run test:e2e` |
+| 后端测试 | `cd backend && .\.venv\Scripts\python.exe -m pytest tests -q` |
 | 后端开发 | `cd backend && uvicorn main:app --reload --port 8000` |
 | 生成迁移 | `cd backend && alembic revision --autogenerate -m "msg"` |
 | 执行迁移 | `cd backend && alembic upgrade head` |
@@ -104,6 +107,9 @@ backend/
 | Tailwind CSS | 4.3 |
 | Vite | 8.1 |
 | Dexie | 4.4 |
+| Three.js / TresJS | 0.185 / 5.8 |
+| ECharts / Chart.js | 6.1 / 4.5 |
+| Vitest / Playwright | 4.1 / 1.62 |
 | FastAPI | 0.115 |
 | SQLAlchemy | 2.0.35 |
 | Alembic | 1.13 |
@@ -115,8 +121,11 @@ backend/
 
 ## 待办与已知限制
 
-- [ ] 尚无单元测试（CI 只做类型检查和构建）
-- [ ] E2E 测试未落地（已有 `.playwright-mcp/` 目录）
-- [ ] AI 第三方请求目前浏览器直连，计划收敛到后端代理
-- [ ] 茶汤和茶器用的是矢量/粒子效果，计划增加真实图片
-- [ ] 用户公开品鉴卡片和分享链接未实现
+- [x] 单元测试与 E2E 测试已落地（Vitest 37 用例 / Playwright 完整流程 + 分享页 + 健康页）
+- [x] AI 第三方请求已收敛到后端代理（`/api/ai/*`，浏览器不再直连）
+- [x] 用户公开品鉴卡片和分享链接已实现（二维码 / `/share` 只读页）
+- [x] 冲泡页已升级为 TresJS 3D 茶席 + 实景夜色暖光背景（`3D_SPEC.md`）
+- [ ] 第六阶段「简历与面试材料」未做（路线图最后一项）
+- [ ] 演示短视频未做（用户暂缓）
+- [ ] 迁移测试本地跑需 Docker 引擎就绪（CI 已用 Postgres service 强制跑）
+- [ ] 生产规模扩展（Redis 分布式限流、Sentry 异常追踪）非必需，可按需推进
