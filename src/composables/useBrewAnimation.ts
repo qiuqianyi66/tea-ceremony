@@ -12,8 +12,10 @@ export interface BrewAnimationState {
   addLeaves: Ref<number>
   /** 闷泡动画（盖碗盖子盖上+蒸汽增强） */
   steep: Ref<number>
-  /** 倒茶动画（盖碗倾斜+茶汤水流+品茗杯液面上升） */
+  /** 出汤动画（盖碗倾斜+茶汤流入公道杯） */
   pourOut: Ref<number>
+  /** 分茶动画（公道杯倾斜+茶汤均匀分到品茗杯） */
+  fairnessPour: Ref<number>
   /** 喝茶动画（品茗杯端起+液面减少） */
   drink: Ref<number>
 }
@@ -39,6 +41,11 @@ export function damp(current: number, target: number, lambda: number, dt: number
  * 基于 BrewPhase 状态机和 isPouringOut 标志，计算各动画阶段的 progress
  * 每帧调用 update(dt) 更新 progress
  *
+ * 动画时序（DONE 阶段）：
+ * 1. isPouringOut=true → pourOut（盖碗→公道杯出汤）
+ * 2. isPouringOut=false → fairnessPour（公道杯→品茗杯分茶）
+ * 3. fairnessPour>0.7 → drink（品茗杯端起喝茶）
+ *
  * @param phase 当前冲泡阶段（响应式 Ref）
  * @param isPouringOut 是否正在出汤（响应式 Ref）
  */
@@ -50,6 +57,7 @@ export function useBrewAnimation(
   const addLeaves = ref(0)
   const steep = ref(0)
   const pourOut = ref(0)
+  const fairnessPour = ref(0)
   const drink = ref(0)
 
   // 每个动画的目标值（由 phase 和 isPouringOut 决定）
@@ -58,6 +66,7 @@ export function useBrewAnimation(
     addLeaves: 0,
     steep: 0,
     pourOut: 0,
+    fairnessPour: 0,
     drink: 0,
   }
 
@@ -76,10 +85,11 @@ export function useBrewAnimation(
     targets.addLeaves = [BrewPhase.RINSING, BrewPhase.STEEPING].includes(p) ? 1 : 0
     // 闷泡：浸泡阶段盖子盖上
     targets.steep = p === BrewPhase.STEEPING ? 1 : 0
-    // 倒茶：isPouringOut 为 true 时
+    // 出汤：isPouringOut 为 true 时（盖碗→公道杯）
     targets.pourOut = isPouringOut.value ? 1 : 0
-    // 喝茶：DONE 阶段且不在出汤时
-    targets.drink = p === BrewPhase.DONE && !isPouringOut.value ? 1 : 0
+    // 分茶：DONE 阶段且出汤完成后（公道杯→品茗杯）
+    targets.fairnessPour = p === BrewPhase.DONE && !isPouringOut.value ? 1 : 0
+    // 喝茶：分茶完成 70% 后触发（在 update 中动态判断）
   }
 
   /**
@@ -94,8 +104,12 @@ export function useBrewAnimation(
     addLeaves.value = damp(addLeaves.value, targets.addLeaves, 2, dt)
     steep.value = damp(steep.value, targets.steep, 1.5, dt)
     pourOut.value = damp(pourOut.value, targets.pourOut, 4, dt)
-    drink.value = damp(drink.value, targets.drink, 1, dt)
+    fairnessPour.value = damp(fairnessPour.value, targets.fairnessPour, 2.5, dt)
+    // 喝茶：分茶完成 70% 后才触发，确保先分茶再喝茶
+    const drinkTarget =
+      targets.fairnessPour === 1 && fairnessPour.value > 0.7 ? 1 : 0
+    drink.value = damp(drink.value, drinkTarget, 1, dt)
   }
 
-  return { pourWater, addLeaves, steep, pourOut, drink, update }
+  return { pourWater, addLeaves, steep, pourOut, fairnessPour, drink, update }
 }

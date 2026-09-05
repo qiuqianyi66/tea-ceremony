@@ -133,16 +133,44 @@ const legPositions: THREE.Vector3[] = [
   new THREE.Vector3(-2, 0.55, 0.9),
   new THREE.Vector3(2, 0.55, 0.9),
 ]
-const gaiwanPos = new THREE.Vector3(0.85, 1.19, 0)
+const gaiwanPos = new THREE.Vector3(-0.15, 1.19, 0)
 const gaiwanScale = new THREE.Vector3(0.24, 0.24, 0.24)
 const liquidPos = new THREE.Vector3(0, 0.68, 0)
 // 盖碗盖子位置（闷泡时下移盖上碗口）
 const lidPosition = computed(() =>
   new THREE.Vector3(0, 0.98 - 0.3 * smoothstep(anim.steep.value), 0),
 )
-// 品茗杯（黑釉，倒茶/喝茶动画用）
-const teacupPos = new THREE.Vector3(1.5, 1.19, 0.4)
-const teacupScale = new THREE.Vector3(0.45, 0.45, 0.45)
+
+// ==================== 公道杯（茶海，玻璃材质，出汤→分茶用） ====================
+const fairnessPos = new THREE.Vector3(0.55, 1.19, 0.25)
+const fairnessScale = new THREE.Vector3(0.28, 0.28, 0.28)
+const fairnessPts = [
+  new THREE.Vector2(0, 0),
+  new THREE.Vector2(0.3, 0.02),
+  new THREE.Vector2(0.42, 0.1),
+  new THREE.Vector2(0.45, 0.35),
+  new THREE.Vector2(0.42, 0.5),
+  new THREE.Vector2(0.35, 0.55),
+]
+const fairnessSpoutPos = new THREE.Vector3(0.48, 0.35, 0)
+const fairnessHandlePos = new THREE.Vector3(-0.45, 0.3, 0)
+const fairnessLiquidPos = new THREE.Vector3(0, 0.3, 0)
+// 公道杯液面（出汤时上升，分茶时下降）
+const fairnessLiquidScale = computed(() => {
+  const poured = 0.1 + smoothstep(anim.pourOut.value) * 0.8
+  const pouredOut = smoothstep(anim.fairnessPour.value) * 0.7
+  return new THREE.Vector3(1, Math.max(0.05, poured - pouredOut), 1)
+})
+const fairnessLiquidOpacity = computed(() => Math.min(1, anim.pourOut.value * 2))
+// 公道杯旋转（分茶时向品茗杯倾斜）
+const fairnessRotation = computed<[number, number, number]>(() => [
+  0,
+  0,
+  0.45 * smoothstep(anim.fairnessPour.value),
+])
+
+// ==================== 品茗杯×3（黑釉，公道杯前方一字排开） ====================
+const teacupScale = new THREE.Vector3(0.3, 0.3, 0.3)
 const teacupPts = [
   new THREE.Vector2(0, 0),
   new THREE.Vector2(0.28, 0.02),
@@ -151,35 +179,45 @@ const teacupPts = [
   new THREE.Vector2(0.34, 0.38),
   new THREE.Vector2(0.25, 0.42),
 ]
+const teacupPositions: THREE.Vector3[] = [
+  new THREE.Vector3(1.1, 1.19, 0.5),
+  new THREE.Vector3(1.35, 1.19, 0.05),
+  new THREE.Vector3(1.1, 1.19, -0.4),
+]
 const teacupLiquidPos = new THREE.Vector3(0, 0.2, 0)
-// 品茗杯液面（倒茶时上升，喝茶时减少）
+// 品茗杯液面（分茶时上升，喝茶时减少）
 const teacupLiquidScale = computed(() => {
-  const poured = 0.1 + smoothstep(anim.pourOut.value) * 0.8
+  const poured = 0.1 + smoothstep(anim.fairnessPour.value) * 0.7
   const drunk = smoothstep(anim.drink.value) * 0.3
   return new THREE.Vector3(1, Math.max(0.05, poured - drunk), 1)
 })
-const teacupLiquidOpacity = computed(() => Math.min(1, anim.pourOut.value * 2))
-// 品茗杯位置（喝茶时端起：向上+向相机方向移动）
-const teacupPosition = computed(() =>
-  teacupPos.clone().add(
-    new THREE.Vector3(
-      0,
-      0.3 * smoothstep(anim.drink.value),
-      -0.2 * smoothstep(anim.drink.value),
-    ),
+const teacupLiquidOpacity = computed(() => Math.min(1, anim.fairnessPour.value * 2))
+// 品茗杯喝茶时的位移偏移（向上+向相机方向）
+const teacupDrinkOffset = computed(() =>
+  new THREE.Vector3(
+    0,
+    0.25 * smoothstep(anim.drink.value),
+    -0.15 * smoothstep(anim.drink.value),
   ),
 )
-// 品茗杯旋转（喝茶时向后倾斜模拟端起）
-const teacupRotation = computed<[number, number, number]>(() => [
-  0.2 * smoothstep(anim.drink.value),
+// 品茗杯喝茶时的旋转（向后倾斜模拟端起）
+const teacupDrinkRotation = computed<[number, number, number]>(() => [
+  0.15 * smoothstep(anim.drink.value),
   0,
   0,
 ])
-// 茶汤水流位置：盖碗碗口到品茗杯中心的中点（倒茶动画）
-const teaStreamPos = computed(() => {
+
+// 出汤水流位置：盖碗碗口到公道杯中心的中点（出汤动画）
+const pourOutStreamPos = computed(() => {
   const gaiwanSpout = new THREE.Vector3(gaiwanPos.x + 0.3, gaiwanPos.y + 0.4, gaiwanPos.z)
-  const teacupCenter = new THREE.Vector3(teacupPos.x, teacupPos.y + 0.2, teacupPos.z)
-  return gaiwanSpout.clone().add(teacupCenter).multiplyScalar(0.5)
+  const fairnessCenter = new THREE.Vector3(fairnessPos.x, fairnessPos.y + 0.3, fairnessPos.z)
+  return gaiwanSpout.clone().add(fairnessCenter).multiplyScalar(0.5)
+})
+// 分茶水流位置：公道杯壶嘴到中间品茗杯中心的中点（分茶动画）
+const fairnessStreamPos = computed(() => {
+  const fairnessSpout = new THREE.Vector3(fairnessPos.x + 0.4, fairnessPos.y + 0.35, fairnessPos.z)
+  const teacupCenter = teacupPositions[1]!.clone().add(new THREE.Vector3(0, 0.15, 0))
+  return fairnessSpout.clone().add(teacupCenter).multiplyScalar(0.5)
 })
 const kettlePos = new THREE.Vector3(-1.15, 1.465, 0)
 const kettleScale = new THREE.Vector3(0.24, 0.24, 0.24)
@@ -731,8 +769,60 @@ onRender(({ delta, elapsed }) => {
     <TresMeshStandardMaterial :color="'#8b6f47'" :roughness="0.6" />
   </TresMesh>
 
-  <!-- 品茗杯（黑釉，倒茶/喝茶动画用） -->
-  <TresGroup :position="teacupPosition" :scale="teacupScale" :rotation="teacupRotation">
+  <!-- 公道杯（茶海，玻璃材质，出汤→分茶用） -->
+  <TresGroup :position="fairnessPos" :scale="fairnessScale" :rotation="fairnessRotation">
+    <!-- 杯身（玻璃） -->
+    <TresMesh>
+      <TresLatheGeometry :args="[fairnessPts, 32]" />
+      <TresMeshStandardMaterial
+        :color="'#e8f0f5'"
+        :roughness="0.05"
+        :metalness="0.1"
+        :transparent="true"
+        :opacity="0.35"
+        :side="THREE.DoubleSide"
+      />
+    </TresMesh>
+    <!-- 壶嘴 -->
+    <TresMesh :position="fairnessSpoutPos" :rotation="[0, 0, -0.5]">
+      <TresCylinderGeometry :args="[0.06, 0.1, 0.4, 12]" />
+      <TresMeshStandardMaterial
+        :color="'#e8f0f5'"
+        :roughness="0.05"
+        :transparent="true"
+        :opacity="0.35"
+      />
+    </TresMesh>
+    <!-- 把手 -->
+    <TresMesh :position="fairnessHandlePos" :rotation="[0, 0, Math.PI / 2]">
+      <TresTorusGeometry :args="[0.2, 0.04, 12, 24, Math.PI * 1.2]" />
+      <TresMeshStandardMaterial
+        :color="'#e8f0f5'"
+        :roughness="0.05"
+        :transparent="true"
+        :opacity="0.35"
+      />
+    </TresMesh>
+    <!-- 杯内茶汤（出汤时上升，分茶时下降） -->
+    <TresMesh :position="fairnessLiquidPos" :scale="fairnessLiquidScale">
+      <TresCylinderGeometry :args="[0.38, 0.4, 0.05, 32]" />
+      <TresMeshStandardMaterial
+        :color="props.soupColor"
+        :roughness="0.2"
+        :transparent="true"
+        :opacity="fairnessLiquidOpacity"
+      />
+    </TresMesh>
+  </TresGroup>
+
+  <!-- 品茗杯×3（黑釉，公道杯前方一字排开，分茶/喝茶动画用） -->
+  <TresGroup
+    v-for="(pos, i) in teacupPositions"
+    :key="i"
+    :position="pos.clone().add(teacupDrinkOffset)"
+    :scale="teacupScale"
+    :rotation="teacupDrinkRotation"
+  >
     <!-- 杯身 -->
     <TresMesh>
       <TresLatheGeometry :args="[teacupPts, 32]" />
@@ -742,7 +832,7 @@ onRender(({ delta, elapsed }) => {
         :metalness="0.15"
       />
     </TresMesh>
-    <!-- 杯内茶汤（初始空杯，倒茶时显示） -->
+    <!-- 杯内茶汤（分茶时上升，喝茶时减少） -->
     <TresMesh :position="teacupLiquidPos" :scale="teacupLiquidScale">
       <TresCylinderGeometry :args="[0.32, 0.34, 0.04, 32]" />
       <TresMeshStandardMaterial
@@ -754,17 +844,31 @@ onRender(({ delta, elapsed }) => {
     </TresMesh>
   </TresGroup>
 
-  <!-- 茶汤水流（从盖碗到品茗杯，倒茶动画） -->
+  <!-- 出汤水流（盖碗→公道杯，出汤动画） -->
   <TresMesh
-    :position="teaStreamPos"
+    :position="pourOutStreamPos"
     :rotation="[0, 0, Math.PI / 2]"
     :visible="anim.pourOut.value > 0.05"
   >
-    <TresCylinderGeometry :args="[0.02, 0.035, 1.2, 8]" />
+    <TresCylinderGeometry :args="[0.02, 0.035, 1.0, 8]" />
     <TresMeshBasicMaterial
       :color="props.soupColor"
       :transparent="true"
       :opacity="0.8 * anim.pourOut.value"
+    />
+  </TresMesh>
+
+  <!-- 分茶水流（公道杯→品茗杯，分茶动画） -->
+  <TresMesh
+    :position="fairnessStreamPos"
+    :rotation="[0, 0, Math.PI / 2]"
+    :visible="anim.fairnessPour.value > 0.05"
+  >
+    <TresCylinderGeometry :args="[0.015, 0.025, 0.9, 8]" />
+    <TresMeshBasicMaterial
+      :color="props.soupColor"
+      :transparent="true"
+      :opacity="0.7 * anim.fairnessPour.value"
     />
   </TresMesh>
 
