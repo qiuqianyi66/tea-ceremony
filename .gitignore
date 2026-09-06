@@ -48,6 +48,9 @@ __pycache__/
 # Python virtualenv
 .venv/
 
+# Codex CLI 本地技能（未入库，见 AGENTS.md §3.1）
+.codex/
+
 # Playwright
 test-results/
 playwright-report/
