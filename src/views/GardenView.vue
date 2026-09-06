@@ -2,8 +2,8 @@
 /**
  * 茶园页面
  * /garden：地区选择
- * /garden/:regionId：某地区茶园（种茶/浇水/养护）
- * 真实茶山场景背景，14天生长周期，真实时间计算
+ * /garden/:regionId：某地区茶园（3D真实感茶山 + 种茶/浇水/养护）
+ * 14天真实生长周期，打开页面即更新
  */
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -13,10 +13,10 @@ import {
   plantTea, waterPlant, prunePlant, getPlantsByRegion,
   getGrowthStage, getGrowthStageInfo, getCurrentWaterLevel,
   getPlantDays, isGrowthPaused, refreshAllPlantStatuses,
-  GROWTH_STAGES,
 } from '@/services/garden'
 import type { PlantedTea, GardenRegion } from '@/types/garden'
 import type { Tea } from '@/types/tea'
+import TeaGardenScene3D from '@/components/three/TeaGardenScene3D.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -39,6 +39,8 @@ const regionTeas = computed<Tea[]>(() => {
     .map(id => getTeaById(id))
     .filter((t): t is Tea => t !== undefined)
 })
+
+const matureCount = computed(() => plants.value.filter(p => getGrowthStage(p) === 'mature').length)
 
 async function loadPlants() {
   if (!regionId.value) return
@@ -69,7 +71,6 @@ async function doWater() {
   if (!selectedPlant.value?.id) return
   await waterPlant(selectedPlant.value.id)
   await loadPlants()
-  // 更新选中的植物
   const updated = plants.value.find(p => p.id === selectedPlant.value?.id)
   if (updated) selectedPlant.value = updated
 }
@@ -86,14 +87,8 @@ function getPlantTea(plant: PlantedTea): Tea | undefined {
   return getTeaById(plant.teaId)
 }
 
-function getPlantPosition(index: number, total: number): { left: string; top: string } {
-  // 茶树在茶园区域的位置，分散排列
-  const cols = Math.ceil(Math.sqrt(total))
-  const row = Math.floor(index / cols)
-  const col = index % cols
-  const left = 10 + (col / Math.max(1, cols - 1)) * 80 + (Math.random() - 0.5) * 5
-  const top = 15 + (row / Math.max(1, Math.ceil(total / cols) - 1)) * 65 + (Math.random() - 0.5) * 5
-  return { left: `${Math.max(5, Math.min(90, left))}%`, top: `${Math.max(10, Math.min(85, top))}%` }
+function getStageLabel(plant: PlantedTea): string {
+  return getGrowthStageInfo(plant)?.label ?? '—'
 }
 
 onMounted(() => {
@@ -124,89 +119,49 @@ onMounted(() => {
     </div>
   </div>
 
-  <!-- 地区茶园视图 -->
-  <div v-else-if="currentRegion" class="region-garden">
-    <div class="garden-bg" :style="{ backgroundImage: `url(${currentRegion.backgroundImage})` }"></div>
-    <div class="garden-bg-overlay"></div>
+  <!-- 地区茶园视图：3D真实感茶山 -->
+  <div v-else-if="currentRegion" class="region-garden-3d">
+    <!-- 3D场景全屏 -->
+    <TeaGardenScene3D />
 
-    <div class="garden-topbar">
-      <button class="back-btn" @click="router.push('/garden')">← 茶园</button>
-      <div class="garden-title-area">
-        <h1 class="garden-name">{{ currentRegion.name }}</h1>
-        <p class="garden-stats">已种 {{ plants.length }} 棵 · {{ plants.filter(p => getGrowthStage(p) === 'mature').length }} 棵可采</p>
+    <!-- 顶部栏叠加（毛玻璃） -->
+    <div class="garden-topbar-3d">
+      <button class="back-btn-3d" @click="router.push('/garden')">← 茶园</button>
+      <div class="garden-title-area-3d">
+        <h1 class="garden-name-3d">{{ currentRegion.name }}</h1>
+        <p class="garden-stats-3d">已种 {{ plants.length }} 棵 · {{ matureCount }} 棵可采</p>
       </div>
-      <button class="plant-btn" @click="openPlantDialog">+ 种茶</button>
+      <button class="plant-btn-3d" @click="openPlantDialog">+ 种茶</button>
     </div>
 
-    <!-- 茶园区域 -->
-    <div class="garden-field">
-      <div v-for="(plant, idx) in plants" :key="plant.id"
-        class="tea-plant"
-        :class="[getGrowthStage(plant), plant.status]"
-        :style="getPlantPosition(idx, plants.length)"
-        @click="openPlantDetail(plant)">
-        <!-- 茶树 SVG：不同生长阶段不同大小 -->
-        <svg v-if="plant.status !== 'dead'" viewBox="0 0 100 120" class="plant-svg">
-          <!-- 树干 -->
-          <path d="M50 115 L50 70" stroke="#5d4e37" stroke-width="6" stroke-linecap="round" fill="none"/>
-          <!-- 枝叶：根据生长阶段 -->
-          <g v-if="getGrowthStage(plant) === 'sprout'">
-            <ellipse cx="42" cy="62" rx="8" ry="4" fill="#7cb342" transform="rotate(-30 42 62)"/>
-            <ellipse cx="58" cy="62" rx="8" ry="4" fill="#7cb342" transform="rotate(30 58 62)"/>
-          </g>
-          <g v-else-if="getGrowthStage(plant) === 'seedling'">
-            <path d="M50 70 L35 50" stroke="#5d4e37" stroke-width="3" fill="none"/>
-            <path d="M50 70 L65 50" stroke="#5d4e37" stroke-width="3" fill="none"/>
-            <ellipse cx="30" cy="45" rx="10" ry="5" fill="#6b8e23" transform="rotate(-25 30 45)"/>
-            <ellipse cx="70" cy="45" rx="10" ry="5" fill="#6b8e23" transform="rotate(25 70 45)"/>
-            <ellipse cx="50" cy="38" rx="9" ry="5" fill="#7cb342"/>
-          </g>
-          <g v-else-if="getGrowthStage(plant) === 'growing'">
-            <path d="M50 70 L30 45" stroke="#5d4e37" stroke-width="3" fill="none"/>
-            <path d="M50 70 L70 45" stroke="#5d4e37" stroke-width="3" fill="none"/>
-            <path d="M50 55 L40 30" stroke="#5d4e37" stroke-width="2.5" fill="none"/>
-            <path d="M50 55 L60 30" stroke="#5d4e37" stroke-width="2.5" fill="none"/>
-            <ellipse cx="25" cy="40" rx="11" ry="6" fill="#558b2f" transform="rotate(-20 25 40)"/>
-            <ellipse cx="75" cy="40" rx="11" ry="6" fill="#558b2f" transform="rotate(20 75 40)"/>
-            <ellipse cx="35" cy="25" rx="10" ry="5" fill="#6b8e23" transform="rotate(-35 35 25)"/>
-            <ellipse cx="65" cy="25" rx="10" ry="5" fill="#6b8e23" transform="rotate(35 65 25)"/>
-            <ellipse cx="50" cy="18" rx="9" ry="5" fill="#7cb342"/>
-          </g>
-          <g v-else><!-- mature -->
-            <path d="M50 70 L28 42" stroke="#5d4e37" stroke-width="3.5" fill="none"/>
-            <path d="M50 70 L72 42" stroke="#5d4e37" stroke-width="3.5" fill="none"/>
-            <path d="M50 55 L35 25" stroke="#5d4e37" stroke-width="3" fill="none"/>
-            <path d="M50 55 L65 25" stroke="#5d4e37" stroke-width="3" fill="none"/>
-            <path d="M50 40 L42 15" stroke="#5d4e37" stroke-width="2" fill="none"/>
-            <path d="M50 40 L58 15" stroke="#5d4e37" stroke-width="2" fill="none"/>
-            <ellipse cx="22" cy="37" rx="12" ry="7" fill="#33691e" transform="rotate(-15 22 37)"/>
-            <ellipse cx="78" cy="37" rx="12" ry="7" fill="#33691e" transform="rotate(15 78 37)"/>
-            <ellipse cx="30" cy="20" rx="11" ry="6" fill="#558b2f" transform="rotate(-30 30 20)"/>
-            <ellipse cx="70" cy="20" rx="11" ry="6" fill="#558b2f" transform="rotate(30 70 20)"/>
-            <ellipse cx="50" cy="10" rx="10" ry="6" fill="#6b8e23"/>
-            <!-- 新芽标记 -->
-            <circle cx="50" cy="8" r="3" fill="#aed581"/>
-            <circle cx="38" cy="14" r="2.5" fill="#c5e1a5"/>
-            <circle cx="62" cy="14" r="2.5" fill="#c5e1a5"/>
-          </g>
-        </svg>
-        <!-- 枯萎 -->
-        <svg v-else viewBox="0 0 100 120" class="plant-svg dead-svg">
-          <path d="M50 115 L50 60" stroke="#6d5c4a" stroke-width="5" stroke-linecap="round" fill="none"/>
-          <path d="M50 75 L35 55" stroke="#6d5c4a" stroke-width="3" fill="none"/>
-          <path d="M50 75 L65 55" stroke="#6d5c4a" stroke-width="3" fill="none"/>
-          <path d="M50 60 L40 40" stroke="#6d5c4a" stroke-width="2" fill="none"/>
-        </svg>
-        <!-- 茶树名牌 -->
-        <div class="plant-label">{{ getPlantTea(plant)?.name ?? '茶' }}</div>
-        <!-- 缺水警告 -->
-        <div v-if="isGrowthPaused(plant) && plant.status === 'growing'" class="water-warning">💧</div>
+    <!-- 底部茶树列表 -->
+    <div class="plant-list-bar">
+      <div v-if="plants.length === 0 && !loading" class="empty-hint" @click="openPlantDialog">
+        <span class="empty-icon">🌱</span>
+        <span>这片茶山还空着，点击种下第一棵茶</span>
       </div>
-
-      <!-- 空地提示 -->
-      <div v-if="plants.length === 0 && !loading" class="empty-field" @click="openPlantDialog">
-        <p class="empty-icon">🌱</p>
-        <p class="empty-text">这片茶山还空着，点击种下第一棵茶</p>
+      <div v-else class="plant-list-scroll">
+        <div v-for="plant in plants" :key="plant.id"
+          class="plant-card"
+          :class="{ dead: plant.status === 'dead', mature: getGrowthStage(plant) === 'mature' }"
+          @click="openPlantDetail(plant)">
+          <div class="plant-card-top">
+            <span class="plant-card-name">{{ getPlantTea(plant)?.name ?? '茶' }}</span>
+            <span class="plant-card-stage" :class="getGrowthStage(plant)">{{ getStageLabel(plant) }}</span>
+          </div>
+          <div class="plant-card-water">
+            <div class="water-bar-bg">
+              <div class="water-bar-fill" :style="{ width: `${Math.round(getCurrentWaterLevel(plant))}%` }"
+                :class="{ low: getCurrentWaterLevel(plant) < 30 }"></div>
+            </div>
+            <span class="water-text">{{ Math.round(getCurrentWaterLevel(plant)) }}%</span>
+          </div>
+          <div class="plant-card-bottom">
+            <span class="plant-days">{{ getPlantDays(plant).toFixed(1) }}天</span>
+            <span v-if="isGrowthPaused(plant) && plant.status === 'growing'" class="water-alert">💧缺水</span>
+            <span v-if="plant.status === 'dead'" class="dead-text">已枯萎</span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -331,82 +286,202 @@ onMounted(() => {
 }
 .region-climate { font-size: 0.7rem; color: rgba(245,241,230,0.4); margin: 0; }
 
-/* 地区茶园 */
-.region-garden {
+/* ========== 3D茶园视图 ========== */
+.region-garden-3d {
   position: relative;
-  min-height: 100vh;
+  width: 100vw;
+  height: 100vh;
   overflow: hidden;
-}
-.garden-bg {
-  position: absolute; inset: 0;
-  background-size: cover; background-position: center;
-}
-.garden-bg-overlay {
-  position: absolute; inset: 0;
-  background: linear-gradient(to bottom, rgba(13,20,16,0.5) 0%, rgba(13,20,16,0.2) 30%, rgba(13,20,16,0.6) 100%);
+  background: #87a5c4;
 }
 
-.garden-topbar {
-  position: relative; z-index: 10;
-  display: flex; align-items: center; justify-content: space-between;
+/* 顶部栏（毛玻璃叠加） */
+.garden-topbar-3d {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 1rem 1.5rem;
+  background: rgba(13, 20, 16, 0.35);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(245, 241, 230, 0.1);
+}
+.back-btn-3d {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(245,241,230,0.2);
+  color: #f5f1e6;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: inherit;
+}
+.back-btn-3d:hover { background: rgba(255,255,255,0.2); }
+.garden-title-area-3d { text-align: center; }
+.garden-name-3d {
+  font-size: 1.15rem;
+  font-weight: 500;
+  margin: 0;
+  color: #f5f1e6;
+  letter-spacing: 0.08em;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
+.garden-stats-3d {
+  font-size: 0.72rem;
+  color: rgba(245,241,230,0.6);
+  margin: 0.2rem 0 0;
+}
+.plant-btn-3d {
+  background: rgba(201,169,110,0.9);
+  border: none;
+  color: #1a2420;
+  padding: 0.5rem 1.2rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: inherit;
+}
+.plant-btn-3d:hover { background: #c9a96e; }
+
+/* 底部茶树列表 */
+.plant-list-bar {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  z-index: 10;
+  padding: 1rem;
+  background: linear-gradient(to top, rgba(13,20,16,0.6) 0%, transparent 100%);
+}
+.empty-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  background: rgba(13,20,16,0.5);
+  backdrop-filter: blur(8px);
+  border: 1px dashed rgba(201,169,110,0.4);
+  border-radius: 12px;
+  padding: 1rem;
+  color: rgba(245,241,230,0.7);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.empty-hint:hover {
+  border-color: rgba(201,169,110,0.7);
+  background: rgba(13,20,16,0.7);
+}
+.empty-icon { font-size: 1.2rem; }
+
+.plant-list-scroll {
+  display: flex;
+  gap: 0.7rem;
+  overflow-x: auto;
+  padding: 0.3rem 0.2rem 0.5rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(201,169,110,0.3) transparent;
+}
+.plant-list-scroll::-webkit-scrollbar { height: 4px; }
+.plant-list-scroll::-webkit-scrollbar-thumb { background: rgba(201,169,110,0.3); border-radius: 2px; }
+
+.plant-card {
+  flex-shrink: 0;
+  width: 160px;
+  background: rgba(13,20,16,0.55);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(245,241,230,0.12);
+  border-radius: 12px;
+  padding: 0.7rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.plant-card:hover {
+  border-color: rgba(201,169,110,0.5);
+  transform: translateY(-2px);
+}
+.plant-card.mature { border-color: rgba(174,213,129,0.5); }
+.plant-card.dead { opacity: 0.6; border-color: rgba(139,69,19,0.4); }
+
+.plant-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+.plant-card-name {
+  font-size: 0.85rem;
+  font-weight: 500;
   color: #f5f1e6;
 }
-.back-btn {
-  background: rgba(0,0,0,0.3); border: 1px solid rgba(245,241,230,0.2);
-  color: #f5f1e6; padding: 0.5rem 1rem; border-radius: 999px;
-  font-size: 0.85rem; cursor: pointer; transition: background 0.2s;
+.plant-card-stage {
+  font-size: 0.62rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(201,169,110,0.15);
+  color: #c9a96e;
 }
-.back-btn:hover { background: rgba(0,0,0,0.5); }
-.garden-title-area { text-align: center; }
-.garden-name { font-size: 1.2rem; font-weight: 500; margin: 0; letter-spacing: 0.1em; }
-.garden-stats { font-size: 0.72rem; color: rgba(245,241,230,0.6); margin: 0.2rem 0 0; }
-.plant-btn {
-  background: rgba(201,169,110,0.9); border: none;
-  color: #1a2420; padding: 0.5rem 1.2rem; border-radius: 999px;
-  font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: background 0.2s;
-}
-.plant-btn:hover { background: #c9a96e; }
+.plant-card-stage.sprout { background: rgba(124,179,66,0.15); color: #7cb342; }
+.plant-card-stage.seedling { background: rgba(107,142,35,0.15); color: #aed581; }
+.plant-card-stage.growing { background: rgba(85,139,47,0.15); color: #9ccc65; }
+.plant-card-stage.mature { background: rgba(174,213,129,0.2); color: #aed581; }
+.plant-card-stage.recovery { background: rgba(184,134,11,0.15); color: #daa520; }
 
-/* 茶园区域 */
-.garden-field {
-  position: relative; z-index: 5;
-  height: calc(100vh - 80px);
+.plant-card-water {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.4rem;
 }
-.tea-plant {
-  position: absolute;
-  width: 80px;
-  cursor: pointer;
-  transition: transform 0.2s;
-  text-align: center;
+.water-bar-bg {
+  flex: 1;
+  height: 5px;
+  background: rgba(245,241,230,0.1);
+  border-radius: 3px;
+  overflow: hidden;
 }
-.tea-plant:hover { transform: scale(1.1); }
-.plant-svg { width: 100%; height: auto; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4)); }
-.dead-svg { opacity: 0.7; }
-.plant-label {
-  font-size: 0.65rem; color: #f5f1e6;
-  background: rgba(0,0,0,0.5); padding: 0.15rem 0.5rem;
-  border-radius: 999px; display: inline-block; margin-top: -8px;
-  white-space: nowrap;
+.water-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4fc3f7, #29b6f6);
+  border-radius: 3px;
+  transition: width 0.3s;
 }
-.water-warning {
-  position: absolute; top: -8px; right: -4px;
-  font-size: 1rem; animation: bounce 1s infinite;
-}
-@keyframes bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
+.water-bar-fill.low { background: linear-gradient(90deg, #ef5350, #e53935); }
+.water-text {
+  font-size: 0.68rem;
+  color: rgba(245,241,230,0.5);
+  min-width: 28px;
+  text-align: right;
 }
 
-.empty-field {
-  position: absolute; top: 50%; left: 50%;
-  transform: translate(-50%, -50%); text-align: center;
-  cursor: pointer; color: #f5f1e6;
+.plant-card-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
-.empty-icon { font-size: 3rem; margin: 0 0 1rem; }
-.empty-text { font-size: 0.9rem; color: rgba(245,241,230,0.7); margin: 0; }
+.plant-days {
+  font-size: 0.68rem;
+  color: rgba(245,241,230,0.45);
+}
+.water-alert {
+  font-size: 0.65rem;
+  color: #ef5350;
+  animation: pulse 1.5s infinite;
+}
+.dead-text {
+  font-size: 0.65rem;
+  color: #8d6e63;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
 
-/* 弹窗 */
+/* ========== 弹窗 ========== */
 .dialog-mask {
   position: fixed; inset: 0; z-index: 100;
   background: rgba(0,0,0,0.6);
@@ -414,11 +489,15 @@ onMounted(() => {
   padding: 1rem;
 }
 .dialog {
-  background: #1a2420; border: 1px solid rgba(201,169,110,0.2);
-  border-radius: 16px; padding: 1.5rem;
-  max-width: 420px; width: 100%;
+  background: #1a2420;
+  border: 1px solid rgba(201,169,110,0.2);
+  border-radius: 16px;
+  padding: 1.5rem;
+  max-width: 420px;
+  width: 100%;
   color: #f5f1e6;
-  max-height: 85vh; overflow-y: auto;
+  max-height: 85vh;
+  overflow-y: auto;
 }
 .dialog-title { font-size: 1.2rem; font-weight: 500; margin: 0 0 0.3rem; }
 .dialog-sub { font-size: 0.78rem; color: rgba(245,241,230,0.5); margin: 0 0 1rem; }
@@ -477,8 +556,8 @@ onMounted(() => {
 }
 
 @media (max-width: 600px) {
-  .garden-topbar { padding: 0.8rem 1rem; }
-  .garden-name { font-size: 1rem; }
-  .tea-plant { width: 60px; }
+  .garden-topbar-3d { padding: 0.7rem 1rem; }
+  .garden-name-3d { font-size: 0.95rem; }
+  .plant-card { width: 140px; }
 }
 </style>
