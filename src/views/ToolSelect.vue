@@ -17,15 +17,35 @@ function selectWare(ware: TeaWare) {
   store.selectTeaWare(ware)
 }
 
+// 备器页是冲泡前唯一的参数设定入口：水温 / 投茶量在此调整后带入冲泡页
+function onTempSlider(value: string) {
+  store.setTargetTemp(parseInt(value))
+}
+
+function onWeightSlider(value: string) {
+  store.setTeaWeight(parseFloat(value))
+}
+
+function backToSelect() {
+  router.push('/select')
+}
+
 function confirm() {
-  if (store.selectedTeaWare) {
-    router.push('/brew')
-  }
+  if (!store.selectedTeaWare) return
+  // 确认备器即开始煮水，再进入全屏冲泡页（冲泡页挂载后接续升温计时）
+  store.startHeating()
+  router.push('/brew')
 }
 </script>
 
 <template>
   <div class="min-h-screen p-4 sm:p-8 flex flex-col items-center">
+    <button
+      @click="backToSelect"
+      class="self-start mb-2 text-sm text-[var(--color-wood-light)] hover:text-[var(--color-wood)] transition-colors"
+    >
+      ← 返回选茶
+    </button>
     <h2 class="text-3xl font-bold text-[var(--color-wood)] mb-2">备器 · 择水</h2>
     <p class="text-lg text-[var(--color-wood)] mb-1">
       {{ currentTeaName }}
@@ -78,6 +98,47 @@ function confirm() {
           <p class="text-sm font-bold text-[var(--color-wood)]">{{ w.name }}</p>
           <p class="text-xs text-[var(--color-wood-light)] mt-1">{{ w.description }}</p>
         </button>
+      </div>
+    </div>
+
+    <!-- 目标水温 -->
+    <div class="w-full max-w-lg mb-8">
+      <h3 class="text-base font-bold text-[var(--color-wood)] mb-3">🌡️ 目标水温</h3>
+      <label class="block text-sm text-[var(--color-wood)] mb-2">
+        目标水温：<strong>{{ store.brewState.targetTemp }}°C</strong>
+        <span v-if="store.currentTea" class="text-[var(--color-tea-gold)]">
+          （建议 {{ store.currentTea.bestTemp }}°C）
+        </span>
+      </label>
+      <input
+        type="range" min="20" max="100" step="1"
+        :value="store.brewState.targetTemp"
+        @input="onTempSlider(($event.target as HTMLInputElement).value)"
+        class="w-full h-2 bg-[var(--color-paper)] rounded-lg appearance-none cursor-pointer"
+      />
+      <div class="flex justify-between text-xs text-[var(--color-wood-light)] mt-1">
+        <span>20°C</span>
+        <span class="text-[var(--color-tea-gold)]">{{ store.currentTea?.bestTemp }}°C 最佳</span>
+        <span>100°C</span>
+      </div>
+    </div>
+
+    <!-- 投茶量 -->
+    <div class="w-full max-w-lg mb-8">
+      <h3 class="text-base font-bold text-[var(--color-wood)] mb-3">🍃 投茶量</h3>
+      <label class="block text-sm text-[var(--color-wood)] mb-2">
+        投茶量：<strong>{{ store.brewState.teaWeight }}g</strong>
+        <span class="text-[var(--color-tea-gold)]">（建议 3g）</span>
+      </label>
+      <input
+        type="range" min="1" max="8" step="0.5"
+        :value="store.brewState.teaWeight"
+        @input="onWeightSlider(($event.target as HTMLInputElement).value)"
+        class="w-full h-2 bg-[var(--color-paper)] rounded-lg appearance-none cursor-pointer"
+      />
+      <div class="flex justify-between text-xs text-[var(--color-wood-light)]">
+        <span>1g</span>
+        <span>8g</span>
       </div>
     </div>
 

@@ -84,7 +84,7 @@ const router = createRouter({
 
 router.beforeEach((to) => {
   const teaStore = useTeaStore()
-  if ((to.name === 'brew' || to.name === 'taste') && !teaStore.currentTea) {
+  if ((to.name === 'brew' || to.name === 'taste' || to.name === 'tools') && !teaStore.currentTea) {
     return { name: 'select' }
   }
 })

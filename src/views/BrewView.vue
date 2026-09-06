@@ -3,10 +3,7 @@ import { ref, computed, watch, onUnmounted, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTeaStore } from '@/stores/tea'
 import { getSoupColor } from '@/data/teas'
-import { WATER_TYPES } from '@/data/constants'
-import { teawares } from '@/data/teawares'
 import { BrewPhase } from '@/types/brewing'
-import type { TeaWare } from '@/types/teaware'
 import { useParticleSystem } from '@/composables/useParticles'
 import { useAudio } from '@/composables/useAudio'
 import TeaBrewScene3D from '@/components/three/TeaBrewScene3D.vue'
@@ -90,6 +87,15 @@ watch(() => store.brewState.currentTemp, (temp) => {
 let mountedTimer: ReturnType<typeof setTimeout> | null = null
 
 onMounted(() => {
+  // 备器（选器/水温/投茶量）已拆分到 /tools：若未经备器页直达 /brew（如刷新），引导回备器页
+  if (store.brewState.phase === BrewPhase.IDLE) {
+    router.replace('/tools')
+    return
+  }
+  // 从备器页「开始煮水」进入时 phase 已是 HEATING，由本页接续升温定时器
+  if (store.brewState.phase === BrewPhase.HEATING) {
+    ensureHeatingInterval()
+  }
   // 给 container 一点时间挂载
   mountedTimer = setTimeout(() => {
     particlesStarted = true
@@ -178,21 +184,13 @@ const isIdle = computed(() => store.brewState.phase === BrewPhase.IDLE)
 const hasTeaWare = computed(() => store.selectedTeaWare !== null)
 const isPouring = computed(() => [BrewPhase.WARMING, BrewPhase.RINSING, BrewPhase.STEEPING].includes(store.brewState.phase))
 
-// ============ 温度控制 ============
-function onTempSlider(value: string) {
-  store.setTargetTemp(parseInt(value))
-}
-
-function onWeightSlider(value: string) {
-  store.setTeaWeight(parseFloat(value))
-}
-
-function startHeating() {
+// ============ 升温计时（备器页已 startHeating，本页挂载后接续递增水温）============
+function ensureHeatingInterval() {
+  if (heatInterval) return
   if (store.brewState.currentTemp >= store.brewState.targetTemp) {
     store.updateTemp(store.brewState.targetTemp)
     return
   }
-  store.startHeating()
   heatInterval = window.setInterval(() => {
     const current = store.brewState.currentTemp
     const target = store.brewState.targetTemp
@@ -209,10 +207,11 @@ function stopHeating() {
   }
 }
 
-// ============ 茶器选择 ============
-function selectWare(ware: TeaWare) {
-  if (!store.isTeaWareUnlocked(ware.id)) return  // 未解锁不可选
-  store.selectTeaWare(ware)
+// 返回备器页调整茶器/参数：停止升温并回到 IDLE（resetBrew 保留已选茶器与水温/投茶量）
+function backToSetup() {
+  stopHeating()
+  store.resetBrew()
+  router.push('/tools')
 }
 
 // ============ 冲泡阶段控制 ============
@@ -305,7 +304,8 @@ function handleMainAction() {
   const phase = store.brewState.phase
 
   if (phase === BrewPhase.IDLE) {
-    startHeating()
+    // 正常不会到达（onMounted 已重定向），兜底回备器页
+    backToSetup()
   } else if (phase === BrewPhase.WARMING) {
     handleWarming()
   } else if (phase === BrewPhase.READY) {
@@ -394,101 +394,6 @@ const phaseDescription = computed(() => {
         </div>
         <span :class="index <= ceremonyStepIndex ? 'text-[var(--color-wood)]' : 'text-[var(--color-wood-light)]/50'">{{ step.label }}</span>
         <div v-if="index < ceremonySteps.length - 1" class="ceremony-line" :class="{ filled: index < ceremonyStepIndex }"></div>
-      </div>
-    </div>
-
-    <!-- ======== IDLE：茶器选择 + 参数设定 ======== -->
-    <div v-if="isIdle" class="w-full max-w-lg mb-6">
-      <p class="text-sm text-[var(--color-wood)] mb-3">选择茶器：</p>
-      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        <button
-          v-for="ware in teawares" :key="ware.id"
-          @click="selectWare(ware)"
-          class="p-3 rounded-xl border-2 transition-all text-center relative"
-          :class="[
-            !store.isTeaWareUnlocked(ware.id)
-              ? 'border-transparent bg-gray-100 opacity-60 cursor-not-allowed'
-              : store.selectedTeaWare?.id === ware.id
-                ? 'border-[var(--color-tea-gold)] bg-[var(--color-paper)] shadow-md scale-105'
-                : 'border-transparent bg-white hover:shadow-md'
-          ]"
-        >
-          <div v-if="!store.isTeaWareUnlocked(ware.id)" class="absolute inset-0 flex items-center justify-center bg-white/40 rounded-xl z-10">
-            <span class="text-lg">🔒</span>
-          </div>
-          <div class="text-2xl mb-1">
-            {{ ware.id === 'gaiwan' ? '🍵' : ware.id === 'yixing' ? '🫖' : ware.id === 'glass' ? '🥛' : ware.id === 'celadon' ? '🍶' : ware.id === 'duanning' ? '🫖' : '🏺' }}
-          </div>
-          <p class="text-sm font-bold text-[var(--color-wood)]">{{ ware.name }}</p>
-          <p class="text-xs text-[var(--color-wood-light)] mt-1">{{ ware.material }}</p>
-          <p class="text-xs text-[var(--color-wood-light)]">{{ ware.capacity }}ml</p>
-          <p v-if="!store.isTeaWareUnlocked(ware.id)" class="text-[10px] text-[var(--color-tea-gold)] mt-1">{{ ware.unlockHint }}</p>
-        </button>
-      </div>
-
-      <!-- 温度滑块 -->
-      <div class="mt-6">
-        <label class="block text-sm text-[var(--color-wood)] mb-2">
-          目标水温：<strong>{{ store.brewState.targetTemp }}°C</strong>
-          <span v-if="store.currentTea" class="text-[var(--color-tea-gold)]">
-            （建议 {{ store.currentTea.bestTemp }}°C）
-          </span>
-        </label>
-        <input
-          type="range" min="20" max="100" step="1"
-          :value="store.brewState.targetTemp"
-          @input="onTempSlider(($event.target as HTMLInputElement).value)"
-          class="w-full h-2 bg-[var(--color-paper)] rounded-lg appearance-none cursor-pointer"
-        />
-        <div class="flex justify-between text-xs text-[var(--color-wood-light)] mt-1">
-          <span>20°C</span>
-          <span class="text-[var(--color-tea-gold)]">{{ store.currentTea?.bestTemp }}°C 最佳</span>
-          <span>100°C</span>
-        </div>
-      </div>
-
-      <!-- 水源选择 -->
-      <div class="mt-4">
-        <label class="block text-sm text-[var(--color-wood)] mb-2">水源：</label>
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          <button
-            v-for="w in WATER_TYPES" :key="w.id"
-            @click="store.waterType = w.id"
-            class="p-2 rounded-lg text-center transition-all text-sm"
-            :class="store.waterType === w.id
-              ? 'bg-[var(--color-wood)] text-[var(--color-cream)]'
-              : 'bg-[var(--color-paper)] text-[var(--color-wood)] hover:shadow-sm'"
-          >
-            <p class="font-bold">{{ w.name }}</p>
-            <p class="text-[10px] opacity-70">{{ w.description }}</p>
-          </button>
-        </div>
-      </div>
-
-      <!-- 投茶量 -->
-      <div class="mt-4">
-        <label class="block text-sm text-[var(--color-wood)] mb-2">
-          投茶量：<strong>{{ store.brewState.teaWeight }}g</strong>
-          <span class="text-[var(--color-tea-gold)]">（建议 3g）</span>
-        </label>
-        <input
-          type="range" min="1" max="8" step="0.5"
-          :value="store.brewState.teaWeight"
-          @input="onWeightSlider(($event.target as HTMLInputElement).value)"
-          class="w-full h-2 bg-[var(--color-paper)] rounded-lg appearance-none cursor-pointer"
-        />
-        <div class="flex justify-between text-xs text-[var(--color-wood-light)]">
-          <span>1g</span>
-          <span>8g</span>
-        </div>
-      </div>
-
-      <!-- 茶器推荐提示 -->
-      <div v-if="store.selectedTeaWare" class="mt-4 p-3 bg-[var(--color-paper)] rounded-lg">
-        <p class="text-sm text-[var(--color-wood)]">
-          ✅ 已选 <strong>{{ store.selectedTeaWare.name }}</strong>（{{ store.selectedTeaWare.material }}）
-        </p>
-        <p class="text-xs text-[var(--color-wood-light)] mt-1">{{ store.selectedTeaWare.description }}</p>
       </div>
     </div>
 
@@ -647,6 +552,15 @@ const phaseDescription = computed(() => {
           : 'bg-[var(--color-wood)] text-[var(--color-cream)] hover:bg-[var(--color-wood-light)]'"
     >
       {{ mainActionLabel }}
+    </button>
+
+    <!-- ======== 返回备器调整（仅煮水阶段，流程推进后不再回退以免状态错乱）======== -->
+    <button
+      v-if="store.brewState.phase === BrewPhase.HEATING"
+      @click="backToSetup"
+      class="mt-3 text-sm text-[var(--color-wood-light)] hover:text-[var(--color-wood)] transition-colors"
+    >
+      ← 返回调整茶器 / 水温 / 投茶量
     </button>
 
     <!-- ======== 茶器信息 ======== -->
