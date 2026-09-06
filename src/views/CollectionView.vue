@@ -130,7 +130,8 @@ const unlockedWares = computed(() =>
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
         <div v-for="item in teaJournal" :key="item.tea.id"
           class="relative rounded-xl p-3 text-center"
-          :class="item.tasted ? 'glass-panel' : 'bg-white/40 border-2 border-dashed border-[#d8cfc0]'">
+          :class="item.tasted ? 'glass-panel cursor-pointer' : 'bg-white/40 border-2 border-dashed border-[#d8cfc0]'"
+          @click="item.tasted && router.push(`/tea/${item.tea.id}`)">
           <div class="w-full h-12 rounded-lg mb-2"
             :style="item.tasted
               ? { background: `linear-gradient(135deg, ${item.tea.soupColorMin}, ${item.tea.soupColorMax})` }

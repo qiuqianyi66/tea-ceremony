@@ -65,6 +65,11 @@ const router = createRouter({
       component: () => import('../views/TeaProfile.vue'),
     },
     {
+      path: '/tea/:id',
+      name: 'tea-detail',
+      component: () => import('../views/TeaDetailView.vue'),
+    },
+    {
       path: '/history',
       name: 'history',
       component: () => import('../views/HistoryView.vue'),

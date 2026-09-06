@@ -217,7 +217,7 @@ onUnmounted(() => {
         </button>
         <div class="tea-grid">
           <div v-for="tea in recommendedTeas" :key="tea.id" class="tea-card" role="button" tabindex="0"
-            @click="go('/select')" @keydown.enter="go('/select')">
+            @click="go(`/tea/${tea.id}`)" @keydown.enter="go(`/tea/${tea.id}`)">
             <div class="tea-card-top">
               <span class="tea-type">{{ tea.type }}</span>
               <span class="tea-share" role="button" tabindex="0" @click.stop="shareTea(tea)"
