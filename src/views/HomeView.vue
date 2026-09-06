@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useTeaStore } from '@/stores/tea'
 import { getCurrentSolarTerm, getSeasonName } from '@/data/solarTerms'
 import { teas } from '@/data/teas'
 import { TEA_POEMS, type TeaPoem } from '@/data/teaPoems'
@@ -12,7 +13,15 @@ import heroImg from '@/assets/tea-mountain-hero.jpg'
 
 const router = useRouter()
 const auth = useAuthStore()
+const teaStore = useTeaStore()
 const term = getCurrentSolarTerm()
+
+// 当前节气是否已打卡
+const termChecked = ref(false)
+async function doCheckIn() {
+  const ok = await teaStore.checkInSolarTerm(term.id)
+  if (ok) termChecked.value = true
+}
 
 // 入场与导航抽屉
 const entered = ref(false)
@@ -120,6 +129,9 @@ watch(menuOpen, (open) => {
 onMounted(() => {
   requestAnimationFrame(() => requestAnimationFrame(() => { entered.value = true }))
   tryStartAudio()
+  teaStore.loadSolarCheckins().then(() => {
+    termChecked.value = !!teaStore.solarCheckins[term.id]
+  })
   window.addEventListener('pointermove', onPointerMove, { passive: true })
   window.addEventListener('keydown', onKeydown)
 })
@@ -180,6 +192,14 @@ onUnmounted(() => {
           <button class="flow-more" @click="go('/select')">全部茶叶 →</button>
         </div>
         <p class="flow-desc">{{ term.description }}</p>
+        <button v-if="!termChecked" class="checkin-btn" @click="doCheckIn">
+          <span>☀️ 打卡 · {{ term.name }}</span>
+          <span class="checkin-hint">每节气一次，集齐二十四节气</span>
+        </button>
+        <button v-else class="checkin-btn checked" disabled>
+          <span>✓ 今日节气已打卡</span>
+          <span class="checkin-hint">{{ term.name }} · 已收入节气册</span>
+        </button>
         <div class="tea-grid">
           <button v-for="tea in recommendedTeas" :key="tea.id" class="tea-card" @click="go('/select')">
             <div class="tea-card-top">
@@ -589,6 +609,38 @@ onUnmounted(() => {
   color: rgba(245, 241, 230, 0.62);
   margin: 0 0 1rem;
 }
+
+/* 节气打卡 */
+.checkin-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  width: 100%;
+  padding: 0.7rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: 0.8rem;
+  border: 1px dashed rgba(201, 169, 110, 0.5);
+  background: rgba(201, 169, 110, 0.1);
+  color: #f3efe4;
+  font-family: inherit;
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all 0.28s ease;
+}
+.checkin-btn:hover {
+  background: rgba(201, 169, 110, 0.22);
+  border-color: rgba(201, 169, 110, 0.8);
+  transform: translateY(-1px);
+}
+.checkin-btn.checked {
+  border-style: solid;
+  background: rgba(60, 110, 80, 0.22);
+  border-color: rgba(120, 190, 150, 0.5);
+  cursor: default;
+}
+.checkin-hint { font-size: 0.7rem; letter-spacing: 0.06em; color: rgba(245, 241, 230, 0.5); }
 
 .tea-grid {
   display: grid;

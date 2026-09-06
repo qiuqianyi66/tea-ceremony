@@ -10,7 +10,7 @@ import type { BrewState } from '@/types/brewing'
 import type { TasteDimensions, TastingRecord, Achievement } from '@/types/tasting'
 import { BrewPhase } from '@/types/brewing'
 import { calculateProcessFactor, calculateOverallScore, generateRecordId } from '@/services/scoring'
-import { historyStorage, achievementStorage, xpStorage, collectedWareStorage } from '@/services/storage'
+import { historyStorage, achievementStorage, xpStorage, collectedWareStorage, settingsStorage } from '@/services/storage'
 import { ACHIEVEMENTS, WATER_TYPES, TEA_LEVELS } from '@/data/constants'
 import { getAllTypes, getTeaById } from '@/data/teas'
 import { TeaType } from '@/types/tea'
@@ -371,6 +371,22 @@ export const useTeaStore = defineStore('tea', () => {
     }
   }
 
+  // ============ 节气打卡 ============
+  const solarCheckins = ref<Record<string, string>>({})
+
+  async function loadSolarCheckins() {
+    solarCheckins.value = await settingsStorage.get<Record<string, string>>('solar-checkins', {})
+  }
+
+  /** 当前节气打卡（每节气一次）；已打卡返回 false */
+  async function checkInSolarTerm(termId: string): Promise<boolean> {
+    if (solarCheckins.value[termId]) return false
+    solarCheckins.value = { ...solarCheckins.value, [termId]: new Date().toISOString() }
+    // 写入前 toRaw 去代理，防止 Dexie 结构化克隆抛 DataCloneError
+    await settingsStorage.set('solar-checkins', toRaw(solarCheckins.value))
+    return true
+  }
+
   return {
     currentTea,
     selectedTeaWare,
@@ -379,6 +395,9 @@ export const useTeaStore = defineStore('tea', () => {
     history,
     achievements,
     newAchievement,
+    solarCheckins,
+    loadSolarCheckins,
+    checkInSolarTerm,
     processFactor,
     selectTea,
     selectTeaWare,

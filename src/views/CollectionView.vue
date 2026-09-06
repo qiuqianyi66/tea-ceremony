@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useTeaStore } from '@/stores/tea'
 import { teas, getTeaById } from '@/data/teas'
 import { teawares } from '@/data/teawares'
+import { SOLAR_TERMS } from '@/data/solarTerms'
 import { TeaType } from '@/types/tea'
 
 const router = useRouter()
@@ -11,7 +12,23 @@ const store = useTeaStore()
 
 onMounted(() => {
   store.loadHistory()
+  store.loadSolarCheckins()
 })
+
+// ============ 茶图鉴：全部茶叶 + 解锁状态 ============
+const teaJournal = computed(() => {
+  const tastedIds = new Set(store.history.map(r => r.teaId))
+  return teas.map(t => ({
+    tea: t,
+    tasted: tastedIds.has(t.id),
+    count: store.history.filter(r => r.teaId === t.id).length,
+  }))
+})
+
+// ============ 节气打卡进度 ============
+const solarCheckedCount = computed(() =>
+  SOLAR_TERMS.filter(t => store.solarCheckins[t.id]).length,
+)
 
 // ============ 已品鉴的茶叶 ============
 const tastedTeas = computed(() => {
@@ -90,23 +107,39 @@ const unlockedWares = computed(() =>
       </div>
     </div>
 
-    <!-- 已品鉴茶叶 -->
+    <!-- 茶图鉴 -->
     <div class="mb-8">
-      <h3 class="text-base font-bold text-[var(--color-wood)] mb-3">🍃 已品鉴</h3>
-      <div v-if="tastedTeas.length === 0" class="text-center text-[var(--color-wood-light)] py-8">
-        <p>还没有品鉴记录</p>
-        <button @click="router.push('/select')" class="mt-2 text-[var(--color-tea-gold)] hover:underline">
-          开始品茶 →
-        </button>
-      </div>
-      <div v-else class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-        <div v-for="tea in tastedTeas" :key="tea.id"
-          class="glass-panel rounded-xl p-3 text-center">
+      <h3 class="text-base font-bold text-[var(--color-wood)] mb-1">🃏 茶图鉴</h3>
+      <p class="text-xs text-[var(--color-wood-light)] mb-3">已解锁 {{ tastedCount }} / {{ totalTeas }} 款 · 品鉴一款茶即点亮茶卡</p>
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        <div v-for="item in teaJournal" :key="item.tea.id"
+          class="rounded-xl p-3 text-center"
+          :class="item.tasted ? 'glass-panel' : 'bg-white/40 border-2 border-dashed border-[#d8cfc0]'">
           <div class="w-full h-12 rounded-lg mb-2"
-            :style="{ background: `linear-gradient(135deg, ${tea.soupColorMin}, ${tea.soupColorMax})` }">
+            :style="item.tasted
+              ? { background: `linear-gradient(135deg, ${item.tea.soupColorMin}, ${item.tea.soupColorMax})` }
+              : { background: 'repeating-linear-gradient(45deg, #e8e2d8, #e8e2d8 6px, #f0ebe2 6px, #f0ebe2 12px)' }">
           </div>
-          <p class="text-sm font-bold text-[var(--color-wood)]">{{ tea.name }}</p>
-          <p class="text-xs text-[var(--color-wood-light)]">{{ tea.type }} · {{ tea.origin }}</p>
+          <p class="text-sm font-bold" :class="item.tasted ? 'text-[var(--color-wood)]' : 'text-[#b5ac9c]'">
+            {{ item.tasted ? item.tea.name : '待解锁' }}
+          </p>
+          <p class="text-xs" :class="item.tasted ? 'text-[var(--color-wood-light)]' : 'text-[#c4bba9]'">
+            {{ item.tasted ? `${item.tea.type} · ${item.tea.origin}${item.count > 1 ? ` · 品${item.count}次` : ''}` : '品鉴后点亮' }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 节气打卡 -->
+    <div class="mb-8">
+      <h3 class="text-base font-bold text-[var(--color-wood)] mb-1">☀️ 节气册</h3>
+      <p class="text-xs text-[var(--color-wood-light)] mb-3">已集 {{ solarCheckedCount }} / {{ SOLAR_TERMS.length }} 个节气 · 每个节气可在首页打卡一次</p>
+      <div class="grid grid-cols-4 sm:grid-cols-8 gap-2">
+        <div v-for="t in SOLAR_TERMS" :key="t.id"
+          class="rounded-lg p-2 text-center"
+          :class="store.solarCheckins[t.id] ? 'glass-panel' : 'bg-white/40 border border-dashed border-[#d8cfc0]'">
+          <p class="text-xs font-bold" :class="store.solarCheckins[t.id] ? 'text-[var(--color-wood)]' : 'text-[#b5ac9c]'">{{ t.name }}</p>
+          <p class="text-[10px] leading-none mt-0.5">{{ store.solarCheckins[t.id] ? '✓' : '·' }}</p>
         </div>
       </div>
     </div>
