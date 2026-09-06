@@ -103,6 +103,12 @@ function enter() {
   router.push('/select')
 }
 
+// 一键茶歇：3 秒静心暂停键（核心首屏钩子）
+function startBreak() {
+  tryStartAudio()
+  router.push('/break')
+}
+
 // 分享名茶知识卡（新窗口打开只读分享页）
 function shareTea(tea: Tea) {
   const data = {
@@ -190,10 +196,15 @@ onUnmounted(() => {
         <h1 class="hero-title">一盏茶</h1>
         <p class="hero-sub">给忙碌的一天，留五分钟茶歇</p>
         <p class="hero-quote">{{ teaQuote }}</p>
-        <button class="enter-btn" @click.stop="enter">
-          <span>入席体验</span>
-          <span class="enter-arrow">→</span>
-        </button>
+        <div class="hero-cta">
+          <button class="enter-btn break-btn" @click.stop="startBreak">
+            <span>🍵 茶歇 5 分钟</span>
+            <span class="enter-arrow">→</span>
+          </button>
+          <button class="enter-link" @click.stop="enter">
+            入席 · 完整泡茶体验 →
+          </button>
+        </div>
       </div>
       <div class="scroll-hint">向下探索 · 茶之世界</div>
     </section>
@@ -567,6 +578,38 @@ onUnmounted(() => {
 .enter-btn:active { transform: translateY(0) scale(0.98); }
 .enter-arrow { transition: transform 0.3s; letter-spacing: 0; }
 .enter-btn:hover .enter-arrow { transform: translateX(4px); }
+
+.hero-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9rem;
+}
+.break-btn {
+  background: rgba(201, 169, 110, 0.88);
+  border-color: rgba(201, 169, 110, 0.88);
+  color: #2a2114;
+  font-weight: 500;
+  box-shadow: 0 6px 24px rgba(201, 169, 110, 0.35);
+}
+.break-btn:hover {
+  background: #c9a96e;
+  border-color: #c9a96e;
+  color: #1a1408;
+  box-shadow: 0 10px 32px rgba(201, 169, 110, 0.5);
+}
+.enter-link {
+  background: none;
+  border: none;
+  color: rgba(245, 241, 230, 0.55);
+  font-size: 0.82rem;
+  letter-spacing: 0.15em;
+  cursor: pointer;
+  padding: 0.3rem 0.6rem;
+  transition: color 0.25s;
+  font-family: inherit;
+}
+.enter-link:hover { color: rgba(245, 241, 230, 0.9); }
 
 .scroll-hint {
   margin-top: 2.2rem;

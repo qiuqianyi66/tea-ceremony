@@ -10,6 +10,11 @@ const router = createRouter({
       component: () => import('../views/HomeView.vue'),
     },
     {
+      path: '/break',
+      name: 'break',
+      component: () => import('../views/TeaBreakView.vue'),
+    },
+    {
       path: '/select',
       name: 'select',
       component: () => import('../views/SelectView.vue'),
