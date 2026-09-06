@@ -318,6 +318,7 @@ function handleMainAction() {
       store.nextInfusion()
       startSteeping()
     } else {
+      audio.playSuccess()
       router.push('/taste')
     }
   }

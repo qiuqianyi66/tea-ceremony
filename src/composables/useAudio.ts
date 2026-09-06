@@ -205,13 +205,13 @@ function playSfx(sprite: SfxSprite, options?: { volume?: number; rate?: number; 
   return id
 }
 
-/** 便捷方法 */
-const playBoil = (vol = 1) => playSfx('boil', { volume: vol })
-const playTeaDropSfx = (vol = 1) => playSfx('teaDrop', { volume: vol })
-const playPour = (vol = 1) => playSfx('pour', { volume: vol })
-const playOutflow = (vol = 1) => playSfx('outflow', { volume: vol })
-const playSip = (vol = 1) => playSfx('sip', { volume: vol })
-const playSuccess = (vol = 1) => playSfx('success', { volume: vol })
+/** 便捷方法（SFX 走 Web Audio 合成，不依赖外部音频文件） */
+const playBoil = (_vol = 1) => startBoilSynth()
+const playTeaDropSfx = (vol = 1) => synthTeaDrop(vol)
+const playPour = (vol = 1) => synthPour(1.5, vol)
+const playOutflow = (vol = 1) => synthOutflow(vol)
+const playSip = (vol = 1) => synthSip(vol)
+const playSuccess = (vol = 1) => synthSuccess(vol)
 
 // ============ Web Audio API 合成器 (火焰噼啪 - 实时动态) ============
 
@@ -250,6 +250,143 @@ function stopCrackleSynthesis() {
     clearInterval(crackleInterval)
     crackleInterval = null
   }
+}
+
+// ============ Web Audio 合成音效（不依赖外部音频文件） ============
+// 因 public/audio/ 资源缺失，Howler SFX 无声；以下用 Web Audio API 程序化合成
+// 煮水 / 倒水 / 投茶 / 出汤 / 啜饮 / 完成音，零延迟、零依赖。
+
+let boilInterval: ReturnType<typeof setInterval> | null = null
+let boilNoiseSource: AudioBufferSourceNode | null = null
+
+/** 创建指定时长的白噪声 buffer */
+function createNoiseBuffer(ctx: AudioContext, duration: number): AudioBuffer {
+  const buffer = ctx.createBuffer(1, Math.floor(ctx.sampleRate * duration), ctx.sampleRate)
+  const data = buffer.getChannelData(0)
+  for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1
+  return buffer
+}
+
+/** 煮水声（循环）：低频沸腾噪声 + 随机气泡 */
+function startBoilSynth() {
+  if (boilInterval) return
+  const ctx = getContext()
+  // 底层沸腾噪声
+  const noise = ctx.createBufferSource()
+  noise.buffer = createNoiseBuffer(ctx, 2)
+  noise.loop = true
+  const bp = ctx.createBiquadFilter()
+  bp.type = 'bandpass'
+  bp.frequency.value = 420
+  bp.Q.value = 0.7
+  const g = ctx.createGain()
+  g.gain.value = 0.05
+  noise.connect(bp).connect(g).connect(ctx.destination)
+  noise.start()
+  boilNoiseSource = noise
+  // 随机气泡
+  boilInterval = setInterval(() => {
+    if (Math.random() > 0.35) {
+      const osc = ctx.createOscillator()
+      osc.type = 'sine'
+      osc.frequency.value = 480 + Math.random() * 900
+      const og = ctx.createGain()
+      const t = ctx.currentTime
+      og.gain.setValueAtTime(0, t)
+      og.gain.linearRampToValueAtTime(0.035 + Math.random() * 0.025, t + 0.02)
+      og.gain.exponentialRampToValueAtTime(0.001, t + 0.14 + Math.random() * 0.1)
+      osc.connect(og).connect(ctx.destination)
+      osc.start(t)
+      osc.stop(t + 0.3)
+    }
+  }, 110 + Math.random() * 110)
+}
+
+function stopBoilSynth() {
+  if (boilInterval) { clearInterval(boilInterval); boilInterval = null }
+  if (boilNoiseSource) {
+    try { boilNoiseSource.stop() } catch { /* 已停止 */ }
+    boilNoiseSource = null
+  }
+}
+
+/** 倒水声（一次性）：带通噪声，中心频率随时间下降模拟水位上升 */
+function synthPour(duration = 1.5, volume = 1) {
+  const ctx = getContext()
+  const noise = ctx.createBufferSource()
+  noise.buffer = createNoiseBuffer(ctx, duration)
+  const bp = ctx.createBiquadFilter()
+  bp.type = 'bandpass'
+  const t = ctx.currentTime
+  bp.frequency.setValueAtTime(950, t)
+  bp.frequency.exponentialRampToValueAtTime(340, t + duration)
+  bp.Q.value = 1.1
+  const g = ctx.createGain()
+  g.gain.setValueAtTime(0, t)
+  g.gain.linearRampToValueAtTime(0.11 * volume, t + 0.08)
+  g.gain.setValueAtTime(0.11 * volume, t + Math.max(0.1, duration - 0.2))
+  g.gain.linearRampToValueAtTime(0, t + duration)
+  noise.connect(bp).connect(g).connect(ctx.destination)
+  noise.start(t)
+  noise.stop(t + duration)
+}
+
+/** 投茶声（一次性）：短促高频沙沙声 */
+function synthTeaDrop(volume = 1) {
+  const ctx = getContext()
+  const noise = ctx.createBufferSource()
+  noise.buffer = createNoiseBuffer(ctx, 0.4)
+  const hp = ctx.createBiquadFilter()
+  hp.type = 'highpass'
+  hp.frequency.value = 2400
+  const g = ctx.createGain()
+  const t = ctx.currentTime
+  g.gain.setValueAtTime(0.14 * volume, t)
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.35)
+  noise.connect(hp).connect(g).connect(ctx.destination)
+  noise.start(t)
+  noise.stop(t + 0.4)
+}
+
+/** 出汤声（一次性）：短倒水，音量略大 */
+function synthOutflow(volume = 1) {
+  synthPour(0.85, volume * 1.15)
+}
+
+/** 啜饮声（一次性）：短促高频共振 */
+function synthSip(volume = 1) {
+  const ctx = getContext()
+  const noise = ctx.createBufferSource()
+  noise.buffer = createNoiseBuffer(ctx, 0.25)
+  const bp = ctx.createBiquadFilter()
+  bp.type = 'bandpass'
+  bp.frequency.value = 2800
+  bp.Q.value = 2.2
+  const g = ctx.createGain()
+  const t = ctx.currentTime
+  g.gain.setValueAtTime(0.09 * volume, t)
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.2)
+  noise.connect(bp).connect(g).connect(ctx.destination)
+  noise.start(t)
+}
+
+/** 完成音（一次性）：古琴泛音感双音（C5 + E5） */
+function synthSuccess(volume = 1) {
+  const ctx = getContext()
+  const notes = [523.25, 659.25] // C5, E5
+  notes.forEach((freq, i) => {
+    const osc = ctx.createOscillator()
+    osc.type = 'sine'
+    osc.frequency.value = freq
+    const g = ctx.createGain()
+    const start = ctx.currentTime + i * 0.14
+    g.gain.setValueAtTime(0, start)
+    g.gain.linearRampToValueAtTime(0.075 * volume, start + 0.03)
+    g.gain.exponentialRampToValueAtTime(0.001, start + 1.3)
+    osc.connect(g).connect(ctx.destination)
+    osc.start(start)
+    osc.stop(start + 1.4)
+  })
 }
 
 // ============ 音量控制 ============
@@ -301,6 +438,7 @@ function autoSwitchAmbient() {
 function dispose() {
   stopAmbient()
   stopCrackleSynthesis()
+  stopBoilSynth()
   ambientHowl?.unload()
   sfxHowl?.unload()
   ambientHowl = null
@@ -319,8 +457,8 @@ export function useAudio() {
   // 兼容旧版 API 的别名
   const startAmbient = toggleAmbient
   const stopAmbientFn = stopAmbient
-  const startBoiling = () => { playBoil(); startCrackleSynthesis() }
-  const stopBoiling = () => { stopCrackleSynthesis() }
+  const startBoiling = () => { startBoilSynth(); startCrackleSynthesis() }
+  const stopBoiling = () => { stopBoilSynth(); stopCrackleSynthesis() }
   const startCrackle = startCrackleSynthesis
   const stopCrackle = stopCrackleSynthesis
   const playPourWater = playPour
@@ -381,8 +519,8 @@ export type { AmbientTrack, SfxSprite, AudioState }
 export const startAmbient = () => toggleAmbient()
 export const playPourWater = (volume = 1) => playPour(volume)
 export const playPourTea = (volume = 1) => playOutflow(volume)
-export const startBoiling = () => { playBoil(); startCrackleSynthesis() }
-export const stopBoiling = () => stopCrackleSynthesis()
+export const startBoiling = () => { startBoilSynth(); startCrackleSynthesis() }
+export const stopBoiling = () => { stopBoilSynth(); stopCrackleSynthesis() }
 export const startCrackle = () => startCrackleSynthesis()
 export const stopCrackle = () => stopCrackleSynthesis()
 export const stopAll = () => dispose()
