@@ -8,7 +8,7 @@ import { generateTastingNote } from '@/services/teaAI'
 import TasteRadarChart from '@/components/tasting/TasteRadarChart.vue'
 import TasteTrendChart from '@/components/tasting/TasteTrendChart.vue'
 import TastingCard from '@/components/tasting/TastingCard.vue'
-import type { TastingRecord } from '@/types/tasting'
+import type { TastingRecord, TasteDimensions } from '@/types/tasting'
 
 const router = useRouter()
 const store = useTeaStore()
@@ -55,101 +55,109 @@ const selectedAromaLabels = computed(() =>
 )
 
 // ============ 品味（八维评分）============
-// 新手模式：每个维度配白话解释 + 口语化感受选项（内部映射 1-5 分）；
-// 专业模式：保留 1-5 滑块。底层 store.tasteDimensions 与评分/雷达图不变。
+// 八维是底层评分模型（雷达图/综合分/成长体系复用）。
+// 新手不直接面对八维：用「第一口表情 + 大白话感受标签」极简快评，自动反推八维；
+// 专业模式才暴露 1-5 滑块。
 const dimensions = [
-  {
-    key: 'bitterness' as const, label: '苦涩度', short: '苦', left: '清淡', right: '浓烈', icon: 'Minus',
-    hint: '这是茶的"刺激强度"，不是缺点——浓茶通常苦涩更明显。',
-    options: [
-      { score: 1, text: '几乎不苦' },
-      { score: 2, text: '微苦涩' },
-      { score: 3, text: '苦涩适中' },
-      { score: 4, text: '苦涩较明显' },
-      { score: 5, text: '苦涩很重' },
-    ],
-  },
-  {
-    key: 'sweetness' as const, label: '甜度', short: '甜', left: '无甜', right: '甘甜', icon: 'Heart',
-    hint: '茶汤入口的甜润感，好茶通常入口甜、回甘更甜。',
-    options: [
-      { score: 1, text: '没有甜味' },
-      { score: 2, text: '隐约有甜' },
-      { score: 3, text: '有明显甜' },
-      { score: 4, text: '甜润舒服' },
-      { score: 5, text: '非常甘甜' },
-    ],
-  },
-  {
-    key: 'aftertaste' as const, label: '回甘', short: '回', left: '无回甘', right: '持久', icon: 'Sparkle',
-    hint: '咽下去后，喉咙里慢慢泛起的甜味，越持久越好。',
-    options: [
-      { score: 1, text: '咽完就没味' },
-      { score: 2, text: '一点点回甜' },
-      { score: 3, text: '回甘明显' },
-      { score: 4, text: '回甘持久' },
-      { score: 5, text: '久久不散' },
-    ],
-  },
-  {
-    key: 'body' as const, label: '醇厚度', short: '醇', left: '单薄', right: '醇厚', icon: 'Gem',
-    hint: '茶汤在嘴里的"分量感"——像水还是像米汤，越稠越醇厚。',
-    options: [
-      { score: 1, text: '像白开水' },
-      { score: 2, text: '偏薄' },
-      { score: 3, text: '有厚度' },
-      { score: 4, text: '饱满醇厚' },
-      { score: 5, text: '浓稠有质感' },
-    ],
-  },
-  {
-    key: 'aroma' as const, label: '香气持久度', short: '香', left: '短暂', right: '持久', icon: 'Wind',
-    hint: '香气能在嘴里和杯里留多久，好茶常说"杯底留香"。',
-    options: [
-      { score: 1, text: '几乎没香' },
-      { score: 2, text: '有香但快散' },
-      { score: 3, text: '持续一会儿' },
-      { score: 4, text: '比较持久' },
-      { score: 5, text: '杯底留香' },
-    ],
-  },
-  {
-    key: 'rhyme' as const, label: '茶韵', short: '韵', left: '浅薄', right: '悠长', icon: 'Activity',
-    hint: '喝完后整体留在嘴里的"茶味余韵"，越悠长越有回味。',
-    options: [
-      { score: 1, text: '没什么余味' },
-      { score: 2, text: '一点余味' },
-      { score: 3, text: '余味明显' },
-      { score: 4, text: '悠长有回味' },
-      { score: 5, text: '余韵很强' },
-    ],
-  },
-  {
-    key: 'shape' as const, label: '叶底', short: '叶', left: '粗散', right: '匀整', icon: 'Target',
-    hint: '泡开后的茶叶样子——越完整匀整，说明原料和工艺越好。',
-    options: [
-      { score: 1, text: '碎而杂乱' },
-      { score: 2, text: '不太整齐' },
-      { score: 3, text: '还算完整' },
-      { score: 4, text: '比较匀整' },
-      { score: 5, text: '完整有弹性' },
-    ],
-  },
-  {
-    key: 'mind' as const, label: '心境', short: '心', left: '浮躁', right: '禅定', icon: 'Crown',
-    hint: '这是你的主观感受，不是茶的品质——喝这泡茶让你有多放松。',
-    options: [
-      { score: 1, text: '没感觉' },
-      { score: 2, text: '稍微放松' },
-      { score: 3, text: '比较平静' },
-      { score: 4, text: '很放松舒服' },
-      { score: 5, text: '完全沉浸' },
-    ],
-  },
+  { key: 'bitterness' as const, label: '苦涩度', short: '苦', left: '清淡', right: '浓烈', icon: 'Minus' },
+  { key: 'sweetness' as const, label: '甜度', short: '甜', left: '无甜', right: '甘甜', icon: 'Heart' },
+  { key: 'aftertaste' as const, label: '回甘', short: '回', left: '无回甘', right: '持久', icon: 'Sparkle' },
+  { key: 'body' as const, label: '醇厚度', short: '醇', left: '单薄', right: '醇厚', icon: 'Gem' },
+  { key: 'aroma' as const, label: '香气持久度', short: '香', left: '短暂', right: '持久', icon: 'Wind' },
+  { key: 'rhyme' as const, label: '茶韵', short: '韵', left: '浅薄', right: '悠长', icon: 'Activity' },
+  { key: 'shape' as const, label: '叶底', short: '叶', left: '粗散', right: '匀整', icon: 'Target' },
+  { key: 'mind' as const, label: '心境', short: '心', left: '浮躁', right: '禅定', icon: 'Crown' },
 ] as const
 
 // 新手 / 专业模式切换（默认新手，降低品鉴门槛）
 const isExpertMode = ref(false)
+
+// ---- 新手快评 1：第一口感觉（表情单选，定整体基调与心境维度）----
+const firstSipOptions = [
+  { score: 5, emoji: '😍', label: '很喜欢' },
+  { score: 4, emoji: '🙂', label: '还不错' },
+  { score: 3, emoji: '😐', label: '一般' },
+  { score: 2, emoji: '😕', label: '不太习惯' },
+  { score: 1, emoji: '😣', label: '不好喝' },
+]
+const firstSip = ref<number | null>(null)
+
+// ---- 新手快评 2：大白话感受标签（多选，同组互斥；选中即映射到对应八维）----
+const feelTags = [
+  { id: 'smooth', label: '顺口不苦涩', group: 'bit' },
+  { id: 'bitter', label: '有点苦', group: 'bit' },
+  { id: 'astringent', label: '涩口', group: 'bit' },
+  { id: 'sweet', label: '甜甜的', group: 'sweet' },
+  { id: 'noSweet', label: '没什么甜味', group: 'sweet' },
+  { id: 'huigan', label: '回甘明显', group: 'hui' },
+  { id: 'noHuigan', label: '咽完没余味', group: 'hui' },
+  { id: 'aromatic', label: '香香的', group: 'aro' },
+  { id: 'noAroma', label: '没什么香气', group: 'aro' },
+  { id: 'fresh', label: '很鲜爽', group: 'style' },
+  { id: 'lingering', label: '余味悠长', group: 'style' },
+  { id: 'mellow', label: '口感醇厚', group: 'body' },
+  { id: 'thin', label: '淡淡的偏薄', group: 'body' },
+]
+// 标签 → 八维分数覆盖（未覆盖维度走由第一口感觉决定的基准值）
+const feelTagMap: Record<string, Partial<TasteDimensions>> = {
+  smooth: { bitterness: 1 },
+  bitter: { bitterness: 4 },
+  astringent: { bitterness: 5 },
+  sweet: { sweetness: 5 },
+  noSweet: { sweetness: 2 },
+  huigan: { aftertaste: 5 },
+  noHuigan: { aftertaste: 1 },
+  aromatic: { aroma: 5 },
+  noAroma: { aroma: 2 },
+  fresh: { aroma: 4, rhyme: 4 },
+  lingering: { rhyme: 5 },
+  mellow: { body: 5 },
+  thin: { body: 2 },
+}
+const selectedFeelTags = ref<string[]>([])
+
+function toggleFeelTag(id: string) {
+  const tag = feelTags.find(t => t.id === id)
+  if (!tag) return
+  const arr = selectedFeelTags.value
+  const idx = arr.indexOf(id)
+  if (idx >= 0) {
+    arr.splice(idx, 1)
+    return
+  }
+  // 同组互斥：先移除同组其他标签
+  for (let i = arr.length - 1; i >= 0; i--) {
+    if (feelTags.find(t => t.id === arr[i])?.group === tag.group) arr.splice(i, 1)
+  }
+  arr.push(id)
+}
+
+// 由「第一口感觉 + 感受标签」反推八维（新手不直接打分）
+function buildQuickDimensions(): TasteDimensions {
+  const sip = firstSip.value ?? 3
+  // 基准值随整体喜恶浮动：喜欢→4，一般→3，不喜欢→2；心境维度直接取第一口感觉
+  const baseline = sip >= 4 ? 4 : sip <= 2 ? 2 : 3
+  const dims: TasteDimensions = {
+    bitterness: baseline,
+    sweetness: baseline,
+    aftertaste: baseline,
+    body: baseline,
+    aroma: baseline,
+    rhyme: baseline,
+    shape: baseline,
+    mind: sip,
+  }
+  for (const id of selectedFeelTags.value) {
+    Object.assign(dims, feelTagMap[id])
+  }
+  return dims
+}
+
+// 新手快评任一选择变化 → 实时写回八维（雷达图/综合分即时反馈）；专业模式不干预
+watch([firstSip, selectedFeelTags], () => {
+  if (isExpertMode.value) return
+  Object.assign(store.tasteDimensions, buildQuickDimensions())
+}, { deep: true })
 
 // ============ 笔记 ============
 const tastingNotes = ref('')
@@ -280,12 +288,16 @@ const averageDimensions = computed(() => {
           class="absolute top-4 right-4 w-8 h-8 text-white/60 animate-bounce"
         />
       </div>
-      <p class="text-lg text-[var(--color-wood)] mb-2">
-        茶汤色：<span :style="{ color: soupColor }">■</span> {{ soupColor }}
-      </p>
-      <p v-if="store.currentTea" class="text-sm text-[var(--color-wood-light)] mb-6">
-        正常汤色范围：{{ store.currentTea.soupColorMin }} ~ {{ store.currentTea.soupColorMax }}
-      </p>
+      <div class="flex items-center gap-2 mb-2">
+        <span class="text-sm text-[var(--color-wood)]">你的茶汤</span>
+        <span class="w-8 h-8 rounded-full shadow-inner" :style="{ backgroundColor: soupColor }"></span>
+        <template v-if="store.currentTea">
+          <span class="text-xs text-[var(--color-wood-light)] ml-2">正常范围</span>
+          <span class="w-5 h-5 rounded-full" :style="{ backgroundColor: store.currentTea.soupColorMin }"></span>
+          <span class="text-[var(--color-wood-light)] text-xs">至</span>
+          <span class="w-5 h-5 rounded-full" :style="{ backgroundColor: store.currentTea.soupColorMax }"></span>
+        </template>
+      </div>
       <button @click="step = 'aroma'"
         class="px-8 py-3 bg-[var(--color-wood)] text-[var(--color-cream)] rounded-lg hover:bg-[var(--color-wood-light)] transition-colors flex items-center gap-2">
         <IconChevronRight class="w-5 h-5" />
@@ -295,7 +307,8 @@ const averageDimensions = computed(() => {
 
     <!-- ======== ② 闻香 ======== -->
     <div v-if="step === 'aroma'" class="w-full max-w-md">
-      <p class="text-sm text-[var(--color-wood)] mb-4">你闻到了什么香气？（可多选）</p>
+      <p class="text-sm text-[var(--color-wood)] mb-1">你闻到了什么香气？（可多选）</p>
+      <p class="text-xs text-[var(--color-wood-light)] mb-4">闻不出来也没关系，直接下一步就行</p>
       <div class="grid grid-cols-2 gap-3 mb-8">
         <button
           v-for="a in aromaTypes" :key="a.id"
@@ -336,29 +349,44 @@ const averageDimensions = computed(() => {
           </button>
         </div>
 
-        <!-- 新手模式：感受选择题（内部映射 1-5 分，底层八维不变） -->
-        <div v-if="!isExpertMode">
-          <p class="text-xs text-[var(--color-wood-light)] mb-3">选一个最接近你感受的描述即可，不确定可跳过（默认中等）。</p>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div v-for="d in dimensions" :key="d.key" class="p-3 bg-white/60 rounded-xl border border-[var(--color-paper)]">
-              <div class="flex items-center gap-2 mb-1">
-                <component :is="`Icon${d.icon}`" class="w-4 h-4 text-[var(--color-tea-gold)] shrink-0" />
-                <span class="text-xs font-bold text-[var(--color-wood)]">{{ d.label }}</span>
-                <span class="text-[10px] text-[var(--color-tea-gold)] ml-auto">{{ store.tasteDimensions[d.key] }}分</span>
-              </div>
-              <p class="text-[10px] text-[var(--color-wood-light)] mb-2 leading-relaxed">{{ d.hint }}</p>
-              <div class="flex flex-col gap-1">
-                <button
-                  v-for="opt in d.options" :key="opt.score"
-                  @click="store.tasteDimensions[d.key] = opt.score"
-                  class="text-left text-[11px] px-2.5 py-1.5 rounded-md transition-all"
-                  :class="store.tasteDimensions[d.key] === opt.score
-                    ? 'bg-[var(--color-tea-gold)] text-white shadow-sm'
-                    : 'bg-[var(--color-paper)] text-[var(--color-wood)] hover:bg-[#e8dcc4]'"
-                >
-                  {{ opt.score }}. {{ opt.text }}
-                </button>
-              </div>
+        <!-- 新手模式：第一口表情 + 大白话标签，自动反推八维（无需理解专业术语） -->
+        <div v-if="!isExpertMode" class="space-y-6">
+          <!-- 第一口感觉 -->
+          <div>
+            <p class="text-sm font-bold text-[var(--color-wood)] mb-1">第一口感觉怎么样？</p>
+            <p class="text-xs text-[var(--color-wood-light)] mb-3">凭直觉选一个就行</p>
+            <div class="grid grid-cols-5 gap-2">
+              <button
+                v-for="opt in firstSipOptions" :key="opt.score"
+                @click="firstSip = opt.score"
+                class="flex flex-col items-center gap-1 py-3 rounded-xl border-2 transition-all"
+                :class="firstSip === opt.score
+                  ? 'border-[var(--color-tea-gold)] bg-[var(--color-paper)] shadow-md scale-105'
+                  : 'border-transparent bg-white hover:shadow-md'"
+              >
+                <span class="text-2xl">{{ opt.emoji }}</span>
+                <span class="text-[11px] text-[var(--color-wood)]">{{ opt.label }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 喝到了什么味道 -->
+          <div>
+            <p class="text-sm font-bold text-[var(--color-wood)] mb-1">喝到了什么味道？（多选，没有可不选）</p>
+            <p v-if="store.currentTea?.flavor?.length" class="text-xs text-[var(--color-tea-gold)] mb-3">
+              这款「{{ store.currentTea.name }}」通常带 {{ store.currentTea.flavor.join('、') }}，你喝到了吗？
+            </p>
+            <div class="flex flex-wrap gap-2">
+              <button
+                v-for="t in feelTags" :key="t.id"
+                @click="toggleFeelTag(t.id)"
+                class="px-3.5 py-2 rounded-full text-sm border transition-all"
+                :class="selectedFeelTags.includes(t.id)
+                  ? 'bg-[var(--color-tea-gold)] text-white border-[var(--color-tea-gold)] shadow-sm'
+                  : 'bg-white text-[var(--color-wood)] border-[var(--color-paper)] hover:border-[var(--color-tea-gold)]'"
+              >
+                {{ t.label }}
+              </button>
             </div>
           </div>
         </div>

@@ -70,9 +70,10 @@ test('完整品鉴流程：首页→入席→选茶→选器→冲泡→品鉴�
   // ② 闻香
   await page.getByRole('button', { name: '花香' }).click()
   await page.getByRole('button', { name: '闻香完成，开始品味' }).click()
-  // ③ 品味：新手模式选感受选项（内部映射八维分数）、选天气心情、写笔记
-  await page.getByRole('button', { name: '5. 苦涩很重' }).click()
-  await page.getByRole('button', { name: '4. 甜润舒服' }).click()
+  // ③ 品味：新手快评——第一口表情 + 大白话感受标签（自动反推八维），再选天气心情、写笔记
+  await page.getByRole('button', { name: /还不错/ }).click()
+  await page.getByRole('button', { name: '甜甜的', exact: true }).click()
+  await page.getByRole('button', { name: '回甘明显', exact: true }).click()
   await page.getByRole('button', { name: '晴' }).click()
   await page.getByRole('button', { name: '安静' }).click()
   await page.getByPlaceholder('记录你的品茶感受...').fill('西湖龙井，豆香清雅，回甘悠长。')
