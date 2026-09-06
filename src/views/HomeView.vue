@@ -284,12 +284,17 @@ onUnmounted(() => {
         </div>
       </section>
 
-      <!-- 图谱 + AI 双列入口 -->
-      <section class="entry-grid">
+      <!-- 图谱 + 茶园 + AI 三列入口 -->
+      <section class="entry-grid entry-grid-3">
         <button class="entry-card" @click="go('/graph')">
           <span class="entry-icon">🔗</span>
           <span class="entry-label">茶文化图谱</span>
           <span class="entry-desc">茶与人 · 茶与诗 · 茶与器</span>
+        </button>
+        <button class="entry-card" @click="go('/garden')">
+          <span class="entry-icon">🌱</span>
+          <span class="entry-label">我的茶园</span>
+          <span class="entry-desc">种茶养茶，14天长成</span>
         </button>
         <button class="entry-card" @click="go('/ai')">
           <span class="entry-icon">🤖</span>

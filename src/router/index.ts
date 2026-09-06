@@ -10,6 +10,16 @@ const router = createRouter({
       component: () => import('../views/HomeView.vue'),
     },
     {
+      path: '/garden',
+      name: 'garden',
+      component: () => import('../views/GardenView.vue'),
+    },
+    {
+      path: '/garden/:regionId',
+      name: 'garden-region',
+      component: () => import('../views/GardenView.vue'),
+    },
+    {
       path: '/synesthesia/:id',
       name: 'synesthesia',
       component: () => import('../views/TeaSynesthesiaView.vue'),
