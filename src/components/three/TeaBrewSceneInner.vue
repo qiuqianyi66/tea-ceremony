@@ -192,6 +192,11 @@ const teacupPositions: THREE.Vector3[] = [
   new THREE.Vector3(1.5, 1.19, 0.05 + SET_Z),
   new THREE.Vector3(1.2, 1.19, -0.42 + SET_Z),
 ]
+// 中景道具：茶席后移后桌面中景偏空，补茶巾/水盂/茶拨/杯托丰富层次。
+// 均位于右侧品茗杯区，不挡左侧注水流与放茶动画（3D_SPEC：只做视觉层）。
+const teaClothPos = new THREE.Vector3(1.7, 1.194, -0.15 + SET_Z)
+const waterPotPos = new THREE.Vector3(1.78, 1.27, 0.28 + SET_Z)
+const teaPickPos = new THREE.Vector3(1.68, 1.206, -0.15 + SET_Z)
 const teacupLiquidPos = new THREE.Vector3(0, 0.2, 0)
 // 品茗杯液面（分茶时上升，喝茶时减少）
 const teacupLiquidScale = computed(() => {
@@ -304,6 +309,11 @@ function setupRenderPipeline() {
   const renderer = (sceneCtx.renderer as { instance?: THREE.WebGLRenderer }).instance
   const scene = sceneCtx.scene.value
   if (!scene) return
+  // 雾化伪景深：线性雾 near=7.8 / far=10.2。
+  // 茶席距相机约 8.1 → 约 12% 雾（夜色氛围，主体仍清晰）；
+  // 远景 cabinet/shelf/scroll 距相机约 9.6 → 约 75% 雾（明显虚化），
+  // 与 scene.background 夜色纹理自然融合。scene.background 本身不受雾影响。
+  scene.fog = new THREE.Fog(0x221810, 7.8, 10.2)
   if (renderer) {
     // 电影级 ACES 色调映射：暖光不过曝、暗部有层次；曝光补偿背景图被压暗的部分
     renderer.toneMapping = THREE.ACESFilmicToneMapping
@@ -997,6 +1007,34 @@ onRender(({ delta, elapsed }) => {
       />
     </TresMesh>
   </TresGroup>
+
+  <!-- 中景道具：杯托×3（品茗杯下） -->
+  <TresMesh
+    v-for="(pos, i) in teacupPositions" :key="'saucer-' + i"
+    :position="pos.clone().setY(1.188)"
+    :receive-shadow="true"
+  >
+    <TresCylinderGeometry :args="[0.22, 0.24, 0.008, 32]" />
+    <TresMeshStandardMaterial :color="'#3a2a1a'" :roughness="0.7" :metalness="0.05" :env-map-intensity="0.3" />
+  </TresMesh>
+
+  <!-- 中景道具：茶巾（深靛蓝，铺在右侧桌面） -->
+  <TresMesh :position="teaClothPos" :rotation="[0, 0.15, 0]" :receive-shadow="true">
+    <TresBoxGeometry :args="[0.75, 0.01, 0.5]" />
+    <TresMeshStandardMaterial :color="'#2a3540'" :roughness="0.95" :env-map-intensity="0.15" />
+  </TresMesh>
+
+  <!-- 中景道具：茶拨（竹制，斜放在茶巾上） -->
+  <TresMesh :position="teaPickPos" :rotation="[0, 0.6, 0]" :cast-shadow="true">
+    <TresCylinderGeometry :args="[0.012, 0.012, 0.4, 8]" />
+    <TresMeshStandardMaterial :color="'#b8956a'" :roughness="0.55" :env-map-intensity="0.35" />
+  </TresMesh>
+
+  <!-- 中景道具：水盂/建水（深陶，最右侧盛废水） -->
+  <TresMesh :position="waterPotPos" :cast-shadow="true" :receive-shadow="true">
+    <TresCylinderGeometry :args="[0.28, 0.22, 0.16, 24]" />
+    <TresMeshStandardMaterial :color="'#2a2018'" :roughness="0.8" :metalness="0.05" :env-map-intensity="0.25" />
+  </TresMesh>
 
   <!-- 出汤水流（盖碗→公道杯，出汤动画） -->
   <TresMesh
