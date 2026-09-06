@@ -8,6 +8,7 @@ import { teas } from '@/data/teas'
 import { TEA_POEMS, type TeaPoem } from '@/data/teaPoems'
 import { TEA_MASTERS, type TeaMaster } from '@/data/teaMasters'
 import type { Tea } from '@/types/tea'
+import { encodeTeaShare, buildTeaShareUrl } from '@/services/share'
 // 首页茶山实景背景：Tanmoy281 / Wikimedia Commons，CC BY-SA 4.0，详见 README「素材致谢」
 import heroImg from '@/assets/tea-mountain-hero.jpg'
 
@@ -100,6 +101,20 @@ function go(path: string) {
 function enter() {
   tryStartAudio()
   router.push('/select')
+}
+
+// 分享名茶知识卡（新窗口打开只读分享页）
+function shareTea(tea: Tea) {
+  const data = {
+    teaId: tea.id,
+    teaName: tea.name,
+    teaType: tea.type,
+    origin: tea.origin,
+    flavor: tea.flavor,
+    description: tea.description,
+  }
+  const url = buildTeaShareUrl(encodeTeaShare(data))
+  window.open(url, '_blank', 'noopener')
 }
 
 // 氛围音频（沿用原逻辑，离开首页不停止）
@@ -201,17 +216,19 @@ onUnmounted(() => {
           <span class="checkin-hint">{{ term.name }} · 已收入节气册</span>
         </button>
         <div class="tea-grid">
-          <button v-for="tea in recommendedTeas" :key="tea.id" class="tea-card" @click="go('/select')">
+          <div v-for="tea in recommendedTeas" :key="tea.id" class="tea-card" role="button" tabindex="0"
+            @click="go('/select')" @keydown.enter="go('/select')">
             <div class="tea-card-top">
               <span class="tea-type">{{ tea.type }}</span>
-              <span class="tea-org">{{ tea.origin }}</span>
+              <span class="tea-share" role="button" tabindex="0" @click.stop="shareTea(tea)"
+                @keydown.enter.stop="shareTea(tea)">↗ 分享</span>
             </div>
             <p class="tea-name">{{ tea.name }}</p>
             <p class="tea-desc">{{ tea.description }}</p>
             <div class="tea-flavors">
               <span v-for="f in tea.flavor" :key="f" class="flavor-pill">{{ f }}</span>
             </div>
-          </button>
+          </div>
         </div>
       </section>
 
@@ -680,6 +697,20 @@ onUnmounted(() => {
   border-radius: 999px;
 }
 .tea-org { font-size: 0.72rem; color: rgba(245, 241, 230, 0.5); }
+.tea-share {
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  color: rgba(201, 169, 110, 0.95);
+  border: 1px solid rgba(201, 169, 110, 0.4);
+  padding: 0.12rem 0.55rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+.tea-share:hover {
+  background: rgba(201, 169, 110, 0.25);
+  border-color: rgba(201, 169, 110, 0.8);
+}
 .tea-name { font-size: 1.1rem; font-weight: 600; margin: 0.1rem 0 0; }
 .tea-desc {
   font-size: 0.76rem;

@@ -2,12 +2,15 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import TastingCard from '@/components/tasting/TastingCard.vue'
-import { parseShareQuery } from '@/services/share'
+import TeaKnowledgeCard from '@/components/tasting/TeaKnowledgeCard.vue'
+import { parseShareQuery, parseTeaShareQuery } from '@/services/share'
+import { getTeaById } from '@/data/teas'
 import type { TastingRecord } from '@/types/tasting'
 
 const route = useRoute()
 const router = useRouter()
 
+// ?r= 品鉴卡分享
 const share = computed(() => parseShareQuery(route.query.r))
 
 /** 把分享快照还原为完整记录（id/teaId 用只读占位，仅用于卡片展示）。 */
@@ -32,6 +35,14 @@ const record = computed<TastingRecord | null>(() => {
   }
 })
 
+// ?t= 名茶知识分享
+const teaShare = computed(() => parseTeaShareQuery(route.query.t))
+const sharedTea = computed(() => {
+  const s = teaShare.value
+  if (!s) return null
+  return getTeaById(s.teaId) ?? null
+})
+
 function goHome() {
   router.push({ name: 'home' })
 }
@@ -48,6 +59,18 @@ function goHome() {
       <button type="button" @click="goHome"
         class="mt-6 w-full rounded-xl bg-[var(--color-wood)] py-3 text-sm font-medium text-[var(--color-cream)] transition-colors hover:bg-[var(--color-wood-light)]">
         打开「一盏茶」，亲手泡一壶
+      </button>
+    </div>
+
+    <div v-else-if="sharedTea" class="mx-auto max-w-lg">
+      <p class="mb-1 text-center text-xs tracking-[0.28em] text-[var(--color-tea-gold)]">一盏茶 · 名茶分享</p>
+      <h1 class="mb-8 text-center text-2xl font-bold text-[var(--color-wood)]">一杯好茶，值得分享</h1>
+
+      <TeaKnowledgeCard :tea="sharedTea" standalone />
+
+      <button type="button" @click="goHome"
+        class="mt-6 w-full rounded-xl bg-[var(--color-wood)] py-3 text-sm font-medium text-[var(--color-cream)] transition-colors hover:bg-[var(--color-wood-light)]">
+        打开「一盏茶」，探索更多名茶
       </button>
     </div>
 

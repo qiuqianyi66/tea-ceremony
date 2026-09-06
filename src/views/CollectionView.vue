@@ -6,6 +6,8 @@ import { teas, getTeaById } from '@/data/teas'
 import { teawares } from '@/data/teawares'
 import { SOLAR_TERMS } from '@/data/solarTerms'
 import { TeaType } from '@/types/tea'
+import type { Tea } from '@/types/tea'
+import { encodeTeaShare, buildTeaShareUrl } from '@/services/share'
 
 const router = useRouter()
 const store = useTeaStore()
@@ -29,6 +31,20 @@ const teaJournal = computed(() => {
 const solarCheckedCount = computed(() =>
   SOLAR_TERMS.filter(t => store.solarCheckins[t.id]).length,
 )
+
+// ============ 分享名茶知识卡 ============
+function shareTea(tea: Tea) {
+  const data = {
+    teaId: tea.id,
+    teaName: tea.name,
+    teaType: tea.type,
+    origin: tea.origin,
+    flavor: tea.flavor,
+    description: tea.description,
+  }
+  const url = buildTeaShareUrl(encodeTeaShare(data))
+  window.open(url, '_blank', 'noopener')
+}
 
 // ============ 已品鉴的茶叶 ============
 const tastedTeas = computed(() => {
@@ -113,7 +129,7 @@ const unlockedWares = computed(() =>
       <p class="text-xs text-[var(--color-wood-light)] mb-3">已解锁 {{ tastedCount }} / {{ totalTeas }} 款 · 品鉴一款茶即点亮茶卡</p>
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
         <div v-for="item in teaJournal" :key="item.tea.id"
-          class="rounded-xl p-3 text-center"
+          class="relative rounded-xl p-3 text-center"
           :class="item.tasted ? 'glass-panel' : 'bg-white/40 border-2 border-dashed border-[#d8cfc0]'">
           <div class="w-full h-12 rounded-lg mb-2"
             :style="item.tasted
@@ -126,6 +142,10 @@ const unlockedWares = computed(() =>
           <p class="text-xs" :class="item.tasted ? 'text-[var(--color-wood-light)]' : 'text-[#c4bba9]'">
             {{ item.tasted ? `${item.tea.type} · ${item.tea.origin}${item.count > 1 ? ` · 品${item.count}次` : ''}` : '品鉴后点亮' }}
           </p>
+          <button v-if="item.tasted" type="button" @click="shareTea(item.tea)"
+            class="absolute right-2 top-2 rounded-full bg-[var(--color-tea-gold)]/15 px-2 py-0.5 text-[10px] text-[var(--color-wood)] transition-colors hover:bg-[var(--color-tea-gold)]/30">
+            分享 ↗
+          </button>
         </div>
       </div>
     </div>

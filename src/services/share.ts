@@ -144,3 +144,71 @@ export function parseShareQuery(raw: unknown): TastingCardShareData | null {
   if (typeof raw !== 'string' || !raw) return null
   return decodeShareData(raw)
 }
+
+// ============ 茶知识分享（内容卡） ============
+
+/** 分享用茶知识快照：不含内部字段，可安全放进 URL */
+export interface TeaShareData {
+  teaId: string
+  teaName: string
+  teaType: string
+  origin: string
+  flavor: string[]
+  description: string
+}
+
+/** 校验未知输入是否为合法的茶知识快照；不合法返回 null。 */
+function validateTeaShareData(raw: unknown): TeaShareData | null {
+  if (typeof raw !== 'object' || raw === null) return null
+  const r = raw as Record<string, unknown>
+  if (typeof r.teaId !== 'string' || !r.teaId) return null
+  if (typeof r.teaName !== 'string' || !r.teaName) return null
+  if (typeof r.teaType !== 'string' || !r.teaType) return null
+  if (typeof r.origin !== 'string' || !r.origin) return null
+  if (typeof r.description !== 'string' || !r.description) return null
+  if (!Array.isArray(r.flavor) || !r.flavor.every(f => typeof f === 'string')) return null
+  return {
+    teaId: r.teaId,
+    teaName: r.teaName,
+    teaType: r.teaType,
+    origin: r.origin,
+    flavor: r.flavor as string[],
+    description: r.description,
+  }
+}
+
+/** 编码茶知识快照为 base64url 字符串。 */
+export function encodeTeaShare(data: TeaShareData): string {
+  const json = JSON.stringify(data)
+  return bytesToBase64url(new TextEncoder().encode(json))
+}
+
+/** 解码并校验茶知识快照；任何非法输入返回 null。 */
+export function decodeTeaShare(encoded: string): TeaShareData | null {
+  if (!encoded) return null
+  const bytes = base64urlToBytes(encoded)
+  if (!bytes) return null
+  try {
+    const json = new TextDecoder().decode(bytes)
+    return validateTeaShareData(JSON.parse(json))
+  } catch {
+    return null
+  }
+}
+
+/** 构建茶知识分享 URL（参数 t）。 */
+export function buildTeaShareUrl(
+  encoded: string,
+  base = `${window.location.origin}${import.meta.env.BASE_URL}`,
+): string {
+  const normalized = base.endsWith('/') ? base : `${base}/`
+  const url = new URL('share', normalized)
+  url.searchParams.set('t', encoded)
+  return url.toString()
+}
+
+/** 从查询参数解析茶知识分享；缺失或非法返回 null。 */
+export function parseTeaShareQuery(raw: unknown): TeaShareData | null {
+  if (typeof raw !== 'string' || !raw) return null
+  return decodeTeaShare(raw)
+}
