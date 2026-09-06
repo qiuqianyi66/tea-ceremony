@@ -42,15 +42,16 @@ const { chromium } = require('@playwright/test')
   await page.getByRole('button', { name: '选择 西湖龙井' }).click()
   await page.waitForURL('**/tools')
 
-  // 选器：白瓷盖碗 + 山泉水
+  // 选器：白瓷盖碗 + 山泉水（确认备器即开始煮水，进入 /brew 已是 HEATING）
   await page.getByRole('button', { name: /白瓷盖碗/ }).click()
   await page.getByRole('button', { name: /山泉|泉水|纯净|山涧|雨水|井水/ }).first().click()
+  await page.waitForTimeout(300)
+  await page.screenshot({ path: 'docs/screenshots/brew-setup.png' })
   await page.getByRole('button', { name: '开始冲泡 →' }).click()
   await page.waitForURL('**/brew')
   await page.waitForTimeout(800)
 
-  // HEATING：开始煮水，等火焰升起
-  await page.getByRole('button', { name: '开始煮水' }).click()
+  // HEATING：备器页已开始煮水，等待火焰/蒸汽升起
   await page.waitForTimeout(3200)
   await page.screenshot({ path: 'docs/screenshots/brew-3d-heating.png' })
 
