@@ -3,12 +3,16 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { getCurrentSolarTerm, getSeasonName } from '@/data/solarTerms'
+import { teas } from '@/data/teas'
+import { TEA_POEMS, type TeaPoem } from '@/data/teaPoems'
+import { TEA_MASTERS, type TeaMaster } from '@/data/teaMasters'
+import type { Tea } from '@/types/tea'
 // 首页茶山实景背景：Tanmoy281 / Wikimedia Commons，CC BY-SA 4.0，详见 README「素材致谢」
 import heroImg from '@/assets/tea-mountain-hero.jpg'
 
 const router = useRouter()
 const auth = useAuthStore()
-const currentTerm = getCurrentSolarTerm()
+const term = getCurrentSolarTerm()
 
 // 入场与导航抽屉
 const entered = ref(false)
@@ -29,7 +33,7 @@ const timeOfDay = computed(() => {
   return 'night'
 })
 
-// 茶语（直接叠在茶山上，不再用黑屏开场）
+// 茶语（直接叠在茶山上）
 const quotes = [
   '山静无人，水自流。',
   '茶者，南方之嘉木也。',
@@ -39,19 +43,43 @@ const quotes = [
 ]
 const teaQuote = ref(quotes[Math.floor(Math.random() * quotes.length)]!)
 
+// ===== 内容流数据 =====
+// 今日宜饮：按节气推荐茶类筛选，数量不足时用其他茶类补齐
+const recommendedTeas = computed<Tea[]>(() => {
+  const types = term.teaTypes
+  const matched = teas.filter((t) => types.includes(t.type))
+  const rest = teas.filter((t) => !types.includes(t.type))
+  return [...matched, ...rest].slice(0, 3)
+})
+
+function pickRandom<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)]!
+}
+
+// 今日茶诗 / 茶人（随机，可换）
+const todayPoem = ref<TeaPoem>(pickRandom(TEA_POEMS))
+const todayMaster = ref<TeaMaster>(pickRandom(TEA_MASTERS))
+function nextPoem() {
+  todayPoem.value = pickRandom(TEA_POEMS)
+}
+function nextMaster() {
+  todayMaster.value = pickRandom(TEA_MASTERS)
+}
+
 interface NavItem {
   icon: string
   label: string
   desc: string
   path: string
 }
+// 内容入口置前：让"逛"成为第一选择
 const navItems: NavItem[] = [
-  { icon: '🍃', label: '选茶入席', desc: '挑一款今日之茶', path: '/select' },
-  { icon: '🗺️', label: '茶产区地图', desc: '遍览中国茶山', path: '/map' },
-  { icon: '📚', label: '我的茶柜', desc: '收藏与品鉴记录', path: '/collection' },
+  { icon: '🗺️', label: '茶产区地图', desc: '遍览 19 省名茶', path: '/map' },
+  { icon: '🔗', label: '茶文化图谱', desc: '茶与人 · 茶与诗', path: '/graph' },
+  { icon: '🍵', label: '选茶入席', desc: '挑一款今日之茶', path: '/select' },
   { icon: '🧘', label: '茶修成长', desc: '品茶进阶之路', path: '/profile' },
+  { icon: '📚', label: '我的茶柜', desc: '收藏与品鉴记录', path: '/collection' },
   { icon: '🤖', label: 'AI 茶灵', desc: '问茶解惑', path: '/ai' },
-  { icon: '🔗', label: '茶文化图谱', desc: '探索茶知识', path: '/graph' },
 ]
 
 function go(path: string) {
@@ -59,7 +87,7 @@ function go(path: string) {
   router.push(path)
 }
 
-// 入席：跳过冗余的十二境文字页，直接进入选茶
+// 入席体验：直达选茶
 function enter() {
   tryStartAudio()
   router.push('/select')
@@ -104,24 +132,19 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="hero-root" :class="[`time-${timeOfDay}`, { 'is-entered': entered }]" @click="tryStartAudio">
-    <!-- 实景茶山背景：外层视差，内层 Ken Burns 缓慢推近 -->
+  <div class="home-root" :class="[`time-${timeOfDay}`, { 'is-entered': entered }]" @click="tryStartAudio">
+    <!-- 实景茶山背景：固定铺满，内容在其上滚动 -->
     <div class="hero-parallax" :style="parallaxStyle">
       <img :src="heroImg" alt="晨雾中的茶山茶园" class="hero-img" draggable="false" />
     </div>
-
-    <!-- 晨雾氛围层 -->
     <div class="mist mist-a" aria-hidden="true"></div>
     <div class="mist mist-b" aria-hidden="true"></div>
-    <!-- 全局薄雾：柔化天空与远山，营造晨雾冷青调 -->
     <div class="hero-haze" aria-hidden="true"></div>
-
-    <!-- 可读性遮罩：顶部导航渐变 + 底部内容压暗 + 晨雾冷调 -->
     <div class="hero-scrim" aria-hidden="true"></div>
     <div class="hero-grain" aria-hidden="true"></div>
 
     <!-- 顶部栏 -->
-    <header class="hero-topbar">
+    <header class="topbar">
       <button class="brand" @click.stop="go('/')">
         <span class="brand-seal">茶</span>
         <span class="brand-name">一盏茶</span>
@@ -131,25 +154,110 @@ onUnmounted(() => {
       </button>
     </header>
 
-    <!-- 主内容：居中偏下 -->
-    <main class="hero-main">
+    <!-- 氛围头图：压缩版 hero，保留入席入口 -->
+    <section class="hero-main">
       <div class="hero-content" :class="{ 'content-in': entered }">
         <p class="term-tag">
-          今日{{ currentTerm.name }} · {{ getSeasonName(currentTerm.season) }}季 ·
-          宜{{ currentTerm.teaTypes.slice(0, 2).join('、') }}
+          今日{{ term.name }} · {{ getSeasonName(term.season) }}季 · 宜{{ term.teaTypes.slice(0, 2).join('、') }}
         </p>
         <h1 class="hero-title">一盏茶</h1>
         <p class="hero-sub">给忙碌的一天，留五分钟茶歇</p>
         <p class="hero-quote">{{ teaQuote }}</p>
         <button class="enter-btn" @click.stop="enter">
-          <span>入 席</span>
+          <span>入席体验</span>
           <span class="enter-arrow">→</span>
         </button>
       </div>
-    </main>
+      <div class="scroll-hint">向下探索 · 茶之世界</div>
+    </section>
 
-    <!-- 底部滚动提示 -->
-    <div class="hero-hint" :class="{ 'hint-in': entered }">选茶 · 冲泡 · 品鉴，一方静谧天地</div>
+    <!-- 内容流：让"逛"成立 -->
+    <main class="content-flow">
+      <!-- 今日宜饮 -->
+      <section class="flow-section">
+        <div class="flow-head">
+          <h2 class="flow-title">🍵 今日宜饮</h2>
+          <button class="flow-more" @click="go('/select')">全部茶叶 →</button>
+        </div>
+        <p class="flow-desc">{{ term.description }}</p>
+        <div class="tea-grid">
+          <button v-for="tea in recommendedTeas" :key="tea.id" class="tea-card" @click="go('/select')">
+            <div class="tea-card-top">
+              <span class="tea-type">{{ tea.type }}</span>
+              <span class="tea-org">{{ tea.origin }}</span>
+            </div>
+            <p class="tea-name">{{ tea.name }}</p>
+            <p class="tea-desc">{{ tea.description }}</p>
+            <div class="tea-flavors">
+              <span v-for="f in tea.flavor" :key="f" class="flavor-pill">{{ f }}</span>
+            </div>
+          </button>
+        </div>
+      </section>
+
+      <!-- 茶产区地图横幅 -->
+      <button class="map-banner" @click="go('/map')">
+        <div class="map-text">
+          <h2 class="map-title">🗺️ 中国茶产区地图</h2>
+          <p class="map-desc">19 省名茶产地 · 一图遍览茶山风土</p>
+        </div>
+        <span class="map-arrow">→</span>
+      </button>
+
+      <!-- 今日茶诗 -->
+      <section class="flow-section">
+        <div class="flow-head">
+          <h2 class="flow-title">📜 今日茶诗</h2>
+          <button class="flow-more" @click="nextPoem">换一首 ↻</button>
+        </div>
+        <div class="poem-card">
+          <p class="poem-title">{{ todayPoem.title }} · {{ todayPoem.author }}（{{ todayPoem.dynasty }}）</p>
+          <p class="poem-content">{{ todayPoem.content }}</p>
+          <p class="poem-desc">{{ todayPoem.description }}</p>
+        </div>
+      </section>
+
+      <!-- 茶人故事 -->
+      <section class="flow-section">
+        <div class="flow-head">
+          <h2 class="flow-title">👤 茶人故事</h2>
+          <button class="flow-more" @click="nextMaster">换一位 ↻</button>
+        </div>
+        <div class="master-card">
+          <div class="master-top">
+            <span class="master-avatar">{{ todayMaster.avatar }}</span>
+            <div>
+              <p class="master-name">{{ todayMaster.name }} · {{ todayMaster.title }}</p>
+              <p class="master-dynasty">{{ todayMaster.dynasty }}代茶人</p>
+            </div>
+          </div>
+          <p class="master-quote">「{{ todayMaster.quote }}」</p>
+          <p class="master-desc">{{ todayMaster.description }}</p>
+        </div>
+      </section>
+
+      <!-- 图谱 + AI 双列入口 -->
+      <section class="entry-grid">
+        <button class="entry-card" @click="go('/graph')">
+          <span class="entry-icon">🔗</span>
+          <span class="entry-label">茶文化图谱</span>
+          <span class="entry-desc">茶与人 · 茶与诗 · 茶与器</span>
+        </button>
+        <button class="entry-card" @click="go('/ai')">
+          <span class="entry-icon">🤖</span>
+          <span class="entry-label">AI 茶灵</span>
+          <span class="entry-desc">问茶解惑，懂茶也懂你</span>
+        </button>
+      </section>
+
+      <!-- 底部 -->
+      <footer class="footer">
+        <button class="footer-link" @click="go(auth.isLoggedIn ? '/history' : '/login')">
+          {{ auth.isLoggedIn ? '查看品鉴历史' : '登录 / 注册' }}
+        </button>
+        <p class="footer-note">一盏茶 · Tea Ceremony · 离线可用</p>
+      </footer>
+    </main>
 
     <!-- 侧边导航抽屉 -->
     <Teleport to="body">
@@ -186,18 +294,20 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-.hero-root {
-  position: fixed;
-  inset: 0;
-  overflow: hidden;
+.home-root {
+  position: relative;
+  min-height: 100vh;
+  overflow-x: hidden;
   background: #0e1a16;
   font-family: 'Noto Serif SC', serif;
+  color: #f5f1e6;
 }
 
-/* ---------- 背景层 ---------- */
+/* ---------- 背景层（固定） ---------- */
 .hero-parallax {
-  position: absolute;
+  position: fixed;
   inset: -4%;
+  z-index: 0;
   will-change: transform;
   transition: transform 1.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -214,9 +324,8 @@ onUnmounted(() => {
   to { transform: scale(1.1) translate(-1.2%, -1%); }
 }
 
-/* ---------- 晨雾 ---------- */
 .mist {
-  position: absolute;
+  position: fixed;
   border-radius: 50%;
   filter: blur(60px);
   pointer-events: none;
@@ -239,9 +348,8 @@ onUnmounted(() => {
   to { transform: translateX(8%) translateY(2%); }
 }
 
-/* 全局薄雾：自上而下由浓到淡，压柔天空与远山；screen 让高光泛白更接近晨雾 */
 .hero-haze {
-  position: absolute;
+  position: fixed;
   inset: 0;
   z-index: 2;
   pointer-events: none;
@@ -251,9 +359,8 @@ onUnmounted(() => {
     radial-gradient(130% 85% at 50% 10%, rgba(236, 243, 239, 0.55), transparent 56%);
 }
 
-/* ---------- 遮罩 ---------- */
 .hero-scrim {
-  position: absolute;
+  position: fixed;
   inset: 0;
   z-index: 3;
   pointer-events: none;
@@ -273,9 +380,8 @@ onUnmounted(() => {
 }
 .time-night .hero-img { filter: saturate(0.7) brightness(0.62) hue-rotate(-8deg); }
 
-/* 胶片颗粒 */
 .hero-grain {
-  position: absolute;
+  position: fixed;
   inset: 0;
   z-index: 4;
   pointer-events: none;
@@ -285,10 +391,10 @@ onUnmounted(() => {
 }
 
 /* ---------- 顶部栏 ---------- */
-.hero-topbar {
-  position: absolute;
+.topbar {
+  position: fixed;
   top: 0; left: 0; right: 0;
-  z-index: 10;
+  z-index: 20;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -299,6 +405,10 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.6rem;
   color: #f3efe4;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
 }
 .brand-seal {
   display: grid;
@@ -330,6 +440,7 @@ onUnmounted(() => {
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.16);
   transition: background 0.3s;
+  cursor: pointer;
 }
 .menu-btn:hover { background: rgba(14, 24, 20, 0.55); }
 .menu-btn span {
@@ -339,19 +450,19 @@ onUnmounted(() => {
   border-radius: 2px;
 }
 
-/* ---------- 主内容 ---------- */
+/* ---------- 氛围头图 ---------- */
 .hero-main {
-  position: absolute;
-  inset: 0;
-  z-index: 8;
+  position: relative;
+  z-index: 10;
   display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding: 0 1.5rem 14vh;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 54vh;
+  padding: 6rem 1.5rem 3rem;
+  text-align: center;
 }
 .hero-content {
-  text-align: center;
-  color: #f5f1e6;
   opacity: 0;
   transform: translateY(28px);
   transition: opacity 1.1s ease 0.2s, transform 1.1s cubic-bezier(0.22, 1, 0.36, 1) 0.2s;
@@ -364,48 +475,49 @@ onUnmounted(() => {
   letter-spacing: 0.14em;
   color: rgba(245, 241, 230, 0.86);
   padding: 0.35rem 0.95rem;
-  margin-bottom: 1.4rem;
+  margin-bottom: 1.1rem;
   border-radius: 999px;
   border: 1px solid rgba(245, 241, 230, 0.28);
   background: rgba(14, 24, 20, 0.26);
   backdrop-filter: blur(6px);
 }
 .hero-title {
-  font-size: clamp(3.4rem, 9vw, 6rem);
+  font-size: clamp(2.6rem, 7vw, 4.2rem);
   font-weight: 700;
   letter-spacing: 0.32em;
-  margin: 0 0 1rem;
-  padding-left: 0.32em; /* 视觉居中抵消字间距 */
+  margin: 0 0 0.7rem;
+  padding-left: 0.32em;
   text-shadow: 0 4px 30px rgba(0, 0, 0, 0.55), 0 1px 4px rgba(0, 0, 0, 0.4);
 }
 .hero-sub {
-  font-size: clamp(1rem, 2.4vw, 1.3rem);
+  font-size: clamp(0.95rem, 2.2vw, 1.15rem);
   letter-spacing: 0.22em;
   color: rgba(245, 241, 230, 0.94);
-  margin: 0 0 0.7rem;
+  margin: 0 0 0.6rem;
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
 }
 .hero-quote {
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   letter-spacing: 0.12em;
   color: rgba(201, 169, 110, 0.95);
-  margin: 0 0 2.2rem;
+  margin: 0 0 1.6rem;
   text-shadow: 0 1px 8px rgba(0, 0, 0, 0.5);
 }
 .enter-btn {
   display: inline-flex;
   align-items: center;
   gap: 0.7rem;
-  padding: 0.95rem 3rem;
+  padding: 0.85rem 2.6rem;
   font-family: inherit;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   letter-spacing: 0.4em;
-  padding-left: 3.4rem;
+  padding-left: 3rem;
   color: #f5f1e6;
   border-radius: 999px;
   border: 1px solid rgba(245, 241, 230, 0.5);
   background: rgba(201, 169, 110, 0.16);
   backdrop-filter: blur(12px);
+  cursor: pointer;
   transition: all 0.4s ease;
 }
 .enter-btn:hover {
@@ -419,20 +531,275 @@ onUnmounted(() => {
 .enter-arrow { transition: transform 0.3s; letter-spacing: 0; }
 .enter-btn:hover .enter-arrow { transform: translateX(4px); }
 
-.hero-hint {
-  position: absolute;
-  bottom: 2.2rem;
-  left: 0; right: 0;
-  z-index: 8;
-  text-align: center;
-  font-size: 0.75rem;
+.scroll-hint {
+  margin-top: 2.2rem;
+  font-size: 0.72rem;
   letter-spacing: 0.3em;
-  color: rgba(245, 241, 230, 0.6);
+  color: rgba(245, 241, 230, 0.55);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
   opacity: 0;
   transition: opacity 1.2s ease 1s;
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
 }
-.hero-hint.hint-in { opacity: 1; }
+.is-entered .scroll-hint { opacity: 1; }
+
+/* ---------- 内容流 ---------- */
+.content-flow {
+  position: relative;
+  z-index: 10;
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 0 1.2rem 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.6rem;
+}
+.flow-section {
+  background: rgba(16, 26, 22, 0.68);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(245, 241, 230, 0.12);
+  border-radius: 1.1rem;
+  padding: 1.4rem 1.3rem;
+}
+.flow-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.7rem;
+}
+.flow-title {
+  font-size: 1.15rem;
+  letter-spacing: 0.1em;
+  color: #f3efe4;
+  margin: 0;
+}
+.flow-more {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  color: rgba(201, 169, 110, 0.95);
+  transition: opacity 0.25s;
+}
+.flow-more:hover { opacity: 0.7; }
+.flow-desc {
+  font-size: 0.82rem;
+  line-height: 1.7;
+  color: rgba(245, 241, 230, 0.62);
+  margin: 0 0 1rem;
+}
+
+.tea-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 0.8rem;
+}
+.tea-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  text-align: left;
+  padding: 1rem 1.05rem;
+  border-radius: 0.9rem;
+  background: rgba(245, 241, 230, 0.06);
+  border: 1px solid rgba(245, 241, 230, 0.1);
+  color: #f3efe4;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.28s ease;
+}
+.tea-card:hover {
+  background: rgba(201, 169, 110, 0.14);
+  border-color: rgba(201, 169, 110, 0.45);
+  transform: translateY(-2px);
+}
+.tea-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.tea-type {
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  color: rgba(201, 169, 110, 0.95);
+  border: 1px solid rgba(201, 169, 110, 0.4);
+  padding: 0.12rem 0.5rem;
+  border-radius: 999px;
+}
+.tea-org { font-size: 0.72rem; color: rgba(245, 241, 230, 0.5); }
+.tea-name { font-size: 1.1rem; font-weight: 600; margin: 0.1rem 0 0; }
+.tea-desc {
+  font-size: 0.76rem;
+  line-height: 1.6;
+  color: rgba(245, 241, 230, 0.58);
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.tea-flavors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.2rem;
+}
+.flavor-pill {
+  font-size: 0.68rem;
+  color: rgba(245, 241, 230, 0.78);
+  background: rgba(245, 241, 230, 0.08);
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+}
+
+/* 地图横幅 */
+.map-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  text-align: left;
+  padding: 1.5rem 1.6rem;
+  border-radius: 1.1rem;
+  background: linear-gradient(120deg, rgba(32, 58, 44, 0.82), rgba(22, 38, 30, 0.82));
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(201, 169, 110, 0.28);
+  color: #f3efe4;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.map-banner:hover {
+  border-color: rgba(201, 169, 110, 0.6);
+  transform: translateY(-2px);
+}
+.map-title { font-size: 1.2rem; letter-spacing: 0.08em; margin: 0 0 0.3rem; }
+.map-desc { font-size: 0.82rem; color: rgba(245, 241, 230, 0.6); margin: 0; }
+.map-arrow { font-size: 1.5rem; color: rgba(201, 169, 110, 0.9); }
+
+/* 茶诗 */
+.poem-card {
+  padding: 1.1rem 1.2rem;
+  border-radius: 0.9rem;
+  background: rgba(245, 241, 230, 0.05);
+  border: 1px solid rgba(245, 241, 230, 0.08);
+}
+.poem-title {
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  color: rgba(201, 169, 110, 0.95);
+  margin: 0 0 0.6rem;
+}
+.poem-content {
+  font-size: 0.95rem;
+  line-height: 2;
+  color: #f3efe4;
+  margin: 0 0 0.7rem;
+  white-space: pre-line;
+}
+.poem-desc {
+  font-size: 0.78rem;
+  line-height: 1.7;
+  color: rgba(245, 241, 230, 0.55);
+  margin: 0;
+}
+
+/* 茶人 */
+.master-card {
+  padding: 1.1rem 1.2rem;
+  border-radius: 0.9rem;
+  background: rgba(245, 241, 230, 0.05);
+  border: 1px solid rgba(245, 241, 230, 0.08);
+}
+.master-top {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 0.7rem;
+}
+.master-avatar {
+  display: grid;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  font-size: 1.3rem;
+  border-radius: 50%;
+  background: rgba(201, 169, 110, 0.16);
+  border: 1px solid rgba(201, 169, 110, 0.35);
+}
+.master-name { font-size: 1rem; color: #f3efe4; margin: 0; }
+.master-dynasty { font-size: 0.72rem; color: rgba(245, 241, 230, 0.5); margin: 0.15rem 0 0; }
+.master-quote {
+  font-size: 0.9rem;
+  line-height: 1.8;
+  color: rgba(201, 169, 110, 0.95);
+  margin: 0 0 0.6rem;
+}
+.master-desc {
+  font-size: 0.78rem;
+  line-height: 1.7;
+  color: rgba(245, 241, 230, 0.55);
+  margin: 0;
+}
+
+/* 双列入口 */
+.entry-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.8rem;
+}
+.entry-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.3rem;
+  padding: 1.2rem 1.2rem;
+  border-radius: 1rem;
+  background: rgba(16, 26, 22, 0.68);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(245, 241, 230, 0.12);
+  color: #f3efe4;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.28s ease;
+}
+.entry-card:hover {
+  border-color: rgba(201, 169, 110, 0.5);
+  background: rgba(24, 38, 32, 0.8);
+  transform: translateY(-2px);
+}
+.entry-icon { font-size: 1.4rem; }
+.entry-label { font-size: 1rem; letter-spacing: 0.08em; }
+.entry-desc { font-size: 0.74rem; color: rgba(245, 241, 230, 0.52); }
+
+/* 底部 */
+.footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 2rem 0 0.5rem;
+}
+.footer-link {
+  background: none;
+  border: 1px solid rgba(245, 241, 230, 0.3);
+  border-radius: 999px;
+  padding: 0.6rem 1.8rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  letter-spacing: 0.15em;
+  color: #f3efe4;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.footer-link:hover {
+  background: rgba(201, 169, 110, 0.9);
+  border-color: rgba(201, 169, 110, 0.9);
+  color: #2a2114;
+}
+.footer-note { font-size: 0.7rem; letter-spacing: 0.2em; color: rgba(245, 241, 230, 0.35); margin: 0; }
 
 /* ---------- 抽屉 ---------- */
 .drawer-mask {
@@ -486,6 +853,10 @@ onUnmounted(() => {
   text-align: left;
   padding: 0.85rem 0.7rem;
   border-radius: 12px;
+  color: #f3efe4;
+  background: none;
+  border: none;
+  font-family: inherit;
   transition: background 0.25s;
 }
 .drawer-item:hover { background: rgba(255, 255, 255, 0.06); }
@@ -513,15 +884,16 @@ onUnmounted(() => {
 
 /* ---------- 响应式 ---------- */
 @media (max-width: 640px) {
-  .hero-main { padding-bottom: 12vh; }
-  .hero-topbar { padding: 1.1rem 1.1rem; }
+  .hero-main { min-height: 58vh; padding-top: 5rem; }
+  .topbar { padding: 1.1rem 1.1rem; }
   .mist-a { width: 110vw; }
   .mist-b { width: 100vw; }
+  .content-flow { padding: 0 0.9rem 3rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .hero-img, .mist-a, .mist-b { animation: none; }
   .hero-parallax { transition: none; }
-  .hero-content, .hero-hint { transition: opacity 0.4s ease; transform: none; }
+  .hero-content, .scroll-hint { transition: opacity 0.4s ease; transform: none; }
 }
 </style>
