@@ -36,23 +36,120 @@ const aromaTypes = [
   { id: 'roasted', label: '焙火', icon: 'Flame' },
   { id: 'fresh', label: '鲜爽', icon: 'Sparkles' },
 ]
-const selectedAroma = ref<string | null>(null)
+const selectedAromas = ref<string[]>([])
 
 function toggleAroma(id: string) {
-  selectedAroma.value = selectedAroma.value === id ? null : id
+  const idx = selectedAromas.value.indexOf(id)
+  if (idx >= 0) {
+    selectedAromas.value.splice(idx, 1)
+  } else {
+    selectedAromas.value.push(id)
+  }
 }
 
+const selectedAromaLabels = computed(() =>
+  selectedAromas.value
+    .map(id => aromaTypes.find(a => a.id === id)?.label)
+    .filter((l): l is string => !!l)
+    .join('、'),
+)
+
 // ============ 品味（八维评分）============
+// 新手模式：每个维度配白话解释 + 口语化感受选项（内部映射 1-5 分）；
+// 专业模式：保留 1-5 滑块。底层 store.tasteDimensions 与评分/雷达图不变。
 const dimensions = [
-  { key: 'bitterness' as const, label: '苦涩度', short: '苦', left: '清淡', right: '浓烈', icon: 'Minus' },
-  { key: 'sweetness' as const, label: '甜度', short: '甜', left: '无甜', right: '甘甜', icon: 'Heart' },
-  { key: 'aftertaste' as const, label: '回甘', short: '回', left: '无回甘', right: '持久', icon: 'Sparkle' },
-  { key: 'body' as const, label: '醇厚度', short: '醇', left: '单薄', right: '醇厚', icon: 'Gem' },
-  { key: 'aroma' as const, label: '香气持久度', short: '香', left: '短暂', right: '持久', icon: 'Wind' },
-  { key: 'rhyme' as const, label: '茶韵', short: '韵', left: '浅薄', right: '悠长', icon: 'Activity' },
-  { key: 'shape' as const, label: '叶底', short: '叶', left: '粗散', right: '匀整', icon: 'Target' },
-  { key: 'mind' as const, label: '心境', short: '心', left: '浮躁', right: '禅定', icon: 'Crown' },
+  {
+    key: 'bitterness' as const, label: '苦涩度', short: '苦', left: '清淡', right: '浓烈', icon: 'Minus',
+    hint: '这是茶的"刺激强度"，不是缺点——浓茶通常苦涩更明显。',
+    options: [
+      { score: 1, text: '几乎不苦' },
+      { score: 2, text: '微苦涩' },
+      { score: 3, text: '苦涩适中' },
+      { score: 4, text: '苦涩较明显' },
+      { score: 5, text: '苦涩很重' },
+    ],
+  },
+  {
+    key: 'sweetness' as const, label: '甜度', short: '甜', left: '无甜', right: '甘甜', icon: 'Heart',
+    hint: '茶汤入口的甜润感，好茶通常入口甜、回甘更甜。',
+    options: [
+      { score: 1, text: '没有甜味' },
+      { score: 2, text: '隐约有甜' },
+      { score: 3, text: '有明显甜' },
+      { score: 4, text: '甜润舒服' },
+      { score: 5, text: '非常甘甜' },
+    ],
+  },
+  {
+    key: 'aftertaste' as const, label: '回甘', short: '回', left: '无回甘', right: '持久', icon: 'Sparkle',
+    hint: '咽下去后，喉咙里慢慢泛起的甜味，越持久越好。',
+    options: [
+      { score: 1, text: '咽完就没味' },
+      { score: 2, text: '一点点回甜' },
+      { score: 3, text: '回甘明显' },
+      { score: 4, text: '回甘持久' },
+      { score: 5, text: '久久不散' },
+    ],
+  },
+  {
+    key: 'body' as const, label: '醇厚度', short: '醇', left: '单薄', right: '醇厚', icon: 'Gem',
+    hint: '茶汤在嘴里的"分量感"——像水还是像米汤，越稠越醇厚。',
+    options: [
+      { score: 1, text: '像白开水' },
+      { score: 2, text: '偏薄' },
+      { score: 3, text: '有厚度' },
+      { score: 4, text: '饱满醇厚' },
+      { score: 5, text: '浓稠有质感' },
+    ],
+  },
+  {
+    key: 'aroma' as const, label: '香气持久度', short: '香', left: '短暂', right: '持久', icon: 'Wind',
+    hint: '香气能在嘴里和杯里留多久，好茶常说"杯底留香"。',
+    options: [
+      { score: 1, text: '几乎没香' },
+      { score: 2, text: '有香但快散' },
+      { score: 3, text: '持续一会儿' },
+      { score: 4, text: '比较持久' },
+      { score: 5, text: '杯底留香' },
+    ],
+  },
+  {
+    key: 'rhyme' as const, label: '茶韵', short: '韵', left: '浅薄', right: '悠长', icon: 'Activity',
+    hint: '喝完后整体留在嘴里的"茶味余韵"，越悠长越有回味。',
+    options: [
+      { score: 1, text: '没什么余味' },
+      { score: 2, text: '一点余味' },
+      { score: 3, text: '余味明显' },
+      { score: 4, text: '悠长有回味' },
+      { score: 5, text: '余韵很强' },
+    ],
+  },
+  {
+    key: 'shape' as const, label: '叶底', short: '叶', left: '粗散', right: '匀整', icon: 'Target',
+    hint: '泡开后的茶叶样子——越完整匀整，说明原料和工艺越好。',
+    options: [
+      { score: 1, text: '碎而杂乱' },
+      { score: 2, text: '不太整齐' },
+      { score: 3, text: '还算完整' },
+      { score: 4, text: '比较匀整' },
+      { score: 5, text: '完整有弹性' },
+    ],
+  },
+  {
+    key: 'mind' as const, label: '心境', short: '心', left: '浮躁', right: '禅定', icon: 'Crown',
+    hint: '这是你的主观感受，不是茶的品质——喝这泡茶让你有多放松。',
+    options: [
+      { score: 1, text: '没感觉' },
+      { score: 2, text: '稍微放松' },
+      { score: 3, text: '比较平静' },
+      { score: 4, text: '很放松舒服' },
+      { score: 5, text: '完全沉浸' },
+    ],
+  },
 ] as const
+
+// 新手 / 专业模式切换（默认新手，降低品鉴门槛）
+const isExpertMode = ref(false)
 
 // ============ 笔记 ============
 const tastingNotes = ref('')
@@ -82,7 +179,7 @@ async function submit() {
   saveError.value = ''
   try {
     savedRecord.value = await store.saveRecord(
-      selectedAroma.value ?? undefined,
+      selectedAromaLabels.value || undefined,
       tastingNotes.value || undefined,
       weather.value || undefined,
       mood.value || undefined,
@@ -204,7 +301,7 @@ const averageDimensions = computed(() => {
           v-for="a in aromaTypes" :key="a.id"
           @click="toggleAroma(a.id)"
           class="p-4 rounded-xl border-2 text-left transition-all flex items-center gap-2"
-          :class="selectedAroma === a.id
+          :class="selectedAromas.includes(a.id)
             ? 'border-[var(--color-tea-gold)] bg-[var(--color-paper)]'
             : 'border-transparent bg-white hover:shadow-md'"
         >
@@ -214,7 +311,7 @@ const averageDimensions = computed(() => {
           />
           <span class="text-[var(--color-wood)]">{{ a.label }}</span>
           <component
-            v-if="selectedAroma === a.id"
+            v-if="selectedAromas.includes(a.id)"
             :is="`IconCheckCircle`"
             class="w-5 h-5 ml-auto text-[var(--color-tea-gold)]"
           />
@@ -231,6 +328,43 @@ const averageDimensions = computed(() => {
     <!-- ======== ③ 品味 ======== -->
     <div v-if="step === 'taste'" class="w-full max-w-lg">
       <div class="space-y-6 mb-8">
+        <!-- 新手 / 专业模式切换 -->
+        <div class="flex justify-end">
+          <button @click="isExpertMode = !isExpertMode"
+            class="text-xs px-3 py-1.5 rounded-lg border border-[var(--color-paper)] text-[var(--color-wood-light)] hover:text-[var(--color-wood)] hover:border-[var(--color-tea-gold)] transition-colors">
+            {{ isExpertMode ? '← 切回新手模式' : '专业模式（滑块打分）→' }}
+          </button>
+        </div>
+
+        <!-- 新手模式：感受选择题（内部映射 1-5 分，底层八维不变） -->
+        <div v-if="!isExpertMode">
+          <p class="text-xs text-[var(--color-wood-light)] mb-3">选一个最接近你感受的描述即可，不确定可跳过（默认中等）。</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div v-for="d in dimensions" :key="d.key" class="p-3 bg-white/60 rounded-xl border border-[var(--color-paper)]">
+              <div class="flex items-center gap-2 mb-1">
+                <component :is="`Icon${d.icon}`" class="w-4 h-4 text-[var(--color-tea-gold)] shrink-0" />
+                <span class="text-xs font-bold text-[var(--color-wood)]">{{ d.label }}</span>
+                <span class="text-[10px] text-[var(--color-tea-gold)] ml-auto">{{ store.tasteDimensions[d.key] }}分</span>
+              </div>
+              <p class="text-[10px] text-[var(--color-wood-light)] mb-2 leading-relaxed">{{ d.hint }}</p>
+              <div class="flex flex-col gap-1">
+                <button
+                  v-for="opt in d.options" :key="opt.score"
+                  @click="store.tasteDimensions[d.key] = opt.score"
+                  class="text-left text-[11px] px-2.5 py-1.5 rounded-md transition-all"
+                  :class="store.tasteDimensions[d.key] === opt.score
+                    ? 'bg-[var(--color-tea-gold)] text-white shadow-sm'
+                    : 'bg-[var(--color-paper)] text-[var(--color-wood)] hover:bg-[#e8dcc4]'"
+                >
+                  {{ opt.score }}. {{ opt.text }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 专业模式：滑块打分 -->
+        <template v-if="isExpertMode">
         <div v-for="d in dimensions" :key="d.key" class="p-4 bg-white/50 rounded-xl border border-[var(--color-paper)]">
           <div class="flex items-center gap-3 mb-3">
             <component
@@ -253,6 +387,7 @@ const averageDimensions = computed(() => {
             <span>{{ d.right }}</span>
           </div>
         </div>
+        </template>
 
         <!-- 雷达图实时预览 -->
         <div class="bg-[var(--color-paper)] rounded-xl p-4 border border-[var(--color-tea-gold)]/20">
@@ -366,9 +501,9 @@ const averageDimensions = computed(() => {
             <strong>茶汤色：</strong>
             <span :style="{ color: soupColor }">■</span> {{ soupColor }}
           </p>
-          <p v-if="selectedAroma" class="text-[var(--color-wood)] mt-2 flex items-center gap-1">
+          <p v-if="selectedAromaLabels" class="text-[var(--color-wood)] mt-2 flex items-center gap-1">
             <IconWind class="w-4 h-4" />
-            <strong>香气：</strong>{{ aromaTypes.find(a => a.id === selectedAroma)?.label }}
+            <strong>香气：</strong>{{ selectedAromaLabels }}
           </p>
           <div class="mt-2 grid grid-cols-4 sm:grid-cols-8 gap-1">
             <div v-for="d in dimensions" :key="d.key" class="text-center">
