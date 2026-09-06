@@ -124,8 +124,9 @@ const anim = useBrewAnimation(toRef(props, 'phase'), toRef(props, 'isPouringOut'
 // 构图：整套茶席沿 z 后移 SET_Z，远离相机，露出近景桌面边缘，
 // 形成「前景桌面 → 中景器具 → 远景茶室」三层纵深（近大远小更协调，也给上方 UI 让出空间）。
 const SET_Z = -0.7
-// 相机配合小幅拉高拉远，视线中心落在后移后的茶席重心；fov 保持 40 不引入额外变量。
-const camPos = new THREE.Vector3(0, 2.5, 7.4)
+// 相机：降低并前移、视线中心下移，让桌面占据画面主体，压缩桌下深色地面的留白比例；
+// fov 略增到 42 让近景桌面更舒展（避免桌面只堆在上半幅、下方一大片死黑地面）。
+const camPos = new THREE.Vector3(0, 1.85, 6.1)
 const camLook = new THREE.Vector3(0, 1.28, -0.5)
 const keyLightPos = new THREE.Vector3(3.2, 5.5, 4)
 const rimLightPos = new THREE.Vector3(-3, 2, -2)
@@ -725,7 +726,7 @@ onRender(({ delta, elapsed }) => {
 
 <template>
   <!-- 相机 -->
-  <TresPerspectiveCamera :position="camPos" :fov="40" :look-at="camLook" />
+  <TresPerspectiveCamera :position="camPos" :fov="43" :look-at="camLook" />
 
   <!-- 灯光：夜色暖光氛围。环境光压低（0.22），环境反射由 scene.environment(IBL) 承担，
        避免旧值 0.55 把明暗对比抹平；主方向光投影（唯一投影灯）。 -->
@@ -743,7 +744,7 @@ onRender(({ delta, elapsed }) => {
        仅保留地面承接茶席光影。 -->
   <TresMesh :position="floorPos" :rotation="[-Math.PI / 2, 0, 0]" :receive-shadow="true">
     <TresPlaneGeometry :args="[12, 8]" />
-    <TresMeshStandardMaterial :color="'#1a140f'" :roughness="0.95" :env-map-intensity="0.2" />
+    <TresMeshStandardMaterial :color="'#241b13'" :roughness="0.95" :env-map-intensity="0.2" />
   </TresMesh>
 
   <!-- 木桌 + 茶席布 + 桌腿 -->
