@@ -10,6 +10,11 @@ const router = createRouter({
       component: () => import('../views/HomeView.vue'),
     },
     {
+      path: '/synesthesia/:id',
+      name: 'synesthesia',
+      component: () => import('../views/TeaSynesthesiaView.vue'),
+    },
+    {
       path: '/break',
       name: 'break',
       component: () => import('../views/TeaBreakView.vue'),

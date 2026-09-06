@@ -57,3 +57,5 @@ playwright-report/
 blob-report/
 
 .user_screenshot.png
+
+break_preview.png

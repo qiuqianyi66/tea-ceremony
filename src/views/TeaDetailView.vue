@@ -37,6 +37,10 @@ function startBrewing() {
   router.push('/select')
 }
 
+function goSynesthesia() {
+  if (tea.value) router.push(`/synesthesia/${tea.value.id}`)
+}
+
 function shareTea() {
   if (!tea.value) return
   const data = {
@@ -135,7 +139,11 @@ function shareTea() {
       </section>
 
       <!-- 底部操作 -->
-      <div class="mt-8 flex gap-3">
+      <button @click="goSynesthesia"
+        class="mt-8 w-full rounded-xl border border-[var(--color-tea-gold)]/40 bg-gradient-to-r from-[var(--color-tea-gold)]/10 to-transparent py-3.5 text-sm font-medium text-[var(--color-wood)] transition-all hover:from-[var(--color-tea-gold)]/20">
+        🎵 听这款茶的味道 · 30秒通感体验
+      </button>
+      <div class="mt-3 flex gap-3">
         <button @click="startBrewing"
           class="flex-1 rounded-xl bg-[var(--color-wood)] py-3 text-sm font-medium text-[var(--color-cream)] transition-colors hover:bg-[var(--color-wood-light)]">
           开始品鉴这泡茶
