@@ -106,3 +106,48 @@ describe('teaStore.saveRecord 离线保存闭环', () => {
     await expect(store.saveRecord()).rejects.toThrow('未选择茶叶')
   })
 })
+
+describe('teaStore 节气打卡', () => {
+  beforeEach(async () => {
+    setActivePinia(createPinia())
+    vi.restoreAllMocks()
+    await initDB()
+    await db.settings.clear()
+  })
+
+  it('首次打卡当前节气成功并写入 IndexedDB', async () => {
+    const store = useTeaStore()
+    await store.loadSolarCheckins()
+
+    const ok = await store.checkInSolarTerm('liqiu')
+
+    expect(ok).toBe(true)
+    expect(store.solarCheckins['liqiu']).toBeTruthy()
+    // 持久化：重新加载仍能读回
+    const reloaded = useTeaStore()
+    await reloaded.loadSolarCheckins()
+    expect(reloaded.solarCheckins['liqiu']).toBeTruthy()
+  })
+
+  it('同一节气重复打卡返回 false 且不覆盖原记录', async () => {
+    const store = useTeaStore()
+    await store.loadSolarCheckins()
+
+    await store.checkInSolarTerm('liqiu')
+    const firstDate = store.solarCheckins['liqiu']
+    const ok = await store.checkInSolarTerm('liqiu')
+
+    expect(ok).toBe(false)
+    expect(store.solarCheckins['liqiu']).toBe(firstDate)
+  })
+
+  it('不同节气可分别打卡，互不影响', async () => {
+    const store = useTeaStore()
+    await store.loadSolarCheckins()
+
+    await store.checkInSolarTerm('liqiu')
+    await store.checkInSolarTerm('bailu')
+
+    expect(Object.keys(store.solarCheckins).sort()).toEqual(['bailu', 'liqiu'])
+  })
+})
