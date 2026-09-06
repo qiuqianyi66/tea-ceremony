@@ -5,6 +5,7 @@ import { useTeaStore } from '@/stores/tea'
 import { TEA_LEVELS } from '@/data/constants'
 import { teas } from '@/data/teas'
 import { teawares } from '@/data/teawares'
+import TasteProfileSection from '@/components/tasting/TasteProfileSection.vue'
 
 const router = useRouter()
 const store = useTeaStore()
@@ -83,6 +84,9 @@ const typeCoverage = computed(() => Math.round((tastedTypes.value.size / 6) * 10
         <p class="text-xs text-[var(--color-wood-light)]">茶器收藏</p>
       </div>
     </div>
+
+    <!-- 口味画像 -->
+    <TasteProfileSection :history="store.history" />
 
     <!-- 近期茶记 -->
     <div>
