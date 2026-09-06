@@ -30,13 +30,15 @@ function makeWare(bonus?: Partial<TeaWare['bonus']>): TeaWare {
   }
 }
 
+// 理想好茶：不苦涩（反向维度取 1），其余七维满分
 const fullDimensions: TasteDimensions = {
-  bitterness: 5, sweetness: 5, aftertaste: 5, body: 5,
+  bitterness: 1, sweetness: 5, aftertaste: 5, body: 5,
   aroma: 5, rhyme: 5, shape: 5, mind: 5,
 }
 
+// 最差：苦涩很重（反向维度取 5），其余七维最低
 const lowDimensions: TasteDimensions = {
-  bitterness: 1, sweetness: 1, aftertaste: 1, body: 1,
+  bitterness: 5, sweetness: 1, aftertaste: 1, body: 1,
   aroma: 1, rhyme: 1, shape: 1, mind: 1,
 }
 
@@ -109,6 +111,12 @@ describe('calculateOverallScore 综合评分', () => {
 
   it('工艺系数为 0 时最低 1 分', () => {
     expect(calculateOverallScore(fullDimensions, 0)).toBe(1)
+  })
+
+  it('苦涩度为反向维度：其他维度相同时，越苦涩得分越低', () => {
+    const mild = { ...fullDimensions, bitterness: 1 }
+    const bitter = { ...fullDimensions, bitterness: 5 }
+    expect(calculateOverallScore(mild, 1)).toBeGreaterThan(calculateOverallScore(bitter, 1))
   })
 })
 

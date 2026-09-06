@@ -43,8 +43,12 @@ export function calculateOverallScore(
 ): number {
   const { bitterness, sweetness, aftertaste, body, aroma, rhyme, shape, mind } = dimensions
 
+  // 苦涩度是反向维度：对绝大多数茶而言越不苦涩越好，用 (6 - bitterness) 转成"适口度"
+  // （bitterness=1 → 5 分，bitterness=5 → 1 分），其余七维为正向。
+  const palatability = 6 - bitterness
+
   // 八维平均分（1-5）
-  const baseScore = (bitterness + sweetness + aftertaste + body + aroma + rhyme + shape + mind) / 8
+  const baseScore = (palatability + sweetness + aftertaste + body + aroma + rhyme + shape + mind) / 8
 
   // 归一化到 1-10 分
   const normalizedScore = baseScore * 2
