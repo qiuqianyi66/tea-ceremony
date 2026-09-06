@@ -15,6 +15,10 @@ import {
   decodeShareData,
   buildShareUrl,
   parseShareQuery,
+  encodeTeaShare,
+  decodeTeaShare,
+  buildTeaShareUrl,
+  parseTeaShareQuery,
   type TastingCardShareData,
 } from '@/services/share'
 
@@ -163,5 +167,47 @@ describe('buildShareUrl / parseShareQuery', () => {
     expect(parseShareQuery(null)).toBeNull()
     expect(parseShareQuery('')).toBeNull()
     expect(parseShareQuery('broken-input')).toBeNull()
+  })
+})
+
+describe('茶知识分享 encodeTeaShare / decodeTeaShare', () => {
+  const teaShare = {
+    teaId: 'longjing',
+    teaName: '西湖龙井',
+    teaType: '绿茶',
+    origin: '浙江杭州',
+    flavor: ['豆香', '栗香', '鲜爽'],
+    description: '中国十大名茶之首，扁平光滑，色泽翠绿。',
+  }
+
+  it('往返一致（含中文与风味数组）', () => {
+    const decoded = decodeTeaShare(encodeTeaShare(teaShare))
+    expect(decoded).toEqual(teaShare)
+  })
+
+  it('编码结果使用 base64url 字符集', () => {
+    expect(encodeTeaShare(teaShare)).toMatch(/^[A-Za-z0-9_-]*$/)
+  })
+
+  it('防御非法输入：缺字段 / 类型错误 / 非 JSON 返回 null', () => {
+    expect(decodeTeaShare('')).toBeNull()
+    expect(decodeTeaShare('!!!bad!!!')).toBeNull()
+    expect(decodeTeaShare(encodeTeaShare({ teaName: 'x' } as never))).toBeNull()
+    const wrongType = encodeTeaShare({ ...teaShare, flavor: '豆香' } as never)
+    expect(decodeTeaShare(wrongType)).toBeNull()
+  })
+
+  it('buildTeaShareUrl 使用 t 参数且基于 BASE_URL', () => {
+    const encoded = encodeTeaShare(teaShare)
+    const url = buildTeaShareUrl(encoded, 'https://example.com/tea-ceremony/')
+    expect(url).toMatch(/^https:\/\/example\.com\/tea-ceremony\/share\?t=/)
+    expect(new URL(url).searchParams.get('t')).toBe(encoded)
+  })
+
+  it('parseTeaShareQuery 从查询参数解码', () => {
+    const encoded = encodeTeaShare(teaShare)
+    expect(parseTeaShareQuery(encoded)).toEqual(teaShare)
+    expect(parseTeaShareQuery(undefined)).toBeNull()
+    expect(parseTeaShareQuery('broken')).toBeNull()
   })
 })

@@ -50,3 +50,24 @@ test('分享页：缺失参数显示错误态', async ({ page }) => {
   await page.goto('share')
   await expect(page.getByText('这份品鉴分享无效或已损坏')).toBeVisible()
 })
+
+const TEA_SAMPLE = {
+  teaId: 'longjing',
+  teaName: '西湖龙井',
+  teaType: '绿茶',
+  origin: '浙江杭州',
+  flavor: ['豆香', '栗香', '鲜爽'],
+  description: '中国十大名茶之首。',
+}
+
+test('分享页：茶知识链接渲染名茶卡（只读）', async ({ page }) => {
+  const encoded = encodeShare(TEA_SAMPLE)
+  await page.goto(`share?t=${encoded}`)
+
+  await expect(page.getByText('一杯好茶，值得分享')).toBeVisible()
+  await expect(page.getByText('西湖龙井', { exact: true })).toBeVisible()
+  await expect(page.getByText('绿茶 · 浙江杭州')).toBeVisible()
+  // 只读模式：不显示操作按钮
+  await expect(page.getByRole('button', { name: '分享链接' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: /探索更多名茶/ })).toBeVisible()
+})
