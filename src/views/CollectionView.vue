@@ -129,19 +129,19 @@ const unlockedWares = computed(() =>
       <p class="text-xs text-[var(--color-wood-light)] mb-3">已解锁 {{ tastedCount }} / {{ totalTeas }} 款 · 品鉴一款茶即点亮茶卡</p>
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
         <div v-for="item in teaJournal" :key="item.tea.id"
-          class="relative rounded-xl p-3 text-center"
-          :class="item.tasted ? 'glass-panel cursor-pointer' : 'bg-white/40 border-2 border-dashed border-[#d8cfc0]'"
-          @click="item.tasted && router.push(`/tea/${item.tea.id}`)">
+          class="relative rounded-xl p-3 text-center cursor-pointer transition-transform hover:scale-[1.02]"
+          :class="item.tasted ? 'glass-panel' : 'bg-white/40 border-2 border-dashed border-[#d8cfc0]'"
+          @click="router.push(`/tea/${item.tea.id}`)">
           <div class="w-full h-12 rounded-lg mb-2"
             :style="item.tasted
               ? { background: `linear-gradient(135deg, ${item.tea.soupColorMin}, ${item.tea.soupColorMax})` }
               : { background: 'repeating-linear-gradient(45deg, #e8e2d8, #e8e2d8 6px, #f0ebe2 6px, #f0ebe2 12px)' }">
           </div>
-          <p class="text-sm font-bold" :class="item.tasted ? 'text-[var(--color-wood)]' : 'text-[#b5ac9c]'">
-            {{ item.tasted ? item.tea.name : '待解锁' }}
+          <p class="text-sm font-bold" :class="item.tasted ? 'text-[var(--color-wood)]' : 'text-[#8a8070]'">
+            {{ item.tea.name }}
           </p>
-          <p class="text-xs" :class="item.tasted ? 'text-[var(--color-wood-light)]' : 'text-[#c4bba9]'">
-            {{ item.tasted ? `${item.tea.type} · ${item.tea.origin}${item.count > 1 ? ` · 品${item.count}次` : ''}` : '品鉴后点亮' }}
+          <p class="text-xs" :class="item.tasted ? 'text-[var(--color-wood-light)]' : 'text-[#b5ac9c]'">
+            {{ item.tasted ? `${item.tea.type} · ${item.tea.origin}${item.count > 1 ? ` · 品${item.count}次` : ''}` : `${item.tea.type} · 未品鉴` }}
           </p>
           <button v-if="item.tasted" type="button" @click="shareTea(item.tea)"
             class="absolute right-2 top-2 rounded-full bg-[var(--color-tea-gold)]/15 px-2 py-0.5 text-[10px] text-[var(--color-wood)] transition-colors hover:bg-[var(--color-tea-gold)]/30">
