@@ -67,6 +67,12 @@ function openPlantDetail(plant: PlantedTea) {
   showPlantDetail.value = true
 }
 
+/** 3D场景点击茶树 → 打开对应详情面板 */
+function onSelectPlant3D(id: number) {
+  const plant = plants.value.find(p => p.id === id)
+  if (plant) openPlantDetail(plant)
+}
+
 async function doWater() {
   if (!selectedPlant.value?.id) return
   await waterPlant(selectedPlant.value.id)
@@ -122,7 +128,7 @@ onMounted(() => {
   <!-- 地区茶园视图：3D真实感茶山 -->
   <div v-else-if="currentRegion" class="region-garden-3d">
     <!-- 3D场景全屏 -->
-    <TeaGardenScene3D />
+    <TeaGardenScene3D :plants="plants" @select-plant="onSelectPlant3D" />
 
     <!-- 顶部栏叠加（毛玻璃） -->
     <div class="garden-topbar-3d">
