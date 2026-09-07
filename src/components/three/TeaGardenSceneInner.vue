@@ -7,12 +7,17 @@
  *
  * TresJS 5 坑：rotation 必须传 [x,y,z] 数组，不能传 Vector3。
  */
-import { computed, onMounted, ref } from 'vue'
-import { useTresContext } from '@tresjs/core'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useLoop, useTresContext } from '@tresjs/core'
 import { OrbitControls } from '@tresjs/cientos'
 import type { PointerEvent as TresPointerEvent } from '@pmndrs/pointer-events'
 import * as THREE from 'three'
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js'
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
+import { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js'
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
 import { getGrowthStage } from '@/services/garden'
 import type { PlantedTea } from '@/types/garden'
 
@@ -25,6 +30,8 @@ const emit = defineEmits<{
 }>()
 
 const sceneCtx = useTresContext()
+/** 四期：渲染函数替换（后处理接管渲染循环） */
+const { render: replaceRender } = useLoop()
 
 // ============ 程序化噪声（Simplex-like，无需外部库） ============
 function hash(x: number, y: number): number {
@@ -148,17 +155,20 @@ interface StageVisual {
 
 const STAGE_VISUALS: Record<string, StageVisual> = {
   // 绝对尺寸（1 单位 ≈ 1 米）：低矮茶丛灌木，成熟约 1.6m 高
-  sprout:   { scale: 1, leafCount: 2, leafColor: '#9ccc65', trunkHeight: 0.35, trunkRadius: 0.08, crownRadius: 0.3,  hasGlow: false },
-  seedling: { scale: 1, leafCount: 3, leafColor: '#8bc34a', trunkHeight: 0.55, trunkRadius: 0.08, crownRadius: 0.45, hasGlow: false },
-  growing:  { scale: 1, leafCount: 5, leafColor: '#7cb342', trunkHeight: 0.8,  trunkRadius: 0.08, crownRadius: 0.6,  hasGlow: false },
-  mature:   { scale: 1, leafCount: 7, leafColor: '#689f38', trunkHeight: 1.05, trunkRadius: 0.08, crownRadius: 0.75, hasGlow: true },
-  recovery: { scale: 1, leafCount: 5, leafColor: '#7cb342', trunkHeight: 0.9,  trunkRadius: 0.08, crownRadius: 0.65, hasGlow: false },
+  // 四期调优：叶子颜色整体提亮（sprout 嫩黄绿 → mature 深绿），叶片数增加使冠形更饱满
+  sprout:   { scale: 1, leafCount: 3, leafColor: '#aed581', trunkHeight: 0.35, trunkRadius: 0.08, crownRadius: 0.3,  hasGlow: false },
+  seedling: { scale: 1, leafCount: 4, leafColor: '#9ccc65', trunkHeight: 0.55, trunkRadius: 0.08, crownRadius: 0.45, hasGlow: false },
+  growing:  { scale: 1, leafCount: 6, leafColor: '#8bc34a', trunkHeight: 0.8,  trunkRadius: 0.08, crownRadius: 0.6,  hasGlow: false },
+  mature:   { scale: 1, leafCount: 9, leafColor: '#7cb342', trunkHeight: 1.05, trunkRadius: 0.08, crownRadius: 0.75, hasGlow: true },
+  recovery: { scale: 1, leafCount: 5, leafColor: '#9ccc65', trunkHeight: 0.9,  trunkRadius: 0.08, crownRadius: 0.65, hasGlow: false },
   dead:     { scale: 1, leafCount: 2, leafColor: '#6d4c41', trunkHeight: 0.85, trunkRadius: 0.08, crownRadius: 0.5,  hasGlow: false },
 }
 
 interface LeafInfo {
   position: [number, number, number]
   scale: number
+  /** 每片叶子的颜色（基于 seed 微调明暗，增加层次感） */
+  color: string
 }
 
 interface PlantVisual {
@@ -221,17 +231,20 @@ function getPlantPosition(seed: number): [number, number, number] {
   return best ?? [0, MIN_H, 0]
 }
 
-/** 生成叶子球的位置（围绕枝干冠部分布） */
-function getLeafPositions(seed: number, count: number, crownRadius: number, crownY: number): LeafInfo[] {
+/** 生成叶子球的位置（围绕枝干冠部分布），每片叶子颜色基于 seed 微调明暗 */
+function getLeafPositions(seed: number, count: number, crownRadius: number, crownY: number, baseColor: string): LeafInfo[] {
+  const base = new THREE.Color(baseColor)
   const leaves: LeafInfo[] = []
   for (let i = 0; i < count; i++) {
     const angle = (i / count) * Math.PI * 2 + seededRandom(seed + i * 7.3) * 0.9
     const dist = crownRadius * (0.35 + seededRandom(seed + i * 11.7) * 0.65)
     const y = crownY + (seededRandom(seed + i * 13.1) - 0.25) * crownRadius * 0.7
     const s = 0.65 + seededRandom(seed + i * 17.3) * 0.7
+    const c = base.clone().offsetHSL(0, 0, (seededRandom(seed + i * 19.7) - 0.5) * 0.14)
     leaves.push({
       position: [Math.cos(angle) * dist, y, Math.sin(angle) * dist],
       scale: s,
+      color: `#${c.getHexString()}`,
     })
   }
   return leaves
@@ -244,7 +257,7 @@ const plantVisuals = computed<PlantVisual[]>(() => {
     const seed = (plant.id ?? 0) * 1000 + plant.teaId.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
     const position = getPlantPosition(seed)
     const crownY = config.trunkHeight * config.scale
-    const leaves = getLeafPositions(seed, config.leafCount, config.crownRadius, crownY)
+    const leaves = getLeafPositions(seed, config.leafCount, config.crownRadius, crownY, config.leafColor)
     const rotationY = seededRandom(seed + 99) * Math.PI * 2
     const plantId = plant.id ?? 0
     return {
@@ -314,6 +327,145 @@ function getLeafEmissive(id: number): string {
   return hoveredPlantId.value === id || selectedPlantId.value === id ? '#aed581' : '#000000'
 }
 
+// ============ 装饰植被（四期） ============
+
+const ROCK_COUNT = 45
+const GRASS_COUNT = 420
+const FLOWER_COUNT = 90
+
+/** 装饰物定位：在中央茶山半径内随机采样地形高度，命中高度范围即返回 */
+function getDecorPosition(seedIdx: number, minH: number, maxH: number): [number, number, number] {
+  for (let attempt = 0; attempt < 24; attempt++) {
+    const x = (seededRandom(seedIdx * 37.1 + attempt * 3.3 + 1) - 0.5) * 70
+    const z = (seededRandom(seedIdx * 53.7 + attempt * 5.1 + 2) - 0.5) * 70
+    const h = getTerrainHeight(x, z)
+    if (h >= minH && h <= maxH) return [x, h, z]
+  }
+  return [0, minH + 1, 0]
+}
+
+/** 生成石头：Dodecahedron 顶点随机位移，程序化圆润石块 */
+function createRockGeometry(): THREE.DodecahedronGeometry {
+  const geo = new THREE.DodecahedronGeometry(1, 0)
+  const pos = geo.attributes.position!
+  for (let i = 0; i < pos.count; i++) {
+    const n = seededRandom(i * 7.7 + 11) - 0.5
+    pos.setXYZ(
+      i,
+      pos.getX(i) * (1 + n * 0.55),
+      pos.getY(i) * (1 + n * 0.4),
+      pos.getZ(i) * (1 + n * 0.55)
+    )
+  }
+  geo.computeVertexNormals()
+  return geo
+}
+
+/** 创建装饰植被并挂到场景（石头用独立 Mesh，草/花用 InstancedMesh，共 3 个 draw call） */
+function createDecorations(scene: THREE.Scene): void {
+  const decorGroup = new THREE.Group()
+  decorGroup.name = 'decorations'
+
+  // --- 石头：散布在坡地/梯田边缘 ---
+  const rockGeo = createRockGeometry()
+  const rockMat = new THREE.MeshStandardMaterial({ color: 0x8a8580, roughness: 0.95, flatShading: true })
+  for (let i = 0; i < ROCK_COUNT; i++) {
+    const [x, h, z] = getDecorPosition(i, 1.2, 12)
+    const rock = new THREE.Mesh(rockGeo, rockMat)
+    const s = 0.28 + seededRandom(i * 3.3 + 5) * 0.85
+    rock.scale.set(s, s * (0.55 + seededRandom(i * 2.1 + 9) * 0.5), s)
+    rock.position.set(x, h - s * 0.3, z)
+    rock.rotation.set(
+      seededRandom(i + 17) * Math.PI,
+      seededRandom(i + 23) * Math.PI,
+      seededRandom(i + 29) * Math.PI
+    )
+    decorGroup.add(rock)
+  }
+
+  // --- 草簇：InstancedMesh，颜色按 HSL 微调 ---
+  const grassGeo = new THREE.ConeGeometry(0.06, 0.5, 4)
+  grassGeo.translate(0, 0.25, 0)
+  const grassMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, flatShading: true })
+  const grass = new THREE.InstancedMesh(grassGeo, grassMat, GRASS_COUNT)
+  const dummy = new THREE.Object3D()
+  const tmpColor = new THREE.Color()
+  for (let i = 0; i < GRASS_COUNT; i++) {
+    const [x, h, z] = getDecorPosition(i + 100, 0.5, 14)
+    dummy.position.set(x, h, z)
+    const s = 0.6 + seededRandom(i * 4.7 + 3) * 1.3
+    dummy.scale.set(s, s, s)
+    dummy.rotation.set(0, seededRandom(i + 41) * Math.PI, (seededRandom(i + 43) - 0.5) * 0.35)
+    dummy.updateMatrix()
+    grass.setMatrixAt(i, dummy.matrix)
+    tmpColor.setHSL(0.25 + seededRandom(i * 1.9 + 2) * 0.07, 0.4, 0.3 + seededRandom(i * 3.1 + 4) * 0.2)
+    grass.setColorAt(i, tmpColor)
+  }
+  if (grass.instanceColor) grass.instanceColor.needsUpdate = true
+  decorGroup.add(grass)
+
+  // --- 野花：InstancedMesh 亮色小球，集中茶园带 ---
+  const flowerGeo = new THREE.IcosahedronGeometry(0.1, 0)
+  const flowerMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.65, flatShading: true })
+  const flowers = new THREE.InstancedMesh(flowerGeo, flowerMat, FLOWER_COUNT)
+  const flowerPalette = [0xf4e28d, 0xf4b8d0, 0xe8e3f2, 0xf2b88d, 0xd9e8b8]
+  for (let i = 0; i < FLOWER_COUNT; i++) {
+    const [x, h, z] = getDecorPosition(i + 500, 2, 10)
+    dummy.position.set(x, h + 0.05, z)
+    const s = 0.8 + seededRandom(i * 5.9 + 7) * 1.4
+    dummy.scale.set(s, s, s)
+    dummy.rotation.set(0, seededRandom(i + 61) * Math.PI, 0)
+    dummy.updateMatrix()
+    flowers.setMatrixAt(i, dummy.matrix)
+    tmpColor.setHex(flowerPalette[Math.floor(seededRandom(i * 8.1 + 13) * flowerPalette.length)] ?? 0xf4e28d)
+    flowers.setColorAt(i, tmpColor)
+  }
+  if (flowers.instanceColor) flowers.instanceColor.needsUpdate = true
+  decorGroup.add(flowers)
+
+  scene.add(decorGroup)
+}
+
+// ============ 后处理（四期：SSAO + Bloom） ============
+
+/** 组装后处理管线：RenderPass → SSAO（桌面）→ Bloom → OutputPass（ACES 色调映射） */
+function setupPostProcessing(
+  renderer: THREE.WebGLRenderer,
+  scene: THREE.Scene,
+  camera: THREE.PerspectiveCamera,
+  sizes: { width: () => number; height: () => number }
+): { composer: EffectComposer; dispose: () => void } {
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
+  const composer = new EffectComposer(renderer)
+  composer.addPass(new RenderPass(scene, camera))
+
+  let ssao: SSAOPass | null = null
+  if (!isMobile) {
+    ssao = new SSAOPass(scene, camera, sizes.width(), sizes.height())
+    // 柔和 AO：中等采样半径，深度范围取场景尺度（避免近处全黑）
+    ssao.kernelRadius = 0.6
+    ssao.minDistance = 0.005
+    ssao.maxDistance = 0.12
+    composer.addPass(ssao)
+  }
+
+  // Bloom：阈值 1.3（HDR 亮度），只让成熟新芽（emissive 2.5）等强发光点辉光，
+  // 普通叶子与环境反光不发光（避免场景整体泛光发晕）
+  const bloom = new UnrealBloomPass(new THREE.Vector2(sizes.width(), sizes.height()), 0.35, 0.6, 1.3)
+  composer.addPass(bloom)
+  composer.addPass(new OutputPass())
+
+  const onResize = () => {
+    composer.setSize(sizes.width(), sizes.height())
+    if (ssao) ssao.setSize(sizes.width(), sizes.height())
+  }
+  window.addEventListener('resize', onResize)
+  return {
+    composer,
+    dispose: () => window.removeEventListener('resize', onResize),
+  }
+}
+
 // ============ HDRI 环境加载 ============
 onMounted(() => {
   const scene = sceneCtx.scene.value
@@ -329,6 +481,20 @@ onMounted(() => {
       THREE,
     }
   }
+
+  // 四期：装饰植被（石头 + 草 + 野花）挂到场景
+  createDecorations(scene)
+
+  // 四期：后处理管线（SSAO + Bloom），用 useLoop().render 接管渲染循环
+  const renderer = sceneCtx.renderer.instance as unknown as THREE.WebGLRenderer
+  const activeCam = sceneCtx.camera.activeCamera as unknown
+  const cam = ((activeCam as { value?: THREE.PerspectiveCamera }).value ?? activeCam) as THREE.PerspectiveCamera
+  const { composer, dispose } = setupPostProcessing(renderer, scene, cam, {
+    width: () => sceneCtx.sizes.width.value,
+    height: () => sceneCtx.sizes.height.value,
+  })
+  replaceRender(() => { composer.render() })
+  onUnmounted(dispose)
 
   const rgbeLoader = new RGBELoader()
   rgbeLoader.load(
@@ -418,7 +584,7 @@ onMounted(() => {
       <MeshStandardMaterial :color="'#5d4037'" :roughness="0.92" />
     </Mesh>
 
-    <!-- 叶子球（围绕冠部分布） -->
+    <!-- 叶子球（围绕冠部分布；四期：每片独立颜色 + emissive 提亮） -->
     <Mesh
       v-for="(leaf, i) in plant.leaves"
       :key="i"
@@ -428,11 +594,12 @@ onMounted(() => {
     >
       <IcosahedronGeometry :args="[0.38, 1]" />
       <MeshStandardMaterial
-        :color="plant.config.leafColor"
-        :roughness="0.82"
+        :color="leaf.color"
+        :roughness="0.72"
         :flat-shading="true"
-        :emissive="getLeafEmissive(plant.id)"
-        :emissive-intensity="0.55"
+        :emissive="leaf.color"
+        :emissive-intensity="getLeafEmissive(plant.id) === '#000000' ? 0.1 : 0.5"
+        :env-map-intensity="0.55"
       />
     </Mesh>
 
