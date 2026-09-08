@@ -4,6 +4,7 @@
  * 真实时间戳计算，打开页面即更新，无需后台
  */
 import { db, initDB } from './storage'
+import { gardenApi } from './api'
 import type { PlantedTea, GrowthStage, GrowthStageInfo } from '@/types/garden'
 
 // ============ 生长周期配置（14 天） ============
@@ -96,7 +97,9 @@ export async function plantTea(regionId: string, teaId: string): Promise<Planted
     harvestCount: 0,
   }
   const id = await db.gardenPlants.add(plant)
-  return { ...plant, id }
+  const saved = { ...plant, id }
+  await syncPlant(saved)
+  return saved
 }
 
 /** 浇水 */
@@ -108,6 +111,7 @@ export async function waterPlant(plantId: number): Promise<void> {
   plant.waterLevel = 100
   // 如果之前因缺水枯萎，浇水不能复活（真实）
   await db.gardenPlants.put(plant)
+  await syncPlant(plant)
 }
 
 /** 定型修剪 */
@@ -117,6 +121,7 @@ export async function prunePlant(plantId: number): Promise<void> {
   if (!plant || plant.pruned) return
   plant.pruned = true
   await db.gardenPlants.put(plant)
+  await syncPlant(plant)
 }
 
 /** 采摘（仅成熟期可采）：进入恢复期，采摘次数 +1，记录采摘时间 */
@@ -129,6 +134,7 @@ export async function harvestPlant(plantId: number): Promise<void> {
   plant.harvestCount = (plant.harvestCount ?? 0) + 1
   plant.harvestedAt = new Date().toISOString()
   await db.gardenPlants.put(plant)
+  await syncPlant(plant)
 }
 
 /** 获取某地区所有种植记录 */
@@ -151,8 +157,53 @@ export async function refreshAllPlantStatuses(): Promise<void> {
     if (plant.status === 'growing' && isPlantDead(plant)) {
       plant.status = 'dead'
       await db.gardenPlants.put(plant)
+      await syncPlant(plant)
     }
   }
+}
+
+// ============ 同步工具 ============
+
+/**
+ * 单株同步（离线优先，与品鉴记录同一模式）：
+ * 本地置 pending → 上传后端（client_id 幂等）→ 成功 synced / 失败 failed。
+ * 网络不可用或未登录时不阻塞本地功能。
+ */
+async function syncPlant(plant: PlantedTea): Promise<void> {
+  if (!plant.id) return
+  await db.gardenPlants.put({ ...plant, syncStatus: 'pending', syncError: undefined })
+  try {
+    await gardenApi.upsert({ ...plant, syncStatus: 'pending' })
+    await db.gardenPlants.put({ ...plant, syncStatus: 'synced', syncError: undefined })
+  } catch (error) {
+    const syncError = error instanceof Error ? error.message : '同步失败'
+    console.warn('[Garden] 茶园记录已保存在本地，稍后可重试同步:', syncError)
+    await db.gardenPlants.put({ ...plant, syncStatus: 'failed', syncError })
+  }
+}
+
+/** 批量重试未同步的茶园记录（登录后 / 网络恢复时调用） */
+export async function syncPendingGarden(): Promise<{ synced: number; failed: number }> {
+  await initDB()
+  const pending = await db.gardenPlants
+    .filter(plant => plant.syncStatus === 'pending' || plant.syncStatus === 'failed')
+    .toArray()
+  let synced = 0
+  let failed = 0
+
+  for (const plant of pending) {
+    try {
+      await gardenApi.upsert(plant)
+      await db.gardenPlants.put({ ...plant, syncStatus: 'synced', syncError: undefined })
+      synced += 1
+    } catch (error) {
+      failed += 1
+      const syncError = error instanceof Error ? error.message : '同步失败'
+      await db.gardenPlants.put({ ...plant, syncStatus: 'failed', syncError })
+    }
+  }
+
+  return { synced, failed }
 }
 
 /** 获取某地区植物统计 */

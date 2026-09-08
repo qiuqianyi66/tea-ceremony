@@ -3,6 +3,7 @@ import './assets/main.css'
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import { historyStorage, initDB } from '@/services/storage'
+import { syncPendingGarden } from '@/services/garden'
 import { registerIcons } from '@/plugins/icons'
 
 import App from './App.vue'
@@ -31,6 +32,7 @@ async function initializeApp() {
     const authStore = useAuthStore()
     if (authStore.isLoggedIn) {
       await historyStorage.syncPending()
+      await syncPendingGarden()
     }
   } catch (error) {
     console.error('[App] 初始化失败:', error)
@@ -44,4 +46,5 @@ void initializeApp()
 // 网络恢复时自动重试，不打断用户当前的品茶流程。
 window.addEventListener('online', () => {
   void historyStorage.syncPending()
+  void syncPendingGarden()
 })

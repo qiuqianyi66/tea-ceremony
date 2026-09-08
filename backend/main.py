@@ -33,7 +33,7 @@ if not DATABASE_URL:
 
 # 配置校验通过后再创建数据库引擎和加载路由。
 from app.database import engine
-from app.routers import teas, teawares, records, auth, culture, ai
+from app.routers import teas, teawares, records, auth, culture, ai, garden
 
 # CORS 来源
 # ============ FastAPI 应用 ============
@@ -64,6 +64,7 @@ app.include_router(auth.router, prefix="/api/auth", tags=["认证"])
 app.include_router(teas.router, prefix="/api/teas", tags=["茶叶"])
 app.include_router(teawares.router, prefix="/api/teawares", tags=["茶器"])
 app.include_router(records.router, prefix="/api/records", tags=["品鉴记录"])
+app.include_router(garden.router, prefix="/api/garden-plants", tags=["茶园"])
 app.include_router(culture.router, prefix="/api/culture", tags=["茶文化"])
 app.include_router(ai.router, prefix="/api/ai", tags=["茶灵 AI"])
 

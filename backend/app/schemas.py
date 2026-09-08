@@ -119,3 +119,23 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserResponse
+
+
+class GardenPlantCreate(BaseModel):
+    client_id: str
+    region_id: str
+    tea_id: str
+    planted_at: datetime
+    last_watered_at: Optional[datetime] = None
+    water_level: int = 100
+    pruned: bool = False
+    status: str = "growing"
+    harvest_count: int = 0
+    harvested_at: Optional[datetime] = None
+
+
+class GardenPlantResponse(GardenPlantCreate):
+    id: int
+    user_id: Optional[int] = None
+    created_at: datetime
+    class Config: from_attributes = True

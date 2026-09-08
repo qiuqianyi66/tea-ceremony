@@ -1,7 +1,7 @@
 """数据库模型定义 — V2.0 文化知识图谱版"""
 
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Float, DateTime, JSON, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, Float, DateTime, JSON, ForeignKey, Text, Boolean
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -240,6 +240,26 @@ class CultureDocument(Base):
     source_type = Column(String(50), comment="来源类型")
     chunk_index = Column(Integer, default=0, comment="切片序号")
     embedding = Column(JSON, nullable=True, comment="向量（预留）")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+# ============ 15. 茶园种植（离线同步）============
+
+class GardenPlant(Base):
+    __tablename__ = "garden_plants"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users_v2.id"), nullable=True)
+    client_id = Column(String(64), comment="客户端本地 ID，用于幂等同步")
+    region_id = Column(String(50), comment="产区 ID")
+    tea_id = Column(String(50), comment="茶种 ID")
+    planted_at = Column(DateTime, comment="种植时间")
+    last_watered_at = Column(DateTime, comment="上次浇水时间")
+    water_level = Column(Integer, default=100, comment="土壤湿度 0-100")
+    pruned = Column(Boolean, default=False, comment="是否定型修剪")
+    status = Column(String(20), default="growing", comment="状态: growing/harvested/dead")
+    harvest_count = Column(Integer, default=0, comment="已采摘次数")
+    harvested_at = Column(DateTime, nullable=True, comment="上次采摘时间")
     created_at = Column(DateTime, default=datetime.utcnow)
 
 

@@ -12,7 +12,7 @@ import { getTeaById } from '@/data/teas'
 import {
   plantTea, waterPlant, prunePlant, harvestPlant, getPlantsByRegion,
   getGrowthStage, getGrowthStageInfo, getCurrentWaterLevel,
-  getPlantDays, isGrowthPaused, refreshAllPlantStatuses,
+  getPlantDays, isGrowthPaused, refreshAllPlantStatuses, syncPendingGarden,
 } from '@/services/garden'
 import type { PlantedTea, GardenRegion } from '@/types/garden'
 import type { Tea } from '@/types/tea'
@@ -51,6 +51,8 @@ async function loadPlants() {
   await refreshAllPlantStatuses()
   plants.value = await getPlantsByRegion(regionId.value)
   loading.value = false
+  // 登录用户进入茶园时重试上次离线未同步的记录（静默失败不影响本地）
+  void syncPendingGarden()
 }
 
 function openPlantDialog() {

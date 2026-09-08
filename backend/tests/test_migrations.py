@@ -34,6 +34,7 @@ EXPECTED_TABLES = {
     "tea_journeys",
     "tea_person_relations",
     "culture_documents",
+    "garden_plants",
 }
 
 

@@ -21,6 +21,8 @@ export interface PlantedTea {
   status: PlantStatus
   harvestedAt?: string // 上次采摘时间
   harvestCount: number // 已采摘次数
+  syncStatus?: 'pending' | 'synced' | 'failed' // 后端同步状态（离线优先）
+  syncError?: string // 最近一次同步失败原因
 }
 
 /** 茶园地区 */
