@@ -34,7 +34,22 @@ const selectedPlant = ref<PlantedTea | null>(null)
 const loading = ref(true)
 
 /** 3D 场景组件实例（浇水时触发粒子动画） */
-const scene3dRef = ref<{ playWater?: (id: number) => void }>()
+import type { WeatherMode } from '@/components/three/garden-weather'
+const scene3dRef = ref<{ playWater?: (id: number) => void; setWeather?: (m: WeatherMode) => void; setAudioEnabled?: (on: boolean) => void }>()
+/** 天气状态：sunny / rain（默认晴天） */
+const weatherMode = ref<'sunny' | 'rain'>('sunny')
+/** 环境音效开关（默认关，需用户手势启动 AudioContext） */
+const audioOn = ref(false)
+
+function toggleWeather() {
+  weatherMode.value = weatherMode.value === 'sunny' ? 'rain' : 'sunny'
+  scene3dRef.value?.setWeather?.(weatherMode.value)
+}
+
+function toggleAudio() {
+  audioOn.value = !audioOn.value
+  scene3dRef.value?.setAudioEnabled?.(audioOn.value)
+}
 
 const regionTeas = computed<Tea[]>(() => {
   if (!currentRegion.value) return []
@@ -152,7 +167,15 @@ onMounted(() => {
         <h1 class="garden-name-3d">{{ currentRegion.name }}</h1>
         <p class="garden-stats-3d">已种 {{ plants.length }} 棵 · {{ matureCount }} 棵可采</p>
       </div>
-      <button class="plant-btn-3d" @click="openPlantDialog">+ 种茶</button>
+      <div class="topbar-actions-3d">
+        <button class="ambient-btn-3d" :class="{ active: weatherMode === 'rain' }" @click="toggleWeather" :title="weatherMode === 'rain' ? '切换到晴天' : '切换到雨天'">
+          {{ weatherMode === 'rain' ? '🌧️' : '☀️' }}
+        </button>
+        <button class="ambient-btn-3d" :class="{ active: audioOn }" @click="toggleAudio" :title="audioOn ? '关闭环境音' : '开启环境音'">
+          {{ audioOn ? '🔊' : '🔇' }}
+        </button>
+        <button class="plant-btn-3d" @click="openPlantDialog">+ 种茶</button>
+      </div>
     </div>
 
     <!-- 底部茶树列表 -->
@@ -373,6 +396,31 @@ onMounted(() => {
   font-family: inherit;
 }
 .plant-btn-3d:hover { background: #c9a96e; }
+
+/* 顶栏右侧操作组（天气/音效/种茶） */
+.topbar-actions-3d {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.ambient-btn-3d {
+  background: rgba(20,30,24,0.55);
+  border: 1px solid rgba(245,241,230,0.25);
+  color: rgba(245,241,230,0.9);
+  width: 2.3rem; height: 2.3rem;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: background 0.2s, border-color 0.2s;
+  font-family: inherit;
+  display: flex; align-items: center; justify-content: center;
+}
+.ambient-btn-3d:hover { background: rgba(40,56,44,0.7); border-color: rgba(245,241,230,0.5); }
+.ambient-btn-3d.active {
+  background: rgba(201,169,110,0.85);
+  border-color: transparent;
+}
 
 /* 底部茶树列表 */
 .plant-list-bar {

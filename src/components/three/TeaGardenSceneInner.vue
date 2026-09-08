@@ -9,6 +9,10 @@
  */
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useLoop, useTresContext } from '@tresjs/core'
+import { createAmbient } from './garden-ambient'
+import { createAnimals } from './garden-animals'
+import { createWeather, type WeatherMode } from './garden-weather'
+import { createAmbientAudio, type AmbientAudio } from './ambient-audio'
 import { OrbitControls } from '@tresjs/cientos'
 import type { PointerEvent as TresPointerEvent } from '@pmndrs/pointer-events'
 import * as THREE from 'three'
@@ -32,9 +36,27 @@ const emit = defineEmits<{
 const sceneCtx = useTresContext()
 /** 六期：OrbitControls 实例引用（DEV 调试钩子暴露，供自动化特写/验证） */
 const controlsRef = ref<InstanceType<typeof OrbitControls> | null>(null)
+const sunLightRef = ref<THREE.DirectionalLight | null>(null)
+const ambientLightRef = ref<THREE.AmbientLight | null>(null)
+
+// 地面湿润度（雨天渐变，地形 shader 读取；天气模块写入）
+const wetnessUniform = { value: 0 }
+
 /** 四期：渲染函数替换（后处理接管渲染循环）；五期：粒子动画钩子 */
 const { render: replaceRender, onBeforeRender } = useLoop()
-onBeforeRender(({ delta }) => { updateWater(delta) })
+let ambientLayer: ReturnType<typeof createAmbient> | null = null
+let animalsLayer: ReturnType<typeof createAnimals> | null = null
+let weatherLayer: ReturnType<typeof createWeather> | null = null
+let audioLayer: AmbientAudio | null = null
+let currentWeather: WeatherMode = 'sunny'
+let audioEnabled = false
+
+onBeforeRender(({ delta, elapsed }) => {
+  updateWater(delta)
+  ambientLayer?.update(elapsed, delta)
+  animalsLayer?.update(elapsed)
+  weatherLayer?.update(delta)
+})
 
 // ============ 程序化噪声（Simplex-like，无需外部库） ============
 function hash(x: number, y: number): number {
@@ -493,7 +515,8 @@ function createBarkTexture(): THREE.CanvasTexture {
  */
 function applyTerrainTextures(
   material: THREE.MeshStandardMaterial,
-  textures: { grass: THREE.Texture; mud: THREE.Texture; rock: THREE.Texture; grassNormal: THREE.Texture }
+  textures: { grass: THREE.Texture; mud: THREE.Texture; rock: THREE.Texture; grassNormal: THREE.Texture },
+  wetness: { value: number }
 ): void {
   // 平铺采样：三张贴图必须 RepeatWrapping，否则 UV×N 超出 1 的部分被边缘像素 clamp 平铺
   for (const t of [textures.grass, textures.mud, textures.rock, textures.grassNormal]) {
@@ -526,6 +549,7 @@ function applyTerrainTextures(
         uniform sampler2D uTexGrass;
         uniform sampler2D uTexMud;
         uniform sampler2D uTexRock;
+        uniform float uWetness;
         varying vec3 vWorldPos;`
       )
       .replace(
@@ -542,8 +566,10 @@ function applyTerrainTextures(
         #ifdef USE_COLOR
           sampledDiffuseColor.rgb *= vColor.rgb; // 顶点色明暗系数（r185: vColor 为 vec4）
         #endif
+        sampledDiffuseColor.rgb *= (1.0 - uWetness * 0.3); // 雨天地面湿润变暗
         diffuseColor *= sampledDiffuseColor;`
       )
+    shader.uniforms.uWetness = wetness // 共享对象引用，运行时 wetness.value 变化实时生效
   }
 }
 
@@ -838,7 +864,21 @@ function updateWater(delta: number): void {
   ;(points.material as THREE.PointsMaterial).opacity = 0.9 * (1 - state.t / state.maxT)
 }
 
-defineExpose({ playWater })
+defineExpose({ playWater, setWeather, setAudioEnabled })
+
+/** 切换天气（晴天/雨天），由 GardenView 按钮触发 */
+function setWeather(mode: WeatherMode): void {
+  currentWeather = mode
+  weatherLayer?.setWeather(mode)
+  // 音效联动：雨天雨声强度跟随
+  audioLayer?.setRainIntensity(mode === 'rain' ? 1 : 0)
+}
+
+/** 环境音效开关（需用户手势，AudioContext 在此启动） */
+function setAudioEnabled(on: boolean): void {
+  audioEnabled = on
+  audioLayer?.setEnabled(on)
+}
 
 // ============ HDRI 环境加载 ============
 onMounted(() => {
@@ -878,7 +918,7 @@ onMounted(() => {
       grassNormal.colorSpace = THREE.NoColorSpace
       const terrain = terrainMeshRef.value
       if (terrain) {
-        applyTerrainTextures(terrain.material as THREE.MeshStandardMaterial, { grass, mud, rock, grassNormal })
+        applyTerrainTextures(terrain.material as THREE.MeshStandardMaterial, { grass, mud, rock, grassNormal }, wetnessUniform)
       }
     })
     .catch((error: unknown) => {
@@ -896,6 +936,26 @@ onMounted(() => {
   const wp = createWaterPoints()
   scene.add(wp)
   waterPoints.value = wp
+
+  // 活茶园：环境氛围层（云朵/云影/晨雾） + 小动物（蝴蝶/蜜蜂/飞鸟）
+  const activeCam2 = sceneCtx.camera.activeCamera as unknown
+  const camRef2 = ((activeCam2 as { value?: THREE.PerspectiveCamera }).value ?? activeCam2) as THREE.PerspectiveCamera
+  ambientLayer = createAmbient(scene, camRef2)
+  animalsLayer = createAnimals(scene)
+  // 天气系统（晴天/雨天：雨丝 + 地面湿润 + 光照/雾联动）
+  const sun = sunLightRef.value
+  const amb = ambientLightRef.value
+  if (sun && amb) {
+    weatherLayer = createWeather({
+      sunLight: sun,
+      ambientLight: amb,
+      fog: (scene.fog as THREE.FogExp2 | null) ?? null,
+      renderer,
+      wetnessUniform,
+    })
+  }
+  // 环境音效（WebAudio 合成，默认静音，需用户手势后开启）
+  audioLayer = createAmbientAudio()
 
   // 四期：后处理管线（SSAO + Bloom），用 useLoop().render 接管渲染循环
   const activeCam = sceneCtx.camera.activeCamera as unknown
@@ -940,6 +1000,7 @@ onMounted(() => {
 
   <!-- 太阳光：平行光，带软阴影 -->
   <DirectionalLight
+    ref="sunLightRef"
     :position="[40, 60, 30]"
     :intensity="2.5"
     :color="'#fff5e0'"
@@ -959,7 +1020,7 @@ onMounted(() => {
   <HemisphereLight :args="['#b8d4e8', '#3a5a3a', 0.6]" />
 
   <!-- 环境光：补光，避免阴影死黑 -->
-  <AmbientLight :intensity="0.2" />
+  <AmbientLight ref="ambientLightRef" :intensity="0.2" />
 
   <!-- 六期：程序化梯田地形（真实 PBR 贴图在 onMounted 异步加载后注入） -->
   <Mesh ref="terrainMeshRef" :geometry="terrainGeo" :receive-shadow="true">
