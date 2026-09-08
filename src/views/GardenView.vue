@@ -10,7 +10,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { gardenRegions, getRegionById } from '@/data/gardenRegions'
 import { getTeaById } from '@/data/teas'
 import {
-  plantTea, waterPlant, prunePlant, getPlantsByRegion,
+  plantTea, waterPlant, prunePlant, harvestPlant, getPlantsByRegion,
   getGrowthStage, getGrowthStageInfo, getCurrentWaterLevel,
   getPlantDays, isGrowthPaused, refreshAllPlantStatuses,
 } from '@/services/garden'
@@ -32,6 +32,9 @@ const selectedTeaId = ref<string>('')
 const showPlantDetail = ref(false)
 const selectedPlant = ref<PlantedTea | null>(null)
 const loading = ref(true)
+
+/** 3D 场景组件实例（浇水时触发粒子动画） */
+const scene3dRef = ref<{ playWater?: (id: number) => void }>()
 
 const regionTeas = computed<Tea[]>(() => {
   if (!currentRegion.value) return []
@@ -76,6 +79,16 @@ function onSelectPlant3D(id: number) {
 async function doWater() {
   if (!selectedPlant.value?.id) return
   await waterPlant(selectedPlant.value.id)
+  // 3D 视觉反馈：水滴粒子落在茶树上（纯视觉层）；
+  // 关闭详情面板让动画完整可见，湿度更新显示在底部卡片
+  scene3dRef.value?.playWater?.(selectedPlant.value.id)
+  showPlantDetail.value = false
+  await loadPlants()
+}
+
+async function doHarvest() {
+  if (!selectedPlant.value?.id) return
+  await harvestPlant(selectedPlant.value.id)
   await loadPlants()
   const updated = plants.value.find(p => p.id === selectedPlant.value?.id)
   if (updated) selectedPlant.value = updated
@@ -128,7 +141,7 @@ onMounted(() => {
   <!-- 地区茶园视图：3D真实感茶山 -->
   <div v-else-if="currentRegion" class="region-garden-3d">
     <!-- 3D场景全屏 -->
-    <TeaGardenScene3D :plants="plants" @select-plant="onSelectPlant3D" />
+    <TeaGardenScene3D ref="scene3dRef" :plants="plants" @select-plant="onSelectPlant3D" />
 
     <!-- 顶部栏叠加（毛玻璃） -->
     <div class="garden-topbar-3d">
@@ -230,6 +243,10 @@ onMounted(() => {
         <div class="dialog-actions">
           <button v-if="getGrowthStage(selectedPlant) === 'seedling' && !selectedPlant.pruned"
             class="dialog-btn secondary" @click="doPrune">✂️ 定型修剪</button>
+          <button v-if="getGrowthStage(selectedPlant) === 'mature' && selectedPlant.status === 'growing'"
+            class="dialog-btn harvest" @click="doHarvest">🍃 采摘</button>
+          <button v-if="getGrowthStage(selectedPlant) === 'recovery'"
+            class="dialog-btn recovery-hint" disabled>🌱 恢复期（休养生息）</button>
           <button class="dialog-btn confirm" @click="doWater" :disabled="selectedPlant.status === 'dead'">
             💧 浇水
           </button>
@@ -537,6 +554,9 @@ onMounted(() => {
 .dialog-btn.cancel:hover { border-color: rgba(245,241,230,0.4); }
 .dialog-btn.secondary { background: rgba(107,142,35,0.2); border: 1px solid rgba(107,142,35,0.4); color: #aed581; }
 .dialog-btn.secondary:hover { background: rgba(107,142,35,0.3); }
+.dialog-btn.harvest { background: rgba(244,167,66,0.85); color: #1a2420; font-weight: 500; }
+.dialog-btn.harvest:hover { background: #f4a742; }
+.dialog-btn.recovery-hint { background: transparent; border: 1px dashed rgba(174,213,129,0.4); color: #aed581; cursor: default; }
 
 /* 植物详情 */
 .plant-detail { max-width: 380px; }

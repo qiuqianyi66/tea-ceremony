@@ -30,8 +30,9 @@ const emit = defineEmits<{
 }>()
 
 const sceneCtx = useTresContext()
-/** 四期：渲染函数替换（后处理接管渲染循环） */
-const { render: replaceRender } = useLoop()
+/** 四期：渲染函数替换（后处理接管渲染循环）；五期：粒子动画钩子 */
+const { render: replaceRender, onBeforeRender } = useLoop()
+onBeforeRender(({ delta }) => { updateWater(delta) })
 
 // ============ 程序化噪声（Simplex-like，无需外部库） ============
 function hash(x: number, y: number): number {
@@ -466,6 +467,95 @@ function setupPostProcessing(
   }
 }
 
+// ============ 浇水水滴粒子（五期：点击浇水后的视觉反馈） ============
+
+const WATER_PARTICLE_COUNT = 40
+const WATER_MAX_LIFE = 1.5 // 秒
+const WATER_GRAVITY = 5.5
+
+interface WaterState {
+  t: number
+  maxT: number
+  velocities: Float32Array
+}
+
+const waterPoints = ref<THREE.Points | null>(null)
+const waterState = ref<WaterState | null>(null)
+
+/** 创建水滴粒子系统（Points，蓝色半透明，一次性池化复用） */
+function createWaterPoints(): THREE.Points {
+  const geo = new THREE.BufferGeometry()
+  geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(WATER_PARTICLE_COUNT * 3), 3))
+  const mat = new THREE.PointsMaterial({
+    color: 0x8ed3ff,
+    size: 0.3,
+    transparent: true,
+    opacity: 0.9,
+    depthWrite: false,
+  })
+  const points = new THREE.Points(geo, mat)
+  points.visible = false
+  points.frustumCulled = false
+  return points
+}
+
+/** 在指定茶树上方播放下雨粒子（不改变任何状态机，纯视觉反馈） */
+function playWater(plantId: number): void {
+  const points = waterPoints.value
+  if (!points || waterState.value) return
+  const pv = plantVisuals.value.find(p => p.id === plantId)
+  if (!pv) return
+  const pos = points.geometry.attributes.position as THREE.BufferAttribute
+  const velocities = new Float32Array(WATER_PARTICLE_COUNT * 3)
+  const [px, py, pz] = pv.position
+  for (let i = 0; i < WATER_PARTICLE_COUNT; i++) {
+    const angle = seededRandom(i * 5.3 + 2) * Math.PI * 2
+    const r = 0.4 + seededRandom(i * 3.7 + 1) * 0.9
+    pos.setXYZ(
+      i,
+      px + Math.cos(angle) * r * 0.4,
+      py + 1.3 + seededRandom(i * 7.1 + 3) * 0.7,
+      pz + Math.sin(angle) * r * 0.4
+    )
+    velocities[i * 3] = (seededRandom(i * 11.3 + 4) - 0.5) * 1.1
+    velocities[i * 3 + 1] = 0
+    velocities[i * 3 + 2] = (seededRandom(i * 13.7 + 5) - 0.5) * 1.1
+  }
+  pos.needsUpdate = true
+  waterState.value = { t: 0, maxT: WATER_MAX_LIFE, velocities }
+  points.visible = true
+  ;(points.material as THREE.PointsMaterial).opacity = 0.9
+}
+
+/** 每帧更新水滴：重力下落 + 整体淡出 */
+function updateWater(delta: number): void {
+  const points = waterPoints.value
+  const state = waterState.value
+  if (!points || !state) return
+  state.t += delta
+  if (state.t >= state.maxT) {
+    points.visible = false
+    waterState.value = null
+    return
+  }
+  const pos = points.geometry.attributes.position as THREE.BufferAttribute
+  const vel = state.velocities
+  for (let i = 0; i < WATER_PARTICLE_COUNT; i++) {
+    const idx = i * 3
+    vel[idx + 1] = (vel[idx + 1] ?? 0) - WATER_GRAVITY * delta
+    pos.setXYZ(
+      i,
+      pos.getX(i) + (vel[idx] ?? 0) * delta,
+      pos.getY(i) + (vel[idx + 1] ?? 0) * delta,
+      pos.getZ(i) + (vel[idx + 2] ?? 0) * delta
+    )
+  }
+  pos.needsUpdate = true
+  ;(points.material as THREE.PointsMaterial).opacity = 0.9 * (1 - state.t / state.maxT)
+}
+
+defineExpose({ playWater })
+
 // ============ HDRI 环境加载 ============
 onMounted(() => {
   const scene = sceneCtx.scene.value
@@ -484,6 +574,11 @@ onMounted(() => {
 
   // 四期：装饰植被（石头 + 草 + 野花）挂到场景
   createDecorations(scene)
+
+  // 五期：浇水水滴粒子系统挂到场景
+  const wp = createWaterPoints()
+  scene.add(wp)
+  waterPoints.value = wp
 
   // 四期：后处理管线（SSAO + Bloom），用 useLoop().render 接管渲染循环
   const renderer = sceneCtx.renderer.instance as unknown as THREE.WebGLRenderer

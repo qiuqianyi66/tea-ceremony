@@ -119,6 +119,18 @@ export async function prunePlant(plantId: number): Promise<void> {
   await db.gardenPlants.put(plant)
 }
 
+/** 采摘（仅成熟期可采）：进入恢复期，采摘次数 +1，记录采摘时间 */
+export async function harvestPlant(plantId: number): Promise<void> {
+  await initDB()
+  const plant = await db.gardenPlants.get(plantId)
+  if (!plant || plant.status !== 'growing') return
+  if (getGrowthStage(plant) !== 'mature') return // 未成熟不可采
+  plant.status = 'harvested'
+  plant.harvestCount = (plant.harvestCount ?? 0) + 1
+  plant.harvestedAt = new Date().toISOString()
+  await db.gardenPlants.put(plant)
+}
+
 /** 获取某地区所有种植记录 */
 export async function getPlantsByRegion(regionId: string): Promise<PlantedTea[]> {
   await initDB()
