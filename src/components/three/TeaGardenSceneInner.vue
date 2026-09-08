@@ -30,6 +30,8 @@ const emit = defineEmits<{
 }>()
 
 const sceneCtx = useTresContext()
+/** 六期：OrbitControls 实例引用（DEV 调试钩子暴露，供自动化特写/验证） */
+const controlsRef = ref<InstanceType<typeof OrbitControls> | null>(null)
 /** 四期：渲染函数替换（后处理接管渲染循环）；五期：粒子动画钩子 */
 const { render: replaceRender, onBeforeRender } = useLoop()
 onBeforeRender(({ delta }) => { updateWater(delta) })
@@ -90,42 +92,26 @@ function createTerrainGeometry(): THREE.PlaneGeometry {
   const pos = geo.attributes.position!
   const colors = new Float32Array(pos.count * 3)
 
-  const grassColor = new THREE.Color(0x4a6b3a)
-  const grassLight = new THREE.Color(0x5d7e45)
-  const soilColor = new THREE.Color(0x6b5344)
-  const rockColor = new THREE.Color(0x7a7570)
-  const rockDark = new THREE.Color(0x5a5550)
-
+  // 六期写实化：顶点色退化为明暗系数（灰白），真实颜色由 PBR 贴图按高度混合提供。
+  // 保留噪声起伏与梯田边缘阴影，增强真实光照层次。
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i)
     const z = pos.getZ(i)
     const h = getTerrainHeight(x, z)
     pos.setY(i, h)
 
-    const color = new THREE.Color()
-    if (h < 1) {
-      color.lerpColors(grassColor, grassLight, smoothNoise(x * 0.1, z * 0.1))
-    } else if (h < TERRACE_END) {
+    // 明暗：缓坡略亮、陡坡/梯田台阶暗（台阶面平缓处亮），叠加低频噪声
+    let shade = 1.0
+    if (h > TERRACE_START && h < TERRACE_END) {
       const terracePos = ((h - TERRACE_START) % TERRACE_STEP) / TERRACE_STEP
-      if (terracePos < 0.15) {
-        color.copy(soilColor)
-      } else {
-        color.lerpColors(grassColor, grassLight, smoothNoise(x * 0.15, z * 0.15))
-      }
-    } else if (h < 15) {
-      color.lerpColors(soilColor, rockDark, (h - TERRACE_END) / 3)
-    } else {
-      color.lerpColors(rockDark, rockColor, smoothNoise(x * 0.2, z * 0.2))
+      shade = terracePos < 0.12 ? 0.88 : 1.0 // 梯田垂直边缘阴影
     }
+    if (h > 12) shade *= 0.92 // 高处岩石略暗
+    shade *= 1.0 + (smoothNoise(x * 0.25, z * 0.25) - 0.5) * 0.22
 
-    const noise = (smoothNoise(x * 0.5, z * 0.5) - 0.5) * 0.08
-    color.r = Math.max(0, Math.min(1, color.r + noise))
-    color.g = Math.max(0, Math.min(1, color.g + noise))
-    color.b = Math.max(0, Math.min(1, color.b + noise))
-
-    colors[i * 3] = color.r
-    colors[i * 3 + 1] = color.g
-    colors[i * 3 + 2] = color.b
+    colors[i * 3] = shade
+    colors[i * 3 + 1] = shade
+    colors[i * 3 + 2] = shade
   }
 
   geo.setAttribute('color', new THREE.BufferAttribute(colors, 3))
@@ -134,6 +120,11 @@ function createTerrainGeometry(): THREE.PlaneGeometry {
 }
 
 const terrainGeo = createTerrainGeometry()
+const terrainMeshRef = ref<THREE.Mesh | null>(null)
+
+// ============ 六期写实化：程序化叶片 / 树皮贴图（同步生成，全局复用） ============
+const leafTexture = createLeafTexture()
+const barkTexture = createBarkTexture()
 
 // ============ 茶树渲染（二期） ============
 
@@ -326,6 +317,187 @@ function getPlantScale(id: number): number {
 /** 悬停/选中时叶子泛光 */
 function getLeafEmissive(id: number): string {
   return hoveredPlantId.value === id || selectedPlantId.value === id ? '#aed581' : '#000000'
+}
+
+// ============ 六期写实化：程序化高细节贴图（叶片 / 树皮） ============
+
+/**
+ * 生成写实叶片贴图（256px，密集叶簇风格）：
+ * 多层绿色渐变 + 叶脉网络 + 微反光斑点 + 边缘暗化。
+ * 纹理无方向性，球面展开不会明显拉丝。
+ */
+function createLeafTexture(): THREE.CanvasTexture {
+  const size = 256
+  const canvas = document.createElement('canvas')
+  canvas.width = canvas.height = size
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('canvas 2d 不可用')
+  const rnd = (n: number) => Math.random() * n
+
+  // 基底：径向渐变（中心亮、边缘深，模拟叶簇球体的受光层次）
+  const base = ctx.createRadialGradient(128, 128, 18, 128, 128, 175)
+  base.addColorStop(0, '#7fb255')
+  base.addColorStop(0.45, '#55863a')
+  base.addColorStop(0.85, '#3a6a2c')
+  base.addColorStop(1, '#2c5322')
+  ctx.fillStyle = base
+  ctx.fillRect(0, 0, size, size)
+
+  // 叶脉网络：短细弧线，半透明深色
+  ctx.strokeStyle = 'rgba(24,52,20,0.4)'
+  ctx.lineWidth = 1.2
+  for (let i = 0; i < 26; i++) {
+    const cx = 96 + rnd(64)
+    const cy = 96 + rnd(64)
+    const a = rnd(Math.PI * 2)
+    ctx.beginPath()
+    ctx.moveTo(cx, cy)
+    ctx.bezierCurveTo(
+      cx + Math.cos(a) * 26, cy + Math.sin(a) * 26,
+      cx + Math.cos(a + 0.5) * 34, cy + Math.sin(a + 0.5) * 34,
+      cx + Math.cos(a) * 42, cy + Math.sin(a) * 42
+    )
+    ctx.stroke()
+  }
+
+  // 微反光斑点（叶片蜡质光泽）+ 瑕疵黄点
+  for (let i = 0; i < 160; i++) {
+    const g = 128 + rnd(60)
+    ctx.fillStyle = `rgba(${g - 30},${g},${g - 60},${0.05 + rnd(0.09)})`
+    ctx.beginPath()
+    ctx.arc(rnd(size), rnd(size), 1 + rnd(2.4), 0, Math.PI * 2)
+    ctx.fill()
+  }
+  for (let i = 0; i < 14; i++) {
+    ctx.fillStyle = `rgba(168,148,64,${0.10 + rnd(0.12)})`
+    ctx.beginPath()
+    ctx.arc(rnd(size), rnd(size), 1.2 + rnd(2), 0, Math.PI * 2)
+    ctx.fill()
+  }
+
+  // 边缘暗化（球体明暗衔接自然）
+  const vign = ctx.createRadialGradient(128, 128, 58, 128, 128, 205)
+  vign.addColorStop(0, 'rgba(0,0,0,0)')
+  vign.addColorStop(1, 'rgba(16,36,12,0.5)')
+  ctx.fillStyle = vign
+  ctx.fillRect(0, 0, size, size)
+
+  const tex = new THREE.CanvasTexture(canvas)
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping
+  tex.colorSpace = THREE.SRGBColorSpace
+  return tex
+}
+
+/** 生成粗糙树皮贴图（128x256，深褐 + 纵向裂纹 + 结疤） */
+function createBarkTexture(): THREE.CanvasTexture {
+  const w = 128
+  const h = 256
+  const canvas = document.createElement('canvas')
+  canvas.width = w
+  canvas.height = h
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('canvas 2d 不可用')
+
+  ctx.fillStyle = '#5b4232'
+  ctx.fillRect(0, 0, w, h)
+  // 纵向裂纹
+  for (let i = 0; i < 22; i++) {
+    const x = Math.random() * w
+    const shade = 0.7 + Math.random() * 0.55
+    ctx.strokeStyle = `rgba(${Math.round(48 * shade)},${Math.round(32 * shade)},${Math.round(22 * shade)},${0.5 + Math.random() * 0.4})`
+    ctx.lineWidth = 0.8 + Math.random() * 1.6
+    ctx.beginPath()
+    ctx.moveTo(x, 0)
+    ctx.bezierCurveTo(x + Math.random() * 6 - 3, h * 0.3, x + Math.random() * 8 - 4, h * 0.7, x + Math.random() * 4 - 2, h)
+    ctx.stroke()
+  }
+  // 高光脊线（裂脊受光）
+  for (let i = 0; i < 16; i++) {
+    const x = Math.random() * w
+    ctx.strokeStyle = `rgba(150,118,88,${0.12 + Math.random() * 0.16})`
+    ctx.lineWidth = 1 + Math.random() * 1.4
+    ctx.beginPath()
+    ctx.moveTo(x, 0)
+    ctx.bezierCurveTo(x + Math.random() * 5 - 2.5, h * 0.4, x + Math.random() * 6 - 3, h * 0.6, x + Math.random() * 4 - 2, h)
+    ctx.stroke()
+  }
+  // 结疤
+  for (let i = 0; i < 3; i++) {
+    const x = 20 + Math.random() * (w - 40)
+    const y = 40 + Math.random() * (h - 80)
+    ctx.fillStyle = 'rgba(30,20,14,0.5)'
+    ctx.beginPath()
+    ctx.ellipse(x, y, 3 + Math.random() * 3, 4 + Math.random() * 4, Math.random(), 0, Math.PI * 2)
+    ctx.fill()
+  }
+
+  const tex = new THREE.CanvasTexture(canvas)
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping
+  tex.colorSpace = THREE.SRGBColorSpace
+  return tex
+}
+
+// ============ 六期写实化：地形 PBR 材质（三贴图按高度混合） ============
+
+/**
+ * 给地形材质注入三张真实贴图（Poly Haven CC0）：
+ * 低处草地 → 梯田泥土 → 高处岩石，按世界高度 smoothstep 混合，
+ * 顶点色保留为明暗系数参与调制。
+ */
+function applyTerrainTextures(
+  material: THREE.MeshStandardMaterial,
+  textures: { grass: THREE.Texture; mud: THREE.Texture; rock: THREE.Texture; grassNormal: THREE.Texture }
+): void {
+  // 平铺采样：三张贴图必须 RepeatWrapping，否则 UV×N 超出 1 的部分被边缘像素 clamp 平铺
+  for (const t of [textures.grass, textures.mud, textures.rock, textures.grassNormal]) {
+    t.wrapS = t.wrapT = THREE.RepeatWrapping
+  }
+  material.map = textures.grass
+  material.normalMap = textures.grassNormal
+  material.normalScale = new THREE.Vector2(0.9, 0.9)
+  material.needsUpdate = true
+
+  material.onBeforeCompile = (shader) => {
+    shader.uniforms.uTexGrass = { value: textures.grass }
+    shader.uniforms.uTexMud = { value: textures.mud }
+    shader.uniforms.uTexRock = { value: textures.rock }
+    shader.vertexShader = shader.vertexShader
+      .replace(
+        '#include <common>',
+        `#include <common>
+        varying vec3 vWorldPos;`
+      )
+      .replace(
+        '#include <worldpos_vertex>',
+        `#include <worldpos_vertex>
+        vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;`
+      )
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        '#include <common>',
+        `#include <common>
+        uniform sampler2D uTexGrass;
+        uniform sampler2D uTexMud;
+        uniform sampler2D uTexRock;
+        varying vec3 vWorldPos;`
+      )
+      .replace(
+        '#include <map_fragment>',
+        `vec4 texGrass = texture2D(uTexGrass, vMapUv * 10.0);
+        vec4 texMud = texture2D(uTexMud, vMapUv * 7.0);
+        vec4 texRock = texture2D(uTexRock, vMapUv * 5.0);
+        float terrH = vWorldPos.y;
+        float tMud = smoothstep(2.0, 6.0, terrH) * 0.38;   // 草地 → 梯田泥（茶园区草皮为主）
+        float tRock = smoothstep(12.0, 16.0, terrH);       // 梯田 → 高处裸岩
+        vec3 terrMix = mix(texGrass.rgb, texMud.rgb, tMud);
+        terrMix = mix(terrMix, texRock.rgb, tRock);
+        vec4 sampledDiffuseColor = vec4(terrMix, 1.0);
+        #ifdef USE_COLOR
+          sampledDiffuseColor.rgb *= vColor.rgb; // 顶点色明暗系数（r185: vColor 为 vec4）
+        #endif
+        diffuseColor *= sampledDiffuseColor;`
+      )
+  }
 }
 
 // ============ 装饰植被（四期） ============
@@ -568,9 +740,38 @@ onMounted(() => {
       scene: () => sceneCtx.scene.value,
       plantVisuals: () => plantVisuals.value,
       activeCamera: () => sceneCtx.camera.activeCamera,
+      controls: () => controlsRef.value,
       THREE,
     }
   }
+
+  // 六期：ACES 电影级色调映射 + 柔和软阴影（真实感光照）
+  const renderer = sceneCtx.renderer.instance as unknown as THREE.WebGLRenderer
+  renderer.toneMapping = THREE.ACESFilmicToneMapping
+  renderer.toneMappingExposure = 1.12
+  renderer.shadowMap.type = THREE.PCFShadowMap
+
+  // 六期：加载 Poly Haven 真实地形贴图（CC0）并应用到地形材质
+  const texLoader = new THREE.TextureLoader()
+  Promise.all([
+    texLoader.loadAsync('/3d/textures/terrain/aerial_grass_rock_diff_2k.jpg'),
+    texLoader.loadAsync('/3d/textures/terrain/brown_mud_dry_diff_2k.jpg'),
+    texLoader.loadAsync('/3d/textures/terrain/rock_ground_02_diff_2k.jpg'),
+    texLoader.loadAsync('/3d/textures/terrain/aerial_grass_rock_nor_gl_2k.jpg'),
+  ])
+    .then(([grass, mud, rock, grassNormal]) => {
+      grass.colorSpace = THREE.SRGBColorSpace
+      mud.colorSpace = THREE.SRGBColorSpace
+      rock.colorSpace = THREE.SRGBColorSpace
+      grassNormal.colorSpace = THREE.NoColorSpace
+      const terrain = terrainMeshRef.value
+      if (terrain) {
+        applyTerrainTextures(terrain.material as THREE.MeshStandardMaterial, { grass, mud, rock, grassNormal })
+      }
+    })
+    .catch((error: unknown) => {
+      console.warn('[TeaGarden] 地形贴图加载失败，回退程序化着色:', error)
+    })
 
   // 四期：装饰植被（石头 + 草 + 野花）挂到场景
   createDecorations(scene)
@@ -581,7 +782,6 @@ onMounted(() => {
   waterPoints.value = wp
 
   // 四期：后处理管线（SSAO + Bloom），用 useLoop().render 接管渲染循环
-  const renderer = sceneCtx.renderer.instance as unknown as THREE.WebGLRenderer
   const activeCam = sceneCtx.camera.activeCamera as unknown
   const cam = ((activeCam as { value?: THREE.PerspectiveCamera }).value ?? activeCam) as THREE.PerspectiveCamera
   const { composer, dispose } = setupPostProcessing(renderer, scene, cam, {
@@ -645,13 +845,13 @@ onMounted(() => {
   <!-- 环境光：补光，避免阴影死黑 -->
   <AmbientLight :intensity="0.2" />
 
-  <!-- 程序化梯田地形 -->
-  <Mesh :geometry="terrainGeo" :receive-shadow="true">
+  <!-- 六期：程序化梯田地形（真实 PBR 贴图在 onMounted 异步加载后注入） -->
+  <Mesh ref="terrainMeshRef" :geometry="terrainGeo" :receive-shadow="true">
     <MeshStandardMaterial
       :vertex-colors="true"
-      :roughness="0.95"
+      :roughness="0.9"
       :metalness="0"
-      :env-map-intensity="0.3"
+      :env-map-intensity="0.35"
     />
   </Mesh>
 
@@ -663,7 +863,7 @@ onMounted(() => {
     :rotation="plant.rotation"
     :scale="getPlantScale(plant.id)"
   >
-    <!-- 枝干 -->
+    <!-- 枝干（六期：粗糙树皮贴图，取代纯色） -->
     <Mesh
       :cast-shadow="true"
       :position="plant.trunkPos"
@@ -673,13 +873,18 @@ onMounted(() => {
           plant.config.trunkRadius * plant.config.scale * 0.55,
           plant.config.trunkRadius * plant.config.scale,
           plant.config.trunkHeight * plant.config.scale,
-          8
+          10
         ]"
       />
-      <MeshStandardMaterial :color="'#5d4037'" :roughness="0.92" />
+      <MeshStandardMaterial
+        :map="barkTexture"
+        :bump-map="barkTexture"
+        :bump-scale="0.6"
+        :roughness="0.95"
+      />
     </Mesh>
 
-    <!-- 叶子球（围绕冠部分布；四期：每片独立颜色 + emissive 提亮） -->
+    <!-- 叶子球（六期：写实叶片贴图 + 平滑法线 + bump，取代 flat-shading 纯色） -->
     <Mesh
       v-for="(leaf, i) in plant.leaves"
       :key="i"
@@ -687,14 +892,16 @@ onMounted(() => {
       :position="leaf.position"
       :scale="leaf.scale * plant.config.scale"
     >
-      <IcosahedronGeometry :args="[0.38, 1]" />
+      <SphereGeometry :args="[0.38, 14, 12]" />
       <MeshStandardMaterial
+        :map="leafTexture"
+        :bump-map="leafTexture"
+        :bump-scale="0.35"
         :color="leaf.color"
-        :roughness="0.72"
-        :flat-shading="true"
+        :roughness="0.68"
         :emissive="leaf.color"
-        :emissive-intensity="getLeafEmissive(plant.id) === '#000000' ? 0.1 : 0.5"
-        :env-map-intensity="0.55"
+        :emissive-intensity="getLeafEmissive(plant.id) === '#000000' ? 0.08 : 0.45"
+        :env-map-intensity="0.6"
       />
     </Mesh>
 
@@ -731,6 +938,7 @@ onMounted(() => {
 
   <!-- 轨道控制器（cientos 组件，内部已处理 camera/domElement） -->
   <OrbitControls
+    ref="controlsRef"
     :make-default="true"
     :enable-damping="true"
     :damping-factor="0.05"
