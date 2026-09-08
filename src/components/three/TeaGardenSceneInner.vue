@@ -123,7 +123,7 @@ const terrainGeo = createTerrainGeometry()
 const terrainMeshRef = ref<THREE.Mesh | null>(null)
 
 // ============ 六期写实化：程序化叶片 / 树皮贴图（同步生成，全局复用） ============
-const leafTexture = createLeafTexture()
+const leafBladeTexture = createLeafBladeTexture()
 const barkTexture = createBarkTexture()
 
 // ============ 茶树渲染（二期） ============
@@ -147,17 +147,19 @@ interface StageVisual {
 
 const STAGE_VISUALS: Record<string, StageVisual> = {
   // 绝对尺寸（1 单位 ≈ 1 米）：低矮茶丛灌木，成熟约 1.6m 高
-  // 四期调优：叶子颜色整体提亮（sprout 嫩黄绿 → mature 深绿），叶片数增加使冠形更饱满
-  sprout:   { scale: 1, leafCount: 3, leafColor: '#aed581', trunkHeight: 0.35, trunkRadius: 0.08, crownRadius: 0.3,  hasGlow: false },
-  seedling: { scale: 1, leafCount: 4, leafColor: '#9ccc65', trunkHeight: 0.55, trunkRadius: 0.08, crownRadius: 0.45, hasGlow: false },
-  growing:  { scale: 1, leafCount: 6, leafColor: '#8bc34a', trunkHeight: 0.8,  trunkRadius: 0.08, crownRadius: 0.6,  hasGlow: false },
-  mature:   { scale: 1, leafCount: 9, leafColor: '#7cb342', trunkHeight: 1.05, trunkRadius: 0.08, crownRadius: 0.75, hasGlow: true },
-  recovery: { scale: 1, leafCount: 5, leafColor: '#9ccc65', trunkHeight: 0.9,  trunkRadius: 0.08, crownRadius: 0.65, hasGlow: false },
-  dead:     { scale: 1, leafCount: 2, leafColor: '#6d4c41', trunkHeight: 0.85, trunkRadius: 0.08, crownRadius: 0.5,  hasGlow: false },
+  // 六期写实化：叶子从球体改为真实叶片卡片，叶片数大幅增加形成叶簇冠
+  sprout:   { scale: 1, leafCount: 12, leafColor: '#aed581', trunkHeight: 0.35, trunkRadius: 0.08, crownRadius: 0.3,  hasGlow: false },
+  seedling: { scale: 1, leafCount: 24, leafColor: '#9ccc65', trunkHeight: 0.55, trunkRadius: 0.08, crownRadius: 0.45, hasGlow: false },
+  growing:  { scale: 1, leafCount: 48, leafColor: '#8bc34a', trunkHeight: 0.8,  trunkRadius: 0.08, crownRadius: 0.6,  hasGlow: false },
+  mature:   { scale: 1, leafCount: 80, leafColor: '#7cb342', trunkHeight: 1.05, trunkRadius: 0.08, crownRadius: 0.75, hasGlow: true },
+  recovery: { scale: 1, leafCount: 36, leafColor: '#9ccc65', trunkHeight: 0.9,  trunkRadius: 0.08, crownRadius: 0.65, hasGlow: false },
+  dead:     { scale: 1, leafCount: 16, leafColor: '#6d4c41', trunkHeight: 0.85, trunkRadius: 0.08, crownRadius: 0.5,  hasGlow: false },
 }
 
-interface LeafInfo {
+/** 单叶片卡片：位置 + 朝向（四元数）+ 缩放 + 颜色 */
+interface LeafBlade {
   position: [number, number, number]
+  quaternion: [number, number, number, number]
   scale: number
   /** 每片叶子的颜色（基于 seed 微调明暗，增加层次感） */
   color: string
@@ -179,7 +181,7 @@ interface PlantVisual {
   /** 稳定引用：点击拾取用 userData（避免每次渲染新对象） */
   hitUserData: { plantId: number }
   config: StageVisual
-  leaves: LeafInfo[]
+  blades: LeafBlade[]
   rotationY: number
 }
 
@@ -223,23 +225,53 @@ function getPlantPosition(seed: number): [number, number, number] {
   return best ?? [0, MIN_H, 0]
 }
 
-/** 生成叶子球的位置（围绕枝干冠部分布），每片叶子颜色基于 seed 微调明暗 */
-function getLeafPositions(seed: number, count: number, crownRadius: number, crownY: number, baseColor: string): LeafInfo[] {
+/**
+ * 生成叶片卡片分布：围绕枝干冠部分布，每片叶子朝向冠心外侧（真实叶簇感），
+ * 顶部叶片上翘（新芽区），颜色基于 seed 微调明暗。
+ */
+function getLeafBlades(seed: number, count: number, crownRadius: number, crownY: number, baseColor: string): LeafBlade[] {
   const base = new THREE.Color(baseColor)
-  const leaves: LeafInfo[] = []
+  const blades: LeafBlade[] = []
+  const crownCenter = new THREE.Vector3(0, crownY, 0)
+  const zAxis = new THREE.Vector3(0, 0, 1)
+  const up = new THREE.Vector3(0, 1, 0)
   for (let i = 0; i < count; i++) {
-    const angle = (i / count) * Math.PI * 2 + seededRandom(seed + i * 7.3) * 0.9
-    const dist = crownRadius * (0.35 + seededRandom(seed + i * 11.7) * 0.65)
-    const y = crownY + (seededRandom(seed + i * 13.1) - 0.25) * crownRadius * 0.7
-    const s = 0.65 + seededRandom(seed + i * 17.3) * 0.7
-    const c = base.clone().offsetHSL(0, 0, (seededRandom(seed + i * 19.7) - 0.5) * 0.14)
-    leaves.push({
-      position: [Math.cos(angle) * dist, y, Math.sin(angle) * dist],
+    const angle = seededRandom(seed + i * 7.3) * Math.PI * 2
+    const distNorm = 0.35 + seededRandom(seed + i * 11.7) * 0.65 // 0.35~1.0 冠内归一化距离
+    const dist = crownRadius * distNorm
+    const y = crownY + (seededRandom(seed + i * 13.1) - 0.4) * crownRadius * 0.9
+    const pos = new THREE.Vector3(Math.cos(angle) * dist, y, Math.sin(angle) * dist)
+
+    // 朝向：默认叶片正面（+Z）朝冠心外侧；顶部新芽叶朝上
+    const q = new THREE.Quaternion()
+    if (y > crownY + crownRadius * 0.35) {
+      q.setFromUnitVectors(zAxis, up)
+    } else {
+      q.setFromUnitVectors(zAxis, new THREE.Vector3().subVectors(crownCenter, pos).normalize())
+    }
+    // 随机绕自身中轴旋转 + 轻微俯仰（自然朝向，避免整齐划一）
+    q.multiply(new THREE.Quaternion().setFromAxisAngle(zAxis, seededRandom(seed + i * 21.1) * Math.PI * 2))
+    q.multiply(new THREE.Quaternion().setFromAxisAngle(
+      new THREE.Vector3(1, 0, 0),
+      (seededRandom(seed + i * 23.7) - 0.5) * 0.7
+    ))
+
+    // 双层冠：内层小叶（深色、填密度），外层大叶（受光、饱满）
+    const isInner = distNorm < 0.62
+    const s = (isInner ? 0.5 + seededRandom(seed + i * 17.3) * 0.3 : 0.8 + seededRandom(seed + i * 17.3) * 0.55)
+    // 顶部新芽叶更浅更亮；内层叶偏深
+    const lightness = (seededRandom(seed + i * 19.7) - 0.5) * 0.14
+      + (y > crownY + crownRadius * 0.35 ? 0.12 : 0)
+      + (isInner ? -0.07 : 0)
+    const c = base.clone().offsetHSL(0, 0, lightness)
+    blades.push({
+      position: [pos.x, pos.y, pos.z],
+      quaternion: [q.x, q.y, q.z, q.w],
       scale: s,
       color: `#${c.getHexString()}`,
     })
   }
-  return leaves
+  return blades
 }
 
 const plantVisuals = computed<PlantVisual[]>(() => {
@@ -249,7 +281,7 @@ const plantVisuals = computed<PlantVisual[]>(() => {
     const seed = (plant.id ?? 0) * 1000 + plant.teaId.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
     const position = getPlantPosition(seed)
     const crownY = config.trunkHeight * config.scale
-    const leaves = getLeafPositions(seed, config.leafCount, config.crownRadius, crownY, config.leafColor)
+    const blades = getLeafBlades(seed, config.leafCount, config.crownRadius, crownY, config.leafColor)
     const rotationY = seededRandom(seed + 99) * Math.PI * 2
     const plantId = plant.id ?? 0
     return {
@@ -264,7 +296,7 @@ const plantVisuals = computed<PlantVisual[]>(() => {
       hitRadius: Math.max(1.1, config.crownRadius * config.scale * 1.6),
       hitUserData: { plantId },
       config,
-      leaves,
+      blades,
       rotationY,
     }
   })
@@ -314,76 +346,91 @@ function getPlantScale(id: number): number {
   return hoveredPlantId.value === id || selectedPlantId.value === id ? 1.15 : 1
 }
 
-/** 悬停/选中时叶子泛光 */
-function getLeafEmissive(id: number): string {
-  return hoveredPlantId.value === id || selectedPlantId.value === id ? '#aed581' : '#000000'
-}
-
 // ============ 六期写实化：程序化高细节贴图（叶片 / 树皮） ============
 
 /**
- * 生成写实叶片贴图（256px，密集叶簇风格）：
- * 多层绿色渐变 + 叶脉网络 + 微反光斑点 + 边缘暗化。
- * 纹理无方向性，球面展开不会明显拉丝。
+ * 生成单叶片 alpha 贴图（128px，透明背景）：
+ * 披针形叶片轮廓（贝塞尔曲线）+ 主/侧叶脉 + 渐变绿 + 微光斑点 + 边缘暗化。
+ * 背景透明，配合材质 alphaTest 裁剪，呈现真实叶片形状而非圆球。
  */
-function createLeafTexture(): THREE.CanvasTexture {
-  const size = 256
+function createLeafBladeTexture(): THREE.CanvasTexture {
+  const size = 128
   const canvas = document.createElement('canvas')
   canvas.width = canvas.height = size
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('canvas 2d 不可用')
   const rnd = (n: number) => Math.random() * n
 
-  // 基底：径向渐变（中心亮、边缘深，模拟叶簇球体的受光层次）
-  const base = ctx.createRadialGradient(128, 128, 18, 128, 128, 175)
-  base.addColorStop(0, '#7fb255')
-  base.addColorStop(0.45, '#55863a')
-  base.addColorStop(0.85, '#3a6a2c')
-  base.addColorStop(1, '#2c5322')
-  ctx.fillStyle = base
-  ctx.fillRect(0, 0, size, size)
+  // 叶片轮廓：披针形（左叶尖 → 上缘弧 → 右叶尖 → 下缘弧回）
+  const lx = 16, rx = 112, midY = 64
+  ctx.beginPath()
+  ctx.moveTo(lx, midY)
+  ctx.bezierCurveTo(lx + 26, midY - 30, rx - 26, midY - 24, rx, midY)
+  ctx.bezierCurveTo(rx - 26, midY + 24, lx + 26, midY + 30, lx, midY)
+  ctx.closePath()
 
-  // 叶脉网络：短细弧线，半透明深色
-  ctx.strokeStyle = 'rgba(24,52,20,0.4)'
-  ctx.lineWidth = 1.2
-  for (let i = 0; i < 26; i++) {
-    const cx = 96 + rnd(64)
-    const cy = 96 + rnd(64)
-    const a = rnd(Math.PI * 2)
+  // 叶片底色：沿叶长线性渐变（叶基深 → 叶尖亮），叠加横向轻微明暗
+  const base = ctx.createLinearGradient(lx, 0, rx, 0)
+  base.addColorStop(0, '#4c7d33')
+  base.addColorStop(0.5, '#62963f')
+  base.addColorStop(1, '#7fb255')
+  ctx.fillStyle = base
+  ctx.fill()
+
+  // 主叶脉（中脉）
+  ctx.strokeStyle = 'rgba(26,54,20,0.5)'
+  ctx.lineWidth = 1.6
+  ctx.beginPath()
+  ctx.moveTo(lx + 3, midY)
+  ctx.quadraticCurveTo((lx + rx) / 2, midY - 1, rx - 4, midY)
+  ctx.stroke()
+
+  // 侧叶脉：每侧 5 条斜线
+  ctx.lineWidth = 0.8
+  for (let i = 0; i < 5; i++) {
+    const t = 0.2 + i * 0.13
+    const vx = lx + (rx - lx) * t
+    const len = 10 + rnd(8)
     ctx.beginPath()
-    ctx.moveTo(cx, cy)
-    ctx.bezierCurveTo(
-      cx + Math.cos(a) * 26, cy + Math.sin(a) * 26,
-      cx + Math.cos(a + 0.5) * 34, cy + Math.sin(a + 0.5) * 34,
-      cx + Math.cos(a) * 42, cy + Math.sin(a) * 42
-    )
+    ctx.moveTo(vx, midY)
+    ctx.lineTo(vx + len, midY - 8 - rnd(6))
+    ctx.stroke()
+    ctx.beginPath()
+    ctx.moveTo(vx, midY)
+    ctx.lineTo(vx + len, midY + 8 + rnd(6))
     ctx.stroke()
   }
 
-  // 微反光斑点（叶片蜡质光泽）+ 瑕疵黄点
-  for (let i = 0; i < 160; i++) {
-    const g = 128 + rnd(60)
-    ctx.fillStyle = `rgba(${g - 30},${g},${g - 60},${0.05 + rnd(0.09)})`
+  // 蜡质微反光斑点
+  for (let i = 0; i < 40; i++) {
+    const g = 140 + rnd(60)
+    ctx.fillStyle = `rgba(${g - 30},${g},${g - 60},${0.06 + rnd(0.1)})`
     ctx.beginPath()
-    ctx.arc(rnd(size), rnd(size), 1 + rnd(2.4), 0, Math.PI * 2)
-    ctx.fill()
-  }
-  for (let i = 0; i < 14; i++) {
-    ctx.fillStyle = `rgba(168,148,64,${0.10 + rnd(0.12)})`
-    ctx.beginPath()
-    ctx.arc(rnd(size), rnd(size), 1.2 + rnd(2), 0, Math.PI * 2)
+    ctx.arc(lx + 10 + rnd(rx - lx - 20), midY - 18 + rnd(36), 1 + rnd(2.2), 0, Math.PI * 2)
     ctx.fill()
   }
 
-  // 边缘暗化（球体明暗衔接自然）
-  const vign = ctx.createRadialGradient(128, 128, 58, 128, 128, 205)
-  vign.addColorStop(0, 'rgba(0,0,0,0)')
-  vign.addColorStop(1, 'rgba(16,36,12,0.5)')
-  ctx.fillStyle = vign
+  // 边缘暗化 + 叶片尖端高光
+  ctx.save()
+  ctx.beginPath()
+  ctx.moveTo(lx, midY)
+  ctx.bezierCurveTo(lx + 26, midY - 30, rx - 26, midY - 24, rx, midY)
+  ctx.bezierCurveTo(rx - 26, midY + 24, lx + 26, midY + 30, lx, midY)
+  ctx.closePath()
+  ctx.clip()
+  const edge = ctx.createRadialGradient((lx + rx) / 2, midY, 20, (lx + rx) / 2, midY, 66)
+  edge.addColorStop(0, 'rgba(0,0,0,0)')
+  edge.addColorStop(1, 'rgba(18,40,12,0.45)')
+  ctx.fillStyle = edge
   ctx.fillRect(0, 0, size, size)
+  // 叶尖透光高光
+  ctx.fillStyle = 'rgba(210,235,170,0.35)'
+  ctx.beginPath()
+  ctx.ellipse(rx - 6, midY, 7, 4, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.restore()
 
   const tex = new THREE.CanvasTexture(canvas)
-  tex.wrapS = tex.wrapT = THREE.RepeatWrapping
   tex.colorSpace = THREE.SRGBColorSpace
   return tex
 }
@@ -499,6 +546,71 @@ function applyTerrainTextures(
       )
   }
 }
+
+// ============ 六期写实化：叶簇层（真实叶片 InstancedMesh） ============
+
+/** 每棵树一个叶簇 Group（含 1 个叶片 InstancedMesh），100 树 ≈ 100 draw call（原 900 球大幅减少） */
+const leafClusterRoot = ref<THREE.Group | null>(null)
+const leafClusterByPlant = new Map<number, THREE.Group>()
+
+/** 重建全部叶簇（plants 增删/阶段变化时调用；共享几何与材质，只重建实例矩阵） */
+function buildLeafClusters(scene: THREE.Scene): void {
+  const oldRoot = leafClusterRoot.value
+  if (oldRoot) {
+    oldRoot.removeFromParent()
+    oldRoot.traverse(o => { if ((o as THREE.InstancedMesh).isInstancedMesh) (o as THREE.InstancedMesh).dispose() })
+  }
+  leafClusterByPlant.clear()
+
+  const root = new THREE.Group()
+  root.name = 'leafClusters'
+  const geo = new THREE.PlaneGeometry(0.3, 0.2)
+  const mat = new THREE.MeshStandardMaterial({
+    map: leafBladeTexture,
+    alphaTest: 0.45,
+    side: THREE.DoubleSide,
+    roughness: 0.72,
+    envMapIntensity: 0.5,
+  })
+  const dummy = new THREE.Object3D()
+  const tmpColor = new THREE.Color()
+
+  for (const plant of plantVisuals.value) {
+    const count = plant.blades.length
+    if (count === 0) continue
+    const group = new THREE.Group()
+    group.position.set(plant.position[0], plant.position[1], plant.position[2])
+    group.rotation.y = plant.rotationY
+    const mesh = new THREE.InstancedMesh(geo, mat, count)
+    mesh.castShadow = true
+    for (let i = 0; i < count; i++) {
+      const b = plant.blades[i]
+      if (!b) continue
+      dummy.position.set(b.position[0], b.position[1], b.position[2])
+      dummy.quaternion.set(b.quaternion[0], b.quaternion[1], b.quaternion[2], b.quaternion[3])
+      dummy.scale.setScalar(b.scale)
+      dummy.updateMatrix()
+      mesh.setMatrixAt(i, dummy.matrix)
+      tmpColor.set(b.color)
+      mesh.setColorAt(i, tmpColor)
+    }
+    mesh.instanceMatrix.needsUpdate = true
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
+    group.add(mesh)
+    root.add(group)
+    leafClusterByPlant.set(plant.id, group)
+  }
+  scene.add(root)
+  leafClusterRoot.value = root
+}
+
+/** 悬停/选中时对应叶簇同步放大（与模板 Group scale 一致） */
+function syncLeafClusterScale(): void {
+  const s = (id: number) => hoveredPlantId.value === id || selectedPlantId.value === id ? 1.15 : 1
+  for (const [id, g] of leafClusterByPlant) g.scale.setScalar(s(id))
+}
+
+watch([hoveredPlantId, selectedPlantId], syncLeafClusterScale)
 
 // ============ 装饰植被（四期） ============
 
@@ -776,6 +888,10 @@ onMounted(() => {
   // 四期：装饰植被（石头 + 草 + 野花）挂到场景
   createDecorations(scene)
 
+  // 六期：真实叶片叶簇层（初始挂载 + 后续 plants 变化时重建）
+  buildLeafClusters(scene)
+  watch(plantVisuals, () => { buildLeafClusters(scene) })
+
   // 五期：浇水水滴粒子系统挂到场景
   const wp = createWaterPoints()
   scene.add(wp)
@@ -884,26 +1000,8 @@ onMounted(() => {
       />
     </Mesh>
 
-    <!-- 叶子球（六期：写实叶片贴图 + 平滑法线 + bump，取代 flat-shading 纯色） -->
-    <Mesh
-      v-for="(leaf, i) in plant.leaves"
-      :key="i"
-      :cast-shadow="true"
-      :position="leaf.position"
-      :scale="leaf.scale * plant.config.scale"
-    >
-      <SphereGeometry :args="[0.38, 14, 12]" />
-      <MeshStandardMaterial
-        :map="leafTexture"
-        :bump-map="leafTexture"
-        :bump-scale="0.35"
-        :color="leaf.color"
-        :roughness="0.68"
-        :emissive="leaf.color"
-        :emissive-intensity="getLeafEmissive(plant.id) === '#000000' ? 0.08 : 0.45"
-        :env-map-intensity="0.6"
-      />
-    </Mesh>
+    <!-- 叶簇（六期：真实叶片卡片，由 buildLeafClusters 编程层 InstancedMesh 渲染，
+         这里不再渲染球体叶子；叶簇随 Group 一起参与悬停/选中缩放） -->
 
     <!-- 成熟茶树：顶部发光新芽 -->
     <Mesh
