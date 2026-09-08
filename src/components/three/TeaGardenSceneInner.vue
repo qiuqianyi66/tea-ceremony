@@ -11,6 +11,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useLoop, useTresContext } from '@tresjs/core'
 import { createAmbient } from './garden-ambient'
 import { createAnimals } from './garden-animals'
+import { createScenery } from './garden-scenery'
 import { createWeather, type WeatherMode } from './garden-weather'
 import { createAmbientAudio, type AmbientAudio } from './ambient-audio'
 import { OrbitControls } from '@tresjs/cientos'
@@ -46,6 +47,7 @@ const wetnessUniform = { value: 0 }
 const { render: replaceRender, onBeforeRender } = useLoop()
 let ambientLayer: ReturnType<typeof createAmbient> | null = null
 let animalsLayer: ReturnType<typeof createAnimals> | null = null
+let sceneryLayer: ReturnType<typeof createScenery> | null = null
 let weatherLayer: ReturnType<typeof createWeather> | null = null
 let audioLayer: AmbientAudio | null = null
 let currentWeather: WeatherMode = 'sunny'
@@ -55,7 +57,13 @@ onBeforeRender(({ delta, elapsed }) => {
   updateWater(delta)
   ambientLayer?.update(elapsed, delta)
   animalsLayer?.update(elapsed)
+  sceneryLayer?.update(elapsed)
   weatherLayer?.update(delta)
+  // 风动：叶簇整簇轻微摇摆（绕组原点，树干不动；幅度 ~2°，微风感）
+  for (const [id, g] of leafClusterByPlant) {
+    g.rotation.z = Math.sin(elapsed * 0.8 + id * 1.7) * 0.035
+    g.rotation.x = Math.sin(elapsed * 0.55 + id * 2.3) * 0.02
+  }
 })
 
 // ============ 程序化噪声（Simplex-like，无需外部库） ============
@@ -942,6 +950,7 @@ onMounted(() => {
   const camRef2 = ((activeCam2 as { value?: THREE.PerspectiveCamera }).value ?? activeCam2) as THREE.PerspectiveCamera
   ambientLayer = createAmbient(scene, camRef2)
   animalsLayer = createAnimals(scene)
+  sceneryLayer = createScenery(scene)
   // 天气系统（晴天/雨天：雨丝 + 地面湿润 + 光照/雾联动）
   const sun = sunLightRef.value
   const amb = ambientLightRef.value
@@ -965,7 +974,14 @@ onMounted(() => {
     height: () => sceneCtx.sizes.height.value,
   })
   replaceRender(() => { composer.render() })
-  onUnmounted(dispose)
+  onUnmounted(() => {
+    dispose()
+    ambientLayer?.dispose()
+    animalsLayer?.dispose()
+    sceneryLayer?.dispose()
+    weatherLayer?.dispose()
+    audioLayer?.dispose()
+  })
 
   const rgbeLoader = new RGBELoader()
   rgbeLoader.load(
