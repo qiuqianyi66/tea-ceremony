@@ -14,6 +14,8 @@ import { createAnimals } from './garden-animals'
 import { createScenery } from './garden-scenery'
 import { createWeather, type WeatherMode } from './garden-weather'
 import { createAmbientAudio, type AmbientAudio } from './ambient-audio'
+import { createTeaField } from './tea-field'
+import { createTerrainGeometry, getTerrainHeight, fbm, smoothNoise } from './terrain'
 import { OrbitControls } from '@tresjs/cientos'
 import type { PointerEvent as TresPointerEvent } from '@pmndrs/pointer-events'
 import * as THREE from 'three'
@@ -49,6 +51,7 @@ let ambientLayer: ReturnType<typeof createAmbient> | null = null
 let animalsLayer: ReturnType<typeof createAnimals> | null = null
 let sceneryLayer: ReturnType<typeof createScenery> | null = null
 let weatherLayer: ReturnType<typeof createWeather> | null = null
+let teaFieldLayer: ReturnType<typeof createTeaField> | null = null
 let audioLayer: AmbientAudio | null = null
 let currentWeather: WeatherMode = 'sunny'
 let audioEnabled = false
@@ -67,30 +70,6 @@ onBeforeRender(({ delta, elapsed }) => {
 })
 
 // ============ 程序化噪声（Simplex-like，无需外部库） ============
-function hash(x: number, y: number): number {
-  const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453
-  return s - Math.floor(s)
-}
-function smoothNoise(x: number, y: number): number {
-  const ix = Math.floor(x), iy = Math.floor(y)
-  const fx = x - ix, fy = y - iy
-  const ux = fx * fx * (3 - 2 * fx)
-  const uy = fy * fy * (3 - 2 * fy)
-  const a = hash(ix, iy), b = hash(ix + 1, iy)
-  const c = hash(ix, iy + 1), d = hash(ix + 1, iy + 1)
-  return a + (b - a) * ux + (c - a) * uy + (a - b - c + d) * ux * uy
-}
-function fbm(x: number, y: number, octaves = 5): number {
-  let value = 0, amplitude = 1, frequency = 1, max = 0
-  for (let i = 0; i < octaves; i++) {
-    value += smoothNoise(x * frequency, y * frequency) * amplitude
-    max += amplitude
-    amplitude *= 0.5
-    frequency *= 2
-  }
-  return value / max
-}
-
 /** 程序化"万里晴空"背景：Equirect 球面渐变（天顶蔚蓝 → 地平线浅蓝白） */
 function createSkyTexture(): THREE.CanvasTexture {
   const w = 64
@@ -120,64 +99,7 @@ function createSkyTexture(): THREE.CanvasTexture {
   return tex
 }
 
-// ============ 地形生成 ============
-const TERRAIN_SIZE = 200
-const TERRAIN_SEGMENTS = 200
-const TERRAIN_AMPLITUDE = 18
-const TERRACE_START = 2
-const TERRACE_END = 12
-const TERRACE_STEP = 1.8
-
-/** 采样地形高度（与createTerrainGeometry中的计算完全一致，供茶树定位用） */
-function getTerrainHeight(x: number, z: number): number {
-  let h = fbm(x * 0.015, z * 0.015, 5) * TERRAIN_AMPLITUDE
-  h += fbm(x * 0.04, z * 0.04, 3) * 4
-  h -= TERRAIN_AMPLITUDE * 0.4
-  // 中央茶山隆起：让茶园区域位于场景中央的相机视野内（边缘渐消，保持整体山势）
-  const r = Math.sqrt(x * x + z * z)
-  const centralHill = Math.max(0, 1 - r / 55) * 10
-  h += centralHill
-  if (h > TERRACE_START && h < TERRACE_END) {
-    const localH = h - TERRACE_START
-    h = TERRACE_START + Math.floor(localH / TERRACE_STEP) * TERRACE_STEP
-    h += (smoothNoise(x * 0.3, z * 0.3) - 0.5) * 0.3
-  }
-  return h
-}
-
-function createTerrainGeometry(): THREE.PlaneGeometry {
-  const geo = new THREE.PlaneGeometry(TERRAIN_SIZE, TERRAIN_SIZE, TERRAIN_SEGMENTS, TERRAIN_SEGMENTS)
-  geo.rotateX(-Math.PI / 2)
-  const pos = geo.attributes.position!
-  const colors = new Float32Array(pos.count * 3)
-
-  // 六期写实化：顶点色退化为明暗系数（灰白），真实颜色由 PBR 贴图按高度混合提供。
-  // 保留噪声起伏与梯田边缘阴影，增强真实光照层次。
-  for (let i = 0; i < pos.count; i++) {
-    const x = pos.getX(i)
-    const z = pos.getZ(i)
-    const h = getTerrainHeight(x, z)
-    pos.setY(i, h)
-
-    // 明暗：缓坡略亮、陡坡/梯田台阶暗（台阶面平缓处亮），叠加低频噪声
-    let shade = 1.0
-    if (h > TERRACE_START && h < TERRACE_END) {
-      const terracePos = ((h - TERRACE_START) % TERRACE_STEP) / TERRACE_STEP
-      shade = terracePos < 0.12 ? 0.88 : 1.0 // 梯田垂直边缘阴影
-    }
-    if (h > 12) shade *= 0.92 // 高处岩石略暗
-    shade *= 1.0 + (smoothNoise(x * 0.25, z * 0.25) - 0.5) * 0.22
-
-    colors[i * 3] = shade
-    colors[i * 3 + 1] = shade
-    colors[i * 3 + 2] = shade
-  }
-
-  geo.setAttribute('color', new THREE.BufferAttribute(colors, 3))
-  geo.computeVertexNormals()
-  return geo
-}
-
+// ============ 地形生成（古籍山场逻辑，实现在 ./terrain.ts） ============
 const terrainGeo = createTerrainGeometry()
 const terrainMeshRef = ref<THREE.Mesh | null>(null)
 
@@ -263,14 +185,15 @@ function isVisibleFromCamera(x: number, h: number, z: number): boolean {
 
 /** 基于种子生成茶树在地形上的位置（中央茶园区，确保相机可见且不被山挡） */
 function getPlantPosition(seed: number): [number, number, number] {
-  const MIN_H = 2
-  const MAX_H = 10
+  // 生态约束（古籍）：只种砾壤带（中坡 4-10m），谷底黄土/高坡烂石/排水沟均不种
+  const MIN_H = 4.2
+  const MAX_H = 9.5
   let best: [number, number, number] | null = null
   let bestScore = Infinity
   // 多次尝试：命中梯田高度且相机可见立即返回；否则记录最接近目标范围的候选
   for (let attempt = 0; attempt < 80; attempt++) {
-    const x = (seededRandom(seed + attempt * 3.1 + 1) - 0.5) * 28
-    const z = (seededRandom(seed + attempt * 5.7 + 2) - 0.5) * 28
+    const x = (seededRandom(seed + attempt * 3.1 + 1) - 0.5) * 30
+    const z = (seededRandom(seed + attempt * 5.7 + 2) - 0.5) * 30
     const h = getTerrainHeight(x, z)
     if (h >= MIN_H && h <= MAX_H && isVisibleFromCamera(x, h, z)) {
       return [x, h, z]
@@ -974,12 +897,14 @@ onMounted(() => {
   scene.add(wp)
   waterPoints.value = wp
 
-  // 活茶园：环境氛围层（云朵/云影/晨雾） + 小动物（蝴蝶/蜜蜂/飞鸟）
+  // 活茶园：环境氛围层（云朵/晨雾） + 小动物（蝴蝶/蜜蜂/飞鸟）
   const activeCam2 = sceneCtx.camera.activeCamera as unknown
   const camRef2 = ((activeCam2 as { value?: THREE.PerspectiveCamera }).value ?? activeCam2) as THREE.PerspectiveCamera
   ambientLayer = createAmbient(scene, camRef2)
   animalsLayer = createAnimals(scene)
   sceneryLayer = createScenery(scene)
+  // 古籍茶园：南坡成垄茶行 + 上缘遮阴树（《茶经》阳崖阴林 /《茶解》丛生成行）
+  teaFieldLayer = createTeaField(scene)
   // 天气系统（晴天/雨天：雨丝 + 地面湿润 + 光照/雾联动）
   const sun = sunLightRef.value
   const amb = ambientLightRef.value
@@ -1009,6 +934,7 @@ onMounted(() => {
     animalsLayer?.dispose()
     sceneryLayer?.dispose()
     weatherLayer?.dispose()
+    teaFieldLayer?.dispose()
     audioLayer?.dispose()
   })
 
