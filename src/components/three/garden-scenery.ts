@@ -7,6 +7,7 @@
  * 材质一律 MeshStandardMaterial + 纯色（不透明通道，本渲染管线确定渲染）。
  */
 import * as THREE from 'three'
+import { getTerrainHeight } from './terrain'
 
 /** 固定种子随机 */
 function seededRandom(seed: number): number {
@@ -31,8 +32,11 @@ export function createScenery(scene: THREE.Scene): GardenScenery {
   const stoneMat = new THREE.MeshStandardMaterial({ color: 0x9aa0a8, roughness: 0.95, metalness: 0 })
   const stoneDarkMat = new THREE.MeshStandardMaterial({ color: 0x7c828a, roughness: 0.95, metalness: 0 })
 
-  // ---- 茶亭：远处山坡 (x=-30, z=-40) 一座小木亭 ----
+  // ---- 茶亭：远处山坡一座小木亭（位置贴合地形，不再陷地）----
   const house = new THREE.Group()
+  const houseX = -30
+  const houseZ = -40
+  const houseY = getTerrainHeight(houseX, houseZ)
   // 台基（两层台阶）
   const base1 = new THREE.Mesh(new THREE.CylinderGeometry(3.4, 3.9, 0.5, 8), stoneMat)
   base1.position.y = 0.25
@@ -54,7 +58,7 @@ export function createScenery(scene: THREE.Scene): GardenScenery {
   const finial = new THREE.Mesh(new THREE.SphereGeometry(0.14, 6, 6), darkWoodMat)
   finial.position.y = 4.4
   house.add(roof, finial)
-  house.position.set(-30, 0, -40)
+  house.position.set(houseX, houseY, houseZ)
   house.rotation.y = 0.5
   root.add(house)
 
@@ -75,7 +79,7 @@ export function createScenery(scene: THREE.Scene): GardenScenery {
     rail2.position.set(0, 0.38, 0)
     rail2.rotation.z = Math.PI / 2
     fence.add(rail1, rail2)
-    fence.position.set(x0, 0, z0)
+    fence.position.set(x0, getTerrainHeight(x0, z0), z0)
     fence.rotation.y = rotY
     return fence
   }
@@ -89,7 +93,9 @@ export function createScenery(scene: THREE.Scene): GardenScenery {
     const x = 6 - 40 * t
     const z = -4 - 34 * t
     const stone = new THREE.Mesh(new THREE.CylinderGeometry(0.55 + seededRandom(i * 2.1 + 131) * 0.4, 0.62 + seededRandom(i * 3.3 + 132) * 0.42, 0.16 + seededRandom(i * 4.7 + 133) * 0.08, 7), i % 3 === 0 ? stoneDarkMat : stoneMat)
-    stone.position.set(x + (seededRandom(i * 6.1 + 134) - 0.5) * 0.9, 0.08, z + (seededRandom(i * 8.3 + 135) - 0.5) * 0.9)
+    const sx = x + (seededRandom(i * 6.1 + 134) - 0.5) * 0.9
+    const sz = z + (seededRandom(i * 8.3 + 135) - 0.5) * 0.9
+    stone.position.set(sx, getTerrainHeight(sx, sz) + 0.08, sz)
     stone.rotation.y = seededRandom(i * 9.9 + 136) * Math.PI
     root.add(stone)
   }

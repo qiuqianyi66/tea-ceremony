@@ -87,7 +87,7 @@ export const DEFAULT_PRESET: GardenPreset = {
   bushScaleMin: 0.85,
   bushScaleMax: 1.2,
   shadeTreeCount: 12,
-  shadeScale: 1.15,
+  shadeScale: 0.85,
   rockCount: 45,
   grassCount: 420,
   flowerCount: 90,
@@ -125,7 +125,7 @@ export const GARDEN_PRESETS: Record<string, GardenPreset> = {
     bushScaleMin: 0.85,
     bushScaleMax: 1.2,
     shadeTreeCount: 12,
-    shadeScale: 1.15,
+    shadeScale: 0.85,
     rockCount: 45,
     grassCount: 420,
     flowerCount: 90,
@@ -161,7 +161,7 @@ export const GARDEN_PRESETS: Record<string, GardenPreset> = {
     bushScaleMin: 0.7,
     bushScaleMax: 1.05,
     shadeTreeCount: 8,
-    shadeScale: 1.15,
+    shadeScale: 0.8,
     rockCount: 85, // 丹霞多岩石
     grassCount: 260,
     flowerCount: 45,
@@ -181,9 +181,9 @@ export const GARDEN_PRESETS: Record<string, GardenPreset> = {
     tintLoess: [0.82, 0.74, 0.58], // 热带腐殖黑土
     tintGravel: [0.9, 0.72, 0.55],
     tintRock: [0.95, 0.88, 0.8],
-    sky: ['#1c4f9e', '#3a7cc8', '#82b4e0', '#c2dcf0', '#eaf4fb'],
+    sky: ['#1c4f9e', '#3a7cc8', '#82b4e0', '#c2dcf0', '#d6e8f4'],
     fogColor: '#a8bfc8',
-    fogDensity: 0.01, // 雨林晨雾
+    fogDensity: 0.005, // 晴天薄雾（远景清晰），雨天由天气层加浓
     sunColor: '#fff3da',
     sunIntensity: 2.2,
     rainColor: '#96a9bd',
@@ -197,7 +197,7 @@ export const GARDEN_PRESETS: Record<string, GardenPreset> = {
     bushScaleMin: 0.9,
     bushScaleMax: 1.45, // 古树蓬更大
     shadeTreeCount: 26, // 雨林遮阴树多
-    shadeScale: 1.6, // 树更参天
+    shadeScale: 1.0,
     rockCount: 30,
     grassCount: 220,
     flowerCount: 40,
@@ -233,7 +233,7 @@ export const GARDEN_PRESETS: Record<string, GardenPreset> = {
     bushScaleMin: 0.85,
     bushScaleMax: 1.2,
     shadeTreeCount: 10,
-    shadeScale: 1.05,
+    shadeScale: 0.85,
     rockCount: 28,
     grassCount: 480, // 开阔草坡
     flowerCount: 150, // 山海野花多
@@ -244,6 +244,7 @@ export const GARDEN_PRESETS: Record<string, GardenPreset> = {
 export function getGardenPreset(id?: string): GardenPreset {
   return (id ? GARDEN_PRESETS[id] : undefined) ?? DEFAULT_PRESET
 }
+
 
 
 

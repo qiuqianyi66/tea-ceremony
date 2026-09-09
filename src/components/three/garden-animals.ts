@@ -106,7 +106,7 @@ export function createAnimals(scene: THREE.Scene): GardenAnimals {
       alphaTest: 0.28, // Basic+map 在本渲染管线不渲染，用 Standard+emissive（云/晨雾实证可渲染）
       emissive: 0xffffff,
       emissiveMap: wingTex,
-      emissiveIntensity: 0.9,
+      emissiveIntensity: 0.35, // 避免 Bloom 过曝成白块
       roughness: 1,
       metalness: 0,
       side: THREE.DoubleSide,
@@ -144,7 +144,7 @@ export function createAnimals(scene: THREE.Scene): GardenAnimals {
     const wingMat = new THREE.MeshStandardMaterial({
       color: 0xffffff,
       emissive: 0xffffff,
-      emissiveIntensity: 0.9,
+      emissiveIntensity: 0.35, // 避免 Bloom 过曝成白块
       alphaTest: 0.5,
       roughness: 1,
       metalness: 0,

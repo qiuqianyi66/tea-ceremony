@@ -103,7 +103,7 @@ export function createTeaField(scene: THREE.Scene, preset?: GardenPreset): TeaFi
         x: tx,
         h: th,
         z: tz,
-        scale: (1.1 + seededRandom(i * 3.3 + 203) * 0.7) * p.shadeScale,
+        scale: (0.6 + seededRandom(i * 3.3 + 203) * 0.4) * p.shadeScale,
         seed: i * 77.7 + 301,
         species: 'wuyi',
       })
@@ -169,15 +169,20 @@ export function createTeaField(scene: THREE.Scene, preset?: GardenPreset): TeaFi
       root.add(bushMesh)
     }
 
-    // 林冠大树：茶行带/后坡散植（茶林共生），干粗冠大、高矮参差，树下垂藤
-    for (let i = 0; i < 30; i++) {
-      const tx = -46 + seededRandom(i * 7.7 + 301) * 92
-      const tz = -12 - seededRandom(i * 9.3 + 302) * 28 // 茶行带起，近景可见
-      const th = getTerrainHeight(tx, tz)
-      if (th < 3.2 || th > 14) continue
-      const s = (1.5 + seededRandom(i * 3.3 + 303) * 0.9) * p.shadeScale
-      treeSpecs.push({ x: tx, h: th, z: tz, scale: s, seed: i * 91.3 + 501, species: 'jungle' })
-      bigTreePos.push([tx, th, tz, s])
+    // 林冠大树：母树聚丛（成片雨林）——6 丛 × 5 棵，干粗冠大、高矮参差，树下垂藤
+    const jungleCluster = 5
+    for (let c = 0; c < 6; c++) {
+      const cx = -46 + seededRandom(c * 7.7 + 301) * 92
+      const cz = -12 - seededRandom(c * 9.3 + 302) * 28
+      for (let i = 0; i < jungleCluster; i++) {
+        const tx = cx + (seededRandom(c * 13.7 + i * 17.9 + 311) - 0.5) * 8
+        const tz = cz + (seededRandom(c * 15.1 + i * 19.3 + 312) - 0.5) * 8
+        const th = getTerrainHeight(tx, tz)
+        if (th < 3.2 || th > 14) continue
+        const s = (1.1 + seededRandom(i * 3.3 + c * 5.1 + 303) * 0.7) * p.shadeScale
+        treeSpecs.push({ x: tx, h: th, z: tz, scale: s, seed: c * 91.3 + i * 17.7 + 501, species: 'jungle' })
+        bigTreePos.push([tx, th, tz, s])
+      }
     }
 
     // 垂藤（附生植物垂挂）：每棵大树 2-3 条，从冠底垂下
@@ -302,21 +307,27 @@ export function createTeaField(scene: THREE.Scene, preset?: GardenPreset): TeaFi
     root.add(trunkMesh)
   }
 
-  // ---- 遮阴树：茶行带 + 上缘散植（阳崖阴林；树在茶园中，近景可见枝干），数量/尺度按预设 ----
+  // ---- 遮阴树：母树聚丛（成片不成点）——每丛 3-5 棵近距成林，丛间留出茶行空隙 ----
   const shadeSpecies: TreeSpecies = p.id === 'fuding' ? 'coast' : 'shade'
-  for (let i = 0; i < p.shadeTreeCount; i++) {
-    const tx = -40 + seededRandom(i * 7.7 + 101) * 80
-    const tz = -10 - seededRandom(i * 9.3 + 102) * 26 // 茶行带 + 山脊下缘
-    const th = getTerrainHeight(tx, tz)
-    if (th < 4.4 || th > 14.5) continue // 茶园中 + 坡上（不种峰顶/谷底）
-    treeSpecs.push({
-      x: tx,
-      h: th,
-      z: tz,
-      scale: (1.6 + seededRandom(i * 3.3 + 103) * 1.0) * p.shadeScale,
-      seed: i * 61.1 + 901,
-      species: shadeSpecies,
-    })
+  const clusterSize = 3 + Math.floor(seededRandom(1) * 3) // 3-5 棵/丛
+  const nCluster = Math.ceil(p.shadeTreeCount / clusterSize)
+  for (let c = 0; c < nCluster; c++) {
+    const cx = -40 + seededRandom(c * 7.7 + 101) * 80
+    const cz = -10 - seededRandom(c * 9.3 + 102) * 26 // 茶行带 + 山脊下缘
+    for (let i = 0; i < clusterSize; i++) {
+      const tx = cx + (seededRandom(c * 13.1 + i * 17.7 + 111) - 0.5) * 7
+      const tz = cz + (seededRandom(c * 15.7 + i * 19.3 + 112) - 0.5) * 7
+      const th = getTerrainHeight(tx, tz)
+      if (th < 4.4 || th > 14.5) continue // 茶园中 + 坡上（不种峰顶/谷底）
+      treeSpecs.push({
+        x: tx,
+        h: th,
+        z: tz,
+        scale: (1.0 + seededRandom(i * 3.3 + c * 5.7 + 103) * 0.6) * p.shadeScale,
+        seed: c * 61.1 + i * 13.7 + 901,
+        species: shadeSpecies,
+      })
+    }
   }
   if (treeSpecs.length > 0) {
     createTreeForest(root, treeSpecs)

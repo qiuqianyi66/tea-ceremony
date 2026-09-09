@@ -221,8 +221,6 @@ export function createTreeForest(parent: THREE.Object3D, specs: TreeSpec[]): { r
       color: 0xffffff,
       roughness: 0.88,
       flatShading: true,
-      emissive: 0x22391f,
-      emissiveIntensity: 0.4, // 树冠微发光：雾里发亮、雨林光斑感
     })
     const leafMesh = new THREE.InstancedMesh(leafGeo, leafMat, leaves.length)
     const dummy = new THREE.Object3D()
