@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTeaStore } from '@/stores/tea'
 import { teas, getTeaById } from '@/data/teas'
@@ -82,6 +82,12 @@ const bestScore = computed(() => {
 const unlockedWares = computed(() =>
   teawares.filter(w => store.isTeaWareUnlocked(w.id)),
 )
+
+// 茶图加载失败记录：茶图鉴降级为渐变色块；茶器图降级为 lucide 图标（key 用 ware.id）
+const imgFailed = reactive<Record<string, boolean>>({})
+const wareImgFailed = reactive<Record<string, boolean>>({})
+function markImgFailed(id: string) { imgFailed[id] = true }
+function markWareImgFailed(id: string) { wareImgFailed[id] = true }
 </script>
 
 <template>
@@ -132,10 +138,14 @@ const unlockedWares = computed(() =>
           class="relative rounded-xl p-3 text-center cursor-pointer transition-transform hover:scale-[1.02]"
           :class="item.tasted ? 'glass-panel' : 'bg-white/40 border-2 border-dashed border-[#d8cfc0]'"
           @click="router.push(`/tea/${item.tea.id}`)">
-          <div class="w-full h-12 rounded-lg mb-2"
-            :style="item.tasted
-              ? { background: `linear-gradient(135deg, ${item.tea.soupColorMin}, ${item.tea.soupColorMax})` }
-              : { background: 'repeating-linear-gradient(45deg, #e8e2d8, #e8e2d8 6px, #f0ebe2 6px, #f0ebe2 12px)' }">
+          <template v-if="item.tasted">
+            <img v-if="item.tea.image && !imgFailed[item.tea.id]" :src="item.tea.image" loading="lazy"
+              @error="markImgFailed(item.tea.id)" class="w-full h-16 rounded-lg object-cover mb-2" :alt="item.tea.name" />
+            <div v-else class="w-full h-16 rounded-lg mb-2"
+              :style="{ background: `linear-gradient(135deg, ${item.tea.soupColorMin}, ${item.tea.soupColorMax})` }"></div>
+          </template>
+          <div v-else class="w-full h-16 rounded-lg mb-2"
+            :style="{ background: 'repeating-linear-gradient(45deg, #e8e2d8, #e8e2d8 6px, #f0ebe2 6px, #f0ebe2 12px)' }">
           </div>
           <p class="text-sm font-bold" :class="item.tasted ? 'text-[var(--color-wood)]' : 'text-[#8a8070]'">
             {{ item.tea.name }}
@@ -171,7 +181,9 @@ const unlockedWares = computed(() =>
       <div class="grid grid-cols-3 sm:grid-cols-6 gap-3">
         <div v-for="ware in unlockedWares" :key="ware.id"
           class="glass-panel rounded-xl p-3 text-center">
-          <component :is="`Icon${ware.icon}`" class="w-8 h-8 mx-auto mb-1 text-[var(--color-tea-gold)]" />
+          <img v-if="ware.image && !wareImgFailed[ware.id]" :src="ware.image" loading="lazy"
+            @error="markWareImgFailed(ware.id)" class="w-12 h-12 object-cover rounded-full mx-auto mb-1" :alt="ware.name" />
+          <component v-else :is="`Icon${ware.icon}`" class="w-8 h-8 mx-auto mb-1 text-[var(--color-tea-gold)]" />
           <p class="text-xs font-bold text-[var(--color-wood)]">{{ ware.name }}</p>
           <p class="text-[10px] text-[var(--color-wood-light)]">{{ ware.material }}</p>
         </div>

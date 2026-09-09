@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTeaStore } from '@/stores/tea'
 import { teawares } from '@/data/teawares'
@@ -11,6 +11,10 @@ const store = useTeaStore()
 
 const currentTeaName = computed(() => store.currentTea?.name ?? '未知')
 const currentTeaType = computed(() => store.currentTea?.type ?? '')
+
+// 茶器图加载失败记录：失败后降级为 lucide 图标
+const imgFailed = reactive<Record<string, boolean>>({})
+function markImgFailed(id: string) { imgFailed[id] = true }
 
 function selectWare(ware: TeaWare) {
   if (!store.isTeaWareUnlocked(ware.id)) return
@@ -72,7 +76,9 @@ function confirm() {
           <div v-if="!store.isTeaWareUnlocked(ware.id)" class="absolute inset-0 flex items-center justify-center bg-white/40 rounded-xl z-10">
             <IconLock class="w-5 h-5 text-[var(--color-wood-light)]" />
           </div>
-          <component :is="`Icon${ware.icon}`" class="w-8 h-8 mx-auto" />
+          <img v-if="ware.image && !imgFailed[ware.id]" :src="ware.image" loading="lazy" @error="markImgFailed(ware.id)"
+            class="w-12 h-12 object-cover rounded-full mx-auto mb-1" :alt="ware.name" />
+          <component v-else :is="`Icon${ware.icon}`" class="w-8 h-8 mx-auto" />
           <p class="text-sm font-bold text-[var(--color-wood)]">{{ ware.name }}</p>
           <p class="text-xs text-[var(--color-wood-light)] mt-1">{{ ware.material }}</p>
           <p class="text-xs text-[var(--color-wood-light)]">{{ ware.capacity }}ml</p>

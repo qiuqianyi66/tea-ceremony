@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { reactive, ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useTeaStore } from '@/stores/tea'
@@ -65,6 +65,10 @@ const recommendedTeas = computed<Tea[]>(() => {
 function pickRandom<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)]!
 }
+
+// 今日宜饮茶图加载失败记录：失败后降级为渐变色块
+const imgFailed = reactive<Record<string, boolean>>({})
+function markImgFailed(id: string) { imgFailed[id] = true }
 
 // 今日茶诗 / 茶人（随机，可换）
 const todayPoem = ref<TeaPoem>(pickRandom(TEA_POEMS))
@@ -229,6 +233,10 @@ onUnmounted(() => {
         <div class="tea-grid">
           <div v-for="tea in recommendedTeas" :key="tea.id" class="tea-card" role="button" tabindex="0"
             @click="go(`/tea/${tea.id}`)" @keydown.enter="go(`/tea/${tea.id}`)">
+            <img v-if="tea.image && !imgFailed[tea.id]" :src="tea.image" loading="lazy" @error="markImgFailed(tea.id)"
+              class="w-full h-28 object-cover rounded-lg mb-2" :alt="tea.name" />
+            <div v-else class="w-full h-28 rounded-lg mb-2"
+              :style="{ background: `linear-gradient(135deg, ${tea.soupColorMin}, ${tea.soupColorMax})` }"></div>
             <div class="tea-card-top">
               <span class="tea-type">{{ tea.type }}</span>
               <span class="tea-share" role="button" tabindex="0" @click.stop="shareTea(tea)"

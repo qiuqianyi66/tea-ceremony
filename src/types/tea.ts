@@ -37,6 +37,8 @@ export interface Tea {
   dryTeaColor: string
   soupColorMin: string
   soupColorMax: string
+  /** 本地茶图素材（assets import 路径），加载失败时茶卡降级为渐变色块 */
+  image?: string
 
   /** API 关联信息，页面可按需使用 */
   regionId?: number

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { teas, getAllTypes } from '@/data/teas'
 import { useTeaStore } from '@/stores/tea'
@@ -14,6 +14,10 @@ const selectedType = ref<TeaType | null>(null)
 const selectedTea = ref<Tea | null>(null)
 const catalog = ref<Tea[]>(teas)
 const isLoading = ref(false)
+
+// 茶图加载失败记录：失败后降级为渐变色块
+const imgFailed = reactive<Record<string, boolean>>({})
+function markImgFailed(id: string) { imgFailed[id] = true }
 
 const visibleTeas = computed(() => selectedType.value
   ? catalog.value.filter(tea => tea.type === selectedType.value)
@@ -86,7 +90,9 @@ const types = getAllTypes()
         @click="selectTea(tea)"
         class="p-6 rounded-xl cursor-pointer transition-all duration-300 border-2"
         :class="selectedTea?.id === tea.id ? 'border-[var(--color-tea-gold)] shadow-lg scale-105' : 'border-transparent bg-white hover:shadow-md'">
-        <div class="w-full h-24 rounded-lg mb-4"
+        <img v-if="tea.image && !imgFailed[tea.id]" :src="tea.image" loading="lazy" @error="markImgFailed(tea.id)"
+          class="w-full h-24 object-cover rounded-lg mb-4" :alt="tea.name" />
+        <div v-else class="w-full h-24 rounded-lg mb-4"
           :style="{ background: `linear-gradient(135deg, ${tea.soupColorMin}, ${tea.soupColorMax})` }"></div>
         <h3 class="text-xl font-bold text-[var(--color-wood)] mb-2">{{ tea.name }}</h3>
         <p class="text-sm text-[var(--color-wood-light)] mb-2">{{ tea.type }} · {{ tea.origin }}</p>

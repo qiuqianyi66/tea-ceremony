@@ -5,6 +5,27 @@
  */
 
 import { TeaType, type Tea } from '@/types/tea'
+import greenLongjing from '@/assets/teas/green-longjing.jpg'
+import greenBiluochun from '@/assets/teas/green-biluochun.jpg'
+import greenHuangshanmaofeng from '@/assets/teas/green-huangshanmaofeng.jpg'
+import greenXinyangmaojian from '@/assets/teas/green-xinyangmaojian.jpg'
+import greenTaipinghoukui from '@/assets/teas/green-taipinghoukui.jpg'
+import greenAnji from '@/assets/teas/green-anji.jpg'
+import greenCommon1 from '@/assets/teas/green-common-1.jpg'
+import greenCommon2 from '@/assets/teas/green-common-2.jpg'
+import whiteYinzhen from '@/assets/teas/white-yinzhen.jpg'
+import whiteBaimudan from '@/assets/teas/white-baimudan.jpg'
+import yellowJunshan from '@/assets/teas/yellow-junshan.jpg'
+import oolongDahongpao from '@/assets/teas/oolong-dahongpao.jpg'
+import oolongWuyi from '@/assets/teas/oolong-wuyi.jpg'
+import redJinjunmei from '@/assets/teas/red-jinjunmei.jpg'
+import redDianhong from '@/assets/teas/red-dianhong.jpg'
+import redQimen from '@/assets/teas/red-qimen.jpg'
+import redCommon from '@/assets/teas/red-common.jpg'
+import darkShengpu from '@/assets/teas/dark-shengpu.jpg'
+import darkShoupu from '@/assets/teas/dark-shoupu.jpg'
+import darkLiubao from '@/assets/teas/dark-liubao.jpg'
+import darkFuzhuan from '@/assets/teas/dark-fuzhuan.jpg'
 
 export const teas: Tea[] = [
   // ============ 绿茶 ============
@@ -24,6 +45,7 @@ export const teas: Tea[] = [
     dryTeaColor: '#4A7C59',
     soupColorMin: '#F5E6A3',
     soupColorMax: '#C9B458',
+    image: greenLongjing,
   },
   {
     id: 'biluochun',
@@ -41,6 +63,7 @@ export const teas: Tea[] = [
     dryTeaColor: '#6B8E23',
     soupColorMin: '#E8F5E9',
     soupColorMax: '#A5D6A7',
+    image: greenBiluochun,
   },
   {
     id: 'huangshanmaofeng',
@@ -58,6 +81,7 @@ export const teas: Tea[] = [
     dryTeaColor: '#5B8C5A',
     soupColorMin: '#F0F5E8',
     soupColorMax: '#B8C9A8',
+    image: greenHuangshanmaofeng,
   },
   {
     id: 'xinyangmaojian',
@@ -75,6 +99,7 @@ export const teas: Tea[] = [
     dryTeaColor: '#6B9E5A',
     soupColorMin: '#E8F5E0',
     soupColorMax: '#A8C99A',
+    image: greenXinyangmaojian,
   },
   {
     id: 'taipinghoukui',
@@ -92,6 +117,7 @@ export const teas: Tea[] = [
     dryTeaColor: '#6B9A5A',
     soupColorMin: '#EAF0E0',
     soupColorMax: '#B8CAA0',
+    image: greenTaipinghoukui,
   },
 
   // ============ 白茶 ============
@@ -111,6 +137,7 @@ export const teas: Tea[] = [
     dryTeaColor: '#8B9A6B',
     soupColorMin: '#F0E68C',
     soupColorMax: '#DAA520',
+    image: whiteBaimudan,
   },
   {
     id: 'baihaoyinzhen',
@@ -128,6 +155,7 @@ export const teas: Tea[] = [
     dryTeaColor: '#9AAD8A',
     soupColorMin: '#F5F0D8',
     soupColorMax: '#D4C89A',
+    image: whiteYinzhen,
   },
 
   // ============ 黄茶 ============
@@ -147,6 +175,7 @@ export const teas: Tea[] = [
     dryTeaColor: '#C9A96E',
     soupColorMin: '#FFE4B5',
     soupColorMax: '#F4A460',
+    image: yellowJunshan,
   },
 
   // ============ 乌龙/青茶 ============
@@ -166,6 +195,7 @@ export const teas: Tea[] = [
     dryTeaColor: '#5C4033',
     soupColorMin: '#FFD700',
     soupColorMax: '#DAA520',
+    image: oolongWuyi,
   },
   {
     id: 'dahongpao',
@@ -183,6 +213,7 @@ export const teas: Tea[] = [
     dryTeaColor: '#4A3D33',
     soupColorMin: '#E8B84A',
     soupColorMax: '#C88A30',
+    image: oolongDahongpao,
   },
   {
     id: 'shuixian',
@@ -200,6 +231,7 @@ export const teas: Tea[] = [
     dryTeaColor: '#4A3D33',
     soupColorMin: '#E8B84A',
     soupColorMax: '#C88A30',
+    image: oolongWuyi,
   },
   {
     id: 'rougui',
@@ -217,6 +249,7 @@ export const teas: Tea[] = [
     dryTeaColor: '#4A3D33',
     soupColorMin: '#F0C04A',
     soupColorMax: '#C88A30',
+    image: oolongWuyi,
   },
   {
     id: 'tieluohan',
@@ -234,6 +267,7 @@ export const teas: Tea[] = [
     dryTeaColor: '#3D3025',
     soupColorMin: '#D89A40',
     soupColorMax: '#B07828',
+    image: oolongWuyi,
   },
   {
     id: 'baijiguan',
@@ -251,6 +285,7 @@ export const teas: Tea[] = [
     dryTeaColor: '#5A6E4A',
     soupColorMin: '#F0E8C0',
     soupColorMax: '#C8B870',
+    image: oolongWuyi,
   },
   {
     id: 'bantianyao',
@@ -268,6 +303,7 @@ export const teas: Tea[] = [
     dryTeaColor: '#4A3D33',
     soupColorMin: '#E8C04A',
     soupColorMax: '#C8A030',
+    image: oolongWuyi,
   },
   {
     id: 'qilan',
@@ -285,6 +321,7 @@ export const teas: Tea[] = [
     dryTeaColor: '#5A6E4A',
     soupColorMin: '#F0D8A0',
     soupColorMax: '#C8A860',
+    image: oolongWuyi,
   },
   {
     id: 'fenghuangdancong',
@@ -302,6 +339,7 @@ export const teas: Tea[] = [
     dryTeaColor: '#5C4A3A',
     soupColorMin: '#F0C84A',
     soupColorMax: '#C8A030',
+    image: oolongWuyi,
   },
   {
     id: 'luanshancha',
@@ -319,6 +357,7 @@ export const teas: Tea[] = [
     dryTeaColor: '#5C4A3A',
     soupColorMin: '#F0C850',
     soupColorMax: '#C8A038',
+    image: oolongWuyi,
   },
 
   // ============ 红茶 ============
@@ -338,6 +377,7 @@ export const teas: Tea[] = [
     dryTeaColor: '#8B4513',
     soupColorMin: '#FFB347',
     soupColorMax: '#CD853F',
+    image: redJinjunmei,
   },
   {
     id: 'lapsangsouchong',
@@ -355,6 +395,7 @@ export const teas: Tea[] = [
     dryTeaColor: '#3D2B1F',
     soupColorMin: '#E8A040',
     soupColorMax: '#B87030',
+    image: redJinjunmei,
   },
   {
     id: 'dianhong',
@@ -372,6 +413,7 @@ export const teas: Tea[] = [
     dryTeaColor: '#4A3020',
     soupColorMin: '#E86040',
     soupColorMax: '#B84020',
+    image: redDianhong,
   },
   {
     id: 'qimenhong',
@@ -389,6 +431,7 @@ export const teas: Tea[] = [
     dryTeaColor: '#3D2B1F',
     soupColorMin: '#E86040',
     soupColorMax: '#B84020',
+    image: redQimen,
   },
 
   // ============ 黑茶 ============
@@ -408,6 +451,7 @@ export const teas: Tea[] = [
     dryTeaColor: '#3D2B1F',
     soupColorMin: '#8B4513',
     soupColorMax: '#654321',
+    image: darkShengpu,
   },
   {
     id: 'liubao',
@@ -425,6 +469,7 @@ export const teas: Tea[] = [
     dryTeaColor: '#3D2B1F',
     soupColorMin: '#B84A30',
     soupColorMax: '#8A3020',
+    image: darkLiubao,
   },
   {
     id: 'anhuahei',
@@ -442,6 +487,7 @@ export const teas: Tea[] = [
     dryTeaColor: '#3D3025',
     soupColorMin: '#C86A40',
     soupColorMax: '#9A4A28',
+    image: darkFuzhuan,
   },
   {
     id: 'fuzhuan',
@@ -459,31 +505,32 @@ export const teas: Tea[] = [
     dryTeaColor: '#3D3025',
     soupColorMin: '#C86A40',
     soupColorMax: '#9A4A28',
+    image: darkFuzhuan,
   },
   // ===== 新增 24 款茶 =====
-  { id: 'anji_bai', name: '安吉白茶', type: TeaType.GREEN, origin: '浙江安吉', altitude: '500-1000米', process: '烘青', bestTemp: 80, bestTime: 45, infusions: 3, flavor: ['鲜爽', '甘甜', '滑润'], story: '安吉白茶是珍稀白化品种，氨基酸含量为普通绿茶3倍，滋味格外鲜爽。', description: '白茶化绿茶，氨基酸之王。', dryTeaColor: '#7BA87A', soupColorMin: '#F0F5E8', soupColorMax: '#B8C9A8' },
-  { id: 'liuan_gua', name: '六安瓜片', type: TeaType.GREEN, origin: '安徽六安', altitude: '400-800米', process: '烘青', bestTemp: 80, bestTime: 45, infusions: 3, flavor: ['栗香', '鲜爽', '醇厚'], story: '中国唯一无芽无梗绿茶，由单片叶制成。清代为贡茶，周恩来总理生前最爱。', description: '唯一无芽无梗绿茶，单片叶制作。', dryTeaColor: '#6B9E5A', soupColorMin: '#E8F5E0', soupColorMax: '#A8C99A' },
-  { id: 'mengding_gan', name: '蒙顶甘露', type: TeaType.GREEN, origin: '四川雅安', altitude: '800-1400米', process: '炒青', bestTemp: 80, bestTime: 50, infusions: 3, flavor: ['嫩香', '鲜爽', '回甘'], story: '蒙顶山是中国茶文化发源地，公元前53年吴理真在此种茶，被尊为"茶祖"。', description: '最古老名茶，茶祖吴理真手植。', dryTeaColor: '#5B8C5A', soupColorMin: '#F0F5E8', soupColorMax: '#B8C9A8' },
-  { id: 'enshi_yulu', name: '恩施玉露', type: TeaType.GREEN, origin: '湖北恩施', altitude: '500-1200米', process: '蒸青', bestTemp: 75, bestTime: 40, infusions: 3, flavor: ['海苔香', '鲜爽', '清甜'], story: '中国唯一保留下来的蒸青绿茶工艺，源自唐代。恩施是中国最大富硒茶产区。', description: '中国唯一蒸青绿茶，唐代工艺活化石。', dryTeaColor: '#6B9E5A', soupColorMin: '#E8F5E0', soupColorMax: '#A8C99A' },
-  { id: 'wuyuan_mei', name: '婺源绿茶', type: TeaType.GREEN, origin: '江西婺源', altitude: '300-1000米', process: '炒青', bestTemp: 80, bestTime: 50, infusions: 3, flavor: ['清香', '鲜爽', '醇和'], story: '婺源是中国最美乡村之一，以"叶绿、汤清、香高、味醇"四绝著称。', description: '江南绿茶代表，四绝名扬。', dryTeaColor: '#6B9E5A', soupColorMin: '#E8F5E0', soupColorMax: '#A8C99A' },
-  { id: 'lushan_yun', name: '庐山云雾', type: TeaType.GREEN, origin: '江西九江', altitude: '500-1200米', process: '烘青', bestTemp: 80, bestTime: 50, infusions: 3, flavor: ['豆香', '鲜爽', '甘甜'], story: '庐山云雾为中国十大名茶之一，庐山为佛教名山，僧人种茶历史悠久。', description: '十大名茶，庐山僧人千年传承。', dryTeaColor: '#5B8C5A', soupColorMin: '#F0F5E8', soupColorMax: '#B8C9A8' },
-  { id: 'shifeng_lj', name: '狮峰龙井', type: TeaType.GREEN, origin: '浙江杭州', altitude: '50-400米', process: '炒青', bestTemp: 80, bestTime: 60, infusions: 3, flavor: ['豆香', '栗香', '鲜爽'], story: '狮峰山是龙井品质最好的核心产区，乾隆御封十八棵御茶所在。', description: '龙井之巅，乾隆御茶核心产区。', dryTeaColor: '#4A7C59', soupColorMin: '#F5E6A3', soupColorMax: '#C9B458' },
-  { id: 'guzhu_zs', name: '顾渚紫笋', type: TeaType.GREEN, origin: '浙江长兴', altitude: '200-500米', process: '炒青', bestTemp: 80, bestTime: 50, infusions: 3, flavor: ['兰花香', '鲜爽', '甘醇'], story: '唐代第一贡茶，陆羽《茶经》多次提及。设贡茶院为历史上最早皇家茶厂。', description: '唐代第一贡茶，最早皇家茶厂。', dryTeaColor: '#5B8C5A', soupColorMin: '#F0F5E8', soupColorMax: '#B8C9A8' },
-  { id: 'shoumei', name: '寿眉', type: TeaType.WHITE, origin: '福建福鼎', altitude: '400-1000米', process: '萎凋+干燥', bestTemp: 95, bestTime: 120, infusions: 7, flavor: ['枣香', '药香', '醇和'], story: '寿眉"一年茶、三年药、七年宝"。传统白茶工艺，自然萎凋。', description: '白茶经典，越陈越香。', dryTeaColor: '#9AAD8A', soupColorMin: '#F5F0D8', soupColorMax: '#D4C89A' },
-  { id: 'zhenhe_bh', name: '政和白毫银针', type: TeaType.WHITE, origin: '福建政和', altitude: '600-1200米', process: '萎凋+干燥', bestTemp: 85, bestTime: 120, infusions: 5, flavor: ['毫香', '清甜', '醇厚'], story: '政和白茶茶味醇厚，与福鼎白茶清雅对比鲜明。政和大白茶品种独特。', description: '白茶中茶味最醇厚者。', dryTeaColor: '#9AAD8A', soupColorMin: '#F5F0D8', soupColorMax: '#D4C89A' },
-  { id: 'dongting_bl', name: '洞庭碧螺春（传统）', type: TeaType.GREEN, origin: '江苏苏州', altitude: '100-300米', process: '炒青', bestTemp: 75, bestTime: 45, infusions: 3, flavor: ['花果香', '清甜', '鲜嫩'], story: '正宗洞庭碧螺春产自太湖东山，茶树与果树间作，天然花果香。', description: '正宗洞庭山产区，茶果间作花果香。', dryTeaColor: '#6B8E23', soupColorMin: '#E8F5E9', soupColorMax: '#A5D6A7' },
-  { id: 'yixing_yx', name: '阳羡雪芽', type: TeaType.GREEN, origin: '江苏宜兴', altitude: '200-500米', process: '炒青', bestTemp: 80, bestTime: 45, infusions: 3, flavor: ['清香', '鲜爽', '甘甜'], story: '阳羡茶唐代即为贡茶，卢仝"天子须尝阳羡茶，百草不敢先开花"即赞此茶。', description: '唐代贡茶，卢仝盛赞。', dryTeaColor: '#6B9E5A', soupColorMin: '#E8F5E0', soupColorMax: '#A8C99A' },
-  { id: 'alishan', name: '阿里山乌龙', type: TeaType.OOLONG, origin: '台湾嘉义', altitude: '1000-1600米', process: '做青+烘焙', bestTemp: 90, bestTime: 40, infusions: 6, flavor: ['花香', '果香', '清雅'], story: '阿里山全球海拔最高茶区之一，独特"高山韵"，茶汤清亮。', description: '全球最高海拔茶区，独特高山韵。', dryTeaColor: '#5C4A3A', soupColorMin: '#F0C850', soupColorMax: '#C8A038' },
-  { id: 'wenshan_bz', name: '文山包种', type: TeaType.OOLONG, origin: '台湾台北', altitude: '300-700米', process: '做青+轻焙', bestTemp: 85, bestTime: 35, infusions: 5, flavor: ['花香', '清雅', '甘甜'], story: '台湾发酵最轻的乌龙茶，香气清雅有"露凝香"之称。', description: '台湾最轻发酵乌龙，"露凝香"。', dryTeaColor: '#5A6E4A', soupColorMin: '#F0E8C0', soupColorMax: '#C8B870' },
-  { id: 'yingde_hc', name: '英德红茶', type: TeaType.RED, origin: '广东英德', altitude: '200-500米', process: '全发酵', bestTemp: 90, bestTime: 45, infusions: 5, flavor: ['蜜香', '果香', '醇厚'], story: '英德红茶创制于1959年，被誉为"中国红茶后起之秀"。', description: '广东红茶代表，后起之秀。', dryTeaColor: '#4A3020', soupColorMin: '#E86040', soupColorMax: '#B84020' },
-  { id: 'ning_hong', name: '宁红工夫', type: TeaType.RED, origin: '江西修水', altitude: '300-800米', process: '全发酵', bestTemp: 90, bestTime: 50, infusions: 5, flavor: ['蜜香', '甜润', '醇和'], story: '宁红是中国最早工夫红茶之一，清代出口欧美。黄庭坚故里茶文化深厚。', description: '最早工夫红茶，出口欧美百年。', dryTeaColor: '#4A3020', soupColorMin: '#E86040', soupColorMax: '#B84020' },
-  { id: 'chuan_hong', name: '川红工夫', type: TeaType.RED, origin: '四川宜宾', altitude: '300-1000米', process: '全发酵', bestTemp: 90, bestTime: 45, infusions: 5, flavor: ['橘糖香', '甜醇', '鲜爽'], story: '川红以宜宾紫土孕育，独特橘糖香，以"早、嫩、香"著称。', description: '四川红茶代表，紫土橘糖香。', dryTeaColor: '#4A3020', soupColorMin: '#E86040', soupColorMax: '#B84020' },
-  { id: 'sheng_pu', name: '生普洱（景迈）', type: TeaType.DARK, origin: '云南普洱', altitude: '1000-1800米', process: '后发酵（生普）', bestTemp: 95, bestTime: 20, infusions: 15, flavor: ['花香', '山野韵', '甘甜'], story: '景迈山千年古茶林为世界文化遗产。生普陈放后自然转化，越陈越香。', description: '世界文化遗产景迈山，自然陈化。', dryTeaColor: '#3D2B1F', soupColorMin: '#8B4513', soupColorMax: '#654321' },
-  { id: 'shou_pu', name: '熟普洱（景迈）', type: TeaType.DARK, origin: '云南普洱', altitude: '1000-1800米', process: '渥堆发酵', bestTemp: 100, bestTime: 25, infusions: 15, flavor: ['陈香', '枣香', '醇滑'], story: '景迈古树熟普渥堆发酵精制，汤色红浓，口感醇滑。', description: '古树熟普，红浓醇滑。', dryTeaColor: '#3D2B1F', soupColorMin: '#8B4513', soupColorMax: '#654321' },
-  { id: 'chenpi', name: '陈皮普洱', type: TeaType.DARK, origin: '广东新会', altitude: '200-1500米', process: '混合陈化', bestTemp: 100, bestTime: 30, infusions: 12, flavor: ['陈皮香', '陈香', '甘醇'], story: '陈皮普洱以新会陈皮搭配云南普洱，茶与果的完美结合。', description: '陈皮与普洱的完美融合。', dryTeaColor: '#3D3025', soupColorMin: '#C86A40', soupColorMax: '#9A4A28' },
-  { id: 'yunnan_gh', name: '云南古树晒红', type: TeaType.RED, origin: '云南临沧', altitude: '1200-2000米', process: '全发酵+日晒', bestTemp: 90, bestTime: 50, infusions: 6, flavor: ['蜜香', '果香', '甜润'], story: '晒红以古树茶为原料，日光干燥替代烘干，可长期陈放。', description: '古树日晒，可长期陈放的红茶。', dryTeaColor: '#4A3020', soupColorMin: '#E86040', soupColorMax: '#B84020' },
-  { id: 'suocha_pt', name: '云南普洱散茶', type: TeaType.DARK, origin: '云南西双版纳', altitude: '800-1500米', process: '后发酵', bestTemp: 100, bestTime: 30, infusions: 12, flavor: ['陈香', '醇和', '甘滑'], story: '普洱茶自古以来就是茶马古道的灵魂，千年茶文化见证者。', description: '茶马古道千年灵魂。', dryTeaColor: '#3D2B1F', soupColorMin: '#8B4513', soupColorMax: '#654321' },
-  { id: 'jingmai_sh', name: '景迈山普洱', type: TeaType.DARK, origin: '云南普洱', altitude: '1000-1800米', process: '后发酵', bestTemp: 100, bestTime: 25, infusions: 15, flavor: ['蜜香', '山野韵', '醇和'], story: '景迈山是世界文化遗产，千年万亩古茶林中最古老的一片。', description: '世界文化遗产，千年古茶林。', dryTeaColor: '#3D2B1F', soupColorMin: '#8B4513', soupColorMax: '#654321' },
+  { id: 'anji_bai', name: '安吉白茶', type: TeaType.GREEN, origin: '浙江安吉', altitude: '500-1000米', process: '烘青', bestTemp: 80, bestTime: 45, infusions: 3, flavor: ['鲜爽', '甘甜', '滑润'], story: '安吉白茶是珍稀白化品种，氨基酸含量为普通绿茶3倍，滋味格外鲜爽。', description: '白茶化绿茶，氨基酸之王。', dryTeaColor: '#7BA87A', soupColorMin: '#F0F5E8', soupColorMax: '#B8C9A8', image: greenAnji },
+  { id: 'liuan_gua', name: '六安瓜片', type: TeaType.GREEN, origin: '安徽六安', altitude: '400-800米', process: '烘青', bestTemp: 80, bestTime: 45, infusions: 3, flavor: ['栗香', '鲜爽', '醇厚'], story: '中国唯一无芽无梗绿茶，由单片叶制成。清代为贡茶，周恩来总理生前最爱。', description: '唯一无芽无梗绿茶，单片叶制作。', dryTeaColor: '#6B9E5A', soupColorMin: '#E8F5E0', soupColorMax: '#A8C99A', image: greenCommon1 },
+  { id: 'mengding_gan', name: '蒙顶甘露', type: TeaType.GREEN, origin: '四川雅安', altitude: '800-1400米', process: '炒青', bestTemp: 80, bestTime: 50, infusions: 3, flavor: ['嫩香', '鲜爽', '回甘'], story: '蒙顶山是中国茶文化发源地，公元前53年吴理真在此种茶，被尊为"茶祖"。', description: '最古老名茶，茶祖吴理真手植。', dryTeaColor: '#5B8C5A', soupColorMin: '#F0F5E8', soupColorMax: '#B8C9A8', image: greenCommon1 },
+  { id: 'enshi_yulu', name: '恩施玉露', type: TeaType.GREEN, origin: '湖北恩施', altitude: '500-1200米', process: '蒸青', bestTemp: 75, bestTime: 40, infusions: 3, flavor: ['海苔香', '鲜爽', '清甜'], story: '中国唯一保留下来的蒸青绿茶工艺，源自唐代。恩施是中国最大富硒茶产区。', description: '中国唯一蒸青绿茶，唐代工艺活化石。', dryTeaColor: '#6B9E5A', soupColorMin: '#E8F5E0', soupColorMax: '#A8C99A', image: greenCommon1 },
+  { id: 'wuyuan_mei', name: '婺源绿茶', type: TeaType.GREEN, origin: '江西婺源', altitude: '300-1000米', process: '炒青', bestTemp: 80, bestTime: 50, infusions: 3, flavor: ['清香', '鲜爽', '醇和'], story: '婺源是中国最美乡村之一，以"叶绿、汤清、香高、味醇"四绝著称。', description: '江南绿茶代表，四绝名扬。', dryTeaColor: '#6B9E5A', soupColorMin: '#E8F5E0', soupColorMax: '#A8C99A', image: greenCommon2 },
+  { id: 'lushan_yun', name: '庐山云雾', type: TeaType.GREEN, origin: '江西九江', altitude: '500-1200米', process: '烘青', bestTemp: 80, bestTime: 50, infusions: 3, flavor: ['豆香', '鲜爽', '甘甜'], story: '庐山云雾为中国十大名茶之一，庐山为佛教名山，僧人种茶历史悠久。', description: '十大名茶，庐山僧人千年传承。', dryTeaColor: '#5B8C5A', soupColorMin: '#F0F5E8', soupColorMax: '#B8C9A8', image: greenHuangshanmaofeng },
+  { id: 'shifeng_lj', name: '狮峰龙井', type: TeaType.GREEN, origin: '浙江杭州', altitude: '50-400米', process: '炒青', bestTemp: 80, bestTime: 60, infusions: 3, flavor: ['豆香', '栗香', '鲜爽'], story: '狮峰山是龙井品质最好的核心产区，乾隆御封十八棵御茶所在。', description: '龙井之巅，乾隆御茶核心产区。', dryTeaColor: '#4A7C59', soupColorMin: '#F5E6A3', soupColorMax: '#C9B458', image: greenLongjing },
+  { id: 'guzhu_zs', name: '顾渚紫笋', type: TeaType.GREEN, origin: '浙江长兴', altitude: '200-500米', process: '炒青', bestTemp: 80, bestTime: 50, infusions: 3, flavor: ['兰花香', '鲜爽', '甘醇'], story: '唐代第一贡茶，陆羽《茶经》多次提及。设贡茶院为历史上最早皇家茶厂。', description: '唐代第一贡茶，最早皇家茶厂。', dryTeaColor: '#5B8C5A', soupColorMin: '#F0F5E8', soupColorMax: '#B8C9A8', image: greenCommon2 },
+  { id: 'shoumei', name: '寿眉', type: TeaType.WHITE, origin: '福建福鼎', altitude: '400-1000米', process: '萎凋+干燥', bestTemp: 95, bestTime: 120, infusions: 7, flavor: ['枣香', '药香', '醇和'], story: '寿眉"一年茶、三年药、七年宝"。传统白茶工艺，自然萎凋。', description: '白茶经典，越陈越香。', dryTeaColor: '#9AAD8A', soupColorMin: '#F5F0D8', soupColorMax: '#D4C89A', image: whiteBaimudan },
+  { id: 'zhenhe_bh', name: '政和白毫银针', type: TeaType.WHITE, origin: '福建政和', altitude: '600-1200米', process: '萎凋+干燥', bestTemp: 85, bestTime: 120, infusions: 5, flavor: ['毫香', '清甜', '醇厚'], story: '政和白茶茶味醇厚，与福鼎白茶清雅对比鲜明。政和大白茶品种独特。', description: '白茶中茶味最醇厚者。', dryTeaColor: '#9AAD8A', soupColorMin: '#F5F0D8', soupColorMax: '#D4C89A', image: whiteYinzhen },
+  { id: 'dongting_bl', name: '洞庭碧螺春（传统）', type: TeaType.GREEN, origin: '江苏苏州', altitude: '100-300米', process: '炒青', bestTemp: 75, bestTime: 45, infusions: 3, flavor: ['花果香', '清甜', '鲜嫩'], story: '正宗洞庭碧螺春产自太湖东山，茶树与果树间作，天然花果香。', description: '正宗洞庭山产区，茶果间作花果香。', dryTeaColor: '#6B8E23', soupColorMin: '#E8F5E9', soupColorMax: '#A5D6A7', image: greenBiluochun },
+  { id: 'yixing_yx', name: '阳羡雪芽', type: TeaType.GREEN, origin: '江苏宜兴', altitude: '200-500米', process: '炒青', bestTemp: 80, bestTime: 45, infusions: 3, flavor: ['清香', '鲜爽', '甘甜'], story: '阳羡茶唐代即为贡茶，卢仝"天子须尝阳羡茶，百草不敢先开花"即赞此茶。', description: '唐代贡茶，卢仝盛赞。', dryTeaColor: '#6B9E5A', soupColorMin: '#E8F5E0', soupColorMax: '#A8C99A', image: greenCommon2 },
+  { id: 'alishan', name: '阿里山乌龙', type: TeaType.OOLONG, origin: '台湾嘉义', altitude: '1000-1600米', process: '做青+烘焙', bestTemp: 90, bestTime: 40, infusions: 6, flavor: ['花香', '果香', '清雅'], story: '阿里山全球海拔最高茶区之一，独特"高山韵"，茶汤清亮。', description: '全球最高海拔茶区，独特高山韵。', dryTeaColor: '#5C4A3A', soupColorMin: '#F0C850', soupColorMax: '#C8A038', image: oolongWuyi },
+  { id: 'wenshan_bz', name: '文山包种', type: TeaType.OOLONG, origin: '台湾台北', altitude: '300-700米', process: '做青+轻焙', bestTemp: 85, bestTime: 35, infusions: 5, flavor: ['花香', '清雅', '甘甜'], story: '台湾发酵最轻的乌龙茶，香气清雅有"露凝香"之称。', description: '台湾最轻发酵乌龙，"露凝香"。', dryTeaColor: '#5A6E4A', soupColorMin: '#F0E8C0', soupColorMax: '#C8B870', image: oolongWuyi },
+  { id: 'yingde_hc', name: '英德红茶', type: TeaType.RED, origin: '广东英德', altitude: '200-500米', process: '全发酵', bestTemp: 90, bestTime: 45, infusions: 5, flavor: ['蜜香', '果香', '醇厚'], story: '英德红茶创制于1959年，被誉为"中国红茶后起之秀"。', description: '广东红茶代表，后起之秀。', dryTeaColor: '#4A3020', soupColorMin: '#E86040', soupColorMax: '#B84020', image: redCommon },
+  { id: 'ning_hong', name: '宁红工夫', type: TeaType.RED, origin: '江西修水', altitude: '300-800米', process: '全发酵', bestTemp: 90, bestTime: 50, infusions: 5, flavor: ['蜜香', '甜润', '醇和'], story: '宁红是中国最早工夫红茶之一，清代出口欧美。黄庭坚故里茶文化深厚。', description: '最早工夫红茶，出口欧美百年。', dryTeaColor: '#4A3020', soupColorMin: '#E86040', soupColorMax: '#B84020', image: redCommon },
+  { id: 'chuan_hong', name: '川红工夫', type: TeaType.RED, origin: '四川宜宾', altitude: '300-1000米', process: '全发酵', bestTemp: 90, bestTime: 45, infusions: 5, flavor: ['橘糖香', '甜醇', '鲜爽'], story: '川红以宜宾紫土孕育，独特橘糖香，以"早、嫩、香"著称。', description: '四川红茶代表，紫土橘糖香。', dryTeaColor: '#4A3020', soupColorMin: '#E86040', soupColorMax: '#B84020', image: redCommon },
+  { id: 'sheng_pu', name: '生普洱（景迈）', type: TeaType.DARK, origin: '云南普洱', altitude: '1000-1800米', process: '后发酵（生普）', bestTemp: 95, bestTime: 20, infusions: 15, flavor: ['花香', '山野韵', '甘甜'], story: '景迈山千年古茶林为世界文化遗产。生普陈放后自然转化，越陈越香。', description: '世界文化遗产景迈山，自然陈化。', dryTeaColor: '#3D2B1F', soupColorMin: '#8B4513', soupColorMax: '#654321', image: darkShengpu },
+  { id: 'shou_pu', name: '熟普洱（景迈）', type: TeaType.DARK, origin: '云南普洱', altitude: '1000-1800米', process: '渥堆发酵', bestTemp: 100, bestTime: 25, infusions: 15, flavor: ['陈香', '枣香', '醇滑'], story: '景迈古树熟普渥堆发酵精制，汤色红浓，口感醇滑。', description: '古树熟普，红浓醇滑。', dryTeaColor: '#3D2B1F', soupColorMin: '#8B4513', soupColorMax: '#654321', image: darkShoupu },
+  { id: 'chenpi', name: '陈皮普洱', type: TeaType.DARK, origin: '广东新会', altitude: '200-1500米', process: '混合陈化', bestTemp: 100, bestTime: 30, infusions: 12, flavor: ['陈皮香', '陈香', '甘醇'], story: '陈皮普洱以新会陈皮搭配云南普洱，茶与果的完美结合。', description: '陈皮与普洱的完美融合。', dryTeaColor: '#3D3025', soupColorMin: '#C86A40', soupColorMax: '#9A4A28', image: darkShoupu },
+  { id: 'yunnan_gh', name: '云南古树晒红', type: TeaType.RED, origin: '云南临沧', altitude: '1200-2000米', process: '全发酵+日晒', bestTemp: 90, bestTime: 50, infusions: 6, flavor: ['蜜香', '果香', '甜润'], story: '晒红以古树茶为原料，日光干燥替代烘干，可长期陈放。', description: '古树日晒，可长期陈放的红茶。', dryTeaColor: '#4A3020', soupColorMin: '#E86040', soupColorMax: '#B84020', image: redDianhong },
+  { id: 'suocha_pt', name: '云南普洱散茶', type: TeaType.DARK, origin: '云南西双版纳', altitude: '800-1500米', process: '后发酵', bestTemp: 100, bestTime: 30, infusions: 12, flavor: ['陈香', '醇和', '甘滑'], story: '普洱茶自古以来就是茶马古道的灵魂，千年茶文化见证者。', description: '茶马古道千年灵魂。', dryTeaColor: '#3D2B1F', soupColorMin: '#8B4513', soupColorMax: '#654321', image: darkShengpu },
+  { id: 'jingmai_sh', name: '景迈山普洱', type: TeaType.DARK, origin: '云南普洱', altitude: '1000-1800米', process: '后发酵', bestTemp: 100, bestTime: 25, infusions: 15, flavor: ['蜜香', '山野韵', '醇和'], story: '景迈山是世界文化遗产，千年万亩古茶林中最古老的一片。', description: '世界文化遗产，千年古茶林。', dryTeaColor: '#3D2B1F', soupColorMin: '#8B4513', soupColorMax: '#654321', image: darkShengpu },
 ]
 
 /** 根据 ID 查找茶叶 */

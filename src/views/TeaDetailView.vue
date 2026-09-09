@@ -6,7 +6,7 @@
  * - 冲泡详解（参数 + 为什么）
  * - 相似茶推荐
  */
-import { computed } from 'vue'
+import { computed, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getTeaById } from '@/data/teas'
 import { getSimilarTeas } from '@/services/teaRecommend'
@@ -19,6 +19,10 @@ const router = useRouter()
 const tea = computed<Tea | null>(() => getTeaById(String(route.params.id)) ?? null)
 
 const similarTeas = computed(() => (tea.value ? getSimilarTeas(tea.value.id) : []))
+
+// 茶图加载失败记录：Hero 降级为纯渐变、相似茶卡降级为渐变色块
+const imgFailed = reactive<Record<string, boolean>>({})
+function markImgFailed(id: string) { imgFailed[id] = true }
 
 /** 冲泡建议文案：根据茶类给"为什么这样泡" */
 function getBrewAdvice(t: Tea): string {
@@ -57,10 +61,14 @@ function shareTea() {
 
 <template>
   <div v-if="tea" class="min-h-screen pb-16">
-    <!-- 顶部 Hero：汤色渐变 -->
+    <!-- 顶部 Hero：汤色渐变 + 茶图背景（加载失败时保持纯渐变） -->
     <header class="relative overflow-hidden px-4 pt-10 pb-8"
       :style="{ background: `linear-gradient(160deg, ${tea.soupColorMin} 0%, ${tea.soupColorMax} 100%)` }">
-      <div class="mx-auto max-w-2xl">
+      <img v-if="tea.image && !imgFailed[tea.id]" :src="tea.image" loading="lazy" @error="markImgFailed(tea.id)"
+        class="absolute inset-0 h-full w-full object-cover" alt="" aria-hidden="true" />
+      <div v-if="tea.image && !imgFailed[tea.id]" class="absolute inset-0"
+        :style="{ background: 'linear-gradient(160deg, rgba(255,255,255,0.75), rgba(255,255,255,0.85))' }"></div>
+      <div class="relative mx-auto max-w-2xl">
         <button @click="router.back()" class="mb-4 text-sm text-[var(--color-wood)]/70 hover:text-[var(--color-wood)]">← 返回</button>
         <p class="text-xs tracking-[0.3em] text-[var(--color-wood)]/60">{{ tea.type }} · {{ tea.process }}</p>
         <h1 class="mt-2 text-4xl font-bold text-[var(--color-wood)]">{{ tea.name }}</h1>
@@ -130,7 +138,9 @@ function shareTea() {
           <button v-for="t in similarTeas" :key="t.id"
             @click="router.push(`/tea/${t.id}`)"
             class="glass-panel rounded-xl p-3 text-left transition-transform hover:scale-[1.02]">
-            <div class="mb-2 h-10 rounded-lg"
+            <img v-if="t.image && !imgFailed[t.id]" :src="t.image" loading="lazy" @error="markImgFailed(t.id)"
+              class="mb-2 h-16 w-full rounded-lg object-cover" :alt="t.name" />
+            <div v-else class="mb-2 h-16 rounded-lg"
               :style="{ background: `linear-gradient(135deg, ${t.soupColorMin}, ${t.soupColorMax})` }"></div>
             <p class="text-sm font-bold text-[var(--color-wood)]">{{ t.name }}</p>
             <p class="text-xs text-[var(--color-wood-light)]">{{ t.origin }}</p>

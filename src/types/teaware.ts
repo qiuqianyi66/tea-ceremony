@@ -23,6 +23,7 @@ export interface TeaWare {
   name: string
   type: TeaWareType
   icon: string            // lucide 图标名（禁止 emoji，渲染时 <component :is="`Icon${icon}`">）
+  image?: string          // 茶器实拍素材（assets import 路径），加载失败时降级为图标
   capacity: number         // 容量 ml
   material: string         // 材质
   description: string      // 描述

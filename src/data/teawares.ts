@@ -4,6 +4,10 @@
  */
 
 import { TeaWareType, type TeaWare } from '@/types/teaware'
+import wareGaiwan from '@/assets/wares/ware-gaiwan.jpg'
+import wareZisha from '@/assets/wares/ware-zisha.jpg'
+import wareGlass from '@/assets/wares/ware-glass.jpg'
+import wareJianzhan from '@/assets/wares/ware-jianzhan.jpg'
 
 export const teawares: TeaWare[] = [
   // ============ 基础款（初始即可用）============
@@ -11,6 +15,7 @@ export const teawares: TeaWare[] = [
     id: 'gaiwan',
     name: '白瓷盖碗',
     icon: 'CupSoda',
+    image: wareGaiwan,
     type: TeaWareType.GAIWAN,
     capacity: 150,
     material: '白瓷（釉面）',
@@ -25,6 +30,7 @@ export const teawares: TeaWare[] = [
     id: 'yixing',
     name: '紫砂壶',
     icon: 'FlaskConical',
+    image: wareZisha,
     type: TeaWareType.YIXING,
     capacity: 150,
     material: '宜兴紫砂（双气孔，无釉）',
@@ -39,6 +45,7 @@ export const teawares: TeaWare[] = [
     id: 'glass',
     name: '玻璃杯',
     icon: 'Beaker',
+    image: wareGlass,
     type: TeaWareType.GLASS,
     capacity: 300,
     material: '高硼硅玻璃',
@@ -55,6 +62,7 @@ export const teawares: TeaWare[] = [
     id: 'celadon',
     name: '青瓷盖碗',
     icon: 'Gem',
+    image: wareJianzhan,
     type: TeaWareType.GAIWAN,
     capacity: 130,
     material: '龙泉青瓷（釉面）',
@@ -69,6 +77,7 @@ export const teawares: TeaWare[] = [
     id: 'duanning',
     name: '段泥石瓢壶',
     icon: 'FlaskConical',
+    image: wareZisha,
     type: TeaWareType.YIXING,
     capacity: 180,
     material: '宜兴段泥（紫砂）',
@@ -83,6 +92,7 @@ export const teawares: TeaWare[] = [
     id: 'jianzhan',
     name: '建盏天目杯',
     icon: 'Coffee',
+    image: wareJianzhan,
     type: TeaWareType.GLASS,
     capacity: 80,
     material: '建阳铁胎（黑釉）',
