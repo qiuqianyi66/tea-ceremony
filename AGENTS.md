@@ -248,6 +248,12 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q   # 后端全量
 * 简报优先：用户明说方向时简报原话赢；勇气只花在一个地方，一个元素负责让人记住。
 * 体系诚实：一个项目一个设计系统；审美方向（玻璃 / Bento / Brutalist 等）无官方包时用原生实现并标注"近似"（Apple Liquid Glass 无 web 官方版）。
 
+**组件与效果标准（Aceternity 品质线）**：
+
+* 网站 / 页面组件必须对标 Aceternity UI（https://ui.aceternity.com/components）的品质：免费复制粘贴级、Tailwind + 动效内置、微交互齐全——**禁止退回普通卡片模板**。
+* Aceternity 是 React/Next.js + Motion 生态，本项目是 Vue 3 + TresJS：**不直接 import**，改为在 Vue 中复刻其设计语言与效果模式（Aurora 极光背景、Spotlight 光斑、Tilt 倾斜卡片、Cloud Shader 程序化云、Text Flipping Board 翻板文字、Chromatic 色彩分离图像等）。
+* 设计新组件 / 效果前，先读 Aceternity 组件目录（https://ui.aceternity.com/components）挑效果模式，再在 Vue + Tailwind 4 + TresJS 里实现；引用时标注灵感来源。
+
 **禁令速查**（完整清单见 FRONTEND_DESIGN_SPEC.md §3）：
 
 * 配色：AI 紫渐变、暖米白 + 陶土、**纯黑灰（要 tint）**、Tailwind 默认色板；**一页一个强调色全页锁定**。
@@ -445,6 +451,6 @@ docker compose down
 
 * **写规则不写建议。** "禁止 X" 能机械执行，"建议 X" 只能被尽量遵守。
 
-* **更新记录**：2026-09-09 融合多源规范重构（行为脚手架 + 边界三层 + 学习记录 + 设计风格规范并入）；同日前端设计升级为「反主流 × 创新」规范（视觉方向先行 + 2026 创新工具箱 + 设计审计）；随后产出通用规范 FRONTEND_DESIGN_SPEC.md（四家融合）并把核心吸收进设计节（设计流程 / 质量底线 / 工程规范 / 设计工作流）。
+* **更新记录**：2026-09-09 融合多源规范重构（行为脚手架 + 边界三层 + 学习记录 + 设计风格规范并入）；同日前端设计升级为「反主流 × 创新」规范（视觉方向先行 + 2026 创新工具箱 + 设计审计）；随后产出通用规范 FRONTEND_DESIGN_SPEC.md（四家融合）并把核心吸收进设计节（设计流程 / 质量底线 / 工程规范 / 设计工作流）；同日安装设计技能全家桶（taste-skill 13 + ui-ux-pro-max 7 + impeccable 全套 + Anthropic 官方 10 + Vercel 3）并新增「组件与效果标准（Aceternity 品质线）」。2026-09-09 更新记录已满，后续新增记录另起一行。
 
 *本文件是活文档，项目架构或流程变更时同步更新。*
