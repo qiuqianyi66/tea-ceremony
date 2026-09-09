@@ -24,14 +24,111 @@ export interface TeaField {
   dispose: () => void
 }
 
-/** 生成南坡成垄茶园 + 上缘遮阴树（行距/密度/蓬面/遮阴树按茶园预设） */
+/** 生成南坡成垄茶园 + 上缘遮阴树（行距/密度/蓬面/遮阴树按茶园预设；武夷走岩缝丛生分支） */
 export function createTeaField(scene: THREE.Scene, preset?: GardenPreset): TeaField {
   const p = preset ?? DEFAULT_PRESET
   const root = new THREE.Group()
   root.name = 'tea-field'
   scene.add(root)
 
-  // ---- 茶行：逐垄逐丛采样（跳过劣地：黄土带/烂石带/排水沟） ----
+  // ---- 武夷：岩缝丛生茶行（丹霞峰腰岩壁下缘，不成行、丛植疏落、蓬面低矮贴岩） ----
+  if (p.id === 'wuyishan') {
+    const bushPos: number[] = []
+    const bushColors: number[] = []
+    for (let i = 0; i < 3200; i++) {
+      const x = (seededRandom(i * 1.1 + 1) - 0.5) * 92
+      const z = -6 - seededRandom(i * 1.7 + 2) * 44
+      const h = getTerrainHeight(x, z)
+      if (h < 4.4 || h > 9.4) continue // 只落峰腰砾壤带
+      // 疏植（岩茶丛稀，无成行感）；岩壁陡处剔除（茶只长缝）
+      if (seededRandom(i * 3.3 + 3) > 0.42) continue
+      // 岩缝偏移大：每丛像从石缝里长出来
+      const ox = (seededRandom(i * 5.7 + 4) - 0.5) * 1.1
+      const oz = (seededRandom(i * 7.1 + 5) - 0.5) * 1.1
+      const px = x + ox
+      const pz = z + oz
+      const ph = getTerrainHeight(px, pz)
+      if (ph < 4.3 || ph > 9.6) continue
+      // 每丛 2-3 株（《四时纂要》丛植），偏靠拢
+      const n = 2 + Math.floor(seededRandom(i * 9.1 + 6) * 2)
+      for (let k = 0; k < n; k++) {
+        const kx = px + (seededRandom(i * 13 + k * 7.7) - 0.5) * 0.4
+        const kz = pz + (seededRandom(i * 17 + k * 3.3) - 0.5) * 0.4
+        const kh = getTerrainHeight(kx, kz)
+        bushPos.push(kx, kh + 0.34, kz)
+        bushColors.push(0.8 + seededRandom(i * 19 + k * 5.9) * 0.35)
+      }
+    }
+    const bushCount = bushPos.length / 3
+    if (bushCount > 0) {
+      const bushGeo = new THREE.SphereGeometry(0.5, 9, 6)
+      const bushMat = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        roughness: 0.9,
+        metalness: 0,
+        flatShading: true,
+      })
+      const bushMesh = new THREE.InstancedMesh(bushGeo, bushMat, bushCount)
+      const dummy = new THREE.Object3D()
+      const col = new THREE.Color()
+      for (let i = 0; i < bushCount; i++) {
+        dummy.position.set(bushPos[i * 3]!, bushPos[i * 3 + 1]!, bushPos[i * 3 + 2]!)
+        // 岩壁蓬：低矮扁宽（受风、少修剪），0.55-0.9
+        dummy.scale.set(
+          p.bushScaleMin + seededRandom(i * 1.3 + 77) * (p.bushScaleMax - p.bushScaleMin),
+          (p.bushScaleMin + seededRandom(i * 2.1 + 78) * 0.2) * 0.6,
+          p.bushScaleMin + seededRandom(i * 3.3 + 79) * (p.bushScaleMax - p.bushScaleMin),
+        )
+        dummy.updateMatrix()
+        bushMesh.setMatrixAt(i, dummy.matrix)
+        const tone = bushColors[i] ?? 0.95
+        const dt = (tone - 0.95) * 0.4
+        col.setRGB(p.bushBase[0] * (1 + dt), p.bushBase[1] * (1 + dt), p.bushBase[2] * (1 + dt))
+        bushMesh.setColorAt(i, col)
+      }
+      bushMesh.castShadow = true
+      bushMesh.receiveShadow = true
+      root.add(bushMesh)
+    }
+
+    // 崖边岩生树：峰顶/崖缘零星苍树（阳崖阴林，稀而瘦）
+    const wuyiShadeMat = new THREE.MeshStandardMaterial({ color: 0x3a5a30, roughness: 0.9, flatShading: true })
+    const wuyiShadeBark = new THREE.MeshStandardMaterial({ color: 0x54442e, roughness: 0.95 })
+    for (let i = 0; i < 4; i++) {
+      const tx = -40 + seededRandom(i * 7.7 + 201) * 80
+      const tz = -8 - seededRandom(i * 9.3 + 202) * 34
+      const th = getTerrainHeight(tx, tz)
+      if (th < 8) continue // 崖上/崖缘才长
+      const tree = new THREE.Group()
+      const s = (1.1 + seededRandom(i * 3.3 + 203) * 0.8) * p.shadeScale
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.16 * s, 0.24 * s, 2.6 * s, 6), wuyiShadeBark)
+      trunk.position.y = 1.3 * s
+      trunk.rotation.z = (seededRandom(i * 5.1 + 204) - 0.5) * 0.3 // 崖风扭曲
+      trunk.castShadow = true
+      tree.add(trunk)
+      const crown = new THREE.Mesh(new THREE.SphereGeometry(1.1 * s, 8, 6), wuyiShadeMat)
+      crown.position.y = 2.9 * s
+      crown.scale.set(1, 0.75, 1)
+      crown.castShadow = true
+      tree.add(crown)
+      tree.position.set(tx, th, tz)
+      tree.rotation.y = seededRandom(i * 6.1 + 205) * Math.PI * 2
+      root.add(tree)
+    }
+    return {
+      group: root,
+      dispose() {
+        root.traverse((o) => {
+          const m = o as THREE.Mesh
+          if (m.geometry) m.geometry.dispose()
+          if (m.material) (m.material as THREE.Material).dispose()
+        })
+        root.removeFromParent()
+      },
+    }
+  }
+
+  // ---- 常规茶园（龙井/勐海/福鼎）：沿等高线成垄 ----
   const bushPos: number[] = [] // 蓬面球实例（每丛 1）
   const bushColors: number[] = []
   const trunkPos: number[] = [] // 树干实例（每株 1）

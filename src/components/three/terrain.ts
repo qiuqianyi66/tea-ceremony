@@ -62,11 +62,44 @@ function ridgeZAt(x: number): number {
 }
 
 /**
+ * 武夷丹霞峰丛-峡谷地形（《东溪试茶录》山场 + 丹霞地貌常识）：
+ * 主峰居中偏前（相机中景），侧峰成丛，峰间深切峡谷为涧水带；
+ * 峰腰 4-10m 砾壤带为岩缝茶园环带（茶行长在岩壁下缘）。
+ * 不做梯田/排水沟（岩茶不修梯田，靠岩缝碎石排水）。
+ */
+function wuyiTerrainHeight(x: number, z: number): number {
+  // 峰丛阵列（丹霞峰林感）：前排三峰并立（左右错落，俯瞰亦见峰林）+ 后排叠嶂
+  const peaks: Array<[number, number, number, number]> = [
+    [0, -14, 32, 12], // 主峰（正中最高）
+    [-24, -8, 22, 9], // 左峰
+    [26, -10, 21, 8], // 右峰
+    [-8, -34, 28, 8], // 后峰（左后叠嶂）
+    [34, -30, 18, 8], // 右后远峰
+  ]
+  let h = 0
+  for (const [px, pz, ph, pr] of peaks) {
+    const d2 = (x - px) * (x - px) + (z - pz) * (z - pz)
+    h += ph * Math.exp(-d2 / (2 * pr * pr))
+  }
+  // 细节：岩壁褶皱 + 沟谷糙化
+  h += fbm(x * 0.03, z * 0.03, 4) * 2.2
+  h += fbm(x * 0.09, z * 0.09, 3) * 0.9
+  // 峰间谷底最低保留涧水带（湿地，不种茶）
+  if (h < 3.0) h = 3.0
+  // 边缘渐消
+  const r = Math.sqrt(x * x + z * z)
+  if (r > activePreset.edgeFadeAt) h -= (r - activePreset.edgeFadeAt) * activePreset.edgeFadeRate
+  return h
+}
+
+/**
  * 采样地形高度（与 createTerrainGeometry 完全一致，供茶树/茶行定位）
  * 1. 东西走向山脊骨架（南坡宽缓 / 北坡陡峭），参数随茶园预设变化
  * 2. 土壤三带内做"田埂梯田 + 微内倾 + 纵向排水浅沟"
+ * 3. 武夷走独立峰丛-峡谷分支（丹霞地貌，无梯田）
  */
 export function getTerrainHeight(x: number, z: number): number {
+  if (activePreset.id === 'wuyishan') return wuyiTerrainHeight(x, z)
   const { ridgeHeight, sigmaSouth, sigmaNorth, centralRadius, centralBump, edgeFadeAt, edgeFadeRate } = activePreset
   // ---- 山脊-沟谷骨架 ----
   const ridgeZ = ridgeZAt(x)

@@ -142,12 +142,12 @@ export const GARDEN_PRESETS: Record<string, GardenPreset> = {
     centralBump: 3.2,
     edgeFadeAt: 92,
     edgeFadeRate: 0.16,
-    tintLoess: [1.05, 0.9, 0.72],
-    tintGravel: [1.25, 0.82, 0.62], // 丹霞红岩
-    tintRock: [1.18, 0.9, 0.82], // 裸露岩壁偏红
+    tintLoess: [1.08, 0.84, 0.6], // 谷底涧水带偏褐
+    tintGravel: [1.42, 0.72, 0.48], // 丹霞红岩（茶园土赤红，《东溪试茶录》"厥土赤坟"）
+    tintRock: [1.38, 0.68, 0.5], // 上部裸露岩壁赤红
     sky: ['#2260b8', '#448fd6', '#8fc0e8', '#cfe6f4', '#f4f8fc'],
     fogColor: '#aebfd2',
-    fogDensity: 0.011, // 200 多天云雾
+    fogDensity: 0.0075, // 峡谷薄雾：藏住峰脚、露出峰头（200 多天云雾）
     sunColor: '#fff0d8',
     sunIntensity: 2.3,
     rainColor: '#8fa3ba',
@@ -157,7 +157,7 @@ export const GARDEN_PRESETS: Record<string, GardenPreset> = {
     rowXRange: 34,
     rowSpacing: 2.0, // 岩茶行距疏（岩缝丛植）
     bushSpacing: 1.6,
-    bushBase: [0.3, 0.48, 0.2], // 岩茶蓬略深
+    bushBase: [0.22, 0.4, 0.2], // 岩茶墨绿（厚叶深绿，与赤壁对比）
     bushScaleMin: 0.7,
     bushScaleMax: 1.05,
     shadeTreeCount: 5,

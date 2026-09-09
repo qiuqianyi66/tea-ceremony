@@ -105,6 +105,81 @@ export function createDecorations(scene: THREE.Scene, preset?: GardenPreset): vo
   if (flowers.instanceColor) flowers.instanceColor.needsUpdate = true
   decorGroup.add(flowers)
 
+  // ---- 武夷崖壁生态（丹霞）：苔藓地衣覆岩 + 岩生灌木（habitat：只长烂石带 10-15） ----
+  if (p.id === 'wuyishan') {
+    // 丹霞崖壁带：主峰（0,-14）腰 9-24m 大片红岩板贴坡（赤壁感，大块扁板）
+    const cliffGeo = new THREE.BoxGeometry(1, 0.5, 1)
+    const cliffMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.92, flatShading: true })
+    const cliffPalette = [0x8a4b3c, 0x7d4536, 0x8f5142]
+    const cliffCount = 280
+    const cliffs = new THREE.InstancedMesh(cliffGeo, cliffMat, cliffCount)
+    let placed = 0
+    for (let i = 0; i < cliffCount * 3; i++) {
+      if (placed >= cliffCount) break
+      const ang = seededRandom(i * 2.9 + 501) * Math.PI * 2
+      const rr = 10 + seededRandom(i * 3.7 + 502) * 7
+      const wx = Math.cos(ang) * rr
+      const wz = -14 + Math.sin(ang) * rr
+      const wh = getTerrainHeight(wx, wz)
+      if (wh < 9 || wh > 24) continue
+      dummy.position.set(wx, wh - 0.2, wz)
+      const s = 2 + seededRandom(i * 5.3 + 503) * 1.8
+      dummy.scale.set(s, s * (0.32 + seededRandom(i * 6.1 + 504) * 0.3), s)
+      dummy.rotation.set((seededRandom(i + 505) - 0.5) * 0.25, seededRandom(i + 506) * Math.PI, (seededRandom(i + 507) - 0.5) * 0.25)
+      dummy.updateMatrix()
+      cliffs.setMatrixAt(placed, dummy.matrix)
+      tmpColor.setHex(cliffPalette[Math.floor(seededRandom(i * 4.7 + 508) * cliffPalette.length)] ?? 0x8a4b3c)
+      cliffs.setColorAt(placed, tmpColor)
+      placed++
+    }
+    if (cliffs.instanceColor) cliffs.instanceColor.needsUpdate = true
+    cliffs.castShadow = true
+    cliffs.receiveShadow = true
+    decorGroup.add(cliffs)
+
+    // 苔藓/地衣垫：扁球贴岩面，深绿-灰绿（岩背阴湿处）
+    const mossGeo = new THREE.IcosahedronGeometry(0.35, 0)
+    const mossMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, flatShading: true })
+    const mossCount = 240
+    const moss = new THREE.InstancedMesh(mossGeo, mossMat, mossCount)
+    const mossPalette = [0x4a5d3a, 0x5c6b4f, 0x3f5240, 0x6b7355]
+    for (let i = 0; i < mossCount; i++) {
+      const [x, h, z] = getDecorPosition(i + 900, 15.5, 26) // 峰顶岩面苔藓（更高处，与崖壁带分层）
+      dummy.position.set(x, h - 0.08, z)
+      const s = 0.5 + seededRandom(i * 2.3 + 21) * 0.9
+      dummy.scale.set(s, s * 0.28, s)
+      dummy.rotation.set(0, seededRandom(i + 31) * Math.PI, (seededRandom(i + 33) - 0.5) * 0.4)
+      dummy.updateMatrix()
+      moss.setMatrixAt(i, dummy.matrix)
+      tmpColor.setHex(mossPalette[Math.floor(seededRandom(i * 4.1 + 24) * mossPalette.length)] ?? 0x4a5d3a)
+      moss.setColorAt(i, tmpColor)
+    }
+    if (moss.instanceColor) moss.instanceColor.needsUpdate = true
+    moss.receiveShadow = true
+    decorGroup.add(moss)
+
+    // 岩生灌木：石隙小灌丛（比草大、暗绿、贴崖壁）
+    const shrubGeo = new THREE.ConeGeometry(0.14, 0.9, 5)
+    shrubGeo.translate(0, 0.45, 0)
+    const shrubMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95, flatShading: true })
+    const shrubCount = 70
+    const shrubs = new THREE.InstancedMesh(shrubGeo, shrubMat, shrubCount)
+    for (let i = 0; i < shrubCount; i++) {
+      const [x, h, z] = getDecorPosition(i + 1300, 9.6, 14.5)
+      dummy.position.set(x, h, z)
+      const s = 0.7 + seededRandom(i * 3.7 + 34) * 1.2
+      dummy.scale.set(s, s, s)
+      dummy.rotation.set(0, seededRandom(i + 44) * Math.PI, (seededRandom(i + 46) - 0.5) * 0.25)
+      dummy.updateMatrix()
+      shrubs.setMatrixAt(i, dummy.matrix)
+      tmpColor.setHSL(0.22 + seededRandom(i * 5.1 + 47) * 0.05, 0.35, 0.22 + seededRandom(i * 6.3 + 48) * 0.12)
+      shrubs.setColorAt(i, tmpColor)
+    }
+    if (shrubs.instanceColor) shrubs.instanceColor.needsUpdate = true
+    shrubs.castShadow = true
+    decorGroup.add(shrubs)
+  }
+
   scene.add(decorGroup)
 }
 
