@@ -243,6 +243,7 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q   # 后端全量
 
 **开工前先定视觉方向**（不直接动手套布局）：
 
+* 做任何页面 / 组件设计前，先 Read `.agents/skills/frontend-design/SKILL.md`（Anthropic 官方防模板方法论：视觉方向 → 令牌系统 → 对照简报评审 → 自批判）。
 * 用一两句话写清本页视觉方向（如"清晨茶园的水墨留白""炭火与陶土的粗粝感"），再选字体、配色、布局。
 * 写下"这页绝不出现的默认值"清单，防滑向通用模板（Anthropic 称之为 distributional convergence）。
 * 字体禁止默认 Inter / 系统栈打天下；选一对有性格的字体（标题体 + 正文体）。
