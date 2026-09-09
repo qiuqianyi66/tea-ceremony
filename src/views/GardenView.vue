@@ -95,11 +95,14 @@ function onSelectPlant3D(id: number) {
 
 async function doWater() {
   if (!selectedPlant.value?.id) return
-  await waterPlant(selectedPlant.value.id)
-  // 3D 视觉反馈：水滴粒子落在茶树上（纯视觉层）；
-  // 关闭详情面板让动画完整可见，湿度更新显示在底部卡片
+  // 视觉优先：先播水滴粒子（不依赖后端；后端离线时 waterPlant 会挂起/失败，不能阻塞动画）
   scene3dRef.value?.playWater?.(selectedPlant.value.id)
   showPlantDetail.value = false
+  try {
+    await waterPlant(selectedPlant.value.id)
+  } catch (e) {
+    console.warn('[GardenView] 浇水同步失败（离线？），湿度暂未更新', e)
+  }
   await loadPlants()
 }
 

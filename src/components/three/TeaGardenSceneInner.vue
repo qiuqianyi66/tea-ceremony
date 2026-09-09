@@ -91,6 +91,35 @@ function fbm(x: number, y: number, octaves = 5): number {
   return value / max
 }
 
+/** 程序化"万里晴空"背景：Equirect 球面渐变（天顶蔚蓝 → 地平线浅蓝白） */
+function createSkyTexture(): THREE.CanvasTexture {
+  const w = 64
+  const h = 256
+  const canvas = document.createElement('canvas')
+  canvas.width = w
+  canvas.height = h
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('canvas 2d 不可用')
+  const g = ctx.createLinearGradient(0, 0, 0, h)
+  g.addColorStop(0, '#1f56ad') // 天顶：蔚蓝
+  g.addColorStop(0.32, '#3f86cf') // 高天：明蓝
+  g.addColorStop(0.62, '#86bae4') // 中天：浅蓝
+  g.addColorStop(0.85, '#c6e0f2') // 低空：蓝白
+  g.addColorStop(1, '#eef6fc') // 地平线：近白
+  ctx.fillStyle = g
+  ctx.fillRect(0, 0, w, h)
+  // 近地平线加一层淡淡晨光暖白（云朵下缘光感）
+  const glow = ctx.createLinearGradient(0, h * 0.78, 0, h)
+  glow.addColorStop(0, 'rgba(255,255,255,0)')
+  glow.addColorStop(1, 'rgba(255,246,230,0.9)')
+  ctx.fillStyle = glow
+  ctx.fillRect(0, h * 0.78, w, h * 0.22)
+  const tex = new THREE.CanvasTexture(canvas)
+  tex.mapping = THREE.EquirectangularReflectionMapping
+  tex.colorSpace = THREE.SRGBColorSpace
+  return tex
+}
+
 // ============ 地形生成 ============
 const TERRAIN_SIZE = 200
 const TERRAIN_SEGMENTS = 200
@@ -787,9 +816,9 @@ function setupPostProcessing(
 
 // ============ 浇水水滴粒子（五期：点击浇水后的视觉反馈） ============
 
-const WATER_PARTICLE_COUNT = 40
-const WATER_MAX_LIFE = 1.5 // 秒
-const WATER_GRAVITY = 5.5
+const WATER_PARTICLE_COUNT = 80
+const WATER_MAX_LIFE = 1.2 // 秒
+const WATER_GRAVITY = 7
 
 interface WaterState {
   t: number
@@ -804,11 +833,10 @@ const waterState = ref<WaterState | null>(null)
 function createWaterPoints(): THREE.Points {
   const geo = new THREE.BufferGeometry()
   geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(WATER_PARTICLE_COUNT * 3), 3))
+  // 注意：transparent:true 在本渲染管线不渲染，用不透明圆点 + 整体淡出
   const mat = new THREE.PointsMaterial({
-    color: 0x8ed3ff,
-    size: 0.3,
-    transparent: true,
-    opacity: 0.9,
+    color: 0x9fdcff,
+    size: 0.55,
     depthWrite: false,
   })
   const points = new THREE.Points(geo, mat)
@@ -828,21 +856,20 @@ function playWater(plantId: number): void {
   const [px, py, pz] = pv.position
   for (let i = 0; i < WATER_PARTICLE_COUNT; i++) {
     const angle = seededRandom(i * 5.3 + 2) * Math.PI * 2
-    const r = 0.4 + seededRandom(i * 3.7 + 1) * 0.9
+    const r = 0.5 + seededRandom(i * 3.7 + 1) * 1.1
     pos.setXYZ(
       i,
-      px + Math.cos(angle) * r * 0.4,
-      py + 1.3 + seededRandom(i * 7.1 + 3) * 0.7,
-      pz + Math.sin(angle) * r * 0.4
+      px + Math.cos(angle) * r * 0.5,
+      py + 1.6 + seededRandom(i * 7.1 + 3) * 0.9,
+      pz + Math.sin(angle) * r * 0.5
     )
-    velocities[i * 3] = (seededRandom(i * 11.3 + 4) - 0.5) * 1.1
+    velocities[i * 3] = (seededRandom(i * 11.3 + 4) - 0.5) * 1.4
     velocities[i * 3 + 1] = 0
-    velocities[i * 3 + 2] = (seededRandom(i * 13.7 + 5) - 0.5) * 1.1
+    velocities[i * 3 + 2] = (seededRandom(i * 13.7 + 5) - 0.5) * 1.4
   }
   pos.needsUpdate = true
   waterState.value = { t: 0, maxT: WATER_MAX_LIFE, velocities }
   points.visible = true
-  ;(points.material as THREE.PointsMaterial).opacity = 0.9
 }
 
 /** 每帧更新水滴：重力下落 + 整体淡出 */
@@ -878,6 +905,8 @@ defineExpose({ playWater, setWeather, setAudioEnabled })
 function setWeather(mode: WeatherMode): void {
   currentWeather = mode
   weatherLayer?.setWeather(mode)
+  // 晨雾为雨天专属（晴天"万里晴空"；雾带在晴天蓝天下会成"白色地块"）
+  ambientLayer?.setFogVisible(mode === 'rain')
   // 音效联动：雨天雨声强度跟随
   audioLayer?.setRainIntensity(mode === 'rain' ? 1 : 0)
 }
@@ -988,14 +1017,17 @@ onMounted(() => {
     '/3d/hdri/kloofendal_2k.hdr',
     (texture) => {
       texture.mapping = THREE.EquirectangularReflectionMapping
+      // HDRI 只做环境反射（PBR 材质质感），背景用程序化"蓝天白云"渐变球
       scene.environment = texture
-      scene.background = texture
+      // 压环境强度：HDRI 太阳亮斑被物体反射 + Bloom 放大 = 用户多次反馈的"右侧刺眼白光"
+      scene.environmentIntensity = 0.3
+      scene.background = createSkyTexture()
       scene.backgroundBlurriness = 0.3
     },
     undefined,
     () => {
       console.warn('[TeaGarden] HDRI 加载失败，使用纯色背景兜底')
-      scene.background = new THREE.Color(0x2a3328)
+      scene.background = createSkyTexture()
     }
   )
 })
@@ -1011,8 +1043,8 @@ onMounted(() => {
     :far="500"
   />
 
-  <!-- 雾效：茶色调雾，远处山朦胧 -->
-  <FogExp2 :args="['#3a4a3a', 0.006]" attach="fog" />
+  <!-- 雾效：晴天淡蓝白雾（远处山朦胧），雨天由天气状态机调浓 -->
+  <FogExp2 :args="['#b9cfdf', 0.006]" attach="fog" />
 
   <!-- 太阳光：平行光，带软阴影 -->
   <DirectionalLight

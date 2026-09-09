@@ -1,12 +1,14 @@
 /**
  * garden-ambient.ts — 茶园环境氛围层（零外部依赖，全程序化）
- * 1. 远处云朵（Sprite 云贴图，缓慢漂移）
- * 2. 流动云影（高空暗斑平面缓慢掠过，光暗交替）
- * 3. 山谷晨雾（低层半透明雾带，左右流动 + 上下微浮）
+ * 1. 远处云朵（横置 Mesh 平面 + emissive 云贴图，慢速摆荡）
+ * 2. 山谷晨雾（低层半透明雾带，左右流动 + 上下微浮）
  *
  * 参考：
  * - threejs-volumetric-clouds 技能（云影作为独立低成本方案，不参与体积 raymarch）
- * - drei Cloud 的实例化云片思路（此处用 Sprite 更轻）
+ * - drei Cloud 的实例化云片思路（此处用 Mesh 平面更轻）
+ *
+ * 历史：云影（高空暗斑）曾反复出现"大黑片/发光片"视觉问题（用户多次反馈），
+ * 于 2026-09-09 彻底移除 —— 用户要的是蓝天白云，不要地面暗影。
  */
 import * as THREE from 'three'
 
@@ -51,34 +53,6 @@ function createCloudTexture(): THREE.CanvasTexture {
   return tex
 }
 
-/** 生成云影贴图（暗色模糊斑块，黑-透明） */
-function createShadowTexture(): THREE.CanvasTexture {
-  const size = 256
-  const canvas = document.createElement('canvas')
-  canvas.width = size
-  canvas.height = size
-  const ctx = canvas.getContext('2d')
-  if (!ctx) throw new Error('canvas 2d 不可用')
-  ctx.clearRect(0, 0, size, size)
-  // 3 个暗斑
-  for (let i = 0; i < 3; i++) {
-    const cx = size * (0.25 + seededRandom(i * 4.9 + 11) * 0.5)
-    const cy = size * (0.3 + seededRandom(i * 6.3 + 12) * 0.4)
-    const rx = size * (0.2 + seededRandom(i * 8.7 + 13) * 0.22)
-    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, rx)
-    g.addColorStop(0, 'rgba(10,14,18,0.85)')
-    g.addColorStop(0.55, 'rgba(10,14,18,0.45)')
-    g.addColorStop(1, 'rgba(10,14,18,0)')
-    ctx.fillStyle = g
-    ctx.beginPath()
-    ctx.arc(cx, cy, rx, 0, Math.PI * 2)
-    ctx.fill()
-  }
-  const tex = new THREE.CanvasTexture(canvas)
-  tex.colorSpace = THREE.SRGBColorSpace
-  return tex
-}
-
 /** 生成晨雾贴图（水平渐变白-透明，边缘柔） */
 function createFogTexture(): THREE.CanvasTexture {
   const w = 512
@@ -95,7 +69,7 @@ function createFogTexture(): THREE.CanvasTexture {
     const gh = h * (0.35 + seededRandom(i * 4.1 + 22) * 0.5)
     const g = ctx.createLinearGradient(0, y - gh / 2, 0, y + gh / 2)
     g.addColorStop(0, 'rgba(255,255,255,0)')
-    g.addColorStop(0.5, `rgba(240,244,238,${0.5 + seededRandom(i * 6.7 + 23) * 0.4})`)
+    g.addColorStop(0.5, `rgba(240,244,238,${0.3 + seededRandom(i * 6.7 + 23) * 0.25})`)
     g.addColorStop(1, 'rgba(255,255,255,0)')
     ctx.fillStyle = g
     ctx.fillRect(0, y - gh / 2, w, gh)
@@ -124,13 +98,6 @@ interface CloudSprite {
   radius: number
 }
 
-interface ShadowPlane {
-  mesh: THREE.Mesh
-  speed: number
-  baseX: number
-  range: number
-}
-
 interface FogBand {
   mesh: THREE.Mesh
   speed: number
@@ -143,6 +110,7 @@ interface FogBand {
 
 export interface GardenAmbient {
   update: (elapsed: number, delta: number) => void
+  setFogVisible: (v: boolean) => void
   dispose: () => void
 }
 
@@ -164,9 +132,9 @@ export function createAmbient(scene: THREE.Scene, camera: THREE.Camera): GardenA
     const mat = new THREE.MeshStandardMaterial({
       map: cloudTex,
       alphaTest: 0.18,
-      emissive: 0x93a8bd,
+      emissive: 0xd8e4f0,
       emissiveMap: cloudTex,
-      emissiveIntensity: 0.9,
+      emissiveIntensity: 0.6,
       roughness: 1,
       metalness: 0,
       depthWrite: false,
@@ -191,30 +159,6 @@ export function createAmbient(scene: THREE.Scene, camera: THREE.Camera): GardenA
     clouds.push({ mesh, speed: 0.15 + seededRandom(i * 6.1 + 38) * 0.1, baseX: pos.x, baseY: pos.y, baseZ: pos.z, radius })
   }
 
-  // ---- 云影：2 片高空暗斑缓慢掠过地面 ----
-  const shadowTex = createShadowTexture()
-  const shadows: ShadowPlane[] = []
-  for (let i = 0; i < 2; i++) {
-    const mat = new THREE.MeshStandardMaterial({
-      map: shadowTex,
-      alphaTest: 0.5,
-      emissive: 0x232a33,
-      emissiveMap: shadowTex,
-      emissiveIntensity: 0.5,
-      roughness: 1,
-      metalness: 0,
-      depthWrite: false,
-      depthTest: false,
-      fog: false,
-    })
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(170, 170), mat)
-    mesh.rotation.x = -Math.PI / 2
-    mesh.position.set(seededRandom(i * 3.9 + 41) * 160 - 80, 26, seededRandom(i * 5.7 + 42) * 60 - 30)
-    mesh.renderOrder = 1
-    root.add(mesh)
-    shadows.push({ mesh, speed: 1.6 + seededRandom(i * 8.1 + 43) * 1.4, baseX: mesh.position.x, range: 60 })
-  }
-
   // ---- 晨雾：3 层低处雾带（横置平面，左右流动 + 上下微浮；Standard+emissive 自发光白雾） ----
   // 注意：雾带必须收敛在山谷低处（近处大平面会盖住上方天空的云）
   const fogTex = createFogTexture()
@@ -223,10 +167,10 @@ export function createAmbient(scene: THREE.Scene, camera: THREE.Camera): GardenA
   for (let i = 0; i < 3; i++) {
     const mat = new THREE.MeshStandardMaterial({
       map: fogTex,
-      alphaTest: 0.08,
-      emissive: 0xd8e4dc,
+      alphaTest: 0.18,
+      emissive: 0xdce6ee,
       emissiveMap: fogTex,
-      emissiveIntensity: 0.18,
+      emissiveIntensity: 0.09,
       roughness: 1,
       metalness: 0,
       depthWrite: false,
@@ -237,6 +181,8 @@ export function createAmbient(scene: THREE.Scene, camera: THREE.Camera): GardenA
     // 收敛到远处山谷（近处大雾带会盖住茶丛与动物）
     mesh.position.set(seededRandom(i * 4.3 + 52) * 30 - 20, fogYs[i] ?? 1.7, seededRandom(i * 6.1 + 53) * 24 - 32)
     mesh.renderOrder = 2
+    // 默认隐藏：晨雾为雨天专属（晴天蓝天下会成"白色地块"，用户多次反馈）
+    mesh.visible = false
     root.add(mesh)
     fogBands.push({
       mesh,
@@ -259,17 +205,15 @@ export function createAmbient(scene: THREE.Scene, camera: THREE.Camera): GardenA
         const angle = Math.atan2(c.baseZ, c.baseX) + t
         c.mesh.position.set(Math.cos(angle) * c.radius, c.baseY + Math.sin(elapsed * 0.22 + c.baseX) * 0.8, Math.sin(angle) * c.radius)
       }
-      // 云影：x 方向往复漂移（ping-pong）
-      for (const s of shadows) {
-        const offset = (Math.sin(elapsed * s.speed * 0.12) * 0.5 + 0.5) * s.range
-        s.mesh.position.x = s.baseX + offset
-      }
       // 晨雾：左右流动 + 上下微浮
       for (const f of fogBands) {
         const offset = Math.sin(elapsed * f.speed * 0.1 + f.phase) * f.range
         f.mesh.position.x = f.baseX + offset
         f.mesh.position.y = f.baseY + Math.sin(elapsed * 0.4 + f.phase) * f.amp
       }
+    },
+    setFogVisible(v: boolean) {
+      for (const f of fogBands) f.mesh.visible = v
     },
     dispose() {
       disposed = true
@@ -281,7 +225,6 @@ export function createAmbient(scene: THREE.Scene, camera: THREE.Camera): GardenA
         else m?.dispose()
       })
       cloudTex.dispose()
-      shadowTex.dispose()
       fogTex.dispose()
       root.removeFromParent()
     },
