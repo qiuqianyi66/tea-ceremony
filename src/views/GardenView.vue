@@ -130,6 +130,19 @@ function getStageLabel(plant: PlantedTea): string {
   return getGrowthStageInfo(plant)?.label ?? '—'
 }
 
+/** 茶亭叙事：四园古籍引文（来源：《茶经》《东溪试茶录》+ 福鼎白茶茶谚，项目既有依据，不编造） */
+const PAVILION_QUOTES: Record<string, { text: string; source: string }> = {
+  hangzhou: { text: '上者生烂石，中者生砾壤，下者生黄土', source: '陆羽《茶经·一之源》' },
+  wuyishan: { text: '园植北山之阳，厥土赤坟，茶生其间', source: '宋子安《东溪试茶录》' },
+  yunnan: { text: '茶者，南方之嘉木也', source: '陆羽《茶经·一之源》' },
+  fuding: { text: '一年茶，三年药，七年宝', source: '福鼎白茶茶谚' },
+}
+const showPavilion = ref(false)
+const pavilionQuote = computed(() => (regionId.value ? PAVILION_QUOTES[regionId.value] : undefined))
+function togglePavilion() {
+  showPavilion.value = !showPavilion.value
+}
+
 onMounted(() => {
   if (regionId.value) loadPlants()
 })
@@ -145,6 +158,7 @@ onMounted(() => {
     <div class="region-grid">
       <div v-for="region in gardenRegions" :key="region.id"
         class="region-card"
+        :style="{ '--region-accent': region.accentColor }"
         @click="router.push(`/garden/${region.id}`)">
         <div class="region-bg" :style="{ backgroundImage: `url(${region.backgroundImage})` }"></div>
         <div class="region-overlay"></div>
@@ -154,6 +168,7 @@ onMounted(() => {
           <p class="region-desc">{{ region.description }}</p>
           <p class="region-climate">{{ region.climate }}</p>
         </div>
+        <span class="region-marker" aria-hidden="true">入山</span>
       </div>
     </div>
   </div>
@@ -161,30 +176,46 @@ onMounted(() => {
   <!-- 地区茶园视图：3D真实感茶山 -->
   <div v-else-if="currentRegion" class="region-garden-3d">
     <!-- 3D场景全屏 -->
-    <TeaGardenScene3D ref="scene3dRef" :plants="plants" :region-id="regionId" @select-plant="onSelectPlant3D" />
+    <TeaGardenScene3D ref="scene3dRef" :plants="plants" :region-id="regionId" @select-plant="onSelectPlant3D" @select-pavilion="togglePavilion" />
 
     <!-- 顶部栏叠加（毛玻璃） -->
     <div class="garden-topbar-3d">
-      <button class="back-btn-3d" @click="router.push('/garden')">← 茶园</button>
+      <button class="back-btn-3d" @click="router.push('/garden')">
+        <IconArrowLeft :size="18" />
+        <span>茶园</span>
+      </button>
       <div class="garden-title-area-3d">
         <h1 class="garden-name-3d">{{ currentRegion.name }}</h1>
         <p class="garden-stats-3d">已种 {{ plants.length }} 棵 · {{ matureCount }} 棵可采</p>
       </div>
       <div class="topbar-actions-3d">
         <button class="ambient-btn-3d" :class="{ active: weatherMode === 'rain' }" @click="toggleWeather" :title="weatherMode === 'rain' ? '切换到晴天' : '切换到雨天'">
-          {{ weatherMode === 'rain' ? '🌧️' : '☀️' }}
+          <IconCloudRain v-if="weatherMode === 'rain'" :size="18" />
+          <IconSun v-else :size="18" />
         </button>
         <button class="ambient-btn-3d" :class="{ active: audioOn }" @click="toggleAudio" :title="audioOn ? '关闭环境音' : '开启环境音'">
-          {{ audioOn ? '🔊' : '🔇' }}
+          <IconVolume2 v-if="audioOn" :size="18" />
+          <IconVolumeX v-else :size="18" />
         </button>
-        <button class="plant-btn-3d" @click="openPlantDialog">+ 种茶</button>
+        <button class="plant-btn-3d" @click="openPlantDialog">
+          <IconPlus :size="16" />
+          <span>种茶</span>
+        </button>
       </div>
     </div>
+
+    <!-- 茶亭叙事浮层：点击 3D 茶亭弹出该园古籍引文 -->
+    <Transition name="pavilion">
+      <div v-if="showPavilion && pavilionQuote" class="pavilion-panel" @click="togglePavilion">
+        <p class="pavilion-quote">“{{ pavilionQuote.text }}”</p>
+        <p class="pavilion-source">—— {{ pavilionQuote.source }}</p>
+      </div>
+    </Transition>
 
     <!-- 底部茶树列表 -->
     <div class="plant-list-bar">
       <div v-if="plants.length === 0 && !loading" class="empty-hint" @click="openPlantDialog">
-        <span class="empty-icon">🌱</span>
+        <IconSprout :size="20" />
         <span>这片茶山还空着，点击种下第一棵茶</span>
       </div>
       <div v-else class="plant-list-scroll">
@@ -205,7 +236,9 @@ onMounted(() => {
           </div>
           <div class="plant-card-bottom">
             <span class="plant-days">{{ getPlantDays(plant).toFixed(1) }}天</span>
-            <span v-if="isGrowthPaused(plant) && plant.status === 'growing'" class="water-alert">💧缺水</span>
+            <span v-if="isGrowthPaused(plant) && plant.status === 'growing'" class="water-alert">
+              <IconDroplet :size="12" /> 缺水
+            </span>
             <span v-if="plant.status === 'dead'" class="dead-text">已枯萎</span>
           </div>
         </div>
@@ -270,13 +303,13 @@ onMounted(() => {
         </div>
         <div class="dialog-actions">
           <button v-if="getGrowthStage(selectedPlant) === 'seedling' && !selectedPlant.pruned"
-            class="dialog-btn secondary" @click="doPrune">✂️ 定型修剪</button>
+            class="dialog-btn secondary" @click="doPrune"><IconScissors :size="14" /> 定型修剪</button>
           <button v-if="getGrowthStage(selectedPlant) === 'mature' && selectedPlant.status === 'growing'"
-            class="dialog-btn harvest" @click="doHarvest">🍃 采摘</button>
+            class="dialog-btn harvest" @click="doHarvest"><IconLeaf :size="14" /> 采摘</button>
           <button v-if="getGrowthStage(selectedPlant) === 'recovery'"
-            class="dialog-btn recovery-hint" disabled>🌱 恢复期（休养生息）</button>
+            class="dialog-btn recovery-hint" disabled><IconSprout :size="14" /> 恢复期（休养生息）</button>
           <button class="dialog-btn confirm" @click="doWater" :disabled="selectedPlant.status === 'dead'">
-            💧 浇水
+            <IconDroplet :size="14" /> 浇水
           </button>
           <button class="dialog-btn cancel" @click="showPlantDetail = false">关闭</button>
         </div>
@@ -307,12 +340,23 @@ onMounted(() => {
 .region-card {
   position: relative;
   height: 320px;
-  border-radius: 16px;
+  border-radius: 6px;
   overflow: hidden;
   cursor: pointer;
   transition: transform 0.3s, box-shadow 0.3s;
 }
+.region-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--region-accent, rgba(201,169,110,0.35));
+  border-radius: 6px;
+  opacity: 0.45;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
 .region-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.4); }
+.region-card:hover::after { opacity: 1; }
 .region-bg {
   position: absolute; inset: 0;
   background-size: cover; background-position: center;
@@ -336,6 +380,24 @@ onMounted(() => {
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 .region-climate { font-size: 0.7rem; color: rgba(245,241,230,0.4); margin: 0; }
+.region-marker {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+  color: rgba(245,241,230,0.85);
+  border: 1px solid rgba(245,241,230,0.35);
+  padding: 0.35rem 0.7rem;
+  border-radius: 2px;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 0.3s, transform 0.3s;
+}
+.region-card:hover .region-marker {
+  opacity: 1;
+  transform: translateY(0);
+}
 
 /* ========== 3D茶园视图 ========== */
 .region-garden-3d {
@@ -361,10 +423,14 @@ onMounted(() => {
   border-bottom: 1px solid rgba(245, 241, 230, 0.1);
 }
 .back-btn-3d {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   background: rgba(255,255,255,0.1);
   border: 1px solid rgba(245,241,230,0.2);
   color: #f5f1e6;
-  padding: 0.5rem 1rem;
+  padding: 0.65rem 1rem;
+  min-height: 44px;
   border-radius: 999px;
   font-size: 0.85rem;
   cursor: pointer;
@@ -372,7 +438,7 @@ onMounted(() => {
   font-family: inherit;
 }
 .back-btn-3d:hover { background: rgba(255,255,255,0.2); }
-.garden-title-area-3d { text-align: center; }
+.garden-title-area-3d { text-align: center; flex: 1; min-width: 0; padding: 0 0.5rem; }
 .garden-name-3d {
   font-size: 1.15rem;
   font-weight: 500;
@@ -387,10 +453,14 @@ onMounted(() => {
   margin: 0.2rem 0 0;
 }
 .plant-btn-3d {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   background: rgba(201,169,110,0.9);
   border: none;
   color: #1a2420;
-  padding: 0.5rem 1.2rem;
+  padding: 0.65rem 1.2rem;
+  min-height: 44px;
   border-radius: 999px;
   font-size: 0.85rem;
   font-weight: 500;
@@ -399,6 +469,41 @@ onMounted(() => {
   font-family: inherit;
 }
 .plant-btn-3d:hover { background: #c9a96e; }
+
+/* 茶亭叙事浮层：古籍笺纸感，点击任意处收起 */
+.pavilion-panel {
+  position: absolute;
+  top: 5.5rem;
+  right: 1.5rem;
+  z-index: 12;
+  max-width: 320px;
+  padding: 1.1rem 1.3rem;
+  background: rgba(10, 16, 12, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(201, 169, 110, 0.35);
+  border-left: 3px solid rgba(201, 169, 110, 0.8);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.pavilion-panel:hover { border-color: rgba(201, 169, 110, 0.7); }
+.pavilion-quote {
+  margin: 0 0 0.4rem;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: #f5f1e6;
+  letter-spacing: 0.05em;
+}
+.pavilion-source {
+  margin: 0;
+  font-size: 0.72rem;
+  color: rgba(201, 169, 110, 0.85);
+  letter-spacing: 0.12em;
+  text-align: right;
+}
+.pavilion-enter-active, .pavilion-leave-active { transition: opacity 0.25s, transform 0.25s; }
+.pavilion-enter-from, .pavilion-leave-to { opacity: 0; transform: translateY(-6px); }
 
 /* 顶栏右侧操作组（天气/音效/种茶） */
 .topbar-actions-3d {
@@ -410,7 +515,8 @@ onMounted(() => {
   background: rgba(20,30,24,0.55);
   border: 1px solid rgba(245,241,230,0.25);
   color: rgba(245,241,230,0.9);
-  width: 2.3rem; height: 2.3rem;
+  width: 2.75rem; height: 2.75rem;
+  min-width: 44px; min-height: 44px;
   border-radius: 999px;
   font-size: 0.95rem;
   cursor: pointer;
@@ -452,7 +558,6 @@ onMounted(() => {
   border-color: rgba(201,169,110,0.7);
   background: rgba(13,20,16,0.7);
 }
-.empty-icon { font-size: 1.2rem; }
 
 .plant-list-scroll {
   display: flex;
@@ -467,10 +572,9 @@ onMounted(() => {
 
 .plant-card {
   flex-shrink: 0;
-  width: 160px;
-  background: rgba(13,20,16,0.55);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(245,241,230,0.12);
+  width: 168px;
+  background: rgba(10, 16, 12, 0.5);
+  border: 1px solid rgba(245,241,230,0.1);
   border-radius: 12px;
   padding: 0.7rem;
   cursor: pointer;
@@ -544,6 +648,9 @@ onMounted(() => {
   color: rgba(245,241,230,0.45);
 }
 .water-alert {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
   font-size: 0.65rem;
   color: #ef5350;
   animation: pulse 1.5s infinite;
@@ -596,7 +703,13 @@ onMounted(() => {
 
 .dialog-actions { display: flex; gap: 0.6rem; justify-content: flex-end; flex-wrap: wrap; }
 .dialog-btn {
-  padding: 0.55rem 1.3rem; border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.55rem 1.3rem;
+  min-height: 44px;
+  border-radius: 999px;
   font-size: 0.85rem; cursor: pointer; border: none;
   transition: all 0.2s; font-family: inherit;
 }
@@ -635,9 +748,13 @@ onMounted(() => {
 }
 
 @media (max-width: 600px) {
-  .garden-topbar-3d { padding: 0.7rem 1rem; }
-  .garden-name-3d { font-size: 0.95rem; }
+  .garden-topbar-3d { padding: 0.7rem 0.8rem; gap: 0.4rem; }
+  .garden-name-3d { font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .garden-stats-3d { font-size: 0.62rem; }
+  .back-btn-3d { padding: 0.55rem 0.7rem; }
+  .back-btn-3d span { display: none; }
   .plant-card { width: 140px; }
+  .pavilion-panel { top: 5rem; right: 0.8rem; left: 0.8rem; max-width: none; }
 }
 </style>
 

@@ -180,3 +180,16 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #5D4E37;
 }
+
+/* 浏览器表面定制：选区与焦点环上主题色（茶汤金），"人做的 vs 拼装的"最便宜信号 */
+::selection {
+  background: rgba(158, 128, 80, 0.28);
+  color: #3D3225;
+}
+
+:focus-visible {
+  outline: 2px solid rgba(158, 128, 80, 0.9);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+

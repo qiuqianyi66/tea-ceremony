@@ -54,6 +54,8 @@ const gardenPreset = getGardenPreset(props.regionId)
 
 const emit = defineEmits<{
   'select-plant': [id: number]
+  /** 点击茶亭叙事锚点（父组件展示该园古籍引文） */
+  'select-pavilion': []
 }>()
 
 
@@ -202,6 +204,24 @@ function onPlantClickEvent(e: TresPointerEvent): void {
 /** 悬停/选中时整体放大，提示可交互 */
 function getPlantScale(id: number): number {
   return hoveredPlantId.value === id || selectedPlantId.value === id ? 1.15 : 1
+}
+
+/** 茶亭叙事锚点：悬停切换光标，点击通知父组件展示古籍引文 */
+let pavilionHovered = false
+function onPavilionOver(): void {
+  pavilionHovered = true
+  updateGardenCursor()
+}
+function onPavilionOut(): void {
+  pavilionHovered = false
+  updateGardenCursor()
+}
+function onPavilionClick(): void {
+  emit('select-pavilion')
+}
+function updateGardenCursor(): void {
+  const canvas = sceneCtx.renderer.instance?.domElement as HTMLCanvasElement | undefined
+  if (canvas) canvas.style.cursor = pavilionHovered ? 'pointer' : ''
 }
 
 
@@ -672,6 +692,22 @@ onMounted(() => {
       />
     </Mesh>
   </Group>
+
+  <!-- 茶亭叙事锚点：透明拾取球（位置与 scenery 层茶亭一致，点击弹出该园古籍引文） -->
+  <Mesh
+    :position="[12, getTerrainHeight(12, 8) + 2.4, 8]"
+    @click="onPavilionClick"
+    @pointer-over="onPavilionOver"
+    @pointer-out="onPavilionOut"
+  >
+    <SphereGeometry :args="[2.6, 10, 10]" />
+    <MeshBasicMaterial
+      :transparent="true"
+      :opacity="0"
+      :depth-write="false"
+      :color-write="false"
+    />
+  </Mesh>
 
   <!-- 轨道控制器（cientos 组件，内部已处理 camera/domElement） -->
   <OrbitControls

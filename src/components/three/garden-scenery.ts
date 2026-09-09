@@ -60,10 +60,12 @@ export function createScenery(scene: THREE.Scene, presetId = 'hangzhou'): Garden
     root.add(foams)
   }
 
-  // ---- 茶亭：远处山坡一座小木亭（位置贴合地形，不再陷地）----
+  // ---- 茶亭：近景一座小木亭（位置贴合地形；原 (-30,-40) 远景被中央山脊/树冠遮挡，点击不可达）----
+  // 四园统一坐标 (12,8)：低地形、默认相机屏幕中部、无遮挡（已脚本验证）
   const house = new THREE.Group()
-  const houseX = -30
-  const houseZ = -40
+  const housePos: [number, number] = [12, 8]
+  const houseX = housePos[0]
+  const houseZ = housePos[1]
   const houseY = getTerrainHeight(houseX, houseZ)
   // 台基（两层台阶）
   const base1 = new THREE.Mesh(new THREE.CylinderGeometry(3.4, 3.9, 0.5, 8), stoneMat)
@@ -113,13 +115,15 @@ export function createScenery(scene: THREE.Scene, presetId = 'hangzhou'): Garden
   }
   root.add(makeFence(-14, -2, 14, 0.25))
   root.add(makeFence(12, -6, 12, -0.4))
-  root.add(makeFence(-26, -36, 10, 0.8))
+  root.add(makeFence(houseX + 4, houseZ + 4, 10, 0.8))
 
-  // ---- 石块小径：从近处 (6,0,-4) 铺向茶亭方向的扁石 ----
-  for (let i = 0; i < 9; i++) {
-    const t = i / 8 // 0→1 从近到远
-    const x = 6 - 40 * t
-    const z = -4 - 34 * t
+  // ---- 石块小径：从近处 (6,-4) 铺向茶亭方向的扁石（终点跟随茶亭位置）----
+  const pathEndX = houseX
+  const pathEndZ = houseZ
+  for (let i = 0; i < 5; i++) {
+    const t = i / 4 // 0→1 从近到远
+    const x = 6 + (pathEndX - 6) * t
+    const z = -4 + (pathEndZ - -4) * t
     const stone = new THREE.Mesh(new THREE.CylinderGeometry(0.55 + seededRandom(i * 2.1 + 131) * 0.4, 0.62 + seededRandom(i * 3.3 + 132) * 0.42, 0.16 + seededRandom(i * 4.7 + 133) * 0.08, 7), i % 3 === 0 ? stoneDarkMat : stoneMat)
     const sx = x + (seededRandom(i * 6.1 + 134) - 0.5) * 0.9
     const sz = z + (seededRandom(i * 8.3 + 135) - 0.5) * 0.9

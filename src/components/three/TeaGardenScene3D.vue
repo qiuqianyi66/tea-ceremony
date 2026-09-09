@@ -17,6 +17,8 @@ defineProps<{
 
 const emit = defineEmits<{
   'select-plant': [id: number]
+  /** 点击茶亭叙事锚点 */
+  'select-pavilion': []
 }>()
 
 /** 子场景实例（用于调用浇水粒子动画等视觉反馈） */
@@ -24,6 +26,10 @@ const innerRef = ref<{ playWater?: (id: number) => void; setWeather?: (m: Weathe
 
 function onSelectPlant(id: number): void {
   emit('select-plant', id)
+}
+
+function onSelectPavilion(): void {
+  emit('select-pavilion')
 }
 
 /** 播放某棵茶树的浇水动画（纯视觉，不触碰状态机） */
@@ -53,7 +59,7 @@ defineExpose({ playWater, setWeather, setAudioEnabled })
       :shadows="true"
       :window-size="true"
     >
-      <TeaGardenSceneInner ref="innerRef" :plants="plants" :region-id="regionId" @select-plant="onSelectPlant" />
+      <TeaGardenSceneInner ref="innerRef" :plants="plants" :region-id="regionId" @select-plant="onSelectPlant" @select-pavilion="onSelectPavilion" />
     </TresCanvas>
   </div>
 </template>
