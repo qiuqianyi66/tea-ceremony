@@ -129,6 +129,7 @@ export function createTeaField(scene: THREE.Scene, preset?: GardenPreset): TeaFi
     // 散生古茶丛：全坡扫点，稀落疏植，每丛 2-4 株分蘖、蓬大苍劲
     const bushPos: number[] = []
     const bushColors: number[] = []
+    const trunkList: number[] = [] // 古茶虬曲主干（每丛 1 根粗干，供苔藓/斑驳感）
     const bigTreePos: Array<[number, number, number, number]> = [] // x,h,z,scale
     for (let i = 0; i < 3600; i++) {
       const x = (seededRandom(i * 1.1 + 1) - 0.5) * 96
@@ -136,6 +137,7 @@ export function createTeaField(scene: THREE.Scene, preset?: GardenPreset): TeaFi
       const h = getTerrainHeight(x, z)
       if (h < 4.2 || h > 9.6) continue
       if (seededRandom(i * 3.3 + 3) > 0.34) continue // 疏植（雨林茶树稀疏散生）
+      trunkList.push(x, h, z) // 丛心粗干
       const n = 2 + Math.floor(seededRandom(i * 9.1 + 6) * 3) // 2-4 株分蘖
       for (let k = 0; k < n; k++) {
         const kx = x + (seededRandom(i * 13 + k * 7.7) - 0.5) * 1.4 // 分蘖间距大（古树多枝）
@@ -167,6 +169,37 @@ export function createTeaField(scene: THREE.Scene, preset?: GardenPreset): TeaFi
       bushMesh.castShadow = true
       bushMesh.receiveShadow = true
       root.add(bushMesh)
+    }
+
+    // 古茶虬曲主干：粗短歪斜柱（干径 0.3-0.5m，苔藓斑驳感），每丛 1 根
+    const trunkN = trunkList.length / 3
+    if (trunkN > 0) {
+      const tGeo = new THREE.CylinderGeometry(0.14, 0.22, 1.6, 7)
+      const tMat = new THREE.MeshStandardMaterial({ color: 0x6b5a48, roughness: 0.95, flatShading: true })
+      const tMesh = new THREE.InstancedMesh(tGeo, tMat, trunkN)
+      const tDummy = new THREE.Object3D()
+      const tCol = new THREE.Color()
+      for (let i = 0; i < trunkN; i++) {
+        const tx = trunkList[i * 3]!
+        const th = trunkList[i * 3 + 1]!
+        const tz = trunkList[i * 3 + 2]!
+        tDummy.position.set(tx, th + 0.8, tz)
+        tDummy.scale.set(1, 0.7 + seededRandom(i * 2.3 + 601) * 0.8, 1)
+        tDummy.rotation.set(
+          (seededRandom(i * 3.1 + 602) - 0.5) * 0.3,
+          seededRandom(i * 4.7 + 603) * Math.PI,
+          (seededRandom(i * 5.3 + 604) - 0.5) * 0.3,
+        )
+        tDummy.updateMatrix()
+        tMesh.setMatrixAt(i, tDummy.matrix)
+        // 苔藓斑驳：随机偏苔绿/深褐
+        const mossy = seededRandom(i * 6.7 + 605)
+        if (mossy < 0.45) tCol.setRGB(0.3, 0.42, 0.26)
+        else tCol.setRGB(0.36, 0.32, 0.26)
+        tMesh.setColorAt(i, tCol)
+      }
+      tMesh.castShadow = true
+      root.add(tMesh)
     }
 
     // 林冠大树：母树聚丛（成片雨林）——6 丛 × 5 棵，干粗冠大、高矮参差，树下垂藤

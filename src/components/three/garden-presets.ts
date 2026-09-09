@@ -66,7 +66,7 @@ export const DEFAULT_PRESET: GardenPreset = {
   sigmaNorth: 13,
   centralRadius: 64,
   centralBump: 4.5,
-  edgeFadeAt: 105,
+  edgeFadeAt: 124,
   edgeFadeRate: 0.12,
   tintLoess: [1.0, 0.95, 0.8],
   tintGravel: [1.14, 0.9, 0.72],
@@ -104,7 +104,7 @@ export const GARDEN_PRESETS: Record<string, GardenPreset> = {
     sigmaNorth: 13,
     centralRadius: 64,
     centralBump: 4.5,
-    edgeFadeAt: 105,
+    edgeFadeAt: 124,
     edgeFadeRate: 0.12,
     tintLoess: [1.0, 0.95, 0.8],
     tintGravel: [1.14, 0.9, 0.72],
@@ -140,7 +140,7 @@ export const GARDEN_PRESETS: Record<string, GardenPreset> = {
     sigmaNorth: 10,
     centralRadius: 48,
     centralBump: 3.2,
-    edgeFadeAt: 102,
+    edgeFadeAt: 124,
     edgeFadeRate: 0.16,
     tintLoess: [1.08, 0.84, 0.6], // 谷底涧水带偏褐
     tintGravel: [1.42, 0.72, 0.48], // 丹霞红岩（茶园土赤红，《东溪试茶录》"厥土赤坟"）
@@ -176,7 +176,7 @@ export const GARDEN_PRESETS: Record<string, GardenPreset> = {
     sigmaNorth: 14,
     centralRadius: 72,
     centralBump: 5.2,
-    edgeFadeAt: 110,
+    edgeFadeAt: 124,
     edgeFadeRate: 0.1,
     tintLoess: [0.82, 0.74, 0.58], // 热带腐殖黑土
     tintGravel: [0.9, 0.72, 0.55],
@@ -212,7 +212,7 @@ export const GARDEN_PRESETS: Record<string, GardenPreset> = {
     sigmaNorth: 16,
     centralRadius: 76,
     centralBump: 3.0,
-    edgeFadeAt: 108,
+    edgeFadeAt: 124,
     edgeFadeRate: 0.1,
     tintLoess: [1.05, 0.98, 0.82], // 海风黄棕壤
     tintGravel: [1.08, 0.96, 0.78],
@@ -244,6 +244,7 @@ export const GARDEN_PRESETS: Record<string, GardenPreset> = {
 export function getGardenPreset(id?: string): GardenPreset {
   return (id ? GARDEN_PRESETS[id] : undefined) ?? DEFAULT_PRESET
 }
+
 
 
 

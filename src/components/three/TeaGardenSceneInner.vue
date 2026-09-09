@@ -506,7 +506,7 @@ onMounted(() => {
   const camRef2 = ((activeCam2 as { value?: THREE.PerspectiveCamera }).value ?? activeCam2) as THREE.PerspectiveCamera
   ambientLayer = createAmbient(scene, camRef2)
   animalsLayer = createAnimals(scene)
-  sceneryLayer = createScenery(scene)
+  sceneryLayer = createScenery(scene, gardenPreset.id)
   // 古籍茶园：南坡成垄茶行 + 上缘遮阴树（《茶经》阳崖阴林 /《茶解》丛生成行）
   teaFieldLayer = createTeaField(scene, gardenPreset)
   // 天气系统（晴天/雨天：雨丝 + 地面湿润 + 光照/雾联动）

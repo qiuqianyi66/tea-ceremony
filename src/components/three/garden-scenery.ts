@@ -20,8 +20,8 @@ export interface GardenScenery {
   dispose: () => void
 }
 
-/** 创建茶亭/篱笆/小径并挂到场景 */
-export function createScenery(scene: THREE.Scene): GardenScenery {
+/** 创建茶亭/篱笆/小径并挂到场景（presetId：龙井小径用红棕土色，其他园石板灰；福鼎铺海面） */
+export function createScenery(scene: THREE.Scene, presetId = 'hangzhou'): GardenScenery {
   const root = new THREE.Group()
   root.name = 'scenery'
   scene.add(root)
@@ -29,8 +29,36 @@ export function createScenery(scene: THREE.Scene): GardenScenery {
   const woodMat = new THREE.MeshStandardMaterial({ color: 0x8a6a4e, roughness: 0.85, metalness: 0 })
   const darkWoodMat = new THREE.MeshStandardMaterial({ color: 0x6b4f38, roughness: 0.9, metalness: 0 })
   const bambooMat = new THREE.MeshStandardMaterial({ color: 0x9a945a, roughness: 0.8, metalness: 0 })
-  const stoneMat = new THREE.MeshStandardMaterial({ color: 0x9aa0a8, roughness: 0.95, metalness: 0 })
-  const stoneDarkMat = new THREE.MeshStandardMaterial({ color: 0x7c828a, roughness: 0.95, metalness: 0 })
+  const stoneMat = new THREE.MeshStandardMaterial({ color: presetId === 'hangzhou' ? 0xa0714f : 0x9aa0a8, roughness: 0.95, metalness: 0 })
+  const stoneDarkMat = new THREE.MeshStandardMaterial({ color: presetId === 'hangzhou' ? 0x8a5f3e : 0x7c828a, roughness: 0.95, metalness: 0 })
+
+  // ---- 福鼎海面：远景东南向大海（茶园→海滩→海），深蓝不透明 + 白浪条 ----
+  if (presetId === 'fuding') {
+    const seaMat = new THREE.MeshStandardMaterial({
+      color: 0x2a6488,
+      roughness: 0.35,
+      metalness: 0.12,
+    })
+    const sea = new THREE.Mesh(new THREE.PlaneGeometry(96, 50), seaMat)
+    sea.rotation.x = -Math.PI / 2
+    sea.position.set(0, 0.86, -77)
+    root.add(sea)
+    // 白浪线：沿海面横排断开的浅色细条（风浪感）
+    const foamMat = new THREE.MeshStandardMaterial({ color: 0xbfd8e8, roughness: 0.5 })
+    const foamGeo = new THREE.BoxGeometry(1.4, 0.05, 0.12)
+    const foams = new THREE.InstancedMesh(foamGeo, foamMat, 26)
+    const dummy = new THREE.Object3D()
+    for (let i = 0; i < 26; i++) {
+      const fx = -40 + seededRandom(i * 3.1 + 501) * 80
+      const fz = -64 - seededRandom(i * 4.7 + 502) * 26
+      dummy.position.set(fx, 0.93 + seededRandom(i * 5.3 + 503) * 0.06, fz)
+      dummy.scale.set(2 + seededRandom(i * 6.7 + 504) * 5, 1, 1)
+      dummy.rotation.y = seededRandom(i * 7.1 + 505) * 0.3 - 0.15
+      dummy.updateMatrix()
+      foams.setMatrixAt(i, dummy.matrix)
+    }
+    root.add(foams)
+  }
 
   // ---- 茶亭：远处山坡一座小木亭（位置贴合地形，不再陷地）----
   const house = new THREE.Group()

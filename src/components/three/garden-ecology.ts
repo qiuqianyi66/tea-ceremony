@@ -11,11 +11,12 @@ import { seededRandom } from './tea-plant'
 import type { GardenPreset } from './garden-presets'
 import { GARDEN_PRESETS, DEFAULT_PRESET } from './garden-presets'
 
-/** 装饰物定位：随机采样地形高度，命中目标土壤带即返回 */
+/** 装饰物定位：随机采样地形高度，命中目标土壤带即返回（福鼎海湾内不撒） */
 function getDecorPosition(seedIdx: number, minH: number, maxH: number): [number, number, number] {
   for (let attempt = 0; attempt < 24; attempt++) {
     const x = (seededRandom(seedIdx * 37.1 + attempt * 3.3 + 1) - 0.5) * 70
     const z = (seededRandom(seedIdx * 53.7 + attempt * 5.1 + 2) - 0.5) * 70
+    if (z < -52 && Math.abs(x) < 44) continue // 福鼎海湾留空
     const h = getTerrainHeight(x, z)
     if (h >= minH && h <= maxH) return [x, h, z]
   }
@@ -47,7 +48,11 @@ export function createDecorations(scene: THREE.Scene, preset?: GardenPreset): vo
 
   // --- 石头（古籍分带）：高坡烂石带露头大石 + 谷底溪石；砾壤带（茶园）不留石 ---
   const rockGeo = createRockGeometry()
-  const rockMat = new THREE.MeshStandardMaterial({ color: 0x8a8580, roughness: 0.95, flatShading: true })
+  const rockMat = new THREE.MeshStandardMaterial({
+    color: p.id === 'fuding' ? 0xa8adb5 : 0x8a8580, // 福鼎太姥山花岗岩亮灰
+    roughness: 0.95,
+    flatShading: true,
+  })
   for (let i = 0; i < p.rockCount; i++) {
     const upSlope = i % 2 === 0
     const [x, h, z] = upSlope
@@ -107,25 +112,29 @@ export function createDecorations(scene: THREE.Scene, preset?: GardenPreset): vo
 
   // ---- 武夷崖壁生态（丹霞）：苔藓地衣覆岩 + 岩生灌木（habitat：只长烂石带 10-15） ----
   if (p.id === 'wuyishan') {
-    // 丹霞崖壁带：主峰（0,-14）腰 9-24m 大片红岩板贴坡（赤壁感，大块扁板）
+    // 丹霞崖壁带：主峰（0,-14）腰 9-24m 竖立红岩层露头（赤壁感：大片竖片插坡，稀而大）
     const cliffGeo = new THREE.BoxGeometry(1, 0.5, 1)
     const cliffMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.92, flatShading: true })
     const cliffPalette = [0x8a4b3c, 0x7d4536, 0x8f5142]
-    const cliffCount = 280
+    const cliffCount = 130
     const cliffs = new THREE.InstancedMesh(cliffGeo, cliffMat, cliffCount)
     let placed = 0
-    for (let i = 0; i < cliffCount * 3; i++) {
+    for (let i = 0; i < cliffCount * 4; i++) {
       if (placed >= cliffCount) break
       const ang = seededRandom(i * 2.9 + 501) * Math.PI * 2
-      const rr = 10 + seededRandom(i * 3.7 + 502) * 7
+      const rr = 11 + seededRandom(i * 3.7 + 502) * 7
       const wx = Math.cos(ang) * rr
       const wz = -14 + Math.sin(ang) * rr
       const wh = getTerrainHeight(wx, wz)
       if (wh < 9 || wh > 24) continue
-      dummy.position.set(wx, wh - 0.2, wz)
-      const s = 2 + seededRandom(i * 5.3 + 503) * 1.8
-      dummy.scale.set(s, s * (0.32 + seededRandom(i * 6.1 + 504) * 0.3), s)
-      dummy.rotation.set((seededRandom(i + 505) - 0.5) * 0.25, seededRandom(i + 506) * Math.PI, (seededRandom(i + 507) - 0.5) * 0.25)
+      const s = 2.6 + seededRandom(i * 5.3 + 503) * 2.4
+      dummy.position.set(wx, wh - s * 0.3, wz) // 根部埋入坡面
+      dummy.scale.set(s * (0.9 + seededRandom(i * 6.1 + 504) * 0.4), s * (0.8 + seededRandom(i * 6.7 + 509) * 0.8), s * 0.22) // 竖立岩片
+      dummy.rotation.set(
+        (seededRandom(i + 505) - 0.5) * 0.3,
+        seededRandom(i + 506) * Math.PI,
+        0.9 + (seededRandom(i + 507) - 0.5) * 0.9, // 25°-80° 斜插坡面（岩层露头，非平铺地砖）
+      )
       dummy.updateMatrix()
       cliffs.setMatrixAt(placed, dummy.matrix)
       tmpColor.setHex(cliffPalette[Math.floor(seededRandom(i * 4.7 + 508) * cliffPalette.length)] ?? 0x8a4b3c)

@@ -62,6 +62,26 @@ function ridgeZAt(x: number): number {
 }
 
 /**
+ * 远山环（解决"孤山突兀"）：r 60-115 一圈连绵低缓远山（山脊噪声 + 中尺度起伏），
+ * 借鉴 vr-forest 的 additive ridge noise + foothills 思路；115-141 逐渐回落接地。
+ * 低于 1.5m 的谷口保留为平地，形成断续山脊天际线而非一圈实心墙。
+ */
+function farMountainRing(x: number, z: number, r: number): number {
+  if (r < 58) return 0
+  const t = Math.min(1, (r - 58) / 57) // 58→115 抬升
+  const falloff = Math.max(0, 1 - Math.max(0, r - 115) / 26) // 115→141 回落接地
+  const ridge = fbm(x * 0.012 + 9.7, z * 0.012 + 4.1, 4) // 大尺度山脊
+  const ridge2 = fbm(x * 0.05 + 2.3, z * 0.05 + 7.9, 3) // 中尺度起伏
+  const h = (3 + ridge * 9 + ridge2 * 2.5) * t * t * falloff
+  return Math.max(0, h - 1.2)
+}
+
+/** 福鼎海湾：远景东南向（z<-52 且 |x|<44）压低成海面（茶园→海滩→海），福鼎独有 */
+function fudingSeaBay(x: number, z: number): boolean {
+  return activePreset.id === 'fuding' && z < -52 && Math.abs(x) < 44
+}
+
+/**
  * 武夷丹霞峰丛-峡谷地形（《东溪试茶录》山场 + 丹霞地貌常识）：
  * 主峰居中偏前（相机中景），侧峰成丛，峰间深切峡谷为涧水带；
  * 峰腰 4-10m 砾壤带为岩缝茶园环带（茶行长在岩壁下缘）。
@@ -86,8 +106,10 @@ function wuyiTerrainHeight(x: number, z: number): number {
   h += fbm(x * 0.09, z * 0.09, 3) * 0.9
   // 峰间谷底保留涧水带（湿地，不种茶）：压平但保留微起伏（避免绝对平面在强光下出现法线突变白线）
   if (h < 3.0) h = 3.0 + (smoothNoise(x * 0.35, z * 0.35) - 0.5) * 0.3
-  // 边缘渐消
+  // 远山环：峰丛外围连绵远峰（丹霞群峰，解决孤山）
   const r = Math.sqrt(x * x + z * z)
+  if (!fudingSeaBay(x, z)) h += farMountainRing(x, z, r)
+  // 边缘渐消
   if (r > activePreset.edgeFadeAt) h = Math.max(0.6, h - (r - activePreset.edgeFadeAt) * activePreset.edgeFadeRate)
   return h
 }
@@ -114,6 +136,11 @@ export function getTerrainHeight(x: number, z: number): number {
   // 中央茶山微隆起（相机正前方视觉焦点）
   const r = Math.sqrt(x * x + z * z)
   h += Math.max(0, 1 - r / centralRadius) * centralBump
+
+  // 福鼎海湾：东南向远景压低成海面（茶园→海滩→海，海平面由场景组件铺 Mesh）
+  if (fudingSeaBay(x, z)) return 0.8 + (smoothNoise(x * 0.3, z * 0.3) - 0.5) * 0.1
+  // 远山环：主山外围连绵远山（解决孤山，形成山峦天际线）
+  h += farMountainRing(x, z, r)
   // 边缘渐消（保持场景封闭，起止随预设）
   if (r > edgeFadeAt) h = Math.max(0.6, h - (r - edgeFadeAt) * edgeFadeRate)
 
