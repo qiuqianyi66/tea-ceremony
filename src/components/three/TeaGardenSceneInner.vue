@@ -637,13 +637,16 @@ function createDecorations(scene: THREE.Scene): void {
   const decorGroup = new THREE.Group()
   decorGroup.name = 'decorations'
 
-  // --- 石头：散布在坡地/梯田边缘 ---
+  // --- 石头（古籍分带）：高坡烂石带露头大石 + 谷底溪石；砾壤带（茶园）不留石 ---
   const rockGeo = createRockGeometry()
   const rockMat = new THREE.MeshStandardMaterial({ color: 0x8a8580, roughness: 0.95, flatShading: true })
   for (let i = 0; i < ROCK_COUNT; i++) {
-    const [x, h, z] = getDecorPosition(i, 1.2, 12)
+    const upSlope = i % 2 === 0
+    const [x, h, z] = upSlope
+      ? getDecorPosition(i, 10.2, 14.8) // 烂石带：风化岩屑露头
+      : getDecorPosition(i + 700, 0.6, 3.4) // 谷底黄土带：溪石
     const rock = new THREE.Mesh(rockGeo, rockMat)
-    const s = 0.28 + seededRandom(i * 3.3 + 5) * 0.85
+    const s = (upSlope ? 0.45 : 0.2) + seededRandom(i * 3.3 + 5) * 0.75
     rock.scale.set(s, s * (0.55 + seededRandom(i * 2.1 + 9) * 0.5), s)
     rock.position.set(x, h - s * 0.3, z)
     rock.rotation.set(
@@ -654,7 +657,7 @@ function createDecorations(scene: THREE.Scene): void {
     decorGroup.add(rock)
   }
 
-  // --- 草簇：InstancedMesh，颜色按 HSL 微调 ---
+  // --- 草簇（砾壤带茶行间土埂草，古籍"开畲"留土埂） ---
   const grassGeo = new THREE.ConeGeometry(0.06, 0.5, 4)
   grassGeo.translate(0, 0.25, 0)
   const grassMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, flatShading: true })
@@ -662,7 +665,7 @@ function createDecorations(scene: THREE.Scene): void {
   const dummy = new THREE.Object3D()
   const tmpColor = new THREE.Color()
   for (let i = 0; i < GRASS_COUNT; i++) {
-    const [x, h, z] = getDecorPosition(i + 100, 0.5, 14)
+    const [x, h, z] = getDecorPosition(i + 100, 4.2, 9.6)
     dummy.position.set(x, h, z)
     const s = 0.6 + seededRandom(i * 4.7 + 3) * 1.3
     dummy.scale.set(s, s, s)
@@ -675,13 +678,13 @@ function createDecorations(scene: THREE.Scene): void {
   if (grass.instanceColor) grass.instanceColor.needsUpdate = true
   decorGroup.add(grass)
 
-  // --- 野花：InstancedMesh 亮色小球，集中茶园带 ---
+  // --- 野花（谷底黄土带杂草地；不种茶的湿地长野花，古法撂荒地相） ---
   const flowerGeo = new THREE.IcosahedronGeometry(0.1, 0)
   const flowerMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.65, flatShading: true })
   const flowers = new THREE.InstancedMesh(flowerGeo, flowerMat, FLOWER_COUNT)
   const flowerPalette = [0xf4e28d, 0xf4b8d0, 0xe8e3f2, 0xf2b88d, 0xd9e8b8]
   for (let i = 0; i < FLOWER_COUNT; i++) {
-    const [x, h, z] = getDecorPosition(i + 500, 2, 10)
+    const [x, h, z] = getDecorPosition(i + 500, 0.6, 3.8)
     dummy.position.set(x, h + 0.05, z)
     const s = 0.8 + seededRandom(i * 5.9 + 7) * 1.4
     dummy.scale.set(s, s, s)
