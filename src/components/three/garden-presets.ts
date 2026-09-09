@@ -66,7 +66,7 @@ export const DEFAULT_PRESET: GardenPreset = {
   sigmaNorth: 13,
   centralRadius: 64,
   centralBump: 4.5,
-  edgeFadeAt: 96,
+  edgeFadeAt: 105,
   edgeFadeRate: 0.12,
   tintLoess: [1.0, 0.95, 0.8],
   tintGravel: [1.14, 0.9, 0.72],
@@ -86,8 +86,8 @@ export const DEFAULT_PRESET: GardenPreset = {
   bushBase: [0.36, 0.55, 0.23],
   bushScaleMin: 0.85,
   bushScaleMax: 1.2,
-  shadeTreeCount: 7,
-  shadeScale: 1,
+  shadeTreeCount: 12,
+  shadeScale: 1.15,
   rockCount: 45,
   grassCount: 420,
   flowerCount: 90,
@@ -104,7 +104,7 @@ export const GARDEN_PRESETS: Record<string, GardenPreset> = {
     sigmaNorth: 13,
     centralRadius: 64,
     centralBump: 4.5,
-    edgeFadeAt: 96,
+    edgeFadeAt: 105,
     edgeFadeRate: 0.12,
     tintLoess: [1.0, 0.95, 0.8],
     tintGravel: [1.14, 0.9, 0.72],
@@ -124,8 +124,8 @@ export const GARDEN_PRESETS: Record<string, GardenPreset> = {
     bushBase: [0.36, 0.55, 0.23],
     bushScaleMin: 0.85,
     bushScaleMax: 1.2,
-    shadeTreeCount: 7,
-    shadeScale: 1,
+    shadeTreeCount: 12,
+    shadeScale: 1.15,
     rockCount: 45,
     grassCount: 420,
     flowerCount: 90,
@@ -140,7 +140,7 @@ export const GARDEN_PRESETS: Record<string, GardenPreset> = {
     sigmaNorth: 10,
     centralRadius: 48,
     centralBump: 3.2,
-    edgeFadeAt: 92,
+    edgeFadeAt: 102,
     edgeFadeRate: 0.16,
     tintLoess: [1.08, 0.84, 0.6], // 谷底涧水带偏褐
     tintGravel: [1.42, 0.72, 0.48], // 丹霞红岩（茶园土赤红，《东溪试茶录》"厥土赤坟"）
@@ -160,8 +160,8 @@ export const GARDEN_PRESETS: Record<string, GardenPreset> = {
     bushBase: [0.22, 0.4, 0.2], // 岩茶墨绿（厚叶深绿，与赤壁对比）
     bushScaleMin: 0.7,
     bushScaleMax: 1.05,
-    shadeTreeCount: 5,
-    shadeScale: 0.85,
+    shadeTreeCount: 8,
+    shadeScale: 1.15,
     rockCount: 85, // 丹霞多岩石
     grassCount: 260,
     flowerCount: 45,
@@ -176,7 +176,7 @@ export const GARDEN_PRESETS: Record<string, GardenPreset> = {
     sigmaNorth: 14,
     centralRadius: 72,
     centralBump: 5.2,
-    edgeFadeAt: 100,
+    edgeFadeAt: 110,
     edgeFadeRate: 0.1,
     tintLoess: [0.82, 0.74, 0.58], // 热带腐殖黑土
     tintGravel: [0.9, 0.72, 0.55],
@@ -196,8 +196,8 @@ export const GARDEN_PRESETS: Record<string, GardenPreset> = {
     bushBase: [0.3, 0.5, 0.19], // 大叶种深绿
     bushScaleMin: 0.9,
     bushScaleMax: 1.45, // 古树蓬更大
-    shadeTreeCount: 12, // 雨林遮阴树多
-    shadeScale: 1.35, // 树更参天
+    shadeTreeCount: 26, // 雨林遮阴树多
+    shadeScale: 1.6, // 树更参天
     rockCount: 30,
     grassCount: 220,
     flowerCount: 40,
@@ -212,7 +212,7 @@ export const GARDEN_PRESETS: Record<string, GardenPreset> = {
     sigmaNorth: 16,
     centralRadius: 76,
     centralBump: 3.0,
-    edgeFadeAt: 98,
+    edgeFadeAt: 108,
     edgeFadeRate: 0.1,
     tintLoess: [1.05, 0.98, 0.82], // 海风黄棕壤
     tintGravel: [1.08, 0.96, 0.78],
@@ -232,8 +232,8 @@ export const GARDEN_PRESETS: Record<string, GardenPreset> = {
     bushBase: [0.42, 0.6, 0.27], // 白茶蓬偏亮绿
     bushScaleMin: 0.85,
     bushScaleMax: 1.2,
-    shadeTreeCount: 6,
-    shadeScale: 0.9,
+    shadeTreeCount: 10,
+    shadeScale: 1.05,
     rockCount: 28,
     grassCount: 480, // 开阔草坡
     flowerCount: 150, // 山海野花多
@@ -244,5 +244,8 @@ export const GARDEN_PRESETS: Record<string, GardenPreset> = {
 export function getGardenPreset(id?: string): GardenPreset {
   return (id ? GARDEN_PRESETS[id] : undefined) ?? DEFAULT_PRESET
 }
+
+
+
 
 

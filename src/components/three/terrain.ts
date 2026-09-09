@@ -84,11 +84,11 @@ function wuyiTerrainHeight(x: number, z: number): number {
   // 细节：岩壁褶皱 + 沟谷糙化
   h += fbm(x * 0.03, z * 0.03, 4) * 2.2
   h += fbm(x * 0.09, z * 0.09, 3) * 0.9
-  // 峰间谷底最低保留涧水带（湿地，不种茶）
-  if (h < 3.0) h = 3.0
+  // 峰间谷底保留涧水带（湿地，不种茶）：压平但保留微起伏（避免绝对平面在强光下出现法线突变白线）
+  if (h < 3.0) h = 3.0 + (smoothNoise(x * 0.35, z * 0.35) - 0.5) * 0.3
   // 边缘渐消
   const r = Math.sqrt(x * x + z * z)
-  if (r > activePreset.edgeFadeAt) h -= (r - activePreset.edgeFadeAt) * activePreset.edgeFadeRate
+  if (r > activePreset.edgeFadeAt) h = Math.max(0.6, h - (r - activePreset.edgeFadeAt) * activePreset.edgeFadeRate)
   return h
 }
 
@@ -115,7 +115,7 @@ export function getTerrainHeight(x: number, z: number): number {
   const r = Math.sqrt(x * x + z * z)
   h += Math.max(0, 1 - r / centralRadius) * centralBump
   // 边缘渐消（保持场景封闭，起止随预设）
-  if (r > edgeFadeAt) h -= (r - edgeFadeAt) * edgeFadeRate
+  if (r > edgeFadeAt) h = Math.max(0.6, h - (r - edgeFadeAt) * edgeFadeRate)
 
   // ---- 田埂梯田（仅砾壤带 4-10，茶园主体） ----
   if (h > SOIL_LOESS && h < SOIL_GRAVEL) {
@@ -194,4 +194,5 @@ export function createTerrainGeometry(): THREE.PlaneGeometry {
   geo.computeVertexNormals()
   return geo
 }
+
 
