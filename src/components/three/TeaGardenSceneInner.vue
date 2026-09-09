@@ -16,6 +16,19 @@ import { createWeather, type WeatherMode } from './garden-weather'
 import { createAmbientAudio, type AmbientAudio } from './ambient-audio'
 import { createTeaField } from './tea-field'
 import { createTerrainGeometry, getTerrainHeight, fbm, smoothNoise } from './terrain'
+import {
+  seededRandom,
+  STAGE_VISUALS,
+  type StageVisual,
+  type LeafBlade,
+  type PlantVisual,
+  getPlantPosition,
+  getLeafBlades,
+  createLeafBladeTexture,
+  createBarkTexture,
+  buildLeafClusters,
+} from './tea-plant'
+import { createDecorations } from './garden-ecology'
 import { OrbitControls } from '@tresjs/cientos'
 import type { PointerEvent as TresPointerEvent } from '@pmndrs/pointer-events'
 import * as THREE from 'three'
@@ -103,158 +116,11 @@ function createSkyTexture(): THREE.CanvasTexture {
 const terrainGeo = createTerrainGeometry()
 const terrainMeshRef = ref<THREE.Mesh | null>(null)
 
-// ============ 六期写实化：程序化叶片 / 树皮贴图（同步生成，全局复用） ============
+// ============ 六期写实化：程序化叶片 / 树皮贴图（同步生成，全局复用，实现见 tea-plant.ts） ============
 const leafBladeTexture = createLeafBladeTexture()
 const barkTexture = createBarkTexture()
 
-// ============ 茶树渲染（二期） ============
-
-/** 基于种子的确定性伪随机 */
-function seededRandom(seed: number): number {
-  const s = Math.sin(seed * 127.1 + 311.7) * 43758.5453
-  return s - Math.floor(s)
-}
-
-/** 生长阶段视觉配置 */
-interface StageVisual {
-  scale: number
-  leafCount: number
-  leafColor: string
-  trunkHeight: number
-  trunkRadius: number
-  crownRadius: number
-  hasGlow: boolean
-}
-
-const STAGE_VISUALS: Record<string, StageVisual> = {
-  // 绝对尺寸（1 单位 ≈ 1 米）：低矮茶丛灌木，成熟约 1.6m 高
-  // 六期写实化：叶子从球体改为真实叶片卡片，叶片数大幅增加形成叶簇冠
-  sprout:   { scale: 1, leafCount: 12, leafColor: '#aed581', trunkHeight: 0.35, trunkRadius: 0.08, crownRadius: 0.3,  hasGlow: false },
-  seedling: { scale: 1, leafCount: 24, leafColor: '#9ccc65', trunkHeight: 0.55, trunkRadius: 0.08, crownRadius: 0.45, hasGlow: false },
-  growing:  { scale: 1, leafCount: 48, leafColor: '#8bc34a', trunkHeight: 0.8,  trunkRadius: 0.08, crownRadius: 0.6,  hasGlow: false },
-  mature:   { scale: 1, leafCount: 80, leafColor: '#7cb342', trunkHeight: 1.05, trunkRadius: 0.08, crownRadius: 0.75, hasGlow: true },
-  recovery: { scale: 1, leafCount: 36, leafColor: '#9ccc65', trunkHeight: 0.9,  trunkRadius: 0.08, crownRadius: 0.65, hasGlow: false },
-  dead:     { scale: 1, leafCount: 16, leafColor: '#6d4c41', trunkHeight: 0.85, trunkRadius: 0.08, crownRadius: 0.5,  hasGlow: false },
-}
-
-/** 单叶片卡片：位置 + 朝向（四元数）+ 缩放 + 颜色 */
-interface LeafBlade {
-  position: [number, number, number]
-  quaternion: [number, number, number, number]
-  scale: number
-  /** 每片叶子的颜色（基于 seed 微调明暗，增加层次感） */
-  color: string
-}
-
-interface PlantVisual {
-  id: number
-  position: [number, number, number]
-  /** 稳定引用：Group rotation（避免模板内联数组导致 TresJS 响应式循环） */
-  rotation: [number, number, number]
-  /** 稳定引用：枝干位置 */
-  trunkPos: [number, number, number]
-  /** 稳定引用：发光新芽位置（无则 null） */
-  glowPos: [number, number, number] | null
-  /** 稳定引用：点击包围球位置 */
-  hitPos: [number, number, number]
-  /** 点击包围球半径 */
-  hitRadius: number
-  /** 稳定引用：点击拾取用 userData（避免每次渲染新对象） */
-  hitUserData: { plantId: number }
-  config: StageVisual
-  blades: LeafBlade[]
-  rotationY: number
-}
-
-/** 检查候选点是否被地形挡住（从初始相机视角出发做步进采样） */
-function isVisibleFromCamera(x: number, h: number, z: number): boolean {
-  const camX = 30
-  const camY = 23
-  const camZ = 30
-  const STEPS = 24
-  for (let i = 1; i < STEPS; i++) {
-    const t = i / STEPS
-    const px = camX + (x - camX) * t
-    const py = camY + (h - camY) * t
-    const pz = camZ + (z - camZ) * t
-    const th = getTerrainHeight(px, pz)
-    if (th > py) return false // 地形高于视线，被遮挡
-  }
-  return true
-}
-
-/** 基于种子生成茶树在地形上的位置（中央茶园区，确保相机可见且不被山挡） */
-function getPlantPosition(seed: number): [number, number, number] {
-  // 生态约束（古籍）：只种砾壤带（中坡 4-10m），谷底黄土/高坡烂石/排水沟均不种
-  const MIN_H = 4.2
-  const MAX_H = 9.5
-  let best: [number, number, number] | null = null
-  let bestScore = Infinity
-  // 多次尝试：命中梯田高度且相机可见立即返回；否则记录最接近目标范围的候选
-  for (let attempt = 0; attempt < 80; attempt++) {
-    const x = (seededRandom(seed + attempt * 3.1 + 1) - 0.5) * 30
-    const z = (seededRandom(seed + attempt * 5.7 + 2) - 0.5) * 30
-    const h = getTerrainHeight(x, z)
-    if (h >= MIN_H && h <= MAX_H && isVisibleFromCamera(x, h, z)) {
-      return [x, h, z]
-    }
-    const score = h < MIN_H ? MIN_H - h : h - MAX_H
-    if (score < bestScore && isVisibleFromCamera(x, h, z)) {
-      bestScore = score
-      best = [x, h, z]
-    }
-  }
-  return best ?? [0, MIN_H, 0]
-}
-
-/**
- * 生成叶片卡片分布：围绕枝干冠部分布，每片叶子朝向冠心外侧（真实叶簇感），
- * 顶部叶片上翘（新芽区），颜色基于 seed 微调明暗。
- */
-function getLeafBlades(seed: number, count: number, crownRadius: number, crownY: number, baseColor: string): LeafBlade[] {
-  const base = new THREE.Color(baseColor)
-  const blades: LeafBlade[] = []
-  const crownCenter = new THREE.Vector3(0, crownY, 0)
-  const zAxis = new THREE.Vector3(0, 0, 1)
-  const up = new THREE.Vector3(0, 1, 0)
-  for (let i = 0; i < count; i++) {
-    const angle = seededRandom(seed + i * 7.3) * Math.PI * 2
-    const distNorm = 0.35 + seededRandom(seed + i * 11.7) * 0.65 // 0.35~1.0 冠内归一化距离
-    const dist = crownRadius * distNorm
-    const y = crownY + (seededRandom(seed + i * 13.1) - 0.4) * crownRadius * 0.9
-    const pos = new THREE.Vector3(Math.cos(angle) * dist, y, Math.sin(angle) * dist)
-
-    // 朝向：默认叶片正面（+Z）朝冠心外侧；顶部新芽叶朝上
-    const q = new THREE.Quaternion()
-    if (y > crownY + crownRadius * 0.35) {
-      q.setFromUnitVectors(zAxis, up)
-    } else {
-      q.setFromUnitVectors(zAxis, new THREE.Vector3().subVectors(crownCenter, pos).normalize())
-    }
-    // 随机绕自身中轴旋转 + 轻微俯仰（自然朝向，避免整齐划一）
-    q.multiply(new THREE.Quaternion().setFromAxisAngle(zAxis, seededRandom(seed + i * 21.1) * Math.PI * 2))
-    q.multiply(new THREE.Quaternion().setFromAxisAngle(
-      new THREE.Vector3(1, 0, 0),
-      (seededRandom(seed + i * 23.7) - 0.5) * 0.7
-    ))
-
-    // 双层冠：内层小叶（深色、填密度），外层大叶（受光、饱满）
-    const isInner = distNorm < 0.62
-    const s = (isInner ? 0.5 + seededRandom(seed + i * 17.3) * 0.3 : 0.8 + seededRandom(seed + i * 17.3) * 0.55)
-    // 顶部新芽叶更浅更亮；内层叶偏深
-    const lightness = (seededRandom(seed + i * 19.7) - 0.5) * 0.14
-      + (y > crownY + crownRadius * 0.35 ? 0.12 : 0)
-      + (isInner ? -0.07 : 0)
-    const c = base.clone().offsetHSL(0, 0, lightness)
-    blades.push({
-      position: [pos.x, pos.y, pos.z],
-      quaternion: [q.x, q.y, q.z, q.w],
-      scale: s,
-      color: `#${c.getHexString()}`,
-    })
-  }
-  return blades
-}
+// ============ 茶树渲染（二期，实现见 tea-plant.ts） ============
 
 const plantVisuals = computed<PlantVisual[]>(() => {
   return props.plants.map(plant => {
@@ -328,143 +194,6 @@ function getPlantScale(id: number): number {
   return hoveredPlantId.value === id || selectedPlantId.value === id ? 1.15 : 1
 }
 
-// ============ 六期写实化：程序化高细节贴图（叶片 / 树皮） ============
-
-/**
- * 生成单叶片 alpha 贴图（128px，透明背景）：
- * 披针形叶片轮廓（贝塞尔曲线）+ 主/侧叶脉 + 渐变绿 + 微光斑点 + 边缘暗化。
- * 背景透明，配合材质 alphaTest 裁剪，呈现真实叶片形状而非圆球。
- */
-function createLeafBladeTexture(): THREE.CanvasTexture {
-  const size = 128
-  const canvas = document.createElement('canvas')
-  canvas.width = canvas.height = size
-  const ctx = canvas.getContext('2d')
-  if (!ctx) throw new Error('canvas 2d 不可用')
-  const rnd = (n: number) => Math.random() * n
-
-  // 叶片轮廓：披针形（左叶尖 → 上缘弧 → 右叶尖 → 下缘弧回）
-  const lx = 16, rx = 112, midY = 64
-  ctx.beginPath()
-  ctx.moveTo(lx, midY)
-  ctx.bezierCurveTo(lx + 26, midY - 30, rx - 26, midY - 24, rx, midY)
-  ctx.bezierCurveTo(rx - 26, midY + 24, lx + 26, midY + 30, lx, midY)
-  ctx.closePath()
-
-  // 叶片底色：沿叶长线性渐变（叶基深 → 叶尖亮），叠加横向轻微明暗
-  const base = ctx.createLinearGradient(lx, 0, rx, 0)
-  base.addColorStop(0, '#4c7d33')
-  base.addColorStop(0.5, '#62963f')
-  base.addColorStop(1, '#7fb255')
-  ctx.fillStyle = base
-  ctx.fill()
-
-  // 主叶脉（中脉）
-  ctx.strokeStyle = 'rgba(26,54,20,0.5)'
-  ctx.lineWidth = 1.6
-  ctx.beginPath()
-  ctx.moveTo(lx + 3, midY)
-  ctx.quadraticCurveTo((lx + rx) / 2, midY - 1, rx - 4, midY)
-  ctx.stroke()
-
-  // 侧叶脉：每侧 5 条斜线
-  ctx.lineWidth = 0.8
-  for (let i = 0; i < 5; i++) {
-    const t = 0.2 + i * 0.13
-    const vx = lx + (rx - lx) * t
-    const len = 10 + rnd(8)
-    ctx.beginPath()
-    ctx.moveTo(vx, midY)
-    ctx.lineTo(vx + len, midY - 8 - rnd(6))
-    ctx.stroke()
-    ctx.beginPath()
-    ctx.moveTo(vx, midY)
-    ctx.lineTo(vx + len, midY + 8 + rnd(6))
-    ctx.stroke()
-  }
-
-  // 蜡质微反光斑点
-  for (let i = 0; i < 40; i++) {
-    const g = 140 + rnd(60)
-    ctx.fillStyle = `rgba(${g - 30},${g},${g - 60},${0.06 + rnd(0.1)})`
-    ctx.beginPath()
-    ctx.arc(lx + 10 + rnd(rx - lx - 20), midY - 18 + rnd(36), 1 + rnd(2.2), 0, Math.PI * 2)
-    ctx.fill()
-  }
-
-  // 边缘暗化 + 叶片尖端高光
-  ctx.save()
-  ctx.beginPath()
-  ctx.moveTo(lx, midY)
-  ctx.bezierCurveTo(lx + 26, midY - 30, rx - 26, midY - 24, rx, midY)
-  ctx.bezierCurveTo(rx - 26, midY + 24, lx + 26, midY + 30, lx, midY)
-  ctx.closePath()
-  ctx.clip()
-  const edge = ctx.createRadialGradient((lx + rx) / 2, midY, 20, (lx + rx) / 2, midY, 66)
-  edge.addColorStop(0, 'rgba(0,0,0,0)')
-  edge.addColorStop(1, 'rgba(18,40,12,0.45)')
-  ctx.fillStyle = edge
-  ctx.fillRect(0, 0, size, size)
-  // 叶尖透光高光
-  ctx.fillStyle = 'rgba(210,235,170,0.35)'
-  ctx.beginPath()
-  ctx.ellipse(rx - 6, midY, 7, 4, 0, 0, Math.PI * 2)
-  ctx.fill()
-  ctx.restore()
-
-  const tex = new THREE.CanvasTexture(canvas)
-  tex.colorSpace = THREE.SRGBColorSpace
-  return tex
-}
-
-/** 生成粗糙树皮贴图（128x256，深褐 + 纵向裂纹 + 结疤） */
-function createBarkTexture(): THREE.CanvasTexture {
-  const w = 128
-  const h = 256
-  const canvas = document.createElement('canvas')
-  canvas.width = w
-  canvas.height = h
-  const ctx = canvas.getContext('2d')
-  if (!ctx) throw new Error('canvas 2d 不可用')
-
-  ctx.fillStyle = '#5b4232'
-  ctx.fillRect(0, 0, w, h)
-  // 纵向裂纹
-  for (let i = 0; i < 22; i++) {
-    const x = Math.random() * w
-    const shade = 0.7 + Math.random() * 0.55
-    ctx.strokeStyle = `rgba(${Math.round(48 * shade)},${Math.round(32 * shade)},${Math.round(22 * shade)},${0.5 + Math.random() * 0.4})`
-    ctx.lineWidth = 0.8 + Math.random() * 1.6
-    ctx.beginPath()
-    ctx.moveTo(x, 0)
-    ctx.bezierCurveTo(x + Math.random() * 6 - 3, h * 0.3, x + Math.random() * 8 - 4, h * 0.7, x + Math.random() * 4 - 2, h)
-    ctx.stroke()
-  }
-  // 高光脊线（裂脊受光）
-  for (let i = 0; i < 16; i++) {
-    const x = Math.random() * w
-    ctx.strokeStyle = `rgba(150,118,88,${0.12 + Math.random() * 0.16})`
-    ctx.lineWidth = 1 + Math.random() * 1.4
-    ctx.beginPath()
-    ctx.moveTo(x, 0)
-    ctx.bezierCurveTo(x + Math.random() * 5 - 2.5, h * 0.4, x + Math.random() * 6 - 3, h * 0.6, x + Math.random() * 4 - 2, h)
-    ctx.stroke()
-  }
-  // 结疤
-  for (let i = 0; i < 3; i++) {
-    const x = 20 + Math.random() * (w - 40)
-    const y = 40 + Math.random() * (h - 80)
-    ctx.fillStyle = 'rgba(30,20,14,0.5)'
-    ctx.beginPath()
-    ctx.ellipse(x, y, 3 + Math.random() * 3, 4 + Math.random() * 4, Math.random(), 0, Math.PI * 2)
-    ctx.fill()
-  }
-
-  const tex = new THREE.CanvasTexture(canvas)
-  tex.wrapS = tex.wrapT = THREE.RepeatWrapping
-  tex.colorSpace = THREE.SRGBColorSpace
-  return tex
-}
 
 // ============ 六期写实化：地形 PBR 材质（三贴图按高度混合） ============
 
@@ -540,54 +269,16 @@ const leafClusterRoot = ref<THREE.Group | null>(null)
 const leafClusterByPlant = new Map<number, THREE.Group>()
 
 /** 重建全部叶簇（plants 增删/阶段变化时调用；共享几何与材质，只重建实例矩阵） */
-function buildLeafClusters(scene: THREE.Scene): void {
+function rebuildLeafClusters(scene: THREE.Scene): void {
   const oldRoot = leafClusterRoot.value
   if (oldRoot) {
     oldRoot.removeFromParent()
     oldRoot.traverse(o => { if ((o as THREE.InstancedMesh).isInstancedMesh) (o as THREE.InstancedMesh).dispose() })
   }
   leafClusterByPlant.clear()
-
-  const root = new THREE.Group()
-  root.name = 'leafClusters'
-  const geo = new THREE.PlaneGeometry(0.3, 0.2)
-  const mat = new THREE.MeshStandardMaterial({
-    map: leafBladeTexture,
-    alphaTest: 0.45,
-    side: THREE.DoubleSide,
-    roughness: 0.72,
-    envMapIntensity: 0.5,
-  })
-  const dummy = new THREE.Object3D()
-  const tmpColor = new THREE.Color()
-
-  for (const plant of plantVisuals.value) {
-    const count = plant.blades.length
-    if (count === 0) continue
-    const group = new THREE.Group()
-    group.position.set(plant.position[0], plant.position[1], plant.position[2])
-    group.rotation.y = plant.rotationY
-    const mesh = new THREE.InstancedMesh(geo, mat, count)
-    mesh.castShadow = true
-    for (let i = 0; i < count; i++) {
-      const b = plant.blades[i]
-      if (!b) continue
-      dummy.position.set(b.position[0], b.position[1], b.position[2])
-      dummy.quaternion.set(b.quaternion[0], b.quaternion[1], b.quaternion[2], b.quaternion[3])
-      dummy.scale.setScalar(b.scale)
-      dummy.updateMatrix()
-      mesh.setMatrixAt(i, dummy.matrix)
-      tmpColor.set(b.color)
-      mesh.setColorAt(i, tmpColor)
-    }
-    mesh.instanceMatrix.needsUpdate = true
-    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
-    group.add(mesh)
-    root.add(group)
-    leafClusterByPlant.set(plant.id, group)
-  }
-  scene.add(root)
-  leafClusterRoot.value = root
+  const layer = buildLeafClusters(scene, plantVisuals.value, leafBladeTexture)
+  leafClusterRoot.value = layer.root
+  for (const [id, g] of layer.byPlant) leafClusterByPlant.set(id, g)
 }
 
 /** 悬停/选中时对应叶簇同步放大（与模板 Group scale 一致） */
@@ -599,106 +290,6 @@ function syncLeafClusterScale(): void {
 watch([hoveredPlantId, selectedPlantId], syncLeafClusterScale)
 
 // ============ 装饰植被（四期） ============
-
-const ROCK_COUNT = 45
-const GRASS_COUNT = 420
-const FLOWER_COUNT = 90
-
-/** 装饰物定位：在中央茶山半径内随机采样地形高度，命中高度范围即返回 */
-function getDecorPosition(seedIdx: number, minH: number, maxH: number): [number, number, number] {
-  for (let attempt = 0; attempt < 24; attempt++) {
-    const x = (seededRandom(seedIdx * 37.1 + attempt * 3.3 + 1) - 0.5) * 70
-    const z = (seededRandom(seedIdx * 53.7 + attempt * 5.1 + 2) - 0.5) * 70
-    const h = getTerrainHeight(x, z)
-    if (h >= minH && h <= maxH) return [x, h, z]
-  }
-  return [0, minH + 1, 0]
-}
-
-/** 生成石头：Dodecahedron 顶点随机位移，程序化圆润石块 */
-function createRockGeometry(): THREE.DodecahedronGeometry {
-  const geo = new THREE.DodecahedronGeometry(1, 0)
-  const pos = geo.attributes.position!
-  for (let i = 0; i < pos.count; i++) {
-    const n = seededRandom(i * 7.7 + 11) - 0.5
-    pos.setXYZ(
-      i,
-      pos.getX(i) * (1 + n * 0.55),
-      pos.getY(i) * (1 + n * 0.4),
-      pos.getZ(i) * (1 + n * 0.55)
-    )
-  }
-  geo.computeVertexNormals()
-  return geo
-}
-
-/** 创建装饰植被并挂到场景（石头用独立 Mesh，草/花用 InstancedMesh，共 3 个 draw call） */
-function createDecorations(scene: THREE.Scene): void {
-  const decorGroup = new THREE.Group()
-  decorGroup.name = 'decorations'
-
-  // --- 石头（古籍分带）：高坡烂石带露头大石 + 谷底溪石；砾壤带（茶园）不留石 ---
-  const rockGeo = createRockGeometry()
-  const rockMat = new THREE.MeshStandardMaterial({ color: 0x8a8580, roughness: 0.95, flatShading: true })
-  for (let i = 0; i < ROCK_COUNT; i++) {
-    const upSlope = i % 2 === 0
-    const [x, h, z] = upSlope
-      ? getDecorPosition(i, 10.2, 14.8) // 烂石带：风化岩屑露头
-      : getDecorPosition(i + 700, 0.6, 3.4) // 谷底黄土带：溪石
-    const rock = new THREE.Mesh(rockGeo, rockMat)
-    const s = (upSlope ? 0.45 : 0.2) + seededRandom(i * 3.3 + 5) * 0.75
-    rock.scale.set(s, s * (0.55 + seededRandom(i * 2.1 + 9) * 0.5), s)
-    rock.position.set(x, h - s * 0.3, z)
-    rock.rotation.set(
-      seededRandom(i + 17) * Math.PI,
-      seededRandom(i + 23) * Math.PI,
-      seededRandom(i + 29) * Math.PI
-    )
-    decorGroup.add(rock)
-  }
-
-  // --- 草簇（砾壤带茶行间土埂草，古籍"开畲"留土埂） ---
-  const grassGeo = new THREE.ConeGeometry(0.06, 0.5, 4)
-  grassGeo.translate(0, 0.25, 0)
-  const grassMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, flatShading: true })
-  const grass = new THREE.InstancedMesh(grassGeo, grassMat, GRASS_COUNT)
-  const dummy = new THREE.Object3D()
-  const tmpColor = new THREE.Color()
-  for (let i = 0; i < GRASS_COUNT; i++) {
-    const [x, h, z] = getDecorPosition(i + 100, 4.2, 9.6)
-    dummy.position.set(x, h, z)
-    const s = 0.6 + seededRandom(i * 4.7 + 3) * 1.3
-    dummy.scale.set(s, s, s)
-    dummy.rotation.set(0, seededRandom(i + 41) * Math.PI, (seededRandom(i + 43) - 0.5) * 0.35)
-    dummy.updateMatrix()
-    grass.setMatrixAt(i, dummy.matrix)
-    tmpColor.setHSL(0.25 + seededRandom(i * 1.9 + 2) * 0.07, 0.4, 0.3 + seededRandom(i * 3.1 + 4) * 0.2)
-    grass.setColorAt(i, tmpColor)
-  }
-  if (grass.instanceColor) grass.instanceColor.needsUpdate = true
-  decorGroup.add(grass)
-
-  // --- 野花（谷底黄土带杂草地；不种茶的湿地长野花，古法撂荒地相） ---
-  const flowerGeo = new THREE.IcosahedronGeometry(0.1, 0)
-  const flowerMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.65, flatShading: true })
-  const flowers = new THREE.InstancedMesh(flowerGeo, flowerMat, FLOWER_COUNT)
-  const flowerPalette = [0xf4e28d, 0xf4b8d0, 0xe8e3f2, 0xf2b88d, 0xd9e8b8]
-  for (let i = 0; i < FLOWER_COUNT; i++) {
-    const [x, h, z] = getDecorPosition(i + 500, 0.6, 3.8)
-    dummy.position.set(x, h + 0.05, z)
-    const s = 0.8 + seededRandom(i * 5.9 + 7) * 1.4
-    dummy.scale.set(s, s, s)
-    dummy.rotation.set(0, seededRandom(i + 61) * Math.PI, 0)
-    dummy.updateMatrix()
-    flowers.setMatrixAt(i, dummy.matrix)
-    tmpColor.setHex(flowerPalette[Math.floor(seededRandom(i * 8.1 + 13) * flowerPalette.length)] ?? 0xf4e28d)
-    flowers.setColorAt(i, tmpColor)
-  }
-  if (flowers.instanceColor) flowers.instanceColor.needsUpdate = true
-  decorGroup.add(flowers)
-
-  scene.add(decorGroup)
-}
 
 // ============ 后处理（四期：SSAO + Bloom） ============
 
@@ -892,8 +483,8 @@ onMounted(() => {
   createDecorations(scene)
 
   // 六期：真实叶片叶簇层（初始挂载 + 后续 plants 变化时重建）
-  buildLeafClusters(scene)
-  watch(plantVisuals, () => { buildLeafClusters(scene) })
+  rebuildLeafClusters(scene)
+  watch(plantVisuals, () => { rebuildLeafClusters(scene) })
 
   // 五期：浇水水滴粒子系统挂到场景
   const wp = createWaterPoints()
@@ -1084,5 +675,6 @@ onMounted(() => {
     :target="[0, 3, 0]"
   />
 </template>
+
 
 
