@@ -252,6 +252,8 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q   # 后端全量
 
 **与 superpowers 流程的联动**：Design Read / 视觉方向必须在 brainstorming + writing-plans 阶段产出并写进计划（计划第一项 = 设计方向），executing-plans 阶段只做门禁 4-6；superpowers 的计划 / 执行 / 收尾三阶段分别对应门禁 1-3 / 4 / 5-6。
 
+**与 functional-design 的联动（功能架构先行）**：新建页面 / 新功能 / 大组件，实现前先调 `functional-design` 技能走 Phase 1-5（功能发现 13 问 → 架构映射 → 行为规格 → 交互设计 → 验证），产出功能规格后再进入门禁链 1-3（视觉方向）→ 实现（Phase 6-8 按规格生成代码）→ 门禁 5-6 收尾；小改动 / 单组件 / 纯视觉调整跳过功能阶段，直接走门禁链。
+
 **组件与效果标准（Aceternity 品质线）**：
 
 * 网站 / 页面组件必须对标 Aceternity UI（https://ui.aceternity.com/components）的品质：免费复制粘贴级、Tailwind + 动效内置、微交互齐全——**禁止退回普通卡片模板**。
@@ -455,6 +457,6 @@ docker compose down
 
 * **写规则不写建议。** "禁止 X" 能机械执行，"建议 X" 只能被尽量遵守。
 
-* **更新记录**：2026-09-09 融合多源规范重构（行为脚手架 + 边界三层 + 学习记录 + 设计风格规范并入）；同日前端设计升级为「反主流 × 创新」规范（视觉方向先行 + 2026 创新工具箱 + 设计审计）；随后产出通用规范 FRONTEND_DESIGN_SPEC.md（四家融合）并把核心吸收进设计节（设计流程 / 质量底线 / 工程规范 / 设计工作流）；同日安装设计技能全家桶（taste-skill 13 + ui-ux-pro-max 7 + impeccable 全套 + Anthropic 官方 10 + Vercel 3）并新增「组件与效果标准（Aceternity 品质线）」；设计流程升级为 6 步强制门禁链并与 superpowers 流程三阶段联动（Design Read 未产出禁止写码 / 未过审计禁止提交）。2026-09-09 更新记录已满，后续新增记录另起一行。
+* **更新记录**：2026-09-09 融合多源规范重构（行为脚手架 + 边界三层 + 学习记录 + 设计风格规范并入）；同日前端设计升级为「反主流 × 创新」规范（视觉方向先行 + 2026 创新工具箱 + 设计审计）；随后产出通用规范 FRONTEND_DESIGN_SPEC.md（四家融合）并把核心吸收进设计节（设计流程 / 质量底线 / 工程规范 / 设计工作流）；同日安装设计技能全家桶（taste-skill 13 + ui-ux-pro-max 7 + impeccable 全套 + Anthropic 官方 10 + Vercel 3）并新增「组件与效果标准（Aceternity 品质线）」；设计流程升级为 6 步强制门禁链并与 superpowers 流程三阶段联动（Design Read 未产出禁止写码 / 未过审计禁止提交）；安装 functional-design 技能并接入门禁链（功能架构先行：新页面/新功能先走 13 问+状态机规格，再进视觉门禁）。2026-09-09 更新记录已满，后续新增记录另起一行。
 
 *本文件是活文档，项目架构或流程变更时同步更新。*
