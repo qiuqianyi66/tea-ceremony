@@ -15,7 +15,8 @@ import { createScenery } from './garden-scenery'
 import { createWeather, type WeatherMode } from './garden-weather'
 import { createAmbientAudio, type AmbientAudio } from './ambient-audio'
 import { createTeaField } from './tea-field'
-import { createTerrainGeometry, getTerrainHeight, fbm, smoothNoise } from './terrain'
+import { createTerrainGeometry, getTerrainHeight, fbm, smoothNoise, setTerrainPreset } from './terrain'
+import { getGardenPreset } from './garden-presets'
 import {
   seededRandom,
   STAGE_VISUALS,
@@ -43,11 +44,18 @@ import type { PlantedTea } from '@/types/garden'
 
 const props = defineProps<{
   plants: PlantedTea[]
+  /** 茶园地区 id（四茶园差异化场景；缺省 = 杭州龙井） */
+  regionId?: string
+
 }>()
+
+/** 当前茶园预设（四茶园差异化：地形/土壤/雾/天空/茶行/装饰） */
+const gardenPreset = getGardenPreset(props.regionId)
 
 const emit = defineEmits<{
   'select-plant': [id: number]
 }>()
+
 
 const sceneCtx = useTresContext()
 /** 六期：OrbitControls 实例引用（DEV 调试钩子暴露，供自动化特写/验证） */
@@ -84,7 +92,7 @@ onBeforeRender(({ delta, elapsed }) => {
 
 // ============ 程序化噪声（Simplex-like，无需外部库） ============
 /** 程序化"万里晴空"背景：Equirect 球面渐变（天顶蔚蓝 → 地平线浅蓝白） */
-function createSkyTexture(): THREE.CanvasTexture {
+function createSkyTexture(sky: [string, string, string, string, string] = gardenPreset.sky): THREE.CanvasTexture {
   const w = 64
   const h = 256
   const canvas = document.createElement('canvas')
@@ -93,11 +101,11 @@ function createSkyTexture(): THREE.CanvasTexture {
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('canvas 2d 不可用')
   const g = ctx.createLinearGradient(0, 0, 0, h)
-  g.addColorStop(0, '#1f56ad') // 天顶：蔚蓝
-  g.addColorStop(0.32, '#3f86cf') // 高天：明蓝
-  g.addColorStop(0.62, '#86bae4') // 中天：浅蓝
-  g.addColorStop(0.85, '#c6e0f2') // 低空：蓝白
-  g.addColorStop(1, '#eef6fc') // 地平线：近白
+  g.addColorStop(0, sky[0]) // 天顶：蔚蓝
+  g.addColorStop(0.32, sky[1]) // 高天：明蓝
+  g.addColorStop(0.62, sky[2]) // 中天：浅蓝
+  g.addColorStop(0.85, sky[3]) // 低空：蓝白
+  g.addColorStop(1, sky[4]) // 地平线：近白
   ctx.fillStyle = g
   ctx.fillRect(0, 0, w, h)
   // 近地平线加一层淡淡晨光暖白（云朵下缘光感）
@@ -113,6 +121,8 @@ function createSkyTexture(): THREE.CanvasTexture {
 }
 
 // ============ 地形生成（古籍山场逻辑，实现在 ./terrain.ts） ============
+// 顶层激活茶园预设（terrainGeo 生成前必须完成，茶行/种茶/装饰都依赖地形带）
+setTerrainPreset(gardenPreset)
 const terrainGeo = createTerrainGeometry()
 const terrainMeshRef = ref<THREE.Mesh | null>(null)
 
@@ -479,8 +489,8 @@ onMounted(() => {
       console.warn('[TeaGarden] 地形贴图加载失败，回退程序化着色:', error)
     })
 
-  // 四期：装饰植被（石头 + 草 + 野花）挂到场景
-  createDecorations(scene)
+  // 四期：装饰植被（石头 + 草 + 野花）挂到场景（密度随茶园预设）
+  createDecorations(scene, gardenPreset)
 
   // 六期：真实叶片叶簇层（初始挂载 + 后续 plants 变化时重建）
   rebuildLeafClusters(scene)
@@ -498,7 +508,7 @@ onMounted(() => {
   animalsLayer = createAnimals(scene)
   sceneryLayer = createScenery(scene)
   // 古籍茶园：南坡成垄茶行 + 上缘遮阴树（《茶经》阳崖阴林 /《茶解》丛生成行）
-  teaFieldLayer = createTeaField(scene)
+  teaFieldLayer = createTeaField(scene, gardenPreset)
   // 天气系统（晴天/雨天：雨丝 + 地面湿润 + 光照/雾联动）
   const sun = sunLightRef.value
   const amb = ambientLightRef.value
@@ -509,7 +519,7 @@ onMounted(() => {
       fog: (scene.fog as THREE.FogExp2 | null) ?? null,
       renderer,
       wetnessUniform,
-    })
+    }, gardenPreset)
   }
   // 环境音效（WebAudio 合成，默认静音，需用户手势后开启）
   audioLayer = createAmbientAudio()
@@ -564,14 +574,14 @@ onMounted(() => {
   />
 
   <!-- 雾效：晴天淡蓝白雾（远处山朦胧），雨天由天气状态机调浓 -->
-  <FogExp2 :args="['#b9cfdf', 0.006]" attach="fog" />
+  <FogExp2 :args="[gardenPreset.fogColor, gardenPreset.fogDensity]" attach="fog" />
 
   <!-- 太阳光：平行光，带软阴影 -->
   <DirectionalLight
     ref="sunLightRef"
     :position="[40, 60, 30]"
-    :intensity="2.5"
-    :color="'#fff5e0'"
+    :intensity="gardenPreset.sunIntensity"
+    :color="gardenPreset.sunColor"
     :cast-shadow="true"
     :shadow-mapSize-width="2048"
     :shadow-mapSize-height="2048"
@@ -675,6 +685,14 @@ onMounted(() => {
     :target="[0, 3, 0]"
   />
 </template>
+
+
+
+
+
+
+
+
 
 
 

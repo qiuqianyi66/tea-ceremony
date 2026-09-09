@@ -1,4 +1,4 @@
-/**
+﻿/**
  * garden-weather.ts — 茶园天气系统（晴天/雨天）
  * 1. 雨丝：InstancedMesh 细长平面，onBeforeCompile 顶点下落（重力+风偏，CPU 零更新）
  * 2. 地面湿润：地形 shader 注入 uWetness（变暗 + 反光增强），雨天渐变
@@ -7,6 +7,8 @@
  * 依据：threejs-precipitation-surfaces 技能 —— 降水必须与地面响应耦合（雨丝 + 湿润是同一事件的两个面）
  */
 import * as THREE from 'three'
+import type { GardenPreset } from './garden-presets'
+import { GARDEN_PRESETS, DEFAULT_PRESET } from './garden-presets'
 
 /** 固定种子随机 */
 function seededRandom(seed: number): number {
@@ -34,23 +36,28 @@ interface WeatherParams {
   wet: number
 }
 
-const PARAMS: Record<WeatherMode, WeatherParams> = {
-  sunny: { sunI: 2.5, sunColor: '#fff5e0', ambI: 0.2, fogD: 0.006, fogColor: '#b9cfdf', exposure: 1.12, wet: 0 },
-  rain: { sunI: 0.6, sunColor: '#a9bccf', ambI: 0.4, fogD: 0.02, fogColor: '#8fa6ba', exposure: 0.92, wet: 1 },
+function paramsFor(preset: GardenPreset): Record<WeatherMode, WeatherParams> {
+  return {
+    sunny: { sunI: preset.sunIntensity, sunColor: preset.sunColor, ambI: 0.2, fogD: preset.fogDensity, fogColor: preset.fogColor, exposure: 1.12, wet: 0 },
+    rain: { sunI: 0.6, sunColor: '#a9bccf', ambI: 0.4, fogD: 0.02, fogColor: preset.rainFogColor, exposure: 0.92, wet: 1 },
+  }
 }
 
-const RAIN_COUNT = 1000
+const RAIN_COUNT = 720
 const RAIN_HEIGHT = 40
 const RAIN_TOP = 34
 
 const sunColorTmp = new THREE.Color()
 const fogColorTmp = new THREE.Color()
 
-/** 创建雨丝 InstancedMesh（顶点 shader 下落，CPU 零更新；Additive 加法混合，走不透明通道可渲染） */
-function createRain(): THREE.InstancedMesh {
-  const geo = new THREE.PlaneGeometry(0.3, 2.8)
+/**
+ * 创建雨丝 InstancedMesh（顶点 shader 下落，CPU 零更新；Additive 加法混合，走不透明通道可渲染）
+ * 细节：细条（0.16×2.2）+ 蓝灰低亮（加法叠加不刺眼），近观不发白
+ */
+function createRain(rainColor: string): THREE.InstancedMesh {
+  const geo = new THREE.PlaneGeometry(0.16, 2.2)
   const mat = new THREE.MeshBasicMaterial({
-    color: 0xf2f8ff,
+    color: rainColor,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
     side: THREE.DoubleSide,
@@ -65,9 +72,9 @@ function createRain(): THREE.InstancedMesh {
   for (let i = 0; i < RAIN_COUNT; i++) {
     seeds[i] = seededRandom(i * 1.7 + 101)
     dummy.position.set(
-      (seededRandom(i * 3.3 + 102) - 0.5) * 180,
+      (seededRandom(i * 3.3 + 102) - 0.5) * 72,
       seededRandom(i * 5.1 + 103) * RAIN_HEIGHT,
-      (seededRandom(i * 7.7 + 104) - 0.5) * 180,
+      (seededRandom(i * 7.7 + 104) - 0.5) * 144,
     )
     dummy.rotation.set(0, 0, 0)
     dummy.scale.setScalar(1)
@@ -101,7 +108,7 @@ function createRain(): THREE.InstancedMesh {
         float fall = mod(uTime * spd + aSeed * 40.0, ${RAIN_HEIGHT.toFixed(1)}) - ${(RAIN_TOP - RAIN_HEIGHT).toFixed(1)};
         transformed.y += fall;
         transformed.x += uWindX * fall * 0.18;
-        vAlpha = 0.55 + aSeed * 0.45;`
+        vAlpha = 0.3 + aSeed * 0.35;`
       )
     shader.fragmentShader = shader.fragmentShader
       .replace(
@@ -127,10 +134,12 @@ export interface GardenWeather {
   dispose: () => void
 }
 
-/** 创建天气系统 */
-export function createWeather(targets: WeatherTargets): GardenWeather {
+/** 创建天气系统（雾色/太阳/雨色按茶园预设） */
+export function createWeather(targets: WeatherTargets, preset?: GardenPreset): GardenWeather {
+  const p = preset ?? DEFAULT_PRESET
+  const PARAMS = paramsFor(p)
   const { sunLight, ambientLight, fog, renderer, wetnessUniform } = targets
-  const rain = createRain()
+  const rain = createRain(p.rainColor)
   // 挂到太阳光所在场景（主场景）
   const parentScene = sunLight.parent as THREE.Scene | THREE.Object3D | null
   const scene = (parentScene?.type === 'Scene' ? parentScene : undefined) as THREE.Scene | undefined
@@ -211,3 +220,5 @@ export function createWeather(targets: WeatherTargets): GardenWeather {
     },
   }
 }
+
+

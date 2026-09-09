@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 /**
  * 茶园页面
  * /garden：地区选择
@@ -161,7 +161,7 @@ onMounted(() => {
   <!-- 地区茶园视图：3D真实感茶山 -->
   <div v-else-if="currentRegion" class="region-garden-3d">
     <!-- 3D场景全屏 -->
-    <TeaGardenScene3D ref="scene3dRef" :plants="plants" @select-plant="onSelectPlant3D" />
+    <TeaGardenScene3D ref="scene3dRef" :plants="plants" :region-id="regionId" @select-plant="onSelectPlant3D" />
 
     <!-- 顶部栏叠加（毛玻璃） -->
     <div class="garden-topbar-3d">
@@ -640,3 +640,4 @@ onMounted(() => {
   .plant-card { width: 140px; }
 }
 </style>
+

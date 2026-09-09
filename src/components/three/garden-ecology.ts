@@ -1,4 +1,4 @@
-/**
+﻿/**
  * garden-ecology.ts — 装饰生态分带（《茶经》土壤三品 /《东溪试茶录》红壤）
  *
  * 烂石带（h>10）：风化岩屑露头大石 —— "上者生烂石"
@@ -8,10 +8,8 @@
 import * as THREE from 'three'
 import { getTerrainHeight } from './terrain'
 import { seededRandom } from './tea-plant'
-
-const ROCK_COUNT = 45
-const GRASS_COUNT = 420
-const FLOWER_COUNT = 90
+import type { GardenPreset } from './garden-presets'
+import { GARDEN_PRESETS, DEFAULT_PRESET } from './garden-presets'
 
 /** 装饰物定位：随机采样地形高度，命中目标土壤带即返回 */
 function getDecorPosition(seedIdx: number, minH: number, maxH: number): [number, number, number] {
@@ -41,15 +39,16 @@ function createRockGeometry(): THREE.DodecahedronGeometry {
   return geo
 }
 
-/** 创建装饰植被并挂到场景（石头独立 Mesh，草/花 InstancedMesh，共 3 个 draw call） */
-export function createDecorations(scene: THREE.Scene): void {
+/** 创建装饰植被并挂到场景（密度/分带随茶园预设） */
+export function createDecorations(scene: THREE.Scene, preset?: GardenPreset): void {
+  const p = preset ?? DEFAULT_PRESET
   const decorGroup = new THREE.Group()
   decorGroup.name = 'decorations'
 
   // --- 石头（古籍分带）：高坡烂石带露头大石 + 谷底溪石；砾壤带（茶园）不留石 ---
   const rockGeo = createRockGeometry()
   const rockMat = new THREE.MeshStandardMaterial({ color: 0x8a8580, roughness: 0.95, flatShading: true })
-  for (let i = 0; i < ROCK_COUNT; i++) {
+  for (let i = 0; i < p.rockCount; i++) {
     const upSlope = i % 2 === 0
     const [x, h, z] = upSlope
       ? getDecorPosition(i, 10.2, 14.8) // 烂石带：风化岩屑露头
@@ -70,10 +69,10 @@ export function createDecorations(scene: THREE.Scene): void {
   const grassGeo = new THREE.ConeGeometry(0.06, 0.5, 4)
   grassGeo.translate(0, 0.25, 0)
   const grassMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, flatShading: true })
-  const grass = new THREE.InstancedMesh(grassGeo, grassMat, GRASS_COUNT)
+  const grass = new THREE.InstancedMesh(grassGeo, grassMat, p.grassCount)
   const dummy = new THREE.Object3D()
   const tmpColor = new THREE.Color()
-  for (let i = 0; i < GRASS_COUNT; i++) {
+  for (let i = 0; i < p.grassCount; i++) {
     const [x, h, z] = getDecorPosition(i + 100, 4.2, 9.6)
     dummy.position.set(x, h, z)
     const s = 0.6 + seededRandom(i * 4.7 + 3) * 1.3
@@ -90,9 +89,9 @@ export function createDecorations(scene: THREE.Scene): void {
   // --- 野花（谷底黄土带杂草地；不种茶的湿地长野花，古法撂荒地相） ---
   const flowerGeo = new THREE.IcosahedronGeometry(0.1, 0)
   const flowerMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.65, flatShading: true })
-  const flowers = new THREE.InstancedMesh(flowerGeo, flowerMat, FLOWER_COUNT)
+  const flowers = new THREE.InstancedMesh(flowerGeo, flowerMat, p.flowerCount)
   const flowerPalette = [0xf4e28d, 0xf4b8d0, 0xe8e3f2, 0xf2b88d, 0xd9e8b8]
-  for (let i = 0; i < FLOWER_COUNT; i++) {
+  for (let i = 0; i < p.flowerCount; i++) {
     const [x, h, z] = getDecorPosition(i + 500, 0.6, 3.8)
     dummy.position.set(x, h + 0.05, z)
     const s = 0.8 + seededRandom(i * 5.9 + 7) * 1.4
@@ -108,3 +107,4 @@ export function createDecorations(scene: THREE.Scene): void {
 
   scene.add(decorGroup)
 }
+

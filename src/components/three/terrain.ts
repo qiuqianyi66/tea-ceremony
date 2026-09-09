@@ -1,4 +1,4 @@
-/**
+﻿/**
  * terrain.ts — 古籍茶园地形生成器（《茶经》山场逻辑）
  *
  * 依据：
@@ -10,6 +10,7 @@
  * 结构：东西走向山脊骨架（z 方向低频）→ 南坡（-z 侧）宽缓为茶园、北坡（+z 侧）陡峭为阴林
  */
 import * as THREE from 'three'
+import { GARDEN_PRESETS, DEFAULT_PRESET, type GardenPreset } from './garden-presets'
 
 export const TERRAIN_SIZE = 200
 export const TERRAIN_SEGMENTS = 200
@@ -20,6 +21,14 @@ export const SOIL_GRAVEL = 10 // 中坡砾壤带（红壤，茶园主体）
 export const SOIL_ROCK = 14 // 高坡烂石带（岩石露头）
 
 export type SoilBand = 'loess' | 'gravel' | 'rock'
+
+/** 当前激活的茶园预设（默认杭州龙井；由场景组件挂载时 setTerrainPreset 切换） */
+let activePreset: GardenPreset = DEFAULT_PRESET
+
+/** 切换地形/土壤预设（四个茶园差异化） */
+export function setTerrainPreset(p: GardenPreset): void {
+  activePreset = p
+}
 
 function hash(x: number, y: number): number {
   const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453
@@ -49,31 +58,31 @@ export function fbm(x: number, y: number, octaves = 5): number {
 
 /** 山脊线 z 位置（东西走向，随 x 蜿蜒）—— 南坡茶园在 -z 侧 */
 function ridgeZAt(x: number): number {
-  return -12 + (smoothNoise(x * 0.02, 4.3) - 0.5) * 14
+  return activePreset.ridgeZ + (smoothNoise(x * 0.02, 4.3) - 0.5) * activePreset.ridgeWander
 }
 
 /**
  * 采样地形高度（与 createTerrainGeometry 完全一致，供茶树/茶行定位）
- * 1. 东西走向山脊骨架（南坡宽缓 / 北坡陡峭）
+ * 1. 东西走向山脊骨架（南坡宽缓 / 北坡陡峭），参数随茶园预设变化
  * 2. 土壤三带内做"田埂梯田 + 微内倾 + 纵向排水浅沟"
  */
 export function getTerrainHeight(x: number, z: number): number {
+  const { ridgeHeight, sigmaSouth, sigmaNorth, centralRadius, centralBump, edgeFadeAt, edgeFadeRate } = activePreset
   // ---- 山脊-沟谷骨架 ----
   const ridgeZ = ridgeZAt(x)
   const dz = z - ridgeZ
-  // 不对称高斯：南坡（dz<0）σ=18 宽缓，北坡（dz>0）σ=13 陡峭（阴林坡）
-  // σ=18 → 茶园砾壤带（4-10m）落在 z≈-27~-40（相机中景视野，r=57-70）
-  const sigma = dz < 0 ? 18 : 13
-  const ridgeH = 15 * Math.exp(-(dz * dz) / (2 * sigma * sigma))
+  // 不对称高斯：南坡（dz<0）宽缓，北坡（dz>0）陡峭（阴林坡）
+  const sigma = dz < 0 ? sigmaSouth : sigmaNorth
+  const ridgeH = ridgeHeight * Math.exp(-(dz * dz) / (2 * sigma * sigma))
   let h = ridgeH
   // 细节起伏
   h += fbm(x * 0.02, z * 0.02, 4) * 3.2
   h += fbm(x * 0.06, z * 0.06, 3) * 1.1
   // 中央茶山微隆起（相机正前方视觉焦点）
   const r = Math.sqrt(x * x + z * z)
-  h += Math.max(0, 1 - r / 60) * 4
-  // 边缘渐消：>90 单位外压回（保持场景封闭）
-  if (r > 90) h -= (r - 90) * 0.12
+  h += Math.max(0, 1 - r / centralRadius) * centralBump
+  // 边缘渐消（保持场景封闭，起止随预设）
+  if (r > edgeFadeAt) h -= (r - edgeFadeAt) * edgeFadeRate
 
   // ---- 田埂梯田（仅砾壤带 4-10，茶园主体） ----
   if (h > SOIL_LOESS && h < SOIL_GRAVEL) {
@@ -110,11 +119,11 @@ export function isDrainGroove(x: number, z: number): boolean {
   return groove < 0.9
 }
 
-/** 土壤带 → 顶点色 tint（×贴图）：黄土暖 / 红壤偏红 / 烂石灰 */
-const SOIL_TINT: Record<SoilBand, [number, number, number]> = {
-  loess: [1.0, 0.95, 0.8],
-  gravel: [1.14, 0.9, 0.72], // 红壤（赤坟）
-  rock: [1.0, 0.97, 0.94],
+/** 土壤带 → 顶点色 tint（×贴图）：按茶园预设（龙井红壤 / 武夷丹霞 / 勐海黑土 / 福鼎黄棕） */
+function soilTint(band: SoilBand): [number, number, number] {
+  return band === 'loess' ? activePreset.tintLoess
+    : band === 'gravel' ? activePreset.tintGravel
+    : activePreset.tintRock
 }
 
 /** 生成带明暗 + 土壤色带的地形几何 */
@@ -141,8 +150,8 @@ export function createTerrainGeometry(): THREE.PlaneGeometry {
     if (h > SOIL_GRAVEL) shade *= 0.92 // 高处岩石略暗
     shade *= 1.0 + (smoothNoise(x * 0.25, z * 0.25) - 0.5) * 0.22
 
-    // 土壤色带 tint
-    const tint = SOIL_TINT[getSoilBand(h)]
+    // 土壤色带 tint（按预设）
+    const tint = soilTint(getSoilBand(h))
     colors[i * 3] = shade * tint[0]
     colors[i * 3 + 1] = shade * tint[1]
     colors[i * 3 + 2] = shade * tint[2]
@@ -152,3 +161,4 @@ export function createTerrainGeometry(): THREE.PlaneGeometry {
   geo.computeVertexNormals()
   return geo
 }
+

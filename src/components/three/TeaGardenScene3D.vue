@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 /**
  * TeaGardenScene3D — 3D茶园场景容器（TresCanvas）
  * 真实感3D茶山：HDRI环境 + 程序化梯田地形 + 太阳光阴影 + 雾效 + 程序化茶树
@@ -11,6 +11,8 @@ import type { WeatherMode } from './garden-weather'
 
 defineProps<{
   plants: PlantedTea[]
+  /** 茶园地区 id（四茶园差异化场景） */
+  regionId?: string
 }>()
 
 const emit = defineEmits<{
@@ -51,7 +53,7 @@ defineExpose({ playWater, setWeather, setAudioEnabled })
       :shadows="true"
       :window-size="true"
     >
-      <TeaGardenSceneInner ref="innerRef" :plants="plants" @select-plant="onSelectPlant" />
+      <TeaGardenSceneInner ref="innerRef" :plants="plants" :region-id="regionId" @select-plant="onSelectPlant" />
     </TresCanvas>
   </div>
 </template>
@@ -69,3 +71,5 @@ defineExpose({ playWater, setWeather, setAudioEnabled })
   height: 100% !important;
 }
 </style>
+
+

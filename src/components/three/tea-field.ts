@@ -1,4 +1,4 @@
-/**
+﻿/**
  * tea-field.ts — 茶行生成器（古籍茶园系统）
  *
  * 依据：
@@ -11,12 +11,8 @@
  */
 import * as THREE from 'three'
 import { getTerrainHeight, SOIL_LOESS, SOIL_GRAVEL, isDrainGroove } from './terrain'
-
-const ROW_SPACING = 1.5 // 行距（m）
-const BUSH_SPACING = 1.2 // 丛距（m）
-const ROW_Z_START = -26.5 // 茶园带起点（z 负 = 南坡相机中景）
-const ROW_Z_END = -41.5
-const ROW_X_RANGE = 44 // 垄横向范围 ±44
+import type { GardenPreset } from './garden-presets'
+import { GARDEN_PRESETS, DEFAULT_PRESET } from './garden-presets'
 
 function seededRandom(seed: number): number {
   const s = Math.sin(seed * 127.1 + 311.7) * 43758.5453
@@ -28,8 +24,9 @@ export interface TeaField {
   dispose: () => void
 }
 
-/** 生成南坡成垄茶园 + 上缘遮阴树 */
-export function createTeaField(scene: THREE.Scene): TeaField {
+/** 生成南坡成垄茶园 + 上缘遮阴树（行距/密度/蓬面/遮阴树按茶园预设） */
+export function createTeaField(scene: THREE.Scene, preset?: GardenPreset): TeaField {
+  const p = preset ?? DEFAULT_PRESET
   const root = new THREE.Group()
   root.name = 'tea-field'
   scene.add(root)
@@ -39,8 +36,8 @@ export function createTeaField(scene: THREE.Scene): TeaField {
   const bushColors: number[] = []
   const trunkPos: number[] = [] // 树干实例（每株 1）
   let rowIndex = 0
-  for (let z = ROW_Z_START; z > ROW_Z_END; z -= ROW_SPACING, rowIndex++) {
-    for (let x = -ROW_X_RANGE; x <= ROW_X_RANGE; x += BUSH_SPACING) {
+  for (let z = p.rowZStart; z > p.rowZEnd; z -= p.rowSpacing, rowIndex++) {
+    for (let x = -p.rowXRange; x <= p.rowXRange; x += p.bushSpacing) {
       const h = getTerrainHeight(x, z)
       if (h < SOIL_LOESS + 0.3 || h > SOIL_GRAVEL - 0.7) continue // 只种砾壤带
       if (isDrainGroove(x, z)) continue // 排水沟不种（聚水劣地）
@@ -78,12 +75,17 @@ export function createTeaField(scene: THREE.Scene): TeaField {
     const col = new THREE.Color()
     for (let i = 0; i < bushCount; i++) {
       dummy.position.set(bushPos[i * 3]!, bushPos[i * 3 + 1]!, bushPos[i * 3 + 2]!)
-      dummy.scale.setScalar(0.85 + seededRandom(i * 1.3 + 77) * 0.35)
+      dummy.scale.setScalar(p.bushScaleMin + seededRandom(i * 1.3 + 77) * (p.bushScaleMax - p.bushScaleMin))
       dummy.updateMatrix()
       bushMesh.setMatrixAt(i, dummy.matrix)
-      // 成熟茶蓬绿：base #5d8c3a，按 tone 明暗
+      // 茶蓬绿：按预设 base（岩茶深/白茶亮/古树大叶深），按 tone 明暗
       const tone = bushColors[i] ?? 0.95
-      col.setRGB(0.36 * (1 + (tone - 0.95) * 0.4), 0.55 * (1 + (tone - 0.95) * 0.4), 0.23 * (1 + (tone - 0.95) * 0.4))
+      const dt = (tone - 0.95) * 0.4
+      col.setRGB(
+        p.bushBase[0] * (1 + dt),
+        p.bushBase[1] * (1 + dt),
+        p.bushBase[2] * (1 + dt),
+      )
       bushMesh.setColorAt(i, col)
     }
     bushMesh.castShadow = true
@@ -107,16 +109,16 @@ export function createTeaField(scene: THREE.Scene): TeaField {
     root.add(trunkMesh)
   }
 
-  // ---- 遮阴树：茶园上缘（山脊下方，阳崖阴林）散植阔叶大树 ----
+  // ---- 遮阴树：茶园上缘（山脊下方，阳崖阴林）散植阔叶大树，数量/尺度按预设 ----
   const shadeMat = new THREE.MeshStandardMaterial({ color: 0x3e6b33, roughness: 0.9, flatShading: true })
   const shadeBark = new THREE.MeshStandardMaterial({ color: 0x5d4a34, roughness: 0.95 })
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < p.shadeTreeCount; i++) {
     const tx = -38 + seededRandom(i * 7.7 + 101) * 76
-    const tz = -14 + seededRandom(i * 9.3 + 102) * 10 // 山脊下缘（z -14~-24）
+    const tz = -14 + seededRandom(i * 9.3 + 102) * 10 // 山脊下缘
     const th = getTerrainHeight(tx, tz)
     if (th < SOIL_GRAVEL - 1.5) continue // 树要种在坡上
     const tree = new THREE.Group()
-    const s = 1.6 + seededRandom(i * 3.3 + 103) * 1.2
+    const s = (1.6 + seededRandom(i * 3.3 + 103) * 1.2) * p.shadeScale
     const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.22 * s, 0.32 * s, 3.2 * s, 7), shadeBark)
     trunk.position.y = 1.6 * s
     trunk.castShadow = true
@@ -145,3 +147,4 @@ export function createTeaField(scene: THREE.Scene): TeaField {
     },
   }
 }
+
