@@ -25,11 +25,11 @@ const personalTip = computed(() => buildPersonalTip(props.history))
 
 <template>
   <section class="mb-6">
-    <h3 class="text-base font-bold text-[var(--color-wood)] mb-1">👤 我的口味画像</h3>
+    <h3 class="text-base font-bold text-[var(--color-wood)] mb-1"><IconUser class="inline-block -mt-1 w-4 h-4" /> 我的口味画像</h3>
     <p class="text-xs text-[var(--color-wood-light)] mb-3">从品鉴记录中提炼的个人风味偏好</p>
 
     <div v-if="history.length > 0" class="glass-panel rounded-2xl p-4 mb-3">
-      <p class="text-sm text-[var(--color-wood)]">💡 {{ personalTip }}</p>
+      <p class="text-sm text-[var(--color-wood)]"><IconLightbulb class="inline-block -mt-0.5 w-4 h-4" /> {{ personalTip }}</p>
     </div>
 
     <div class="grid gap-3 sm:grid-cols-2">

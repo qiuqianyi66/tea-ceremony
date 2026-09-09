@@ -98,7 +98,7 @@ const types = getAllTypes()
         <div v-if="selectedTea?.id === tea.id" class="mt-3 pt-3 border-t border-[var(--color-paper)]">
           <div v-for="master in teaMasters(tea)" :key="master.id"
             class="flex items-center gap-2 mb-1">
-            <span>{{ master.avatar }}</span>
+            <component :is="`Icon${master.avatar}`" class="w-6 h-6 text-[var(--color-tea-gold)] shrink-0" />
             <div>
               <p class="text-xs font-bold text-[var(--color-wood)]">{{ master.name }}（{{ master.dynasty }}）· {{ master.title }}</p>
               <p class="text-[10px] text-[var(--color-wood-light)] italic">"{{ master.quote.slice(0, 20) }}…"</p>

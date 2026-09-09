@@ -75,7 +75,7 @@ function selectTea(tea: Tea) {
 <template>
   <div class="min-h-screen p-4 sm:p-8">
     <div class="flex items-center justify-between mb-6">
-      <h2 class="text-3xl font-bold text-[var(--color-wood)]">🔗 茶文化图谱</h2>
+      <h2 class="text-3xl font-bold text-[var(--color-wood)]"><IconShare2 class="inline-block -mt-1 w-7 h-7" /> 茶文化图谱</h2>
       <button @click="router.push('/')" class="text-[var(--color-wood-light)] hover:text-[var(--color-wood)]">返回</button>
     </div>
 
@@ -130,7 +130,7 @@ function selectTea(tea: Tea) {
 
     <!-- 关联详情 -->
     <div v-if="selectedTea" class="glass-panel rounded-xl p-4">
-      <h3 class="text-base font-bold text-[var(--color-wood)] mb-3">📖 文化关联</h3>
+      <h3 class="text-base font-bold text-[var(--color-wood)] mb-3"><IconBookOpen class="inline-block -mt-1 w-4 h-4" /> 文化关联</h3>
       <div class="space-y-2 text-sm">
         <div class="flex justify-between py-1 border-b border-[var(--color-paper)]">
           <span class="text-[var(--color-wood-light)]">茶类</span>

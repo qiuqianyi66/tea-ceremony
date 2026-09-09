@@ -59,7 +59,7 @@ async function retrySync() {
       <div class="glass-panel rounded-xl p-4 mb-4">
         <div class="flex items-center justify-between mb-2">
           <div class="flex items-center gap-2">
-            <span class="text-2xl">{{ store.currentLevel.icon }}</span>
+            <component :is="`Icon${store.currentLevel.icon}`" class="w-8 h-8 text-[var(--color-tea-gold)]" />
             <div>
               <p class="text-sm font-bold text-[var(--color-wood)]">{{ store.currentLevel.name }}</p>
               <p class="text-xs text-[var(--color-wood-light)]">经验 {{ store.userXp }}</p>
@@ -92,7 +92,7 @@ async function retrySync() {
             ? 'bg-[var(--color-paper)] shadow-sm'
             : 'bg-gray-100 opacity-50'"
         >
-          <p class="text-2xl mb-1" :class="!ach.unlocked ? 'grayscale' : ''">{{ ach.icon }}</p>
+          <component :is="`Icon${ach.icon}`" class="w-8 h-8 mb-1" :class="!ach.unlocked ? 'grayscale opacity-60' : 'text-[var(--color-tea-gold)]'" />
           <p class="text-xs font-bold text-[var(--color-wood)]">{{ ach.name }}</p>
           <p class="text-[10px] text-[var(--color-wood-light)]">{{ ach.description }}</p>
         </div>

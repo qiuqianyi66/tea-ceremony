@@ -6,7 +6,7 @@ export interface TeaRoomTheme {
   id: string
   name: string
   description: string
-  icon: string
+  icon: string // lucide 图标组件名（全局注册，禁止 emoji）
   // 颜色覆盖
   colors: {
     wood: string
@@ -25,7 +25,7 @@ export const TEA_ROOM_THEMES: TeaRoomTheme[] = [
     id: 'song',
     name: '宋式茶室',
     description: '极简 · 留白 · 古琴',
-    icon: '🏛️',
+    icon: 'Landmark',
     colors: {
       wood: '#4A4A4A',
       woodLight: '#8C8C8C',
@@ -40,7 +40,7 @@ export const TEA_ROOM_THEMES: TeaRoomTheme[] = [
     id: 'ming',
     name: '明式茶室',
     description: '紫砂 · 木家具 · 文人气',
-    icon: '🪵',
+    icon: 'BookOpen',
     colors: {
       wood: '#5D4E37',
       woodLight: '#8B7355',
@@ -55,7 +55,7 @@ export const TEA_ROOM_THEMES: TeaRoomTheme[] = [
     id: 'mountain',
     name: '山林茶舍',
     description: '雨声 · 鸟鸣 · 松风',
-    icon: '🌲',
+    icon: 'TreePine',
     colors: {
       wood: '#4A6B4A',
       woodLight: '#7A9E7A',

@@ -75,7 +75,7 @@ function shareTea() {
     <main class="mx-auto max-w-2xl px-4">
       <!-- 来历故事（核心深度） -->
       <section class="mt-6">
-        <h2 class="mb-3 text-lg font-bold text-[var(--color-wood)]">📜 来历故事</h2>
+        <h2 class="mb-3 text-lg font-bold text-[var(--color-wood)]"><IconScrollText class="inline-block -mt-1 w-5 h-5" /> 来历故事</h2>
         <div class="glass-panel rounded-2xl p-5">
           <p class="text-sm leading-8 text-[var(--color-wood)]">{{ tea.story }}</p>
         </div>
@@ -83,7 +83,7 @@ function shareTea() {
 
       <!-- 风味与汤色 -->
       <section class="mt-6">
-        <h2 class="mb-3 text-lg font-bold text-[var(--color-wood)]">🍃 风味解析</h2>
+        <h2 class="mb-3 text-lg font-bold text-[var(--color-wood)]"><IconLeaf class="inline-block -mt-1 w-5 h-5" /> 风味解析</h2>
         <div class="glass-panel rounded-2xl p-5">
           <p class="text-sm leading-7 text-[var(--color-wood)]">{{ tea.description }}</p>
           <div class="mt-4 flex items-center gap-4">
@@ -103,7 +103,7 @@ function shareTea() {
 
       <!-- 冲泡详解 -->
       <section class="mt-6">
-        <h2 class="mb-3 text-lg font-bold text-[var(--color-wood)]">🫖 冲泡详解</h2>
+        <h2 class="mb-3 text-lg font-bold text-[var(--color-wood)]"><IconCupSoda class="inline-block -mt-1 w-5 h-5" /> 冲泡详解</h2>
         <div class="glass-panel rounded-2xl p-5">
           <div class="grid grid-cols-3 gap-3 text-center">
             <div>
@@ -125,7 +125,7 @@ function shareTea() {
 
       <!-- 相似茶推荐 -->
       <section v-if="similarTeas.length > 0" class="mt-6">
-        <h2 class="mb-3 text-lg font-bold text-[var(--color-wood)]">🔗 同类好茶</h2>
+        <h2 class="mb-3 text-lg font-bold text-[var(--color-wood)]"><IconShare2 class="inline-block -mt-1 w-5 h-5" /> 同类好茶</h2>
         <div class="grid grid-cols-3 gap-3">
           <button v-for="t in similarTeas" :key="t.id"
             @click="router.push(`/tea/${t.id}`)"
@@ -141,7 +141,7 @@ function shareTea() {
       <!-- 底部操作 -->
       <button @click="goSynesthesia"
         class="mt-8 w-full rounded-xl border border-[var(--color-tea-gold)]/40 bg-gradient-to-r from-[var(--color-tea-gold)]/10 to-transparent py-3.5 text-sm font-medium text-[var(--color-wood)] transition-all hover:from-[var(--color-tea-gold)]/20">
-        🎵 听这款茶的味道 · 30秒通感体验
+        <IconMusic class="inline-block -mt-1 w-4 h-4" /> 听这款茶的味道 · 30秒通感体验
       </button>
       <div class="mt-3 flex gap-3">
         <button @click="startBrewing"

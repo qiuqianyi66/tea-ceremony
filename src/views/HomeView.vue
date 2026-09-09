@@ -84,12 +84,12 @@ interface NavItem {
 }
 // 内容入口置前：让"逛"成为第一选择
 const navItems: NavItem[] = [
-  { icon: '🗺️', label: '茶产区地图', desc: '遍览 19 省名茶', path: '/map' },
-  { icon: '🔗', label: '茶文化图谱', desc: '茶与人 · 茶与诗', path: '/graph' },
-  { icon: '🍵', label: '选茶入席', desc: '挑一款今日之茶', path: '/select' },
-  { icon: '🧘', label: '茶修成长', desc: '品茶进阶之路', path: '/profile' },
-  { icon: '📚', label: '我的茶柜', desc: '收藏与品鉴记录', path: '/collection' },
-  { icon: '🤖', label: 'AI 茶灵', desc: '问茶解惑', path: '/ai' },
+  { icon: 'Map', label: '茶产区地图', desc: '遍览 19 省名茶', path: '/map' },
+  { icon: 'Share2', label: '茶文化图谱', desc: '茶与人 · 茶与诗', path: '/graph' },
+  { icon: 'CupSoda', label: '选茶入席', desc: '挑一款今日之茶', path: '/select' },
+  { icon: 'Heart', label: '茶修成长', desc: '品茶进阶之路', path: '/profile' },
+  { icon: 'BookOpen', label: '我的茶柜', desc: '收藏与品鉴记录', path: '/collection' },
+  { icon: 'Bot', label: 'AI 茶灵', desc: '问茶解惑', path: '/ai' },
 ]
 
 function go(path: string) {
@@ -198,7 +198,7 @@ onUnmounted(() => {
         <p class="hero-quote">{{ teaQuote }}</p>
         <div class="hero-cta">
           <button class="enter-btn break-btn" @click.stop="startBreak">
-            <span>🍵 茶歇 5 分钟</span>
+            <span><IconCupSoda class="inline-block -mt-1" /> 茶歇 5 分钟</span>
             <span class="enter-arrow">→</span>
           </button>
           <button class="enter-link" @click.stop="enter">
@@ -214,12 +214,12 @@ onUnmounted(() => {
       <!-- 今日宜饮 -->
       <section class="flow-section">
         <div class="flow-head">
-          <h2 class="flow-title">🍵 今日宜饮</h2>
+          <h2 class="flow-title"><IconCupSoda class="inline-block -mt-1" /> 今日宜饮</h2>
           <button class="flow-more" @click="go('/select')">全部茶叶 →</button>
         </div>
         <p class="flow-desc">{{ term.description }}</p>
         <button v-if="!termChecked" class="checkin-btn" @click="doCheckIn">
-          <span>☀️ 打卡 · {{ term.name }}</span>
+          <span><IconSun class="inline-block -mt-1" /> 打卡 · {{ term.name }}</span>
           <span class="checkin-hint">每节气一次，集齐二十四节气</span>
         </button>
         <button v-else class="checkin-btn checked" disabled>
@@ -246,7 +246,7 @@ onUnmounted(() => {
       <!-- 茶产区地图横幅 -->
       <button class="map-banner" @click="go('/map')">
         <div class="map-text">
-          <h2 class="map-title">🗺️ 中国茶产区地图</h2>
+          <h2 class="map-title"><IconMap class="inline-block -mt-1" /> 中国茶产区地图</h2>
           <p class="map-desc">19 省名茶产地 · 一图遍览茶山风土</p>
         </div>
         <span class="map-arrow">→</span>
@@ -255,7 +255,7 @@ onUnmounted(() => {
       <!-- 今日茶诗 -->
       <section class="flow-section">
         <div class="flow-head">
-          <h2 class="flow-title">📜 今日茶诗</h2>
+          <h2 class="flow-title"><IconScrollText class="inline-block -mt-1" /> 今日茶诗</h2>
           <button class="flow-more" @click="nextPoem">换一首 ↻</button>
         </div>
         <div class="poem-card">
@@ -268,12 +268,12 @@ onUnmounted(() => {
       <!-- 茶人故事 -->
       <section class="flow-section">
         <div class="flow-head">
-          <h2 class="flow-title">👤 茶人故事</h2>
+          <h2 class="flow-title"><IconUser class="inline-block -mt-1" /> 茶人故事</h2>
           <button class="flow-more" @click="nextMaster">换一位 ↻</button>
         </div>
         <div class="master-card">
           <div class="master-top">
-            <span class="master-avatar">{{ todayMaster.avatar }}</span>
+            <component :is="`Icon${todayMaster.avatar}`" class="master-avatar text-[var(--color-tea-gold)]" />
             <div>
               <p class="master-name">{{ todayMaster.name }} · {{ todayMaster.title }}</p>
               <p class="master-dynasty">{{ todayMaster.dynasty }}代茶人</p>
@@ -287,17 +287,17 @@ onUnmounted(() => {
       <!-- 图谱 + 茶园 + AI 三列入口 -->
       <section class="entry-grid entry-grid-3">
         <button class="entry-card" @click="go('/graph')">
-          <span class="entry-icon">🔗</span>
+          <IconShare2 class="entry-icon" />
           <span class="entry-label">茶文化图谱</span>
           <span class="entry-desc">茶与人 · 茶与诗 · 茶与器</span>
         </button>
         <button class="entry-card" @click="go('/garden')">
-          <span class="entry-icon">🌱</span>
+          <IconSprout class="entry-icon" />
           <span class="entry-label">我的茶园</span>
           <span class="entry-desc">种茶养茶，14天长成</span>
         </button>
         <button class="entry-card" @click="go('/ai')">
-          <span class="entry-icon">🤖</span>
+          <IconBot class="entry-icon" />
           <span class="entry-label">AI 茶灵</span>
           <span class="entry-desc">问茶解惑，懂茶也懂你</span>
         </button>
@@ -327,7 +327,7 @@ onUnmounted(() => {
 
             <nav class="drawer-nav">
               <button v-for="item in navItems" :key="item.path" class="drawer-item" @click="go(item.path)">
-                <span class="drawer-icon">{{ item.icon }}</span>
+            <component :is="`Icon${item.icon}`" class="drawer-icon" />
                 <span class="drawer-text">
                   <span class="drawer-label">{{ item.label }}</span>
                   <span class="drawer-desc">{{ item.desc }}</span>

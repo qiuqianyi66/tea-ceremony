@@ -46,7 +46,7 @@ function useSuggestion(text: string) {
     <!-- 顶栏 -->
     <div class="flex items-center justify-between p-4 border-b border-[var(--color-paper)]">
       <div class="flex items-center gap-2">
-        <span class="text-xl">🤖</span>
+        <IconBot class="w-6 h-6 text-[var(--color-tea-gold)]" />
         <div>
           <h2 class="text-lg font-bold text-[var(--color-wood)]">茶灵 AI</h2>
           <p class="text-xs text-[var(--color-wood-light)]">你的私人茶道师傅</p>
@@ -59,7 +59,7 @@ function useSuggestion(text: string) {
     <div class="flex-1 overflow-y-auto p-4 space-y-4">
       <!-- 初始空状态：显示推荐问题 -->
       <div v-if="messages.length === 0" class="flex flex-col items-center justify-center h-full text-center py-12">
-        <p class="text-5xl mb-4">🍵</p>
+        <IconCupSoda class="w-12 h-12 mx-auto mb-4 text-[var(--color-tea-gold)]" />
         <p class="text-[var(--color-wood)] mb-6">有什么关于茶的问题想问？</p>
         <div class="flex flex-wrap gap-2 justify-center max-w-md">
           <button v-for="s in suggestions" :key="s" @click="useSuggestion(s)"
@@ -73,7 +73,7 @@ function useSuggestion(text: string) {
       <div v-for="(msg, i) in messages" :key="i"
         class="flex" :class="msg.role === 'user' ? 'justify-end' : 'justify-start'">
         <div v-if="msg.role === 'ai'" class="flex items-start gap-2 max-w-[80%]">
-          <span class="text-lg mt-1">🤖</span>
+          <IconBot class="w-5 h-5 mt-1 text-[var(--color-tea-gold)] shrink-0" />
           <div class="glass-panel rounded-2xl rounded-tl-sm p-3 text-sm text-[var(--color-wood)]">
             {{ msg.content }}
           </div>
@@ -87,7 +87,7 @@ function useSuggestion(text: string) {
 
       <!-- AI 输入中 -->
       <div v-if="loading" class="flex items-start gap-2 max-w-[80%]">
-        <span class="text-lg mt-1">🤖</span>
+        <IconBot class="w-5 h-5 mt-1 text-[var(--color-tea-gold)] shrink-0" />
         <div class="glass-panel rounded-2xl rounded-tl-sm p-3">
           <span class="text-sm text-[var(--color-wood-light)]">思考中...</span>
         </div>

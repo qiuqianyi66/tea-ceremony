@@ -10,6 +10,7 @@ export const teawares: TeaWare[] = [
   {
     id: 'gaiwan',
     name: '白瓷盖碗',
+    icon: 'CupSoda',
     type: TeaWareType.GAIWAN,
     capacity: 150,
     material: '白瓷（釉面）',
@@ -23,6 +24,7 @@ export const teawares: TeaWare[] = [
   {
     id: 'yixing',
     name: '紫砂壶',
+    icon: 'FlaskConical',
     type: TeaWareType.YIXING,
     capacity: 150,
     material: '宜兴紫砂（双气孔，无釉）',
@@ -36,6 +38,7 @@ export const teawares: TeaWare[] = [
   {
     id: 'glass',
     name: '玻璃杯',
+    icon: 'Beaker',
     type: TeaWareType.GLASS,
     capacity: 300,
     material: '高硼硅玻璃',
@@ -51,6 +54,7 @@ export const teawares: TeaWare[] = [
   {
     id: 'celadon',
     name: '青瓷盖碗',
+    icon: 'Gem',
     type: TeaWareType.GAIWAN,
     capacity: 130,
     material: '龙泉青瓷（釉面）',
@@ -64,6 +68,7 @@ export const teawares: TeaWare[] = [
   {
     id: 'duanning',
     name: '段泥石瓢壶',
+    icon: 'FlaskConical',
     type: TeaWareType.YIXING,
     capacity: 180,
     material: '宜兴段泥（紫砂）',
@@ -77,6 +82,7 @@ export const teawares: TeaWare[] = [
   {
     id: 'jianzhan',
     name: '建盏天目杯',
+    icon: 'Coffee',
     type: TeaWareType.GLASS,
     capacity: 80,
     material: '建阳铁胎（黑釉）',

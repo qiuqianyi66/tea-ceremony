@@ -9,6 +9,8 @@ import {
   Home,
   Menu,
   X,
+  DoorOpen,
+  Eye,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
@@ -86,10 +88,18 @@ import {
   Mic,
   MicOff,
 
+  // 书写/绘画
+  PenLine,
+  Sunrise,
+  Palette,
+  Paintbrush,
+
   // 位置/地图
   MapPin,
   Navigation,
   Compass,
+  Map,
+  Mountain,
 
   // 文档/笔记
   FileText,
@@ -97,6 +107,14 @@ import {
   Notebook,
   Clipboard,
   ClipboardList,
+  ScrollText,
+
+  // AI/角色
+  Bot,
+
+  // 状态/权限
+  Lock,
+  Lightbulb,
 
   // 系统/工具
   Wrench,
@@ -145,6 +163,8 @@ import {
   Apple,
   Wheat,
   Carrot,
+  Waves,
+  Landmark,
 } from 'lucide-vue-next'
 
 const icons = {
@@ -152,6 +172,8 @@ const icons = {
   Home,
   Menu,
   X,
+  DoorOpen,
+  Eye,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
@@ -229,10 +251,18 @@ const icons = {
   Mic,
   MicOff,
 
+  // 书写/绘画
+  PenLine,
+  Sunrise,
+  Palette,
+  Paintbrush,
+
   // 位置/地图
   MapPin,
   Navigation,
   Compass,
+  Map,
+  Mountain,
 
   // 文档/笔记
   FileText,
@@ -240,6 +270,14 @@ const icons = {
   Notebook,
   Clipboard,
   ClipboardList,
+  ScrollText,
+
+  // AI/角色
+  Bot,
+
+  // 状态/权限
+  Lock,
+  Lightbulb,
 
   // 系统/工具
   Wrench,
@@ -288,6 +326,8 @@ const icons = {
   Apple,
   Wheat,
   Carrot,
+  Waves,
+  Landmark,
 
   // 茶具语义化别名（映射到现有图标）
   Cup: CupSoda,

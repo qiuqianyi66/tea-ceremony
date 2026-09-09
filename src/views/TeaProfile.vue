@@ -26,13 +26,13 @@ const typeCoverage = computed(() => Math.round((tastedTypes.value.size / 6) * 10
 <template>
   <div class="min-h-screen p-4 sm:p-8">
     <div class="flex items-center justify-between mb-6">
-      <h2 class="text-3xl font-bold text-[var(--color-wood)]">🌿 茶修档案</h2>
+      <h2 class="text-3xl font-bold text-[var(--color-wood)]"><IconSprout class="inline-block -mt-1 w-7 h-7" /> 茶修档案</h2>
       <button @click="router.push('/')" class="text-[var(--color-wood-light)] hover:text-[var(--color-wood)]">返回</button>
     </div>
 
     <!-- 当前境界 -->
     <div class="glass-panel rounded-2xl p-6 mb-6 text-center">
-      <p class="text-5xl mb-2">{{ store.currentLevel.icon }}</p>
+      <component :is="`Icon${store.currentLevel.icon}`" class="w-12 h-12 mx-auto mb-2 text-[var(--color-tea-gold)]" />
       <p class="text-2xl font-bold text-[var(--color-wood)] mb-1">{{ store.currentLevel.name }}</p>
       <p class="text-sm text-[var(--color-wood-light)] mb-4">{{ store.currentLevel.desc }}</p>
       <p class="text-xs text-[var(--color-wood-light)]">茶修经验 {{ store.userXp }}</p>
@@ -58,7 +58,7 @@ const typeCoverage = computed(() => Math.round((tastedTypes.value.size / 6) * 10
           :class="store.userXp >= level.minXp
             ? 'opacity-100'
             : 'opacity-40 grayscale'">
-          <p class="text-2xl mb-1">{{ level.icon }}</p>
+          <component :is="`Icon${level.icon}`" class="w-7 h-7 mb-1 mx-auto" :class="store.userXp >= level.minXp ? 'text-[var(--color-tea-gold)]' : ''" />
           <p class="text-xs font-bold text-[var(--color-wood)]">{{ level.name }}</p>
           <p class="text-[10px] text-[var(--color-wood-light)]">{{ level.desc }}</p>
         </div>
@@ -90,7 +90,7 @@ const typeCoverage = computed(() => Math.round((tastedTypes.value.size / 6) * 10
 
     <!-- 近期茶记 -->
     <div>
-      <h3 class="text-base font-bold text-[var(--color-wood)] mb-3">📖 近期茶记</h3>
+      <h3 class="text-base font-bold text-[var(--color-wood)] mb-3"><IconBookOpen class="inline-block -mt-1 w-4 h-4" /> 近期茶记</h3>
       <div v-if="store.history.length === 0" class="text-center text-[var(--color-wood-light)] py-8">
         <p>还没有品鉴记录</p>
         <button @click="router.push('/select')" class="mt-2 text-[var(--color-tea-gold)] hover:underline">开始品茶</button>

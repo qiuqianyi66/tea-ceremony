@@ -549,7 +549,7 @@ const averageDimensions = computed(() => {
           <!-- AI 茶记 -->
           <div v-if="aiComment" class="mt-3 pt-3 border-t border-[var(--color-tea-gold)]/30">
             <div class="flex items-start gap-2">
-              <span class="text-sm">🤖</span>
+              <IconBot :size="18" class="mt-0.5 text-[var(--color-tea-gold)]" />
               <div>
                 <p class="text-xs text-[var(--color-tea-gold)] font-bold mb-1">茶灵 AI</p>
                 <p class="text-sm text-[var(--color-wood)] italic">{{ aiComment }}</p>
@@ -557,7 +557,7 @@ const averageDimensions = computed(() => {
             </div>
           </div>
           <div v-else-if="!aiComment && step === 'result'" class="mt-3 text-xs text-[var(--color-wood-light)]">
-            🤖 茶灵正在思考...
+            <IconBot :size="14" class="inline-block mr-1 -mt-0.5 text-[var(--color-tea-gold)]" /> 茶灵正在思考...
           </div>
         </div>
 
@@ -603,7 +603,7 @@ const averageDimensions = computed(() => {
         v-if="store.newAchievement"
         class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-2xl shadow-2xl p-8 text-center animate-[fadeIn_0.3s_ease-out]"
       >
-        <p class="text-5xl mb-3">{{ store.achievements.find(a => a.id === store.newAchievement)?.icon }}</p>
+        <component :is="`Icon${store.achievements.find(a => a.id === store.newAchievement)?.icon}`" class="w-12 h-12 mx-auto mb-3 text-[var(--color-tea-gold)]" />
         <p class="text-xl font-bold text-[var(--color-wood)] mb-1">成就解锁！</p>
         <p class="text-lg text-[var(--color-tea-gold)] font-bold mb-1">
           {{ store.achievements.find(a => a.id === store.newAchievement)?.name }}

@@ -326,10 +326,10 @@ onUnmounted(() => {
             :aria-label="soundMode ? '关闭声音模式' : '开启声音模式'"
             title="声音模式：环境越安静茶长得越好"
           >
-            🎤
+            <IconMic class="w-8 h-8" />
           </button>
           <button class="sound-btn" @click="toggleSound" :aria-label="soundOn ? '关闭环境音' : '开启环境音'">
-            {{ soundOn ? '🔊' : '🔇' }}
+            <IconVolume2 v-if="soundOn" class="w-8 h-8" /><IconVolumeX v-else class="w-8 h-8" />
           </button>
         </div>
       </div>

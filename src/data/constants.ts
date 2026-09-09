@@ -26,14 +26,14 @@ export const WATER_TYPES = [
   { id: 'mineral', name: '矿泉水', factor: 1.02, description: '富含矿物质，增强茶汤醇厚感' },
 ] as const
 
-/** 茶修等级 — 茶修六境 */
+/** 茶修等级 — 茶修六境。icon 存 lucide 组件名（禁止 emoji，渲染时 <component :is="`Icon${icon}`">） */
 export const TEA_LEVELS = [
-  { id: 'shicha', name: '识茶', minXp: 0, icon: '🌱', desc: '认识一片叶子的来处' },
-  { id: 'zhiqi', name: '知器', minXp: 150, icon: '🫖', desc: '了解茶器与茶性' },
-  { id: 'dongshui', name: '懂水', minXp: 400, icon: '💧', desc: '知水者得茶之真味' },
-  { id: 'wuxiang', name: '悟香', minXp: 800, icon: '🌸', desc: '闻香识茶，心随香静' },
-  { id: 'pinjing', name: '品境', minXp: 1500, icon: '🍃', desc: '品茶入境，天人合一' },
-  { id: 'chaxin', name: '茶心', minXp: 3000, icon: '🧘', desc: '茶即心，心即茶' },
+  { id: 'shicha', name: '识茶', minXp: 0, icon: 'Sprout', desc: '认识一片叶子的来处' },
+  { id: 'zhiqi', name: '知器', minXp: 150, icon: 'CupSoda', desc: '了解茶器与茶性' },
+  { id: 'dongshui', name: '懂水', minXp: 400, icon: 'Droplet', desc: '知水者得茶之真味' },
+  { id: 'wuxiang', name: '悟香', minXp: 800, icon: 'Flower', desc: '闻香识茶，心随香静' },
+  { id: 'pinjing', name: '品境', minXp: 1500, icon: 'Leaf', desc: '品茶入境，天人合一' },
+  { id: 'chaxin', name: '茶心', minXp: 3000, icon: 'Heart', desc: '茶即心，心即茶' },
 ] as const
 
 export const ACHIEVEMENTS = [
@@ -41,30 +41,30 @@ export const ACHIEVEMENTS = [
     id: 'first_brew',
     name: '初识茶道',
     description: '完成第一次完整冲泡',
-    icon: '🍵',
+    icon: 'Sparkles',
   },
   {
     id: 'all_types',
     name: '六大茶类',
     description: '各茶类至少品鉴一款',
-    icon: '🌈',
+    icon: 'Rainbow',
   },
   {
     id: 'temp_accuracy',
     name: '温控大师',
     description: '连续5次温度偏差<5°C',
-    icon: '🎯',
+    icon: 'Target',
   },
   {
     id: 'total_brews_20',
     name: '品鉴达人',
     description: '累计品鉴20款茶',
-    icon: '🏆',
+    icon: 'Trophy',
   },
   {
     id: 'high_score',
     name: '满分品鉴',
     description: '获得一次9分以上评分',
-    icon: '⭐',
+    icon: 'Star',
   },
 ] as const

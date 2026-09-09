@@ -153,7 +153,7 @@ const unlockedWares = computed(() =>
 
     <!-- 节气打卡 -->
     <div class="mb-8">
-      <h3 class="text-base font-bold text-[var(--color-wood)] mb-1">☀️ 节气册</h3>
+      <h3 class="text-base font-bold text-[var(--color-wood)] mb-1"><IconSun class="inline-block -mt-1 w-4 h-4" /> 节气册</h3>
       <p class="text-xs text-[var(--color-wood-light)] mb-3">已集 {{ solarCheckedCount }} / {{ SOLAR_TERMS.length }} 个节气 · 每个节气可在首页打卡一次</p>
       <div class="grid grid-cols-4 sm:grid-cols-8 gap-2">
         <div v-for="t in SOLAR_TERMS" :key="t.id"
@@ -167,13 +167,11 @@ const unlockedWares = computed(() =>
 
     <!-- 已解锁茶器 -->
     <div>
-      <h3 class="text-base font-bold text-[var(--color-wood)] mb-3">🫖 我的茶器</h3>
+      <h3 class="text-base font-bold text-[var(--color-wood)] mb-3"><IconCupSoda class="inline-block -mt-1 w-4 h-4" /> 我的茶器</h3>
       <div class="grid grid-cols-3 sm:grid-cols-6 gap-3">
         <div v-for="ware in unlockedWares" :key="ware.id"
           class="glass-panel rounded-xl p-3 text-center">
-          <p class="text-2xl mb-1">
-            {{ ware.id === 'gaiwan' ? '🍵' : ware.id === 'yixing' ? '🫖' : ware.id === 'glass' ? '🥛' : ware.id === 'celadon' ? '🍶' : ware.id === 'duanning' ? '🫖' : '🏺' }}
-          </p>
+          <component :is="`Icon${ware.icon}`" class="w-8 h-8 mx-auto mb-1 text-[var(--color-tea-gold)]" />
           <p class="text-xs font-bold text-[var(--color-wood)]">{{ ware.name }}</p>
           <p class="text-[10px] text-[var(--color-wood-light)]">{{ ware.material }}</p>
         </div>

@@ -164,7 +164,7 @@ const categoryColors: Record<string, string> = {
     <!-- 标题 -->
     <div class="flex items-center justify-between mb-6">
       <div>
-        <h2 class="text-3xl font-bold text-[var(--color-wood)]">🗺️ 中国茶产区地图</h2>
+        <h2 class="text-3xl font-bold text-[var(--color-wood)]"><IconMap class="inline-block mr-2 -mt-1" :size="26" />中国茶产区地图</h2>
         <p class="text-sm text-[var(--color-wood-light)] mt-1">点击省份查看名茶与茶文化 · 四大茶区 {{ teaRegions.length }} 个产茶省份</p>
       </div>
       <button @click="$router.push('/')" class="text-[var(--color-wood-light)] hover:text-[var(--color-wood)] text-sm">返回首页</button>
@@ -201,18 +201,18 @@ const categoryColors: Record<string, string> = {
                 {{ selectedRegion.zone }}
               </span>
             </div>
-            <button @click="selectedProvince = null" class="text-[var(--color-wood-light)] hover:text-[var(--color-wood)]" aria-label="关闭省份详情">✕</button>
+            <button @click="selectedProvince = null" class="text-[var(--color-wood-light)] hover:text-[var(--color-wood)]" aria-label="关闭省份详情"><IconX :size="18" /></button>
           </div>
 
           <!-- 气候 -->
           <div class="mb-4">
-            <p class="text-xs text-[var(--color-wood-light)] mb-1">🌡️ 气候地理</p>
+            <p class="text-xs text-[var(--color-wood-light)] mb-1"><IconThermometer :size="13" class="inline-block mr-1 -mt-0.5" />气候地理</p>
             <p class="text-sm text-[var(--color-wood)] leading-relaxed">{{ selectedRegion.climate }}</p>
           </div>
 
           <!-- 名茶列表 -->
           <div class="mb-4">
-            <p class="text-xs text-[var(--color-wood-light)] mb-2">🍵 代表名茶（{{ selectedRegion.famousTeas.length }}）</p>
+            <p class="text-xs text-[var(--color-wood-light)] mb-2"><IconLeaf :size="13" class="inline-block mr-1 -mt-0.5" />代表名茶（{{ selectedRegion.famousTeas.length }}）</p>
             <div class="space-y-2">
               <div v-for="tea in selectedRegion.famousTeas" :key="tea.name"
                 class="bg-[var(--color-paper)] rounded-lg p-3">
@@ -223,7 +223,7 @@ const categoryColors: Record<string, string> = {
                     {{ tea.category }}
                   </span>
                 </div>
-                <p class="text-[11px] text-[var(--color-wood-light)] mb-1">📍 {{ tea.origin }}</p>
+                <p class="text-[11px] text-[var(--color-wood-light)] mb-1"><IconMapPin :size="12" class="inline-block mr-1 -mt-0.5" />{{ tea.origin }}</p>
                 <p class="text-xs text-[var(--color-wood)]/80 leading-relaxed">{{ tea.description }}</p>
               </div>
             </div>
@@ -231,14 +231,14 @@ const categoryColors: Record<string, string> = {
 
           <!-- 茶文化 -->
           <div>
-            <p class="text-xs text-[var(--color-wood-light)] mb-1">📜 茶文化</p>
+            <p class="text-xs text-[var(--color-wood-light)] mb-1"><IconScrollText :size="13" class="inline-block mr-1 -mt-0.5" />茶文化</p>
             <p class="text-sm text-[var(--color-wood)] leading-relaxed">{{ selectedRegion.culture }}</p>
           </div>
         </div>
 
         <!-- 未选中时的引导 -->
         <div v-else class="glass-panel rounded-2xl p-5 h-[500px] flex flex-col items-center justify-center text-center">
-          <div class="text-5xl mb-4 opacity-30">🍃</div>
+          <IconLeaf class="mb-4 opacity-30" :size="48" />
           <p class="text-[var(--color-wood)] font-medium mb-2">点击地图上的产茶省份</p>
           <p class="text-xs text-[var(--color-wood-light)] opacity-70 max-w-[200px]">
             查看该省的代表名茶、茶类、产地、冲泡工艺和茶文化历史
@@ -250,7 +250,7 @@ const categoryColors: Record<string, string> = {
     <!-- 茶山产区列表（选中省份时显示） -->
     <div v-if="selectedMountains.length > 0" class="mt-8">
       <h3 class="text-lg font-bold text-[var(--color-wood)] mb-4">
-        ⛰️ {{ selectedProvince }} 核心茶山产区（{{ selectedMountains.length }}）
+        <IconMountain :size="20" class="inline-block mr-1 -mt-1" />{{ selectedProvince }} 核心茶山产区（{{ selectedMountains.length }}）
       </h3>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <div v-for="m in selectedMountains" :key="m.id"
@@ -275,7 +275,7 @@ const categoryColors: Record<string, string> = {
     <!-- 全部茶山产区（未选中时显示） -->
     <div v-else class="mt-8">
       <h3 class="text-lg font-bold text-[var(--color-wood)] mb-4">
-        ⛰️ 全国核心茶山产区（{{ TEA_REGIONS.length }}）
+        <IconMountain :size="20" class="inline-block mr-1 -mt-1" />全国核心茶山产区（{{ TEA_REGIONS.length }}）
       </h3>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         <div v-for="m in TEA_REGIONS" :key="m.id"

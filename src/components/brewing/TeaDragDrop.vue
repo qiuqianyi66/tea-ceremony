@@ -67,19 +67,8 @@ const teaWallItems = computed<TeaItem[]>(() => {
   }))
 })
 
-// 计算属性：茶器类型对应的图标
-const wareIcon = computed(() => {
-  if (!props.currentWare) return '🫖'
-  const icons: Record<string, string> = {
-    gaiwan: '🍵',
-    yixing: '🫖',
-    glass: '🥛',
-    celadon: '🍶',
-    duanning: '🫖',
-    jianzhan: '☕',
-  }
-  return icons[props.currentWare.id] || '🫖'
-})
+// 计算属性：茶器类型对应的 lucide 图标名（数据层 teawares.icon 已存）
+const wareIcon = computed(() => props.currentWare?.icon ?? 'CupSoda')
 
 // 计算属性：茶器匹配度
 const wareMatchScore = computed(() => {
@@ -200,7 +189,7 @@ onUnmounted(() => {
     <!-- ======== 茶叶墙（源） ======== -->
     <div class="tea-wall-section mb-6">
       <h3 class="text-lg font-bold text-[var(--color-wood)] mb-3 flex items-center gap-2">
-        <span class="text-xl">🍃</span>
+        <IconLeaf class="w-5 h-5" />
         选择茶叶拖入茶器
       </h3>
 
@@ -250,7 +239,7 @@ onUnmounted(() => {
     <!-- ======== 茶器区（目标） ======== -->
     <div v-if="currentWare" class="tea-vessel-section relative">
       <h3 class="text-lg font-bold text-[var(--color-wood)] mb-3 flex items-center gap-2">
-        <span class="text-xl">{{ wareIcon }}</span>
+        <component :is="`Icon${wareIcon}`" class="w-5 h-5" />
         投茶区
       </h3>
 
@@ -273,9 +262,9 @@ onUnmounted(() => {
       >
         <div class="vessel-content text-center p-6" :class="{ 'has-tea': draggedTea }">
           <!-- 茶器图标 -->
-          <div class="vessel-icon text-6xl mb-4 transition-all duration-300"
+          <div class="vessel-icon mb-4 transition-all duration-300"
             :class="{ 'animate-bounce': isOverVessel }">
-            {{ wareIcon }}
+            <component :is="`Icon${wareIcon}`" class="w-16 h-16 text-[var(--color-tea-gold)]" />
           </div>
 
           <!-- 茶器名称 -->
@@ -332,9 +321,11 @@ onUnmounted(() => {
             />
 
             <!-- 匹配度提示 -->
-            <p class="text-xs mt-2" :class="wareMatchScore === 1 ? 'text-[var(--color-tea-gold)]' : 'text-[var(--color-wood-light)]'">
-              {{ wareMatchScore === 1 ? '✅ 完美搭配' : '⚠️ 可用但非最佳搭配' }}
-            </p>
+              <p class="text-xs mt-2 flex items-center gap-1" :class="wareMatchScore === 1 ? 'text-[var(--color-tea-gold)]' : 'text-[var(--color-wood-light)]'">
+                <IconCheckCircle v-if="wareMatchScore === 1" class="w-4 h-4" />
+                <IconAlertCircle v-else class="w-4 h-4" />
+                {{ wareMatchScore === 1 ? '完美搭配' : '可用但非最佳搭配' }}
+              </p>
           </div>
 
           <!-- 空状态提示 -->
@@ -367,7 +358,7 @@ onUnmounted(() => {
 
     <!-- 无茶器时的提示 -->
     <div v-else class="no-ware-hint text-center p-6 bg-[var(--color-paper)] rounded-xl border border-dashed border-[var(--color-wood-light)]">
-      <p class="text-4xl mb-2">🫖</p>
+      <IconCupSoda class="w-10 h-10 mx-auto mb-2 text-[var(--color-tea-gold)]" />
       <p class="text-[var(--color-wood)] font-bold mb-1">请先在上方选择茶器</p>
       <p class="text-sm text-[var(--color-wood-light)]">选择茶器后即可进行投茶操作</p>
     </div>

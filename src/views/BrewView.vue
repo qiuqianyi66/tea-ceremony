@@ -332,7 +332,7 @@ const mainActionLabel = computed(() => {
     case BrewPhase.HEATING:
       return `${store.brewState.currentTemp}°C`
     case BrewPhase.WARMING:
-      return '🫖 温杯'
+      return '温杯'
     case BrewPhase.RINSING:
       return `醒茶中 ${rinseCountdown.value}s`
     case BrewPhase.READY:
@@ -483,7 +483,7 @@ const phaseDescription = computed(() => {
 
       <!-- 浸泡时茶叶缓慢舒展，让等待本身成为体验的一部分 -->
       <div v-if="store.brewState.phase === BrewPhase.STEEPING" class="tea-leaves" aria-hidden="true">
-        <span v-for="i in 4" :key="i" :style="{ animationDelay: `${i * 0.35}s` }">🍃</span>
+        <span v-for="i in 4" :key="i" :style="{ animationDelay: `${i * 0.35}s` }"><IconLeaf class="w-6 h-6 text-[var(--color-tea-gold)]" /></span>
       </div>
 
       <!-- 出汤：倾壶、流线、杯中液面与落点涟漪 -->

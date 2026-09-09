@@ -55,7 +55,7 @@ function confirm() {
 
     <!-- 茶器选择 -->
     <div class="w-full max-w-lg mb-8">
-      <h3 class="text-base font-bold text-[var(--color-wood)] mb-3">🫖 茶器</h3>
+      <h3 class="text-base font-bold text-[var(--color-wood)] mb-3"><IconCupSoda class="inline-block -mt-1" /> 茶器</h3>
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <button
           v-for="ware in teawares" :key="ware.id"
@@ -70,11 +70,9 @@ function confirm() {
           ]"
         >
           <div v-if="!store.isTeaWareUnlocked(ware.id)" class="absolute inset-0 flex items-center justify-center bg-white/40 rounded-xl z-10">
-            <span class="text-lg">🔒</span>
+            <IconLock class="w-5 h-5 text-[var(--color-wood-light)]" />
           </div>
-          <div class="text-2xl mb-1">
-            {{ ware.id === 'gaiwan' ? '🍵' : ware.id === 'yixing' ? '🫖' : ware.id === 'glass' ? '🥛' : ware.id === 'celadon' ? '🍶' : ware.id === 'duanning' ? '🫖' : '🏺' }}
-          </div>
+          <component :is="`Icon${ware.icon}`" class="w-8 h-8 mx-auto" />
           <p class="text-sm font-bold text-[var(--color-wood)]">{{ ware.name }}</p>
           <p class="text-xs text-[var(--color-wood-light)] mt-1">{{ ware.material }}</p>
           <p class="text-xs text-[var(--color-wood-light)]">{{ ware.capacity }}ml</p>
@@ -85,7 +83,7 @@ function confirm() {
 
     <!-- 水源选择 -->
     <div class="w-full max-w-lg mb-8">
-      <h3 class="text-base font-bold text-[var(--color-wood)] mb-3">💧 水源</h3>
+      <h3 class="text-base font-bold text-[var(--color-wood)] mb-3"><IconDroplet class="inline-block -mt-1" /> 水源</h3>
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <button
           v-for="w in WATER_TYPES" :key="w.id"
@@ -103,7 +101,7 @@ function confirm() {
 
     <!-- 目标水温 -->
     <div class="w-full max-w-lg mb-8">
-      <h3 class="text-base font-bold text-[var(--color-wood)] mb-3">🌡️ 目标水温</h3>
+      <h3 class="text-base font-bold text-[var(--color-wood)] mb-3"><IconThermometer class="inline-block -mt-1" /> 目标水温</h3>
       <label class="block text-sm text-[var(--color-wood)] mb-2">
         目标水温：<strong>{{ store.brewState.targetTemp }}°C</strong>
         <span v-if="store.currentTea" class="text-[var(--color-tea-gold)]">
@@ -125,7 +123,7 @@ function confirm() {
 
     <!-- 投茶量 -->
     <div class="w-full max-w-lg mb-8">
-      <h3 class="text-base font-bold text-[var(--color-wood)] mb-3">🍃 投茶量</h3>
+      <h3 class="text-base font-bold text-[var(--color-wood)] mb-3"><IconLeaf class="inline-block -mt-1" /> 投茶量</h3>
       <label class="block text-sm text-[var(--color-wood)] mb-2">
         投茶量：<strong>{{ store.brewState.teaWeight }}g</strong>
         <span class="text-[var(--color-tea-gold)]">（建议 3g）</span>
@@ -145,7 +143,7 @@ function confirm() {
     <!-- 选中预览 -->
     <div v-if="store.selectedTeaWare" class="glass-panel rounded-xl p-3 mb-6 w-full max-w-lg text-sm">
       <p class="text-[var(--color-wood)]">
-        ✅ {{ store.selectedTeaWare.name }} · {{ store.selectedTeaWare.material }}
+        <IconCheckCircle class="inline-block -mt-0.5 text-[var(--color-tea-gold)]" /> {{ store.selectedTeaWare.name }} · {{ store.selectedTeaWare.material }}
       </p>
       <p class="text-xs text-[var(--color-wood-light)] mt-1">{{ store.selectedTeaWare.description }}</p>
     </div>
