@@ -13,6 +13,7 @@ import * as THREE from 'three'
 import { getTerrainHeight, SOIL_LOESS, SOIL_GRAVEL, isDrainGroove } from './terrain'
 import type { GardenPreset } from './garden-presets'
 import { GARDEN_PRESETS, DEFAULT_PRESET } from './garden-presets'
+import { createTreeForest, type TreeSpec, type TreeSpecies } from './tea-tree'
 
 function seededRandom(seed: number): number {
   const s = Math.sin(seed * 127.1 + 311.7) * 43758.5453
@@ -24,10 +25,11 @@ export interface TeaField {
   dispose: () => void
 }
 
-/** 生成南坡成垄茶园 + 上缘遮阴树（行距/密度/蓬面/遮阴树按茶园预设；武夷走岩缝丛生分支） */
+/** 生成南坡成垄茶园 + 程序化树林（行距/密度/蓬面/树按茶园预设；武夷/勐海走独立分支） */
 export function createTeaField(scene: THREE.Scene, preset?: GardenPreset): TeaField {
   const p = preset ?? DEFAULT_PRESET
   const root = new THREE.Group()
+  const treeSpecs: TreeSpec[] = [] // 全部树统一交给程序化树林（枝干分明）
   root.name = 'tea-field'
   scene.add(root)
 
@@ -91,29 +93,23 @@ export function createTeaField(scene: THREE.Scene, preset?: GardenPreset): TeaFi
       root.add(bushMesh)
     }
 
-    // 崖边岩生树：峰顶/崖缘零星苍树（阳崖阴林，稀而瘦）
-    const wuyiShadeMat = new THREE.MeshStandardMaterial({ color: 0x3a5a30, roughness: 0.9, flatShading: true })
-    const wuyiShadeBark = new THREE.MeshStandardMaterial({ color: 0x54442e, roughness: 0.95 })
+    // 崖边岩生树：峰顶/崖缘零星苍树（阳崖阴林，稀而瘦但可见）
     for (let i = 0; i < 4; i++) {
       const tx = -40 + seededRandom(i * 7.7 + 201) * 80
       const tz = -8 - seededRandom(i * 9.3 + 202) * 34
       const th = getTerrainHeight(tx, tz)
       if (th < 8) continue // 崖上/崖缘才长
-      const tree = new THREE.Group()
-      const s = (1.1 + seededRandom(i * 3.3 + 203) * 0.8) * p.shadeScale
-      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.16 * s, 0.24 * s, 2.6 * s, 6), wuyiShadeBark)
-      trunk.position.y = 1.3 * s
-      trunk.rotation.z = (seededRandom(i * 5.1 + 204) - 0.5) * 0.3 // 崖风扭曲
-      trunk.castShadow = true
-      tree.add(trunk)
-      const crown = new THREE.Mesh(new THREE.SphereGeometry(1.1 * s, 8, 6), wuyiShadeMat)
-      crown.position.y = 2.9 * s
-      crown.scale.set(1, 0.75, 1)
-      crown.castShadow = true
-      tree.add(crown)
-      tree.position.set(tx, th, tz)
-      tree.rotation.y = seededRandom(i * 6.1 + 205) * Math.PI * 2
-      root.add(tree)
+      treeSpecs.push({
+        x: tx,
+        h: th,
+        z: tz,
+        scale: (1.1 + seededRandom(i * 3.3 + 203) * 0.7) * p.shadeScale,
+        seed: i * 77.7 + 301,
+        species: 'wuyi',
+      })
+    }
+    if (treeSpecs.length > 0) {
+      createTreeForest(root, treeSpecs) // 森林实例挂到 root，随 TeaField 统一清理
     }
     return {
       group: root,
@@ -128,7 +124,107 @@ export function createTeaField(scene: THREE.Scene, preset?: GardenPreset): TeaFi
     }
   }
 
-  // ---- 常规茶园（龙井/勐海/福鼎）：沿等高线成垄 ----
+  // ---- 勐海：雨林茶林共生（茶散生于大树下，不成行；"茶在林中，林在茶中"） ----
+  if (p.id === 'yunnan') {
+    // 散生古茶丛：全坡扫点，稀落疏植，每丛 2-4 株分蘖、蓬大苍劲
+    const bushPos: number[] = []
+    const bushColors: number[] = []
+    const bigTreePos: Array<[number, number, number, number]> = [] // x,h,z,scale
+    for (let i = 0; i < 3600; i++) {
+      const x = (seededRandom(i * 1.1 + 1) - 0.5) * 96
+      const z = -6 - seededRandom(i * 1.7 + 2) * 40
+      const h = getTerrainHeight(x, z)
+      if (h < 4.2 || h > 9.6) continue
+      if (seededRandom(i * 3.3 + 3) > 0.34) continue // 疏植（雨林茶树稀疏散生）
+      const n = 2 + Math.floor(seededRandom(i * 9.1 + 6) * 3) // 2-4 株分蘖
+      for (let k = 0; k < n; k++) {
+        const kx = x + (seededRandom(i * 13 + k * 7.7) - 0.5) * 1.4 // 分蘖间距大（古树多枝）
+        const kz = z + (seededRandom(i * 17 + k * 3.3) - 0.5) * 1.4
+        const kh = getTerrainHeight(kx, kz)
+        if (kh < 4.1 || kh > 9.8) continue
+        bushPos.push(kx, kh + 0.6, kz) // 蓬位更高（古树高大多枝）
+        bushColors.push(0.8 + seededRandom(i * 19 + k * 5.9) * 0.35)
+      }
+    }
+    const bushCount = bushPos.length / 3
+    if (bushCount > 0) {
+      const bushGeo = new THREE.SphereGeometry(0.5, 10, 7)
+      const bushMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.88, flatShading: true })
+      const bushMesh = new THREE.InstancedMesh(bushGeo, bushMat, bushCount)
+      const dummy = new THREE.Object3D()
+      const col = new THREE.Color()
+      for (let i = 0; i < bushCount; i++) {
+        dummy.position.set(bushPos[i * 3]!, bushPos[i * 3 + 1]!, bushPos[i * 3 + 2]!)
+        const s = p.bushScaleMin + seededRandom(i * 1.3 + 77) * (p.bushScaleMax - p.bushScaleMin)
+        dummy.scale.set(s, s * 1.1, s) // 古树高耸
+        dummy.updateMatrix()
+        bushMesh.setMatrixAt(i, dummy.matrix)
+        const tone = bushColors[i] ?? 0.95
+        const dt = (tone - 0.95) * 0.35
+        col.setRGB(p.bushBase[0] * (1 + dt), p.bushBase[1] * (1 + dt), p.bushBase[2] * (1 + dt))
+        bushMesh.setColorAt(i, col)
+      }
+      bushMesh.castShadow = true
+      bushMesh.receiveShadow = true
+      root.add(bushMesh)
+    }
+
+    // 林冠大树：茶行带/后坡散植（茶林共生），干粗冠大、高矮参差，树下垂藤
+    for (let i = 0; i < 30; i++) {
+      const tx = -46 + seededRandom(i * 7.7 + 301) * 92
+      const tz = -12 - seededRandom(i * 9.3 + 302) * 28 // 茶行带起，近景可见
+      const th = getTerrainHeight(tx, tz)
+      if (th < 3.2 || th > 14) continue
+      const s = (1.5 + seededRandom(i * 3.3 + 303) * 0.9) * p.shadeScale
+      treeSpecs.push({ x: tx, h: th, z: tz, scale: s, seed: i * 91.3 + 501, species: 'jungle' })
+      bigTreePos.push([tx, th, tz, s])
+    }
+
+    // 垂藤（附生植物垂挂）：每棵大树 2-3 条，从冠底垂下
+    if (bigTreePos.length > 0) {
+      const vineGeo = new THREE.ConeGeometry(0.05, 1, 4)
+      vineGeo.translate(0, -0.5, 0)
+      const vineMat = new THREE.MeshStandardMaterial({ color: 0x3a5a38, roughness: 0.95 })
+      const vineList: number[] = []
+      for (const [tx, th, tz, s] of bigTreePos) {
+        const vn = 2 + Math.floor(seededRandom(tx * 3.1 + tz * 1.3 + 401) * 2)
+        for (let v = 0; v < vn; v++) {
+          vineList.push(
+            tx + (seededRandom(tx * 7.7 + v * 5.9 + 402) - 0.5) * 1.6 * s,
+            th + (3.4 + seededRandom(tx * 4.1 + v * 3.3 + 403) * 1.2) * s,
+            tz + (seededRandom(tx * 9.1 + v * 6.7 + 404) - 0.5) * 1.6 * s,
+          )
+        }
+      }
+      const vineCount = vineList.length / 3
+      const vines = new THREE.InstancedMesh(vineGeo, vineMat, vineCount)
+      const dummy = new THREE.Object3D()
+      for (let i = 0; i < vineCount; i++) {
+        dummy.position.set(vineList[i * 3]!, vineList[i * 3 + 1]!, vineList[i * 3 + 2]!)
+        dummy.scale.set(1, 2 + seededRandom(i * 3.7 + 405) * 2.4, 1) // 长 2-4.4m
+        dummy.rotation.set(0, 0, (seededRandom(i * 5.3 + 406) - 0.5) * 0.5)
+        dummy.updateMatrix()
+        vines.setMatrixAt(i, dummy.matrix)
+      }
+      root.add(vines)
+    }
+    if (treeSpecs.length > 0) {
+      createTreeForest(root, treeSpecs)
+    }
+    return {
+      group: root,
+      dispose() {
+        root.traverse((o) => {
+          const m = o as THREE.Mesh
+          if (m.geometry) m.geometry.dispose()
+          if (m.material) (m.material as THREE.Material).dispose()
+        })
+        root.removeFromParent()
+      },
+    }
+  }
+
+  // ---- 常规茶园（龙井/福鼎）：沿等高线成垄 ----
   const bushPos: number[] = [] // 蓬面球实例（每丛 1）
   const bushColors: number[] = []
   const trunkPos: number[] = [] // 树干实例（每株 1）
@@ -206,30 +302,24 @@ export function createTeaField(scene: THREE.Scene, preset?: GardenPreset): TeaFi
     root.add(trunkMesh)
   }
 
-  // ---- 遮阴树：茶园上缘（山脊下方，阳崖阴林）散植阔叶大树，数量/尺度按预设 ----
-  const shadeMat = new THREE.MeshStandardMaterial({ color: 0x3e6b33, roughness: 0.9, flatShading: true })
-  const shadeBark = new THREE.MeshStandardMaterial({ color: 0x5d4a34, roughness: 0.95 })
+  // ---- 遮阴树：茶行带 + 上缘散植（阳崖阴林；树在茶园中，近景可见枝干），数量/尺度按预设 ----
+  const shadeSpecies: TreeSpecies = p.id === 'fuding' ? 'coast' : 'shade'
   for (let i = 0; i < p.shadeTreeCount; i++) {
-    const tx = -38 + seededRandom(i * 7.7 + 101) * 76
-    const tz = -14 + seededRandom(i * 9.3 + 102) * 10 // 山脊下缘
+    const tx = -40 + seededRandom(i * 7.7 + 101) * 80
+    const tz = -10 - seededRandom(i * 9.3 + 102) * 26 // 茶行带 + 山脊下缘
     const th = getTerrainHeight(tx, tz)
-    if (th < SOIL_GRAVEL - 1.5) continue // 树要种在坡上
-    const tree = new THREE.Group()
-    const s = (1.6 + seededRandom(i * 3.3 + 103) * 1.2) * p.shadeScale
-    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.22 * s, 0.32 * s, 3.2 * s, 7), shadeBark)
-    trunk.position.y = 1.6 * s
-    trunk.castShadow = true
-    tree.add(trunk)
-    const crown = new THREE.Mesh(new THREE.SphereGeometry(1.5 * s, 9, 7), shadeMat)
-    crown.position.y = 3.4 * s
-    crown.castShadow = true
-    tree.add(crown)
-    const crown2 = new THREE.Mesh(new THREE.SphereGeometry(1.0 * s, 8, 6), shadeMat)
-    crown2.position.set(0.7 * s, 4.2 * s, 0.4 * s)
-    tree.add(crown2)
-    tree.position.set(tx, th, tz)
-    tree.rotation.y = seededRandom(i * 5.1 + 104) * Math.PI * 2
-    root.add(tree)
+    if (th < 4.4 || th > 14.5) continue // 茶园中 + 坡上（不种峰顶/谷底）
+    treeSpecs.push({
+      x: tx,
+      h: th,
+      z: tz,
+      scale: (1.6 + seededRandom(i * 3.3 + 103) * 1.0) * p.shadeScale,
+      seed: i * 61.1 + 901,
+      species: shadeSpecies,
+    })
+  }
+  if (treeSpecs.length > 0) {
+    createTreeForest(root, treeSpecs)
   }
 
   return {

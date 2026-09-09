@@ -180,6 +180,68 @@ export function createDecorations(scene: THREE.Scene, preset?: GardenPreset): vo
     decorGroup.add(shrubs)
   }
 
+  // ---- 勐海雨林林下（腐殖层生态）：蕨类大叶 + 蘑菇 + 苔藓，只长林下阴湿 3-9m ----
+  if (p.id === 'yunnan') {
+    // 蕨类（大叶蕨丛，林下阴湿）
+    const fernGeo = new THREE.ConeGeometry(0.5, 1.8, 5)
+    fernGeo.translate(0, 0.9, 0)
+    const fernMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, flatShading: true })
+    const fernCount = 220
+    const ferns = new THREE.InstancedMesh(fernGeo, fernMat, fernCount)
+    for (let i = 0; i < fernCount; i++) {
+      const [x, h, z] = getDecorPosition(i + 2000, 3.2, 8.8)
+      dummy.position.set(x, h, z)
+      const s = 0.7 + seededRandom(i * 3.1 + 601) * 1.6
+      dummy.scale.set(s, s, s)
+      dummy.rotation.set(0, seededRandom(i + 602) * Math.PI, (seededRandom(i + 603) - 0.5) * 0.3)
+      dummy.updateMatrix()
+      ferns.setMatrixAt(i, dummy.matrix)
+      tmpColor.setHSL(0.26 + seededRandom(i * 4.7 + 604) * 0.05, 0.42, 0.2 + seededRandom(i * 5.9 + 605) * 0.12)
+      ferns.setColorAt(i, tmpColor)
+    }
+    if (ferns.instanceColor) ferns.instanceColor.needsUpdate = true
+    ferns.castShadow = true
+    decorGroup.add(ferns)
+
+    // 腐殖蘑菇（白伞点缀，林下枯枝落叶层）
+    const mushroomGeo = new THREE.SphereGeometry(0.13, 7, 4, 0, Math.PI * 2, 0, Math.PI * 0.5)
+    const mushroomMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85, flatShading: true })
+    const mushroomCount = 60
+    const mushrooms = new THREE.InstancedMesh(mushroomGeo, mushroomMat, mushroomCount)
+    for (let i = 0; i < mushroomCount; i++) {
+      const [x, h, z] = getDecorPosition(i + 2400, 2.6, 6.5)
+      dummy.position.set(x, h + 0.06, z)
+      dummy.scale.setScalar(0.7 + seededRandom(i * 3.7 + 701) * 1.3)
+      dummy.rotation.set(0, seededRandom(i + 702) * Math.PI, 0)
+      dummy.updateMatrix()
+      mushrooms.setMatrixAt(i, dummy.matrix)
+      tmpColor.setHSL(0.08 + seededRandom(i * 2.3 + 703) * 0.05, 0.3, 0.82 + seededRandom(i * 4.1 + 704) * 0.12)
+      mushrooms.setColorAt(i, tmpColor)
+    }
+    if (mushrooms.instanceColor) mushrooms.instanceColor.needsUpdate = true
+    decorGroup.add(mushrooms)
+
+    // 林下苔藓（暗绿苔垫，树基/洼地）
+    const yunMossGeo = new THREE.IcosahedronGeometry(0.3, 0)
+    const yunMossMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, flatShading: true })
+    const yunMossCount = 180
+    const yunMoss = new THREE.InstancedMesh(yunMossGeo, yunMossMat, yunMossCount)
+    for (let i = 0; i < yunMossCount; i++) {
+      const [x, h, z] = getDecorPosition(i + 2600, 4.2, 9.4)
+      dummy.position.set(x, h - 0.06, z)
+      const s = 0.5 + seededRandom(i * 2.3 + 801) * 0.9
+      dummy.scale.set(s, s * 0.22, s)
+      dummy.rotation.set(0, seededRandom(i + 802) * Math.PI, (seededRandom(i + 803) - 0.5) * 0.4)
+      dummy.updateMatrix()
+      yunMoss.setMatrixAt(i, dummy.matrix)
+      tmpColor.setHSL(0.28 + seededRandom(i * 4.1 + 804) * 0.06, 0.35, 0.18 + seededRandom(i * 5.3 + 805) * 0.1)
+      yunMoss.setColorAt(i, tmpColor)
+    }
+    if (yunMoss.instanceColor) yunMoss.instanceColor.needsUpdate = true
+    yunMoss.receiveShadow = true
+    decorGroup.add(yunMoss)
+  }
+
   scene.add(decorGroup)
 }
 
