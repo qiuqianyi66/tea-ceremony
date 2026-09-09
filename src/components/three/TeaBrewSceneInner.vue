@@ -558,6 +558,22 @@ for (let i = 0; i < STEAM_COUNT; i++) {
 }
 const steamGeometry = new THREE.BufferGeometry()
 steamGeometry.setAttribute('position', new THREE.BufferAttribute(steamPositions, 3))
+// 蒸汽 Points 对象：TresJS 5.8 core 不再提供 TresPoints 标签，用原生 THREE.Points + primitive 挂载
+// （与茶叶粒子同一模式；材质由 steamMat ref 持有，动画循环逐帧更新 opacity/位置）
+const steamPoints = new THREE.Points(
+  steamGeometry,
+  new THREE.PointsMaterial({
+    size: 0.22,
+    map: softCircleTex,
+    color: '#fff4e0',
+    transparent: true,
+    opacity: 0.15,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    sizeAttenuation: true,
+  }),
+)
+steamMat.value = steamPoints.material as THREE.PointsMaterial
 
 // ==================== 程序化资源：Lathe 轮廓点 ====================
 // 盖碗碗身
@@ -1077,20 +1093,8 @@ onRender(({ delta, elapsed }) => {
     />
   </TresMesh>
 
-  <!-- 蒸汽粒子 -->
-  <TresPoints :geometry="steamGeometry">
-    <TresPointsMaterial
-      ref="steamMat"
-      :size="0.22"
-      :map="softCircleTex"
-      :color="'#fff4e0'"
-      :transparent="true"
-      :opacity="0.15"
-      :blending="THREE.AdditiveBlending"
-      :depth-write="false"
-      :size-attenuation="true"
-    />
-  </TresPoints>
+  <!-- 蒸汽粒子（原生 THREE.Points，TresJS 5.8 无 TresPoints 标签） -->
+  <primitive :object="steamPoints" />
 
   <!-- 茶叶粒子（放茶动画）。TresJS 5 原生对象用小写 primitive 标签（TresPrimitive 无法解析） -->
   <primitive v-if="teaLeavesPoints" :object="teaLeavesPoints" />

@@ -4,6 +4,7 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import tresCompilerOptions from '@tresjs/core/template-compiler-options'
 
 export default defineConfig({
   // GitHub Pages 使用项目子路径，本地和 Docker 部署保持根路径。
@@ -14,7 +15,7 @@ export default defineConfig({
     },
   },
   plugins: [
-    vue(),
+    vue(tresCompilerOptions),
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
