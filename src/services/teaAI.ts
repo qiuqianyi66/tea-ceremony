@@ -261,7 +261,7 @@ function ruleBasedReply(question: string): string {
   // 1. 茶名匹配（teas.ts 数据，返回该茶冲泡参数）
   const tea = teas.find(t => question.includes(t.name))
   if (tea) {
-    return `${tea.name}：${tea.type}茶，宜 ${tea.bestTemp}℃ 水温，首泡约 ${tea.bestTime} 秒，可冲泡 ${tea.infusions} 泡。${tea.description.slice(0, 18)}`
+    return `${tea.name}：${tea.type}，宜 ${tea.bestTemp}℃ 水温，首泡约 ${tea.bestTime} 秒，可冲泡 ${tea.infusions} 泡。${tea.description.slice(0, 18)}`
   }
   // 2. 茶类匹配（六大茶类基准参数）
   const typeHint: Record<string, string> = {
