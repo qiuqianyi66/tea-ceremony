@@ -9,6 +9,13 @@ from app.models import Tea, TeaRegion, TeaPerson, TeaPoem, TeaProcess
 router = APIRouter()
 
 
+def _people_for_tea(db: Session, tea_id: int) -> list[TeaPerson]:
+    """按关联茶 ID 过滤茶人。related_tea_ids 是 JSON 列，Postgres 上不可用 contains(@>)，
+    数据量小（22 位），直接 Python 侧过滤。"""
+    people = db.query(TeaPerson).all()
+    return [p for p in people if str(tea_id) in (p.related_tea_ids or [])]
+
+
 # ============ 产区 ============
 
 @router.get("/regions")
@@ -120,9 +127,7 @@ def get_tea_detail(tea_id: int, db: Session = Depends(get_db)):
             }
 
     # 关联茶人
-    people = db.query(TeaPerson).filter(
-        TeaPerson.related_tea_ids.contains([str(tea.id)])
-    ).all()
+    people = _people_for_tea(db, tea.id)
     if people:
         result["people"] = [
             {"name": p.name, "dynasty": p.dynasty, "quote": p.quote}
@@ -159,9 +164,7 @@ def get_tea_graph(tea_id: int, db: Session = Depends(get_db)):
             edges.append({"source": f"tea_{tea.id}", "target": f"process_{process.id}", "relation": "工艺"})
 
     # 关联茶人
-    people = db.query(TeaPerson).filter(
-        TeaPerson.related_tea_ids.contains([str(tea.id)])
-    ).all()
+    people = _people_for_tea(db, tea.id)
     for p in people:
         nodes.append({"id": f"person_{p.id}", "name": p.name, "type": "person"})
         edges.append({"source": f"tea_{tea.id}", "target": f"person_{p.id}", "relation": "历史关联"})

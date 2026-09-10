@@ -292,28 +292,36 @@ function ruleBasedReply(question: string): string {
 
 // ============ RAG 知识库检索 ============
 
+/** /api/culture/search 响应结构（与 backend/app/routers/culture.py 对齐） */
+interface CultureSearchResult {
+  teas?: { id: number; name: string; type: string }[]
+  people?: { id: number; name: string; dynasty?: string; type: string }[]
+  regions?: { id: number; name: string; province?: string; type: string }[]
+  poems?: { id: number; title: string; author?: string; type: string }[]
+}
+
 async function fetchRAGContext(question: string): Promise<string> {
   try {
     const res = await fetch(`${API_BASE}/culture/search?q=${encodeURIComponent(question)}`)
     if (!res.ok) return ''
-    const data = await res.json()
+    const data = (await res.json()) as CultureSearchResult
     const parts: string[] = ['【茶文化知识库资料】']
 
     if (data.teas?.length) {
       parts.push('\n相关茶叶：')
-      data.teas.forEach((t: any) => parts.push(`- ${t.name}`))
+      data.teas.forEach(t => parts.push(`- ${t.name}`))
     }
     if (data.people?.length) {
       parts.push('\n相关茶人：')
-      data.people.forEach((p: any) => parts.push(`- ${p.name}（${p.dynasty}）`))
+      data.people.forEach(p => parts.push(`- ${p.name}（${p.dynasty ?? ''}）`))
     }
     if (data.regions?.length) {
       parts.push('\n相关产区：')
-      data.regions.forEach((r: any) => parts.push(`- ${r.name}（${r.province}）`))
+      data.regions.forEach(r => parts.push(`- ${r.name}（${r.province ?? ''}）`))
     }
     if (data.poems?.length) {
       parts.push('\n相关茶诗：')
-      data.poems.forEach((p: any) => parts.push(`- 《${p.title}》${p.author}`))
+      data.poems.forEach(p => parts.push(`- 《${p.title}》${p.author ?? ''}`))
     }
 
     return parts.join('\n')
