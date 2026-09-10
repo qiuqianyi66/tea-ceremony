@@ -51,6 +51,9 @@ __pycache__/
 # Codex CLI 本地技能（未入库，见 AGENTS.md §3.1）
 .codex/
 
+# Reasonix 本地配置与运行时数据（与 .reasonix/ 一并忽略）
+reasonix.toml
+
 # Playwright
 test-results/
 playwright-report/

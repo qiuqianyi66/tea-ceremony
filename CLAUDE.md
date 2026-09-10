@@ -6,7 +6,7 @@
 ## 必读顺序
 
 1. `AGENTS.md` — 不可妥协 / 写码纪律 / 必守规则 / 边界 / 命令速查（先读全文）。
-2. 设计任务 → `FRONTEND_DESIGN_SPEC.md`（通用前端设计规范：Design Read → 三拨盘 → 禁令 → 质量底线 → 设计审计）。
+2. 设计任务 → 全局技能 `frontend-design-spec`（通用前端设计规范：Design Read → 三拨盘 → 禁令 → 质量底线 → 工程规范 → 设计审计）。
 3. 设计任务 → `.agents/skills/frontend-design/SKILL.md`（Anthropic 官方防模板方法论）。
 4. 3D 任务 → `3D_SPEC.md`。
 5. 匹配的技能必须先 Read 对应 `SKILL.md` 再执行。
@@ -29,7 +29,7 @@ npm run build        # 提交前必跑
 node scripts/verify-gardens.cjs   # 3D 茶园四园晴雨截图，期望 ERRORS: []
 ```
 
-## 设计速查（权威版在 FRONTEND_DESIGN_SPEC.md）
+## 设计速查（权威版在全局技能 `frontend-design-spec` + AGENTS.md 第 8 节）
 
 * 开工先输出一行 Design Read（页面类型 / 受众 / vibe / 倾向体系），再设三拨盘（基线 8/6/4）。
 * 禁：AI 紫渐变、Inter / 衬线体默认、眉题 eyebrow、Hero+三卡片、卡片套卡片、玻璃拟态装饰、渐变文字、Emoji 图标、每节同款入场动效。
