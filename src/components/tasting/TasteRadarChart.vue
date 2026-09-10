@@ -19,7 +19,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js'
-import type { ChartDataset, TooltipItem } from 'chart.js'
+import type { ChartDataset, ChartOptions, TooltipItem } from 'chart.js'
 import { Radar } from 'vue-chartjs'
 
 // 注册 Chart.js 组件
@@ -80,7 +80,7 @@ const referenceData = computed(() =>
 )
 
 // Chart.js 配置
-const chartOptions = computed<any>(() => ({
+const chartOptions = computed<ChartOptions<'radar'>>(() => ({
   responsive: true,
   maintainAspectRatio: true,
   plugins: {
@@ -126,7 +126,7 @@ const chartOptions = computed<any>(() => ({
         color: 'rgba(61, 50, 37, 0.15)',
       },
       pointLabels: {
-        font: { size: 11, family: 'Noto Serif SC, serif', weight: '500' },
+        font: { size: 11, family: 'Noto Serif SC, serif', weight: 500 },
         color: '#3D3225',
         padding: 12,
       },

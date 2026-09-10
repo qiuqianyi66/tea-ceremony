@@ -13,7 +13,7 @@ import { ref, onUnmounted, type Ref } from 'vue'
 import { loadSlim } from '@tsparticles/slim'
 import { loadFirePreset } from '@tsparticles/preset-fire'
 import { loadBubblesPreset } from '@tsparticles/preset-bubbles'
-import { tsParticles, type Engine, type Container } from '@tsparticles/engine'
+import { tsParticles, type Engine, type Container, type ISourceOptions } from '@tsparticles/engine'
 
 // ============ 类型定义 ============
 
@@ -33,7 +33,7 @@ const COLOR_WOOD = '#5D4E37'
 const COLOR_STEAM = '#E6E0D8'
 const COLOR_RIPPLE = '#B4A08C'
 
-function createFireOptions(width: number, height: number, intensity = 1): any {
+function createFireOptions(width: number, height: number, intensity = 1): Record<string, unknown> {
   return {
     fpsLimit: 60,
     fullScreen: { enable: false, zIndex: 0 },
@@ -69,7 +69,7 @@ function createFireOptions(width: number, height: number, intensity = 1): any {
   }
 }
 
-function createSteamOptions(width: number, height: number, intensity = 1): any {
+function createSteamOptions(width: number, height: number, intensity = 1): Record<string, unknown> {
   return {
     fpsLimit: 40,
     fullScreen: { enable: false, zIndex: 0 },
@@ -100,7 +100,7 @@ function createSteamOptions(width: number, height: number, intensity = 1): any {
   }
 }
 
-function createRippleOptions(width: number, height: number): any {
+function createRippleOptions(width: number, height: number): Record<string, unknown> {
   return {
     fpsLimit: 30,
     fullScreen: { enable: false, zIndex: 0 },
@@ -169,7 +169,7 @@ export function useParticleSystem(
       container = null
     }
 
-    let options: any
+    let options: Record<string, unknown>
 
     switch (mode) {
       case 'fire':
@@ -188,7 +188,7 @@ export function useParticleSystem(
     container = (await engine.load({
       id: `tea-particles-${mode}`,
       element: containerRef.value,
-      options,
+      options: options as ISourceOptions,
     })) ?? null
 
     state.value.mode = mode

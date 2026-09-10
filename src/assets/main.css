@@ -21,6 +21,11 @@ body {
   font-family: var(--font-sans);
 }
 
+/* 链接下划线偏移：衬线 descender 不裁切（设计规范·浏览器表面定制） */
+a {
+  text-underline-offset: 0.2em;
+}
+
 /* 自定义动画 */
 @keyframes steam {
   0% { transform: translateY(0) scaleX(1); opacity: 0.4; }

@@ -222,9 +222,7 @@ onUnmounted(() => {
           >
             <!-- 拖拽手柄 -->
             <div class="tea-drag-handle absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <svg class="w-5 h-5 text-[var(--color-wood-light)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16M4 12h16" />
-              </svg>
+              <IconGripVertical class="w-5 h-5 text-[var(--color-wood-light)]" />
             </div>
 
             <!-- 茶叶颜色指示 -->

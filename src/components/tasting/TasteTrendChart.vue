@@ -15,7 +15,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js'
-import type { TooltipItem } from 'chart.js'
+import type { ChartOptions, TooltipItem } from 'chart.js'
 import { Line } from 'vue-chartjs'
 
 ChartJS.register(
@@ -67,7 +67,7 @@ const processData = computed(() =>
 )
 
 // 配置
-const lineOptions = computed<any>(() => ({
+const lineOptions = computed<ChartOptions<'line'>>(() => ({
   responsive: true,
   maintainAspectRatio: false,
   interaction: {
@@ -125,7 +125,10 @@ const lineOptions = computed<any>(() => ({
         stepSize: 1,
         font: { size: 9, family: 'Noto Sans SC, sans-serif' },
         color: '#8B7355',
-        callback: (value: number) => value === 10 ? '1.0' : `0.${value}`,
+        callback: (value: string | number) => {
+          const v = Number(value)
+          return v === 10 ? '1.0' : `0.${v}`
+        },
       },
     },
   },

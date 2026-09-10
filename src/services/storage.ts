@@ -16,7 +16,7 @@ class TeaCeremonyDB extends Dexie {
   // 表定义
   tastings!: Dexie.Table<TastingRecord, string>
   achievements!: Dexie.Table<Achievement, string>
-  settings!: Dexie.Table<{ key: string; value: any; migratedAt?: string }, string>
+  settings!: Dexie.Table<{ key: string; value: unknown; migratedAt?: string }, string>
   userXp!: Dexie.Table<{ key: string; value: number }, string>
   collectedWare!: Dexie.Table<{ id: string; unlockedAt: string }, string>
   gardenPlants!: Dexie.Table<PlantedTea, number>
@@ -365,7 +365,7 @@ export const settingsStorage = {
   async get<T>(key: string, defaultValue: T): Promise<T> {
     await initDB()
     const record = await db.settings.get({ key })
-    return record?.value ?? defaultValue
+    return (record?.value as T) ?? defaultValue
   },
 
   async set<T>(key: string, value: T): Promise<void> {
