@@ -6,6 +6,7 @@
 import type { Tea } from '@/types/tea'
 import type { TasteDimensions, TastingRecord } from '@/types/tasting'
 import { teas } from '@/data/teas'
+import { teawares } from '@/data/teawares'
 import { getCurrentSolarTerm } from '@/data/solarTerms'
 
 // ============ LLM 调用 ============
@@ -252,6 +253,43 @@ const FALLBACK_REPLIES = [
   '泡茶如做人，水温不宜过高，心气不宜过急。七分茶，三分情。',
 ]
 
+/**
+ * 离线规则降级回复：按问题关键词匹配茶名 / 茶类 / 茶器，返回数据驱动的真实内容；
+ * 无匹配才用通用格言。参数口径与 tea-tasting 基准表一致，不编造。
+ */
+function ruleBasedReply(question: string): string {
+  // 1. 茶名匹配（teas.ts 数据，返回该茶冲泡参数）
+  const tea = teas.find(t => question.includes(t.name))
+  if (tea) {
+    return `${tea.name}：${tea.type}茶，宜 ${tea.bestTemp}℃ 水温，首泡约 ${tea.bestTime} 秒，可冲泡 ${tea.infusions} 泡。${tea.description.slice(0, 18)}`
+  }
+  // 2. 茶类匹配（六大茶类基准参数）
+  const typeHint: Record<string, string> = {
+    绿茶: '绿茶宜 80-85℃ 冲泡、30-45 秒出汤，玻璃杯或盖碗皆宜，讲究鲜爽回甘。',
+    白茶: '白茶宜 90-95℃ 冲泡、45-60 秒出汤，新茶清甜、老茶醇和，可长期存放。',
+    黄茶: '黄茶宜 85-90℃ 冲泡、30-45 秒出汤，闷黄工艺带来独特醇和。',
+    青茶: '青茶（乌龙）宜 95-100℃ 冲泡、15-30 秒出汤，可泡 7-10 泡，香高韵长。',
+    红茶: '红茶宜 90-95℃ 冲泡、30-45 秒出汤，可泡 3-5 泡，蜜甜醇厚。',
+    黑茶: '黑茶宜 100℃ 沸水冲泡、30-60 秒出汤，越陈越香，醇厚顺滑。',
+  }
+  for (const [k, v] of Object.entries(typeHint)) {
+    if (question.includes(k)) return v
+  }
+  // 3. 茶器匹配（teawares.ts 数据，含常用别名）
+  const wareAlias: Record<string, string> = {
+    盖碗: '白瓷盖碗', 紫砂: '紫砂壶', 玻璃杯: '玻璃杯',
+    青瓷: '青瓷盖碗', 石瓢: '段泥石瓢壶', 建盏: '建盏天目杯',
+  }
+  for (const [alias, fullName] of Object.entries(wareAlias)) {
+    if (question.includes(alias)) {
+      const ware = teawares.find(w => w.name === fullName)
+      if (ware) return `${ware.name}：${ware.description.slice(0, 40)}`
+    }
+  }
+  // 4. 无匹配 → 通用格言
+  return FALLBACK_REPLIES[Math.floor(Math.random() * FALLBACK_REPLIES.length)]!
+}
+
 // ============ RAG 知识库检索 ============
 
 async function fetchRAGContext(question: string): Promise<string> {
@@ -310,11 +348,11 @@ export async function askTeaMaster(question: string, history: ChatMessage[] = []
     })
     lastCallTime = Date.now()
 
-    if (!res.ok) return FALLBACK_REPLIES[Math.floor(Math.random() * FALLBACK_REPLIES.length)]!
+    if (!res.ok) return ruleBasedReply(question)
     const data = await res.json()
-    return data.content || FALLBACK_REPLIES[Math.floor(Math.random() * FALLBACK_REPLIES.length)]!
+    return data.content || ruleBasedReply(question)
   } catch {
-    return FALLBACK_REPLIES[Math.floor(Math.random() * FALLBACK_REPLIES.length)]!
+    return ruleBasedReply(question)
   }
 }
 

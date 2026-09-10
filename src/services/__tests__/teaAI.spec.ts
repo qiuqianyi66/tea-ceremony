@@ -44,4 +44,28 @@ describe('teaAI 降级逻辑（后端代理不可用时）', () => {
     expect(reply).toBeTruthy()
     expect(reply.length).toBeGreaterThan(0)
   })
+
+  it('askTeaMaster：离线时含茶名问题返回该茶冲泡参数（数据驱动，非通用格言）', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('network down')))
+    const { askTeaMaster } = await freshTeaAI()
+    const reply = await askTeaMaster('西湖龙井怎么泡？')
+    expect(reply).toContain('西湖龙井')
+    expect(reply).toContain('80')
+    expect(reply).toContain('秒')
+  })
+
+  it('askTeaMaster：离线时含茶类问题返回该类基准参数', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('network down')))
+    const { askTeaMaster } = await freshTeaAI()
+    const reply = await askTeaMaster('红茶用什么水温？')
+    expect(reply).toContain('红茶')
+    expect(reply).toContain('90')
+  })
+
+  it('askTeaMaster：离线时含茶器问题返回茶器信息', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('network down')))
+    const { askTeaMaster } = await freshTeaAI()
+    const reply = await askTeaMaster('盖碗有什么好处？')
+    expect(reply).toContain('盖碗')
+  })
 })
