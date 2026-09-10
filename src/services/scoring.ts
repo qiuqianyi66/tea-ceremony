@@ -5,15 +5,29 @@
 import type { TasteDimensions, TastingRecord } from '@/types/tasting'
 import type { TeaWare } from '@/types/teaware'
 
-/** 计算工艺系数 */
-export function calculateProcessFactor(
+/** 工艺系数分解（可解释：温度 / 时间 / 茶器 / 水 各因子） */
+export interface ProcessFactorParts {
+  tempDiff: number
+  tempFactor: number
+  timeDiff: number
+  timeFactor: number
+  baseFactor: number
+  wareName: string | null
+  wareBonus: number | null
+  compensation: number
+  waterFactor: number
+  factor: number
+}
+
+/** 计算工艺系数各组成因子（calculateProcessFactor 与 explainProcessFactor 共用）。 */
+function computeProcessParts(
   actualTemp: number,
   bestTemp: number,
   actualTime: number,
   bestTime: number,
   teaWare?: TeaWare | null,
   waterFactor: number = 1.0,
-): number {
+): ProcessFactorParts {
   // 温度偏差系数：偏差越大，扣分越多
   const tempDiff = Math.abs(actualTemp - bestTemp)
   const tempFactor = Math.max(0, 1 - tempDiff / 30)
@@ -26,14 +40,42 @@ export function calculateProcessFactor(
   // 基础工艺系数 = 温度 + 时间 取平均
   const baseFactor = (tempFactor + timeFactor) / 2
 
-  // 茶器匹配加成
+  // 茶器匹配加成：工艺偏差越大、茶器越合用时补偿越多（弥补操作偏差）
+  let wareName: string | null = null
+  let wareBonus: number | null = null
+  let compensation = 0
   if (teaWare) {
-    const wareBonus = (teaWare.bonus.heatRetention + teaWare.bonus.visual) / 2
-    const compensation = (1 - baseFactor) * (wareBonus - 0.8) * 0.5
-    return Math.min(1, (baseFactor + Math.max(0, compensation)) * waterFactor)
+    wareName = teaWare.name
+    wareBonus = (teaWare.bonus.heatRetention + teaWare.bonus.visual) / 2
+    compensation = Math.max(0, (1 - baseFactor) * (wareBonus - 0.8) * 0.5)
   }
 
-  return Math.min(1, baseFactor * waterFactor)
+  const factor = Math.min(1, (baseFactor + compensation) * waterFactor)
+  return { tempDiff, tempFactor, timeDiff, timeFactor, baseFactor, wareName, wareBonus, compensation, waterFactor, factor }
+}
+
+/** 计算工艺系数 */
+export function calculateProcessFactor(
+  actualTemp: number,
+  bestTemp: number,
+  actualTime: number,
+  bestTime: number,
+  teaWare?: TeaWare | null,
+  waterFactor: number = 1.0,
+): number {
+  return computeProcessParts(actualTemp, bestTemp, actualTime, bestTime, teaWare, waterFactor).factor
+}
+
+/** 工艺系数分解（供 UI 展示"为什么是这个系数"）。 */
+export function explainProcessFactor(
+  actualTemp: number,
+  bestTemp: number,
+  actualTime: number,
+  bestTime: number,
+  teaWare?: TeaWare | null,
+  waterFactor: number = 1.0,
+): ProcessFactorParts {
+  return computeProcessParts(actualTemp, bestTemp, actualTime, bestTime, teaWare, waterFactor)
 }
 
 /** 计算综合评分（1-10分） */

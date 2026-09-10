@@ -9,6 +9,7 @@ import {
   calculateOverallScore,
   getScoreLevel,
   generateRecordId,
+  explainProcessFactor,
 } from '@/services/scoring'
 import type { TeaWare } from '@/types/teaware'
 import { TeaWareType } from '@/types/teaware'
@@ -81,6 +82,36 @@ describe('calculateProcessFactor 工艺系数', () => {
 
   it('水质系数参与乘法', () => {
     expect(calculateProcessFactor(80, 80, 60, 60, null, 0.8)).toBe(0.8)
+  })
+})
+
+describe('explainProcessFactor 工艺系数分解', () => {
+  it('返回各组成因子且 factor 与 calculateProcessFactor 一致', () => {
+    const parts = explainProcessFactor(70, 80, 90, 60, makeWare(), 1.0)
+    expect(parts.tempDiff).toBe(10)
+    expect(parts.tempFactor).toBeCloseTo(1 - 10 / 30)
+    expect(parts.timeDiff).toBe(30)
+    expect(parts.timeFactor).toBeCloseTo(1 - 30 / 30)
+    expect(parts.baseFactor).toBeCloseTo((parts.tempFactor + parts.timeFactor) / 2)
+    expect(parts.wareName).toBe(makeWare().name)
+    expect(parts.wareBonus).toBe((makeWare().bonus.heatRetention + makeWare().bonus.visual) / 2)
+    expect(parts.factor).toBe(calculateProcessFactor(70, 80, 90, 60, makeWare(), 1.0))
+  })
+
+  it('无茶器时 wareName 为 null 且无补偿', () => {
+    const parts = explainProcessFactor(70, 80, 90, 60, null, 1.0)
+    expect(parts.wareName).toBeNull()
+    expect(parts.wareBonus).toBeNull()
+    expect(parts.compensation).toBe(0)
+    expect(parts.factor).toBe(parts.baseFactor)
+  })
+
+  it('工艺无偏差时无扣减、factor 为 1', () => {
+    const parts = explainProcessFactor(80, 80, 60, 60, null, 1.0)
+    expect(parts.tempFactor).toBe(1)
+    expect(parts.timeFactor).toBe(1)
+    expect(parts.baseFactor).toBe(1)
+    expect(parts.factor).toBe(1)
   })
 })
 

@@ -3,7 +3,8 @@ import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTeaStore } from '@/stores/tea'
 import { getSoupColor } from '@/data/teas'
-import { getScoreLevel } from '@/services/scoring'
+import { getScoreLevel, explainProcessFactor } from '@/services/scoring'
+import { WATER_TYPES } from '@/data/constants'
 import { generateTastingNote } from '@/services/teaAI'
 import TasteRadarChart from '@/components/tasting/TasteRadarChart.vue'
 import TasteTrendChart from '@/components/tasting/TasteTrendChart.vue'
@@ -170,6 +171,20 @@ const moodOptions = ['愉悦', '安静', '禅定', '沉思', '悠然']
 // ============ 评分结果 ============
 const finalScore = computed(() => store.calculateScore())
 const scoreLevel = computed(() => getScoreLevel(finalScore.value))
+const waterFactor = computed(() => WATER_TYPES.find(w => w.id === store.waterType)?.factor ?? 1.0)
+/** 工艺系数分解（"为什么是这个系数"）：温度 / 时间 / 茶器 / 水 */
+const processExplanation = computed(() => {
+  const tea = store.currentTea
+  if (!tea) return null
+  return explainProcessFactor(
+    store.brewState.currentTemp,
+    tea.bestTemp,
+    store.brewState.steepTime,
+    tea.bestTime,
+    store.selectedTeaWare,
+    waterFactor.value,
+  )
+})
 const aiComment = ref('')
 const isSaving = ref(false)
 const saveError = ref('')
@@ -499,6 +514,12 @@ const averageDimensions = computed(() => {
               {{ store.selectedTeaWare.name }}
             </span>
           </template>
+        </p>
+        <p v-if="processExplanation" class="mb-6 text-[11px] leading-5 text-[var(--color-wood-light)]">
+          温度 {{ store.brewState.currentTemp }}°C（宜 {{ store.currentTea?.bestTemp }}°C，{{ processExplanation.tempFactor >= 1 ? '无扣减' : '−' + Math.round((1 - processExplanation.tempFactor) * 100) + '%' }}）
+          · 时间 {{ store.brewState.steepTime }}s（宜 {{ store.currentTea?.bestTime }}s，{{ processExplanation.timeFactor >= 1 ? '无扣减' : '−' + Math.round((1 - processExplanation.timeFactor) * 100) + '%' }}）
+          <template v-if="processExplanation.wareName">· {{ processExplanation.wareName }}补偿 +{{ Math.round(processExplanation.compensation * 100) }}%</template>
+          · 水 ×{{ processExplanation.waterFactor }} → {{ (processExplanation.factor * 100).toFixed(0) }}%
         </p>
       </div>
 
