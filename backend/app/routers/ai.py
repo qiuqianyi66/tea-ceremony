@@ -1,5 +1,6 @@
-"""AI 代理路由：把第三方 LLM（Pollinations）请求收敛到后端，浏览器不直连外部服务。
+"""AI 代理路由：把第三方 LLM 请求收敛到后端，浏览器不直连外部服务。
 
+- 供应商：OpenRouter（OpenAI 兼容接口），默认走免费模型路由 openrouter/free。
 - 统一超时 / 失败处理：第三方不可用时返回 502，前端据此降级到规则引擎。
 - 端点：/api/ai/recommend（荐茶）、/api/ai/note（茶记）、/api/ai/chat（问答）。
 """
@@ -11,7 +12,7 @@ import httpx
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from app.config import AI_PROXY_MODEL, AI_PROXY_TIMEOUT, AI_PROXY_URL
+from app.config import AI_PROXY_KEY, AI_PROXY_MODEL, AI_PROXY_TIMEOUT, AI_PROXY_URL
 
 logger = logging.getLogger("tea.ai")
 
@@ -44,26 +45,30 @@ class AIResponse(BaseModel):
 
 
 def _proxy(messages: list[dict]) -> str:
-    """调用 Pollinations 并返回回复文本；任何失败抛 502。"""
+    """调用 LLM 并返回回复文本；任何失败抛 502。"""
+    headers = {"Content-Type": "application/json"}
+    if AI_PROXY_KEY:
+        headers["Authorization"] = f"Bearer {AI_PROXY_KEY}"
     try:
         with httpx.Client(timeout=AI_PROXY_TIMEOUT) as client:
             res = client.post(
                 AI_PROXY_URL,
+                headers=headers,
                 json={"model": AI_PROXY_MODEL, "messages": messages},
             )
     except httpx.HTTPError as error:
-        logger.warning("调用 Pollinations 失败: %s", error)
+        logger.warning("调用 LLM 失败: %s", error)
         raise HTTPException(status_code=502, detail="AI 服务暂不可用，请稍后重试") from error
 
     if res.status_code != 200:
-        logger.warning("Pollinations 返回非 200: %s", res.status_code)
+        logger.warning("LLM 返回非 200: %s", res.status_code)
         raise HTTPException(status_code=502, detail="AI 服务暂不可用，请稍后重试")
 
     try:
         data = res.json()
         content = data.get("choices", [{}])[0].get("message", {}).get("content")
     except (ValueError, IndexError, AttributeError):
-        logger.warning("Pollinations 响应解析失败")
+        logger.warning("LLM 响应解析失败")
         content = None
     if not content:
         raise HTTPException(status_code=502, detail="AI 服务返回异常")

@@ -22,7 +22,11 @@ CORS_ORIGINS = [
 RATE_LIMIT_MAX = int(os.environ.get("RATE_LIMIT_MAX", "300"))
 RATE_LIMIT_WINDOW = int(os.environ.get("RATE_LIMIT_WINDOW", "60"))
 
-# AI 代理（Pollinations）
-AI_PROXY_URL = os.environ.get("AI_PROXY_URL", "https://text.pollinations.ai/openai")
-AI_PROXY_MODEL = os.environ.get("AI_PROXY_MODEL", "deepseek")
-AI_PROXY_TIMEOUT = int(os.environ.get("AI_PROXY_TIMEOUT", "8"))
+# AI 代理（OpenRouter，OpenAI 兼容）
+# - 注册 key（免费，每天约 50 次免费模型调用）后填入 .env 的 AI_PROXY_KEY
+# - 默认模型：免费池中实测中文稳定的模型；免费档会动态变化，可在 .env 改 AI_PROXY_MODEL
+# - 未配置 key 时后端返回 401/502，前端自动降级到规则引擎（离线兜底不受影响）
+AI_PROXY_URL = os.environ.get("AI_PROXY_URL", "https://openrouter.ai/api/v1/chat/completions")
+AI_PROXY_MODEL = os.environ.get("AI_PROXY_MODEL", "inclusionai/ling-3.0-flash-sante:free")
+AI_PROXY_KEY = os.environ.get("AI_PROXY_KEY", "")
+AI_PROXY_TIMEOUT = int(os.environ.get("AI_PROXY_TIMEOUT", "30"))
