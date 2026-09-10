@@ -61,6 +61,7 @@ const typeCoverage = computed(() => Math.round((tastedTypes.value.size / 6) * 10
           <component :is="`Icon${level.icon}`" class="w-7 h-7 mb-1 mx-auto" :class="store.userXp >= level.minXp ? 'text-[var(--color-tea-gold)]' : ''" />
           <p class="text-xs font-bold text-[var(--color-wood)]">{{ level.name }}</p>
           <p class="text-[10px] text-[var(--color-wood-light)]">{{ level.desc }}</p>
+          <p class="mt-1 text-[10px] leading-4 text-[var(--color-tea-gold)]/80">{{ level.essence }}</p>
         </div>
       </div>
     </div>

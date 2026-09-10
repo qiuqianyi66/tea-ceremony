@@ -127,7 +127,7 @@ async function retrySync() {
               <template v-else>! 同步失败：{{ record.syncError || '请重试' }}</template>
             </p>
           </div>
-          <span class="text-2xl font-bold" :style="{ color: record.overallScore >= 7.5 ? '#4A7C59' : record.overallScore >= 6 ? '#5D4E37' : '#8B7355' }">{{ record.overallScore }}</span>
+          <span class="text-2xl font-bold" :style="{ color: record.overallScore >= 7.5 ? '#4A7C59' : record.overallScore >= 6 ? '#5D4E37' : '#7E6A55' }">{{ record.overallScore }}</span>
         </div>
         <div class="flex flex-wrap gap-2 mt-2">
           <span class="px-2 py-0.5 text-xs bg-[var(--color-paper)] text-[var(--color-wood)] rounded">

@@ -60,13 +60,13 @@ export function calculateOverallScore(
   return Math.round(Math.max(1, Math.min(10, finalScore)) * 10) / 10
 }
 
-/** 获取评分等级 */
+/** 获取评分等级（色值在 cream #FAF6F0 上对比度 ≥ 4.5:1，达标见 P0-3 审计） */
 export function getScoreLevel(score: number): { text: string; color: string } {
-  if (score >= 9) return { text: '完美', color: '#C9A96E' }
+  if (score >= 9) return { text: '完美', color: '#8A6A3A' }
   if (score >= 7.5) return { text: '优秀', color: '#4A7C59' }
   if (score >= 6) return { text: '良好', color: '#5D4E37' }
-  if (score >= 4) return { text: '一般', color: '#8B7355' }
-  return { text: '需改进', color: '#999999' }
+  if (score >= 4) return { text: '一般', color: '#7E6A55' }
+  return { text: '需改进', color: '#6E6259' }
 }
 
 /** 生成记录 ID */
