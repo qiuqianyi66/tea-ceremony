@@ -114,7 +114,7 @@ async function downloadCard() {
   ctx.fillStyle = '#5D4E37'
   ctx.font = 'bold 56px serif'
   ctx.fillText(props.tea.name, 78, 190)
-  ctx.fillStyle = '#8B7355'
+  ctx.fillStyle = '#7E6A55'
   ctx.font = '26px sans-serif'
   ctx.fillText(`${props.tea.type}  ·  ${props.tea.origin}  ·  ${props.tea.altitude ?? '产地海拔'}`, 80, 235)
 
@@ -131,7 +131,7 @@ async function downloadCard() {
   })
 
   // 描述（折行最多 6 行）
-  ctx.fillStyle = '#8B7355'
+  ctx.fillStyle = '#7E6A55'
   ctx.font = '26px serif'
   const maxWidth = 740
   let cursorY = 420
@@ -158,7 +158,7 @@ async function downloadCard() {
   ctx.moveTo(78, 700)
   ctx.lineTo(822, 700)
   ctx.stroke()
-  ctx.fillStyle = '#8B7355'
+  ctx.fillStyle = '#7E6A55'
   ctx.font = '24px sans-serif'
   ctx.fillText(`水温 ${props.tea.bestTemp}°C    首泡 ${props.tea.bestTime}s    可冲 ${props.tea.infusions} 泡`, 78, 745)
 

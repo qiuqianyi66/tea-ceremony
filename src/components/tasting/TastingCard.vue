@@ -109,14 +109,14 @@ async function downloadCard() {
   ctx.fillStyle = '#5D4E37'
   ctx.font = 'bold 52px serif'
   ctx.fillText(props.record.teaName, 78, 180)
-  ctx.fillStyle = '#8B7355'
+  ctx.fillStyle = '#7E6A55'
   ctx.font = '24px sans-serif'
   ctx.fillText(`${new Date(props.record.date).toLocaleDateString()}  ·  第 ${props.record.infusions} 泡`, 80, 225)
 
   ctx.fillStyle = scoreLevel.color
   ctx.font = 'bold 100px sans-serif'
   ctx.fillText(String(props.record.overallScore), 660, 180)
-  ctx.fillStyle = '#8B7355'
+  ctx.fillStyle = '#7E6A55'
   ctx.font = '24px sans-serif'
   ctx.fillText(scoreLevel.text, 708, 225)
 
@@ -128,7 +128,7 @@ async function downloadCard() {
     ctx.fillStyle = 'rgba(255,255,255,.65)'
     roundRect(ctx, x, y, 155, 110, 14)
     ctx.fill()
-    ctx.fillStyle = '#8B7355'
+    ctx.fillStyle = '#7E6A55'
     ctx.font = '22px sans-serif'
     ctx.fillText(label, x + 62, y + 38)
     ctx.fillStyle = '#5D4E37'
@@ -136,7 +136,7 @@ async function downloadCard() {
     ctx.fillText(String(props.record.dimensions[key]), x + 67, y + 84)
   })
 
-  ctx.fillStyle = '#8B7355'
+  ctx.fillStyle = '#7E6A55'
   ctx.font = '24px sans-serif'
   ctx.fillText(`水温 ${props.record.brewTemp}°C    浸泡 ${props.record.brewTime}s`, 78, 680)
   if (props.record.weather || props.record.mood) {
@@ -149,7 +149,7 @@ async function downloadCard() {
     ctx.moveTo(78, 760)
     ctx.lineTo(822, 760)
     ctx.stroke()
-    ctx.fillStyle = '#8B7355'
+    ctx.fillStyle = '#7E6A55'
     ctx.font = 'italic 24px serif'
     ctx.fillText(`“${props.record.notes.slice(0, 42)}”`, 78, 815)
   }
