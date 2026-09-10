@@ -155,6 +155,7 @@ export interface TeaShareData {
   origin: string
   flavor: string[]
   description: string
+  story?: string
 }
 
 /** 校验未知输入是否为合法的茶知识快照；不合法返回 null。 */
@@ -167,7 +168,8 @@ function validateTeaShareData(raw: unknown): TeaShareData | null {
   if (typeof r.origin !== 'string' || !r.origin) return null
   if (typeof r.description !== 'string' || !r.description) return null
   if (!Array.isArray(r.flavor) || !r.flavor.every(f => typeof f === 'string')) return null
-  return {
+  if (r.story !== undefined && typeof r.story !== 'string') return null
+  const result: TeaShareData = {
     teaId: r.teaId,
     teaName: r.teaName,
     teaType: r.teaType,
@@ -175,6 +177,8 @@ function validateTeaShareData(raw: unknown): TeaShareData | null {
     flavor: r.flavor as string[],
     description: r.description,
   }
+  if (typeof r.story === 'string') result.story = r.story
+  return result
 }
 
 /** 编码茶知识快照为 base64url 字符串。 */

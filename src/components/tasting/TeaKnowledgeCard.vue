@@ -29,6 +29,7 @@ async function toggleSharePanel() {
       origin: props.tea.origin,
       flavor: props.tea.flavor,
       description: props.tea.description,
+      story: props.tea.story,
     }
     shareUrl.value = buildTeaShareUrl(encodeTeaShare(data))
     qrDataUrl.value = await QRCode.toDataURL(shareUrl.value, {
@@ -56,8 +57,9 @@ async function shareTea() {
     `【${props.tea.name}】${props.tea.type} · ${props.tea.origin}`,
     `风味：${props.tea.flavor.join('、')}`,
     props.tea.description,
+    props.tea.story ? `“${props.tea.story.slice(0, 40)}…”` : '',
     '来自「一盏茶」茶文化空间',
-  ].join('\n')
+  ].filter(Boolean).join('\n')
 
   try {
     if (navigator.share) {
@@ -177,6 +179,7 @@ async function downloadCard() {
       origin: props.tea.origin,
       flavor: props.tea.flavor,
       description: props.tea.description,
+      story: props.tea.story,
     }
     const url = buildTeaShareUrl(encodeTeaShare(data))
     const dataUrl = await QRCode.toDataURL(url, { width: 200, margin: 0, errorCorrectionLevel: 'M' })
@@ -220,6 +223,10 @@ async function downloadCard() {
     </div>
 
     <p class="mt-4 text-sm leading-relaxed text-[var(--color-wood)]">{{ tea.description }}</p>
+
+    <blockquote v-if="tea.story" class="mt-4 border-l-2 border-[var(--color-tea-gold)]/40 pl-3 text-xs italic leading-relaxed text-[var(--color-wood-light)]">
+      “{{ tea.story.slice(0, 56) }}…”
+    </blockquote>
 
     <div class="mt-4 flex flex-wrap gap-2">
       <span v-for="f in tea.flavor" :key="f"

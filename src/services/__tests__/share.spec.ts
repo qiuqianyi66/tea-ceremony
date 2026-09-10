@@ -210,4 +210,11 @@ describe('茶知识分享 encodeTeaShare / decodeTeaShare', () => {
     expect(parseTeaShareQuery(undefined)).toBeNull()
     expect(parseTeaShareQuery('broken')).toBeNull()
   })
+
+  it('story 字段：编码解码往返；旧链接（无 story）兼容为 undefined', () => {
+    const withStory = { ...teaShare, story: '乾隆御封狮峰十八棵茶树为御茶。' }
+    expect(decodeTeaShare(encodeTeaShare(withStory))).toEqual(withStory)
+    expect(decodeTeaShare(encodeTeaShare(teaShare))).toEqual(teaShare)
+    expect(decodeTeaShare(encodeTeaShare(teaShare)).story).toBeUndefined()
+  })
 })
