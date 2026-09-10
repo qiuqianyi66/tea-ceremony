@@ -1,6 +1,8 @@
 /**
  * 历代茶人数据
- * 中国茶文化历史上的重要人物
+ * 中国茶文化历史上的重要人物。
+ * 来源：生平与贡献依据史载与茶学文献（《茶经》《大观茶论》《茶疏》《随园食单》等），
+ * quote 为原典原文；不确定处标"待核实"（当前无）。
  */
 
 export interface TeaMaster {
@@ -55,8 +57,8 @@ export const TEA_MASTERS: TeaMaster[] = [
     dynasty: '清',
     title: '六下江南品茶帝',
     avatar: 'Landmark',
-    description: '爱新觉罗·弘历（1711-1799），清乾隆帝。六下江南，四次驾临龙井茶区，亲封狮峰十八棵茶树为"御茶"。',
-    contribution: '推动龙井茶名扬天下，题诗《观采茶作歌》，为龙井茶文化的传播做出不可磨灭的贡献。',
+    description: '爱新觉罗·弘历（1711-1799），清乾隆帝。六下江南、四次驾临龙井茶区，亲封狮峰十八棵茶树为"御茶"；一生御制茶诗数百首，嗜茶成癖。',
+    contribution: '推动龙井茶名扬天下，题诗《观采茶作歌》；御制茶诗数百首，对茶文化的传播做出不可磨灭的贡献。',
     quote: '火前嫩，火后老，惟有骑火品最好。',
     relatedTeas: ['longjing', 'biluochun'],
   },
@@ -235,17 +237,6 @@ export const TEA_MASTERS: TeaMaster[] = [
     contribution: '将茶与文人画结合，创作了大量以茶为主题的绘画作品，诗画相映成趣。',
     quote: '柴门反关无俗客，纱帽笼头自煎吃。',
     relatedTeas: ['shuixian', 'dahongpao'],
-  },
-  {
-    id: 'hongliangji',
-    name: '弘历（乾隆）',
-    dynasty: '清',
-    title: '十全茶帝',
-    avatar: 'Crown',
-    description: '清高宗弘历（1711-1799），即乾隆皇帝。一生嗜茶，曾六下江南巡视茶区。',
-    contribution: '御制茶诗数百首，亲封龙井十八棵御茶树，极大推动了中国茶文化的发展。',
-    quote: '君不可一日无茶。',
-    relatedTeas: ['longjing', 'biluochun'],
   },
   {
     id: 'pu_songling',

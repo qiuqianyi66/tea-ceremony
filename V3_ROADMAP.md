@@ -57,7 +57,7 @@
 |---|---|---|
 | teas.ts | 49 款 | 六大茶类 |
 | teawares.ts | 6 款 | 茶器 |
-| teaMasters.ts | 22 位 | 茶人 |
+| teaMasters.ts | 21 位 | 茶人（乾隆重复记录已合并，2026-09-10） |
 | gardenRegions.ts | 4 产区 | hangzhou / wuyishan / yunnan / fuding |
 | solarTerms.ts | 24 节气 | 节气数据 |
 | teaRegions.ts | 52 条 | 产区数据 |
