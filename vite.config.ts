@@ -59,7 +59,8 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,svg,webm,mp3,woff2}'],
+        globPatterns: ['**/*.{js,css,html,ico,svg,webm,mp3,woff2,jpg,png}'],
+        globIgnores: ['**/3d/**', '**/*.map'],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -83,6 +84,15 @@ export default defineConfig({
             options: {
               cacheName: 'audio-cache',
               expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 * 30 },
+            },
+          },
+          {
+            // 3D 纹理大图（单张 2-6MB）不走预缓存，首次加载后 CacheFirst
+            urlPattern: /\/3d\/.*\.(?:jpg|png)$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: '3d-textures',
+              expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 365 },
             },
           },
         ],
