@@ -48,7 +48,7 @@ async function retrySync() {
           :disabled="isSyncing"
           @click="retrySync"
         >{{ isSyncing ? '同步中…' : '重试同步' }}</button>
-        <button @click="router.push('/')" class="inline-flex min-h-11 items-center text-[var(--color-wood-light)] hover:text-[var(--color-wood)]">返回</button>
+        <button @click="router.push('/')" class="inline-flex min-h-11 min-w-11 items-center justify-center text-[var(--color-wood-light)] hover:text-[var(--color-wood)]">返回</button>
       </div>
     </div>
 

@@ -491,6 +491,7 @@ onUnmounted(() => {
 .brand {
   display: flex;
   align-items: center;
+  min-height: 2.75rem;
   gap: 0.6rem;
   color: #f3efe4;
   background: none;
@@ -639,6 +640,9 @@ onUnmounted(() => {
   box-shadow: 0 10px 32px rgba(201, 169, 110, 0.5);
 }
 .enter-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
   background: none;
   border: none;
   color: rgba(245, 241, 230, 0.55);
@@ -693,6 +697,9 @@ onUnmounted(() => {
   margin: 0;
 }
 .flow-more {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
   background: none;
   border: none;
   cursor: pointer;
@@ -781,6 +788,9 @@ onUnmounted(() => {
 }
 .tea-org { font-size: 0.72rem; color: rgba(245, 241, 230, 0.5); }
 .tea-share {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
   font-size: 0.7rem;
   letter-spacing: 0.06em;
   color: rgba(201, 169, 110, 0.95);
