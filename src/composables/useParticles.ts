@@ -28,7 +28,7 @@ interface ParticleSystemState {
 
 // ============ 配置工厂 ============
 
-const COLOR_TEA_GOLD = '#C89B3C'
+const COLOR_TEA_GOLD = '#9E8050'
 const COLOR_WOOD = '#5D4E37'
 const COLOR_STEAM = '#E6E0D8'
 const COLOR_RIPPLE = '#B4A08C'

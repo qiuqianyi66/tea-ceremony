@@ -53,14 +53,14 @@ const props = withDefaults(defineProps<Props>(), {
 
 // 维度配置（按 DESIGN_SPEC.md 顺序）
 const DIMENSIONS = [
-  { key: 'bitterness', label: '苦涩度', color: '#8B7355' },
-  { key: 'sweetness', label: '甜度', color: '#C89B3C' },
+  { key: 'bitterness', label: '苦涩度', color: '#7E6A55' },
+  { key: 'sweetness', label: '甜度', color: '#9E8050' },
   { key: 'aftertaste', label: '回甘', color: '#6B7D5A' },
   { key: 'body', label: '醇厚度', color: '#5D4E37' },
   { key: 'aroma', label: '香气', color: '#A33B2E' },
   { key: 'rhyme', label: '汤感', color: '#36454F' },
   { key: 'shape', label: '身心', color: '#C9A96E' },
-  { key: 'mind', label: '整体', color: '#1C1C1C' },
+  { key: 'mind', label: '整体', color: '#3D3225' },
 ] as const
 
 // 计算标签和数据
