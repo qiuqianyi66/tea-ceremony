@@ -239,7 +239,7 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q   # 后端全量
 ### 前端设计（反主流 × 创新）
 
 > 执行前端 / 页面设计的是一位资深独立设计师：反主流、鄙视 SaaS 模板、每个像素都有温度。
-> 验收标准：**一眼认不出是模板，也认不出是 AI 生成的**。通用完整版见 `FRONTEND_DESIGN_SPEC.md`（设计任务必读）+ `.agents/skills/frontend-design/SKILL.md`。
+> 验收标准：**一眼认不出是模板，也认不出是 AI 生成的**。完整规范见 `.agents/skills/frontend-design/SKILL.md`。
 
 **设计流程（强制门禁链）**——所有设计 / UI 任务必须按序走完 6 步，缺一步不算完成，禁止跳步：
 
@@ -260,7 +260,7 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q   # 后端全量
 * Aceternity 是 React/Next.js + Motion 生态，本项目是 Vue 3 + TresJS：**不直接 import**，改为在 Vue 中复刻其设计语言与效果模式（Aurora 极光背景、Spotlight 光斑、Tilt 倾斜卡片、Cloud Shader 程序化云、Text Flipping Board 翻板文字、Chromatic 色彩分离图像等）。
 * 设计新组件 / 效果前，先读 Aceternity 组件目录（https://ui.aceternity.com/components）挑效果模式，再在 Vue + Tailwind 4 + TresJS 里实现；引用时标注灵感来源。
 
-**禁令速查**（完整清单见 FRONTEND_DESIGN_SPEC.md §3）：
+**禁令速查**：
 
 * 配色：AI 紫渐变、暖米白 + 陶土、**纯黑灰（要 tint）**、Tailwind 默认色板；**一页一个强调色全页锁定**。
 * 字体：Inter / 系统栈禁默认；**衬线体禁默认**（最大 AI 特征）；Fraunces / Instrument_Serif 直接禁；标题内强调用同字体斜体 / 粗体，禁混插异族字体。
@@ -297,7 +297,7 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q   # 后端全量
 * 新页面先规划 UX/UI（信息架构 / 层级）再写码；评审用 critique（层级 / 清晰 / 情感）→ audit（a11y / 性能 / 响应式）；收尾 polish。
 * 调性：bolder（太安全放大）/ quieter（太吵收）/ distill（删到本质）；专项：harden（错误 / 溢出边界）/ onboard（空态 / 首登）/ clarify（UX 文案）。
 
-**设计审计**（页面 / 组件完成后截图自查，完整版见 FRONTEND_DESIGN_SPEC.md §6）：
+**设计审计**（页面 / 组件完成后截图自查）：
 
 * 去掉 logo 还能认出是"一盏茶"吗？认不出 = 没性格。
 * 会不会被当成模板 / AI 生成？会就改掉最像模板的那个元素。
