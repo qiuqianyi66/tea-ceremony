@@ -11,6 +11,10 @@ import type { Tea } from '@/types/tea'
 import { encodeTeaShare, buildTeaShareUrl } from '@/services/share'
 // 首页茶山实景背景：Tanmoy281 / Wikimedia Commons，CC BY-SA 4.0，详见 README「素材致谢」
 import heroImg from '@/assets/tea-mountain-hero.jpg'
+// 首页茶山晨雾视频背景：Vaishnav A V / Pexels，Pexels License（免费商用），详见 SOURCES.md VIDEO 段
+const heroVideoUrl = 'https://videos.pexels.com/video-files/38238683/16236719_1280_720_60fps.mp4'
+// 系统减弱动效偏好：开启时跳过视频背景（叠加 CSS 媒体查询兜底）
+const prefersReducedMotion = ref(false)
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -153,6 +157,7 @@ watch(menuOpen, (open) => {
 
 onMounted(() => {
   requestAnimationFrame(() => requestAnimationFrame(() => { entered.value = true }))
+  prefersReducedMotion.value = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   tryStartAudio()
   teaStore.loadSolarCheckins().then(() => {
     termChecked.value = !!teaStore.solarCheckins[term.id]
@@ -172,7 +177,17 @@ onUnmounted(() => {
   <div class="home-root" :class="[`time-${timeOfDay}`, { 'is-entered': entered }]" @click="tryStartAudio">
     <!-- 实景茶山背景：固定铺满，内容在其上滚动 -->
     <div class="hero-parallax" :style="parallaxStyle">
-      <img :src="heroImg" alt="晨雾中的茶山茶园" class="hero-img" draggable="false" />
+      <!-- 静态图 fallback：始终在底层，视频加载失败/离线/reduced-motion 时可见 -->
+      <img :src="heroImg" alt="晨雾中的茶山茶园" class="hero-img hero-img-fallback" draggable="false" />
+      <!-- 视频层：在线且非 reduced-motion 时加载，覆盖在静态图上 -->
+      <video v-if="!prefersReducedMotion"
+        class="hero-video"
+        autoplay muted loop playsinline
+        :poster="heroImg"
+        preload="none"
+        aria-hidden="true">
+        <source :src="heroVideoUrl" type="video/mp4" />
+      </video>
     </div>
     <div class="mist mist-a" aria-hidden="true"></div>
     <div class="mist mist-b" aria-hidden="true"></div>
@@ -384,6 +399,16 @@ onUnmounted(() => {
   from { transform: scale(1); }
   to { transform: scale(1.1) translate(-1.2%, -1%); }
 }
+.hero-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 52%;
+  /* 与 .hero-img 滤镜保持一致，夜间主题在下方单独覆盖 */
+  filter: saturate(0.78) brightness(1.05) contrast(0.96);
+}
 
 .mist {
   position: fixed;
@@ -440,6 +465,7 @@ onUnmounted(() => {
     linear-gradient(to top, rgba(5, 10, 13, 0.86) 0%, rgba(5, 10, 13, 0.5) 36%, transparent 64%);
 }
 .time-night .hero-img { filter: saturate(0.7) brightness(0.62) hue-rotate(-8deg); }
+.time-night .hero-video { filter: saturate(0.7) brightness(0.62) hue-rotate(-8deg); }
 
 .hero-grain {
   position: fixed;
@@ -1033,6 +1059,7 @@ onUnmounted(() => {
 @media (prefers-reduced-motion: reduce) {
   .hero-img, .mist-a, .mist-b { animation: none; }
   .hero-parallax { transition: none; }
+  .hero-video { display: none; }
   .hero-content, .scroll-hint { transition: opacity 0.4s ease; transform: none; }
 }
 </style>

@@ -60,3 +60,11 @@
 - `dark-liubao.jpg`：**通用图**（普洱饼+玻璃杯代黑茶，无六堡专图）。
 - `dark-fuzhuan.jpg`：**通用图**（紧压茶饼，符合茯砖形态，安化黑茶/茯砖共享）。
 - `public/garden/wuyishan.jpg`、`public/garden/yunnan.jpg`、`public/garden/fuding.jpg`：**通用图**（无该地专图，用同类茶园实景代替；hangzhou.jpg 为杭州龙井茶园专图）。
+
+## VIDEO（视频素材）
+
+> 视频不本地化、不进入 PWA 缓存，直链加载失败/离线时首页 Hero 自动降级为静态图 tea-mountain-hero.jpg。
+
+| 文件/URL | 来源页面 | 授权 | 作者/摄影师 | 接入方式 |
+|----------|----------|------|-------------|----------|
+| https://videos.pexels.com/video-files/38238683/16236719_1280_720_60fps.mp4 | https://www.pexels.com/video/misty-landscape-over-tea-plantations-38238683/ | Pexels License | Vaishnav A V（@vaishnavav99） | 首页Hero背景（720p/11s），离线降级静态图 |
