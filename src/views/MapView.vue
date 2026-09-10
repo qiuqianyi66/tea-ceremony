@@ -1,13 +1,19 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, shallowRef } from 'vue'
-import * as echarts from 'echarts'
-import chinaMap from '@/data/china-map.json'
+import * as echarts from 'echarts/core'
+import { MapChart } from 'echarts/charts'
+import { TooltipComponent } from 'echarts/components'
+import { CanvasRenderer } from 'echarts/renderers'
+import type { ECharts, EChartsOption } from 'echarts'
+import chinaMapUrl from '@/data/china-map.json?url'
 import { teaRegions, getTeaRegion, type TeaRegion } from '@/data/tea-regions'
 import { TEA_REGIONS, type TeaRegion as MountainRegion } from '@/data/teaRegions'
 
 // ==================== ECharts 地图 ====================
+echarts.use([MapChart, TooltipComponent, CanvasRenderer])
+
 const mapContainer = ref<HTMLDivElement | null>(null)
-const chartInstance = shallowRef<echarts.ECharts | null>(null)
+const chartInstance = shallowRef<ECharts | null>(null)
 
 // 四大茶区配色（夜色暖光风格）
 const zoneColors: Record<string, string> = {
@@ -57,13 +63,20 @@ const mapData = computed(() =>
   })),
 )
 
-function initChart(): void {
+// 地图数据加载失败提示
+const mapLoadFailed = ref(false)
+
+async function initChart(): Promise<void> {
   if (!mapContainer.value) return
-  echarts.registerMap('china', chinaMap as never)
+  try {
+    const res = await fetch(chinaMapUrl)
+    if (!res.ok) throw new Error(`地图数据加载失败：HTTP ${res.status}`)
+    const geo = (await res.json()) as never
+    echarts.registerMap('china', geo)
   const chart = echarts.init(mapContainer.value)
   chartInstance.value = chart
 
-  const option: echarts.EChartsOption = {
+  const option: EChartsOption = {
     backgroundColor: 'transparent',
     tooltip: {
       trigger: 'item',
@@ -131,6 +144,10 @@ function initChart(): void {
 
   // 响应式
   window.addEventListener('resize', handleResize)
+  } catch (err) {
+    mapLoadFailed.value = true
+    console.error('[MapView] 地图数据加载失败', err)
+  }
 }
 
 function handleResize(): void {
@@ -184,7 +201,10 @@ const categoryColors: Record<string, string> = {
       <div class="lg:col-span-2">
         <div class="glass-panel rounded-2xl p-4 h-[500px] relative overflow-hidden">
           <div ref="mapContainer" class="w-full h-full"></div>
-          <div v-if="!selectedProvince" class="absolute bottom-4 left-4 text-xs text-[var(--color-wood-light)] opacity-60">
+          <div v-if="mapLoadFailed" class="absolute inset-0 flex items-center justify-center text-sm text-[var(--color-wood-light)]">
+            地图加载失败，请检查网络后重试
+          </div>
+          <div v-if="!selectedProvince && !mapLoadFailed" class="absolute bottom-4 left-4 text-xs text-[var(--color-wood-light)] opacity-60">
             提示：点击产茶省份查看详情 · 滚轮缩放 · 拖拽平移
           </div>
         </div>

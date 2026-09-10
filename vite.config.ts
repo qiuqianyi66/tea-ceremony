@@ -9,6 +9,11 @@ import tresCompilerOptions from '@tresjs/core/template-compiler-options'
 export default defineConfig({
   // GitHub Pages 使用项目子路径，本地和 Docker 部署保持根路径。
   base: process.env.GITHUB_ACTIONS === 'true' ? '/tea-ceremony/' : '/',
+  build: {
+    // Three.js/TresJS 库 chunk 约 0.8MB，单一依赖不可再拆且已路由懒加载，提高阈值消除误报。
+    // 业务 chunk（MapView 等）已通过地图数据外置 + echarts 按需控制在 500kB 内。
+    chunkSizeWarningLimit: 1000,
+  },
   server: {
     proxy: {
       '/api': 'http://localhost:8000',
@@ -59,7 +64,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,svg,webm,mp3,woff2,jpg,png}'],
+        globPatterns: ['**/*.{js,css,html,ico,svg,webm,mp3,woff2,jpg,png,json}'],
         globIgnores: ['**/3d/**', '**/*.map'],
         runtimeCaching: [
           {
