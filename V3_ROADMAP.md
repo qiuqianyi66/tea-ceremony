@@ -112,7 +112,8 @@
 | 设计令牌 | AGENTS.md 已立禁令与色板（4.2） | ✅ 已统一：色令牌（f455fa9）/字体角色（0f9414b）/触控目标（f7fb744）；四方向审计补五态/排版（89dd072/d330c58） | 完成 | `node scripts/scan-emoji.cjs` 零命中；逐页截图对比令牌；正文对比度 ≥ 4.5:1 |
 | 素材 | 29 张可商用图 + 1 视频已落地（第 6 章）；通用图覆盖的茶暂以本地增强替代 | 补专图**暂缓**（Pexels 全站 robots 拒自动访问、电商图库版权不可商用）；SOURCES.md 归并规则随数据同步维护 | P1·暂缓 | 若重启：每张新图登记 SOURCES.md 且 ≤ 体积上限；抽查归并关系与 teas.ts 一致 |
 | 茶文化深度 | 49 茶/21 茶人/24 节气数据齐；冲泡参数在茶类常识范围内 | ✅ 已完成：产区风土叙事（544621e）、参数全量比对归因（P1-1）、六境/节气叙事（5ec33ec）、茶人去重+来源标注（e35f1b8，22→21 位） | 完成 | 抽样 10 款茶参数与 tea-tasting 基准表一致；数据无编造（标来源）；无"待核实"悬空 |
-| 测试覆盖 | 74 Vitest + 13 E2E + verify-* 脚本群（audit-hex/touch/states/type/scan-emoji/gardens/pavilion/icons） | ✅ 已完成：分享链路 E2E 9 用例（1838801）；四方向审计脚本入库 | 完成 | 改动提交前跑对应 verify 脚本；分享卡 E2E 覆盖编码/解码/非法输入 |
+| 测试覆盖 | 81 Vitest + 13 E2E + 后端 34 过 1 跳 + verify-* 脚本群 | ✅ 已完成：分享链路 E2E 9 用例（1838801）；四方向审计脚本入库；test_culture 4 用例（3697d9b）；test_records 防 307（5f76ba7）；scoring explain 3 用例（b254bc7） | 完成 | 改动提交前跑对应 verify 脚本；分享卡 E2E 覆盖编码/解码/非法输入；后端 pytest 全量过 |
+| 后端链路 | FastAPI 路由 + /api/ai 代理 + /culture/search RAG + records 同步基础 | ✅ 已实测闭环：AI 代理无直连（test_ai 5 用例）；RAG 检索真实返回；修复 detail/graph 500 与 records 307（3697d9b/5f76ba7）；真实 Postgres 端到端实测 pending→failed→登录→synced→落库 | 完成 | 真实 Postgres 往返幂等（同 client_id 同 id）；用户隔离（B 看不到 A）；无 307/500 |
 | 社交 | 分享卡已实现 | 好友茶空间 / 点赞评论（增量） | P2 | E2E 覆盖核心交互；设计门禁链走完 |
 | 云端 | LoginView + 后端 /api/auth + IndexedDB sync_status 同步基础 | 品鉴记录云同步增强 | P2 | pytest 全量过；同步往返（pending→synced/failed）测试 |
 | 阶段六（简历） | 用户明确不做 | 不做，标注暂缓 | 暂缓 | 不立项，文档不进入开发计划 |
@@ -284,6 +285,8 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q   # 后端全量
 | P1-2 素材补专图 | ~~通用图覆盖的茶逐款补 Pexels 专图~~ **暂缓**：Pexels 全站 robots 拒自动访问（search/photo 页均验证），电商图库版权不可商用；以本地增强（压暗+暗角，见 7afa1b7/35f9074）替代 | 若重启：每张登记 SOURCES.md、过 compress-assets 体积上限；归并规则与 teas.ts 一致 |
 | P1-3 六境/节气深度 ✅ | 茶通感六境 essence 叙事 + 24 节气来源头注（5ec33ec）；顺带修评分等级色对比度 | 数据无编造（标来源）；页面按门禁链走完；截图对比 |
 | P1-4 测试补强 ✅ | 分享链路 E2E 4→9 用例（1838801）；verify:static/verify:ui 入 package.json | 分享卡编码/解码/非法输入 E2E 通过；verify-* 脚本群纳入提交前基线 |
+| P1-5 工艺系数可解释性 ✅ | 评分=八维×工艺系数在结果页完整可理解（b254bc7）：scoring 提取 computeProcessParts + explainProcessFactor，结果页展示温度/时间/茶器/水各因子分解 | 结果页截图可见分解行（如"温度 80℃无扣减 · 时间 0s -100% · 盖碗补偿 +2% → 53%"）；scoring.spec 3 用例；分解与 calculateProcessFactor 数值一致 |
+| P1-6 后端链路实测 ✅ | AI 代理/RAG/同步 API 真实链路核查（3697d9b/5f76ba7）：修复文化详情与图谱 500（JSON contains 在 Postgres 不可用→Python 过滤）；records 集合路由去尾斜杠消除 307；teaAI 4 处 any 收窄；真实 Postgres 端到端实测 pending→failed→登录→synced→落库 | 后端 pytest 34 过 1 跳；test_culture 4 用例；test_records 防 307 用例；真实 Postgres 往返幂等（同 client_id 同 id）与用户隔离实测 PASS |
 
 ### 7.3 P2 远期（增量，不作为当前主线）
 
