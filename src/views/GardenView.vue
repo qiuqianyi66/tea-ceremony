@@ -152,7 +152,7 @@ onMounted(() => {
   <!-- 地区选择视图 -->
   <div v-if="!regionId" class="garden-home">
     <div class="garden-header">
-      <h1 class="garden-title">我的茶园</h1>
+      <h1 class="garden-title font-serif">我的茶园</h1>
       <p class="garden-sub">选一片茶山，种下属于你的茶</p>
     </div>
     <div class="region-grid">
@@ -164,7 +164,7 @@ onMounted(() => {
         <div class="region-overlay"></div>
         <div class="region-info">
           <p class="region-tea-area">{{ region.teaArea }}</p>
-          <h2 class="region-name">{{ region.name }}</h2>
+          <h2 class="region-name font-serif">{{ region.name }}</h2>
           <p class="region-desc">{{ region.description }}</p>
           <p class="region-climate">{{ region.climate }}</p>
         </div>
@@ -185,7 +185,7 @@ onMounted(() => {
         <span>茶园</span>
       </button>
       <div class="garden-title-area-3d">
-        <h1 class="garden-name-3d">{{ currentRegion.name }}</h1>
+        <h1 class="garden-name-3d font-serif">{{ currentRegion.name }}</h1>
         <p class="garden-stats-3d">已种 {{ plants.length }} 棵 · {{ matureCount }} 棵可采</p>
       </div>
       <div class="topbar-actions-3d">
@@ -248,7 +248,7 @@ onMounted(() => {
     <!-- 种茶弹窗 -->
     <div v-if="showPlantDialog" class="dialog-mask" @click.self="showPlantDialog = false">
       <div class="dialog">
-        <h3 class="dialog-title">种下一棵茶</h3>
+        <h3 class="dialog-title font-serif">种下一棵茶</h3>
         <p class="dialog-sub">{{ currentRegion.name }} · 可种茶种</p>
         <div class="tea-select-list">
           <div v-for="tea in regionTeas" :key="tea.id"
@@ -273,7 +273,7 @@ onMounted(() => {
     <div v-if="showPlantDetail && selectedPlant" class="dialog-mask" @click.self="showPlantDetail = false">
       <div class="dialog plant-detail">
         <div class="detail-header">
-          <h3 class="dialog-title">{{ getPlantTea(selectedPlant)?.name }}</h3>
+          <h3 class="dialog-title font-serif">{{ getPlantTea(selectedPlant)?.name }}</h3>
           <span class="detail-stage" :class="getGrowthStage(selectedPlant)">
             {{ getGrowthStageInfo(selectedPlant)?.label }}
           </span>

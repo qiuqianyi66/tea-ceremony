@@ -52,7 +52,7 @@ function goHome() {
   <main class="min-h-screen bg-gradient-to-b from-[var(--color-cream)] to-[var(--color-sand)] px-4 py-12">
     <div v-if="record" class="mx-auto max-w-lg">
       <p class="mb-1 text-center text-xs tracking-[0.28em] text-[var(--color-tea-gold)]">一盏茶 · 品鉴分享</p>
-      <h1 class="mb-8 text-center text-2xl font-bold text-[var(--color-wood)]">他人分享的一席茶</h1>
+      <h1 class="mb-8 text-center text-2xl font-bold font-serif text-[var(--color-wood)]">他人分享的一席茶</h1>
 
       <TastingCard :record="record" standalone />
 
@@ -64,7 +64,7 @@ function goHome() {
 
     <div v-else-if="sharedTea" class="mx-auto max-w-lg">
       <p class="mb-1 text-center text-xs tracking-[0.28em] text-[var(--color-tea-gold)]">一盏茶 · 名茶分享</p>
-      <h1 class="mb-8 text-center text-2xl font-bold text-[var(--color-wood)]">一杯好茶，值得分享</h1>
+      <h1 class="mb-8 text-center text-2xl font-bold font-serif text-[var(--color-wood)]">一杯好茶，值得分享</h1>
 
       <TeaKnowledgeCard :tea="sharedTea" standalone />
 

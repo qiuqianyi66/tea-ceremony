@@ -36,7 +36,7 @@ onMounted(async () => {
 <template>
   <main class="min-h-screen bg-gradient-to-b from-[var(--color-cream)] to-[var(--color-sand)] px-4 py-12">
     <div class="mx-auto max-w-md text-center">
-      <h1 class="mb-8 text-2xl font-bold text-[var(--color-wood)]">服务健康检查</h1>
+      <h1 class="mb-8 text-2xl font-bold font-serif text-[var(--color-wood)]">服务健康检查</h1>
 
       <div class="rounded-2xl bg-white/70 p-6 shadow-xl">
         <div class="flex items-center justify-center gap-3">

@@ -208,7 +208,7 @@ async function downloadCard() {
     <div class="flex items-start justify-between gap-4">
       <div>
         <p class="text-xs tracking-[0.24em] text-[var(--color-tea-gold)]">一盏茶 · TEA CARD</p>
-        <h3 class="text-2xl font-bold text-[var(--color-wood)] mt-2">{{ tea.name }}</h3>
+        <h3 class="text-2xl font-bold font-serif text-[var(--color-wood)] mt-2">{{ tea.name }}</h3>
         <p class="text-xs text-[var(--color-wood-light)] mt-1">{{ tea.type }} · {{ tea.origin }}</p>
       </div>
       <div class="shrink-0 text-right">

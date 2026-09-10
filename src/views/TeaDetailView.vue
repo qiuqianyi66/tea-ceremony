@@ -77,7 +77,7 @@ function shareTea() {
       <div class="relative mx-auto max-w-2xl">
         <button @click="router.back()" class="mb-4 text-sm text-[var(--color-wood)]/70 hover:text-[var(--color-wood)]">← 返回</button>
         <p class="text-xs tracking-[0.3em] text-[var(--color-wood)]/60">{{ tea.type }} · {{ tea.process }}</p>
-        <h1 class="mt-2 text-4xl font-bold text-[var(--color-wood)]">{{ tea.name }}</h1>
+        <h1 class="mt-2 text-4xl font-bold font-serif text-[var(--color-wood)]">{{ tea.name }}</h1>
         <p class="mt-2 text-sm text-[var(--color-wood)]/70">{{ tea.origin }} · 海拔 {{ tea.altitude }}</p>
         <div class="mt-4 flex flex-wrap gap-2">
           <span v-for="f in tea.flavor" :key="f"

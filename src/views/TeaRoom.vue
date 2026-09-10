@@ -156,7 +156,7 @@ function startBrew() {
       <!-- 当前步骤展示 -->
       <div class="glass-panel room-step-card rounded-2xl p-8 w-full max-w-lg text-center mb-6">
         <div class="step-breath"><component :is="iconOf(teaSteps[currentStep]!.icon)" :size="56" class="mb-4 mx-auto" /></div>
-        <h3 class="text-2xl font-bold text-[var(--color-wood)] mb-2">{{ teaSteps[currentStep]!.name }}</h3>
+        <h3 class="text-2xl font-bold font-serif text-[var(--color-wood)] mb-2">{{ teaSteps[currentStep]!.name }}</h3>
         <p class="text-[var(--color-wood-light)]">{{ teaSteps[currentStep]!.desc }}</p>
       </div>
 

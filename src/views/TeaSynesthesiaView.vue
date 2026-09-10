@@ -234,7 +234,7 @@ onUnmounted(() => {
     <div v-if="!isFinished" class="synth-overlay">
       <div class="synth-info">
         <p class="synth-label">听 · 茶之味</p>
-        <h1 class="synth-name">{{ tea?.name ?? '未知茶' }}</h1>
+        <h1 class="synth-name font-serif">{{ tea?.name ?? '未知茶' }}</h1>
         <div class="synth-flavors">
           <span v-for="f in tea?.flavor ?? []" :key="f" class="flavor-tag">{{ f }}</span>
         </div>
@@ -251,7 +251,7 @@ onUnmounted(() => {
     <!-- 结束态 -->
     <div v-else class="synth-overlay finish">
       <p class="finish-eyebrow">30 秒通感</p>
-      <h2 class="finish-title">这就是<br/>{{ tea?.name }}的味道</h2>
+      <h2 class="finish-title font-serif">这就是<br/>{{ tea?.name }}的味道</h2>
       <p class="finish-desc">{{ tea?.description }}</p>
       <div class="finish-actions">
         <button class="synth-btn primary" @click="goBack">了解这款茶 →</button>

@@ -8,13 +8,17 @@
   --color-paper: #F5F0E8;
   --color-ink: #3D3225;
   --color-cream: #FAF6F0;
+
+  /* 字体角色（DESIGN_SPEC 二）：正文黑体 / 标题衬线。系统字体栈，不引入外部字体资产（PWA 离线优先） */
+  --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+  --font-serif: 'Songti SC', 'SimSun', 'Noto Serif SC', 'Source Han Serif CN', serif;
 }
 
 /* 全局样式 */
 body {
   background-color: #FAF6F0;
   color: #3D3225;
-  font-family: 'Noto Serif SC', 'Source Han Serif CN', 'SimSun', serif;
+  font-family: var(--font-sans);
 }
 
 /* 自定义动画 */

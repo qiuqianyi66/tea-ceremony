@@ -186,7 +186,7 @@ async function downloadCard() {
     <div class="flex items-start justify-between gap-4">
       <div>
         <p class="text-xs tracking-[0.24em] text-[var(--color-tea-gold)]">一盏茶 · TASTING NOTE</p>
-        <h3 class="text-2xl font-bold text-[var(--color-wood)] mt-2">{{ record.teaName }}</h3>
+        <h3 class="text-2xl font-bold font-serif text-[var(--color-wood)] mt-2">{{ record.teaName }}</h3>
         <p class="text-xs text-[var(--color-wood-light)] mt-1">
           {{ new Date(record.date).toLocaleDateString() }} · 第 {{ record.infusions }} 泡
         </p>

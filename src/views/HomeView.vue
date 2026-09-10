@@ -212,7 +212,7 @@ onUnmounted(() => {
         <p class="term-tag">
           今日{{ term.name }} · {{ getSeasonName(term.season) }}季 · 宜{{ term.teaTypes.slice(0, 2).join('、') }}
         </p>
-        <h1 class="hero-title">一盏茶</h1>
+        <h1 class="hero-title font-serif">一盏茶</h1>
         <p class="hero-sub">给忙碌的一天，留五分钟茶歇</p>
         <p class="hero-quote">{{ teaQuote }}</p>
         <div class="hero-cta">

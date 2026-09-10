@@ -94,7 +94,7 @@ const types = getAllTypes()
           class="w-full h-24 object-cover rounded-lg mb-4" :alt="tea.name" />
         <div v-else class="w-full h-24 rounded-lg mb-4"
           :style="{ background: `linear-gradient(135deg, ${tea.soupColorMin}, ${tea.soupColorMax})` }"></div>
-        <h3 class="text-xl font-bold text-[var(--color-wood)] mb-2">{{ tea.name }}</h3>
+        <h3 class="text-xl font-bold font-serif text-[var(--color-wood)] mb-2">{{ tea.name }}</h3>
         <p class="text-sm text-[var(--color-wood-light)] mb-2">{{ tea.type }} · {{ tea.origin }}</p>
         <p class="text-sm text-[var(--color-wood-light)] opacity-80">{{ tea.description }}</p>
         <div class="flex flex-wrap gap-2 mt-3">

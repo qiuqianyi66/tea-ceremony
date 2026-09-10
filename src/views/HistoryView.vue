@@ -109,7 +109,7 @@ async function retrySync() {
         <div class="flex justify-between items-start">
           <div>
             <div class="flex items-center gap-2">
-              <h3 class="text-lg font-bold text-[var(--color-wood)]">{{ record.teaName }}</h3>
+              <h3 class="text-lg font-bold font-serif text-[var(--color-wood)]">{{ record.teaName }}</h3>
               <span v-if="record.weather || record.mood" class="text-xs text-[var(--color-wood-light)]">
                 {{ record.weather }} {{ record.mood }}
               </span>
