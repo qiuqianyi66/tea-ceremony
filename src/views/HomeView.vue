@@ -184,7 +184,7 @@ onUnmounted(() => {
         class="hero-video"
         autoplay muted loop playsinline
         :poster="heroImg"
-        preload="none"
+        preload="metadata"
         aria-hidden="true">
         <source :src="heroVideoUrl" type="video/mp4" />
       </video>
@@ -242,7 +242,7 @@ onUnmounted(() => {
           <span class="checkin-hint">每节气一次，集齐二十四节气</span>
         </button>
         <button v-else class="checkin-btn checked" disabled>
-          <span>✓ 今日节气已打卡</span>
+          <span><IconCheck class="inline-block -mt-0.5 w-4 h-4" /> 今日节气已打卡</span>
           <span class="checkin-hint">{{ term.name }} · 已收入节气册</span>
         </button>
         <div class="tea-grid">
@@ -345,7 +345,7 @@ onUnmounted(() => {
                 <p class="drawer-title">一盏茶</p>
                 <p class="drawer-user">{{ auth.isLoggedIn ? auth.user?.display_name || '茶人' : '尚未登录 · 茶客' }}</p>
               </div>
-              <button class="drawer-close" aria-label="关闭菜单" @click="menuOpen = false">✕</button>
+              <button class="drawer-close" aria-label="关闭菜单" @click="menuOpen = false"><IconX class="w-5 h-5" /></button>
             </div>
 
             <nav class="drawer-nav">

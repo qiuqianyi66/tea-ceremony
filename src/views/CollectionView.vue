@@ -170,7 +170,7 @@ function markWareImgFailed(id: string) { wareImgFailed[id] = true }
           class="rounded-lg p-2 text-center"
           :class="store.solarCheckins[t.id] ? 'glass-panel' : 'bg-white/40 border border-dashed border-[#d8cfc0]'">
           <p class="text-xs font-bold" :class="store.solarCheckins[t.id] ? 'text-[var(--color-wood)]' : 'text-[#b5ac9c]'">{{ t.name }}</p>
-          <p class="text-[10px] leading-none mt-0.5">{{ store.solarCheckins[t.id] ? '✓' : '·' }}</p>
+          <p class="text-[10px] leading-none mt-0.5"><IconCheck v-if="store.solarCheckins[t.id]" class="inline-block w-3 h-3 text-[var(--color-tea-gold)]" /><span v-else>·</span></p>
         </div>
       </div>
     </div>

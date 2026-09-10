@@ -122,7 +122,9 @@ async function retrySync() {
               'text-amber-700': record.syncStatus === 'pending',
               'text-red-700': record.syncStatus === 'failed'
             }">
-              {{ record.syncStatus === 'synced' ? '✓ 已同步' : record.syncStatus === 'pending' ? '◷ 等待同步' : `! 同步失败：${record.syncError || '请重试'}` }}
+              <template v-if="record.syncStatus === 'synced'"><IconCheck class="inline-block -mt-0.5 w-3.5 h-3.5" /> 已同步</template>
+              <template v-else-if="record.syncStatus === 'pending'"><IconClock class="inline-block -mt-0.5 w-3.5 h-3.5" /> 等待同步</template>
+              <template v-else>! 同步失败：{{ record.syncError || '请重试' }}</template>
             </p>
           </div>
           <span class="text-2xl font-bold" :style="{ color: record.overallScore >= 7.5 ? '#4A7C59' : record.overallScore >= 6 ? '#5D4E37' : '#8B7355' }">{{ record.overallScore }}</span>

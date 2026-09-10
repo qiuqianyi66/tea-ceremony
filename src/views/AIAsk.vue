@@ -52,7 +52,7 @@ function useSuggestion(text: string) {
           <p class="text-xs text-[var(--color-wood-light)]">你的私人茶道师傅</p>
         </div>
       </div>
-      <button @click="router.push('/')" aria-label="关闭茶灵" class="text-[var(--color-wood-light)] hover:text-[var(--color-wood)]">✕</button>
+      <button @click="router.push('/')" aria-label="关闭茶灵" class="text-[var(--color-wood-light)] hover:text-[var(--color-wood)]"><IconX class="w-5 h-5" /></button>
     </div>
 
     <!-- 对话区域 -->

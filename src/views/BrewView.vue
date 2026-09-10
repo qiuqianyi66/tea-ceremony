@@ -390,7 +390,7 @@ const phaseDescription = computed(() => {
     <div class="ceremony-progress" aria-label="冲泡流程进度">
       <div v-for="(step, index) in ceremonySteps" :key="step.phase" class="ceremony-step">
         <div class="ceremony-dot" :class="{ active: index === ceremonyStepIndex, done: index < ceremonyStepIndex }">
-          <span v-if="index < ceremonyStepIndex">✓</span>
+          <IconCheck v-if="index < ceremonyStepIndex" class="w-3.5 h-3.5" />
           <span v-else>{{ index + 1 }}</span>
         </div>
         <span :class="index <= ceremonyStepIndex ? 'text-[var(--color-wood)]' : 'text-[var(--color-wood-light)]/50'">{{ step.label }}</span>

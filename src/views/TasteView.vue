@@ -74,11 +74,11 @@ const isExpertMode = ref(false)
 
 // ---- 新手快评 1：第一口感觉（表情单选，定整体基调与心境维度）----
 const firstSipOptions = [
-  { score: 5, emoji: '😍', label: '很喜欢' },
-  { score: 4, emoji: '🙂', label: '还不错' },
-  { score: 3, emoji: '😐', label: '一般' },
-  { score: 2, emoji: '😕', label: '不太习惯' },
-  { score: 1, emoji: '😣', label: '不好喝' },
+  { score: 5, icon: 'Laugh', label: '很喜欢' },
+  { score: 4, icon: 'Smile', label: '还不错' },
+  { score: 3, icon: 'Meh', label: '一般' },
+  { score: 2, icon: 'Frown', label: '不太习惯' },
+  { score: 1, icon: 'Angry', label: '不好喝' },
 ]
 const firstSip = ref<number | null>(null)
 
@@ -364,7 +364,7 @@ const averageDimensions = computed(() => {
                   ? 'border-[var(--color-tea-gold)] bg-[var(--color-paper)] shadow-md scale-105'
                   : 'border-transparent bg-white hover:shadow-md'"
               >
-                <span class="text-2xl">{{ opt.emoji }}</span>
+                <component :is="`Icon${opt.icon}`" class="w-6 h-6 mx-auto text-[var(--color-wood)]" />
                 <span class="text-[11px] text-[var(--color-wood)]">{{ opt.label }}</span>
               </button>
             </div>

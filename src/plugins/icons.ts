@@ -52,6 +52,7 @@ import {
   Sparkles,
 
   // 状态/反馈
+  Check,
   CheckCircle,
   AlertCircle,
   Info,
@@ -93,6 +94,13 @@ import {
   Sunrise,
   Palette,
   Paintbrush,
+
+  // 表情/情感
+  Laugh,
+  Smile,
+  Meh,
+  Frown,
+  Angry,
 
   // 位置/地图
   MapPin,
@@ -215,6 +223,7 @@ const icons = {
   Sparkles,
 
   // 状态/反馈
+  Check,
   CheckCircle,
   AlertCircle,
   Info,
@@ -256,6 +265,13 @@ const icons = {
   Sunrise,
   Palette,
   Paintbrush,
+
+  // 表情/情感
+  Laugh,
+  Smile,
+  Meh,
+  Frown,
+  Angry,
 
   // 位置/地图
   MapPin,
