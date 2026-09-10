@@ -11,12 +11,18 @@ import { useRoute, useRouter } from 'vue-router'
 import { getTeaById } from '@/data/teas'
 import { getSimilarTeas } from '@/services/teaRecommend'
 import { encodeTeaShare, buildTeaShareUrl } from '@/services/share'
+import { gardenRegions } from '@/data/gardenRegions'
 import type { Tea } from '@/types/tea'
 
 const route = useRoute()
 const router = useRouter()
 
 const tea = computed<Tea | null>(() => getTeaById(String(route.params.id)) ?? null)
+
+/** 产区风土：按 teaIds 反查归属产区（无归属返回 undefined，不渲染板块，不编造风土） */
+const region = computed(() =>
+  tea.value ? gardenRegions.find(r => r.teaIds.includes(tea.value!.id)) : undefined,
+)
 
 const similarTeas = computed(() => (tea.value ? getSimilarTeas(tea.value.id) : []))
 
@@ -86,6 +92,20 @@ function shareTea() {
         <h2 class="mb-3 text-lg font-bold text-[var(--color-wood)]"><IconScrollText class="inline-block -mt-1 w-5 h-5" /> 来历故事</h2>
         <div class="glass-panel rounded-2xl p-5">
           <p class="text-sm leading-8 text-[var(--color-wood)]">{{ tea.story }}</p>
+        </div>
+      </section>
+
+      <!-- 产区风土（有产区归属时显示，数据来自 gardenRegions） -->
+      <section v-if="region" class="mt-6">
+        <h2 class="mb-3 text-lg font-bold text-[var(--color-wood)]"><IconMountain class="inline-block -mt-1 w-5 h-5" /> 产区风土</h2>
+        <div class="glass-panel rounded-2xl p-5">
+          <div class="mb-3 flex flex-wrap items-center gap-2">
+            <span class="inline-block h-2.5 w-2.5 rounded-full" :style="{ background: region.accentColor }"></span>
+            <span class="text-sm font-semibold text-[var(--color-wood)]">{{ region.name }}</span>
+            <span class="rounded-full bg-[var(--color-paper)] px-2 py-0.5 text-xs text-[var(--color-wood)]">{{ region.teaArea }}</span>
+          </div>
+          <p class="text-sm leading-7 text-[var(--color-wood)]">{{ region.description }}</p>
+          <p class="mt-2 text-xs leading-5 text-[var(--color-wood-light)]">{{ region.climate }}</p>
         </div>
       </section>
 
