@@ -41,6 +41,7 @@ function shareTea(tea: Tea) {
     origin: tea.origin,
     flavor: tea.flavor,
     description: tea.description,
+    story: tea.story,
   }
   const url = buildTeaShareUrl(encodeTeaShare(data))
   window.open(url, '_blank', 'noopener')
@@ -68,13 +69,13 @@ const typeStats = computed(() => {
 
 // ============ 评分统计 ============
 const avgScore = computed(() => {
-  if (store.history.length === 0) return 0
+  if (store.history.length === 0) return '—'
   const sum = store.history.reduce((a, r) => a + r.overallScore, 0)
   return (sum / store.history.length).toFixed(1)
 })
 
 const bestScore = computed(() => {
-  if (store.history.length === 0) return 0
+  if (store.history.length === 0) return '—'
   return Math.max(...store.history.map(r => r.overallScore))
 })
 
@@ -131,7 +132,7 @@ function markWareImgFailed(id: string) { wareImgFailed[id] = true }
 
     <!-- 茶图鉴 -->
     <div class="mb-8">
-      <h3 class="text-base font-bold text-[var(--color-wood)] mb-1">🃏 茶图鉴</h3>
+      <h3 class="text-base font-bold text-[var(--color-wood)] mb-1"><IconBookOpen class="inline-block -mt-1 w-4 h-4" /> 茶图鉴</h3>
       <p class="text-xs text-[var(--color-wood-light)] mb-3">已解锁 {{ tastedCount }} / {{ totalTeas }} 款 · 品鉴一款茶即点亮茶卡</p>
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
         <div v-for="item in teaJournal" :key="item.tea.id"

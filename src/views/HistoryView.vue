@@ -3,6 +3,7 @@ import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTeaStore } from '@/stores/tea'
 import { historyStorage } from '@/services/storage'
+import { getScoreLevel } from '@/services/scoring'
 
 const router = useRouter()
 const store = useTeaStore()
@@ -90,7 +91,7 @@ async function retrySync() {
           class="p-3 rounded-xl text-center transition-all"
           :class="ach.unlocked
             ? 'bg-[var(--color-paper)] shadow-sm'
-            : 'bg-gray-100 opacity-50'"
+            : 'bg-white/40 opacity-50'"
         >
           <component :is="`Icon${ach.icon}`" class="w-8 h-8 mb-1" :class="!ach.unlocked ? 'grayscale opacity-60' : 'text-[var(--color-tea-gold)]'" />
           <p class="text-xs font-bold text-[var(--color-wood)]">{{ ach.name }}</p>
@@ -124,10 +125,10 @@ async function retrySync() {
             }">
               <template v-if="record.syncStatus === 'synced'"><IconCheck class="inline-block -mt-0.5 w-3.5 h-3.5" /> 已同步</template>
               <template v-else-if="record.syncStatus === 'pending'"><IconClock class="inline-block -mt-0.5 w-3.5 h-3.5" /> 等待同步</template>
-              <template v-else>! 同步失败：{{ record.syncError || '请重试' }}</template>
+              <template v-else><IconAlertTriangle class="inline-block -mt-0.5 w-3.5 h-3.5" /> 同步失败：{{ record.syncError || '请重试' }}</template>
             </p>
           </div>
-          <span class="text-2xl font-bold" :style="{ color: record.overallScore >= 7.5 ? '#4A7C59' : record.overallScore >= 6 ? '#5D4E37' : '#7E6A55' }">{{ record.overallScore }}</span>
+          <span class="text-2xl font-bold" :style="{ color: getScoreLevel(record.overallScore).color }">{{ record.overallScore }}</span>
         </div>
         <div class="flex flex-wrap gap-2 mt-2">
           <span class="px-2 py-0.5 text-xs bg-[var(--color-paper)] text-[var(--color-wood)] rounded">
