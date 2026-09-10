@@ -13,7 +13,10 @@
     "type-check": "vue-tsc --build",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "verify": "npm run verify:static",
+    "verify:static": "node scripts/scan-emoji.cjs",
+    "verify:ui": "node scripts/verify-gardens.cjs && node scripts/verify-pavilion.cjs && node scripts/verify-icons.cjs"
   },
   "dependencies": {
     "@tresjs/cientos": "^5.8.1",
