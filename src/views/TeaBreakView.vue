@@ -40,7 +40,6 @@ let pausedElapsed = 0 // 暂停时累计已过时间
 let pauseStart = 0
 
 let timer: ReturnType<typeof setInterval> | null = null
-let breathTimer: ReturnType<typeof setInterval> | null = null
 
 const timeText = computed(() => {
   const m = Math.floor(remaining.value / 60)
@@ -63,21 +62,13 @@ function tick() {
   }
 }
 
-function updateBreathPhase() {
-  const cyclePos = (Date.now() / 1000) % 10
-  breathPhase.value = cyclePos < 4 ? 'inhale' : 'exhale'
-}
-
 function startTimers() {
   if (timer) clearInterval(timer)
-  if (breathTimer) clearInterval(breathTimer)
   timer = setInterval(tick, 1000)
-  breathTimer = setInterval(updateBreathPhase, 100)
 }
 
 function stopTimers() {
   if (timer) { clearInterval(timer); timer = null }
-  if (breathTimer) { clearInterval(breathTimer); breathTimer = null }
 }
 
 /** 伪随机：基于种子的可复现随机 */
@@ -175,6 +166,11 @@ function render() {
   const leafColor = soundMode.value
     ? `rgba(${Math.round(124 + micLevel.value * 77)}, ${Math.round(179 - micLevel.value * 69)}, ${Math.round(66 + micLevel.value * 44)}, ALPHA)`
     : 'rgba(124, 179, 66, ALPHA)'
+
+  // 呼吸相位：由本帧 rAF 驱动（10s 周期），只在变化时赋值
+  const cyclePos = (Date.now() / 1000) % 10
+  const phase: 'inhale' | 'exhale' = cyclePos < 4 ? 'inhale' : 'exhale'
+  if (breathPhase.value !== phase) breathPhase.value = phase
 
   // 摇曳衰减
   sway.value *= 0.92
@@ -409,7 +405,7 @@ onUnmounted(() => {
   background: rgba(245, 241, 230, 0.08);
   border: 1px solid rgba(245, 241, 230, 0.15);
   border-radius: 999px;
-  width: 2.5rem; height: 2.5rem;
+  width: 2.75rem; height: 2.75rem;
   font-size: 1rem;
   cursor: pointer;
   transition: background 0.2s;
