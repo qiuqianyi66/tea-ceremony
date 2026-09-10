@@ -369,7 +369,7 @@ const phaseDescription = computed(() => {
 </script>
 
 <template>
-  <div class="brew-dark min-h-screen p-4 sm:p-8 flex flex-col items-center relative overflow-hidden z-0">
+  <div class="brew-dark min-h-[100dvh] p-4 sm:p-8 flex flex-col items-center relative overflow-hidden z-0">
     <!-- 3D 真实感茶席背景（状态机 / 手势 / 音频不受影响；headless 回退 CSS 插画） -->
     <TeaBrewScene3D
       v-if="!isHeadless"
@@ -547,7 +547,7 @@ const phaseDescription = computed(() => {
       :disabled="store.brewState.phase === BrewPhase.HEATING || store.brewState.phase === BrewPhase.RINSING"
       class="mt-4 px-10 py-4 rounded-lg text-xl transition-all duration-300"
       :class="isIdle && !store.selectedTeaWare
-        ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+        ? 'bg-[#E8E2D8] text-[#B5AC9C] cursor-not-allowed'
         : store.brewState.phase === BrewPhase.STEEPING
           ? 'bg-[var(--color-tea-gold)] text-white hover:bg-[#B89450]'
           : 'bg-[var(--color-wood)] text-[var(--color-cream)] hover:bg-[var(--color-wood-light)]'"
@@ -578,7 +578,7 @@ const phaseDescription = computed(() => {
           ? 'bg-[var(--color-tea-gold)] text-white'
           : i === store.brewState.infusionsDone + 1 && store.brewState.phase !== BrewPhase.DONE
             ? 'border-2 border-[var(--color-tea-gold)] text-[var(--color-tea-gold)]'
-            : 'bg-gray-200 text-gray-400'"
+            : 'bg-[#E8E2D8] text-[#B5AC9C]'"
       >
         {{ i }}
       </div>

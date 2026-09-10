@@ -266,7 +266,7 @@ const averageDimensions = computed(() => {
 </script>
 
 <template>
-  <div class="min-h-screen p-4 sm:p-8 flex flex-col items-center">
+  <div class="min-h-[100dvh] p-4 sm:p-8 flex flex-col items-center">
     <h2 class="text-3xl font-bold text-[var(--color-wood)] mb-2">品鉴</h2>
 
     <p class="text-lg text-[var(--color-wood)] mb-1">
@@ -286,7 +286,7 @@ const averageDimensions = computed(() => {
             ? 'bg-[var(--color-wood)] text-[var(--color-cream)]'
             : ['observe', 'aroma', 'taste', 'result'].indexOf(step) > i
               ? 'bg-[var(--color-tea-gold)] text-white'
-              : 'bg-gray-200 text-gray-400'"
+              : 'bg-[#E8E2D8] text-[#B5AC9C]'"
         >
           {{ ['观', '闻', '品', '果'][i] }}
         </div>

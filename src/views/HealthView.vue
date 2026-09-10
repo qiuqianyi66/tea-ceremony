@@ -34,7 +34,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <main class="min-h-screen bg-gradient-to-b from-[var(--color-cream)] to-[var(--color-sand)] px-4 py-12">
+  <main class="min-h-[100dvh] bg-gradient-to-b from-[var(--color-cream)] to-[var(--color-sand)] px-4 py-12">
     <div class="mx-auto max-w-md text-center">
       <h1 class="mb-8 text-2xl font-bold font-serif text-[var(--color-wood)]">服务健康检查</h1>
 

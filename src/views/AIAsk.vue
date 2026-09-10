@@ -42,7 +42,7 @@ function useSuggestion(text: string) {
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col">
+  <div class="min-h-[100dvh] flex flex-col">
     <!-- 顶栏 -->
     <div class="flex items-center justify-between p-4 border-b border-[var(--color-paper)]">
       <div class="flex items-center gap-2">

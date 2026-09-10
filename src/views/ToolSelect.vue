@@ -43,7 +43,7 @@ function confirm() {
 </script>
 
 <template>
-  <div class="min-h-screen p-4 sm:p-8 flex flex-col items-center">
+  <div class="min-h-[100dvh] p-4 sm:p-8 flex flex-col items-center">
     <button
       @click="backToSelect"
       class="self-start mb-2 text-sm text-[var(--color-wood-light)] hover:text-[var(--color-wood)] transition-colors"

@@ -90,9 +90,10 @@ const porcelainTex = shallowRef<THREE.Texture | null>(null)
 watch([zishaTex, porcelainTex], () => {
   const scene = sceneCtx.scene.value
   if (!scene) return
-  scene.traverse((obj: any) => {
-    if (!obj.isMesh || !obj.material) return
-    const mats = Array.isArray(obj.material) ? obj.material : [obj.material]
+  scene.traverse((obj: THREE.Object3D) => {
+    const mesh = obj as THREE.Mesh
+    if (!mesh.isMesh || !mesh.material) return
+    const mats = Array.isArray(mesh.material) ? (mesh.material as THREE.MeshStandardMaterial[]) : [mesh.material as THREE.MeshStandardMaterial]
     for (const m of mats) {
       if (!m.color) continue
       const hex = m.color.getHexString()

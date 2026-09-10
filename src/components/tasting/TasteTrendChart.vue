@@ -15,6 +15,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js'
+import type { TooltipItem } from 'chart.js'
 import { Line } from 'vue-chartjs'
 
 ChartJS.register(
@@ -91,11 +92,13 @@ const lineOptions = computed<any>(() => ({
       padding: 10,
       cornerRadius: 8,
       callbacks: {
-        label: (context: any) => {
+        label: (context: TooltipItem<'line'>) => {
+          const y = context.parsed.y
+          if (y === null) return ''
           if (context.dataset.label === '工艺系数') {
-            return `${context.dataset.label}: ${(context.parsed.y / 10).toFixed(2)}`
+            return `${context.dataset.label}: ${(y / 10).toFixed(2)}`
           }
-          return `${context.dataset.label}: ${context.parsed.y.toFixed(1)}`
+          return `${context.dataset.label}: ${y.toFixed(1)}`
         },
       },
     },

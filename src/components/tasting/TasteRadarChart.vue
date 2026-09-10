@@ -19,6 +19,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js'
+import type { ChartDataset, TooltipItem } from 'chart.js'
 import { Radar } from 'vue-chartjs'
 
 // 注册 Chart.js 组件
@@ -100,7 +101,7 @@ const chartOptions = computed<any>(() => ({
       padding: 12,
       cornerRadius: 8,
       callbacks: {
-        label: (context: any) => {
+        label: (context: TooltipItem<'radar'>) => {
           const value = context.parsed.r
           const dimension = DIMENSIONS[context.dataIndex]
           return `${context.dataset.label}: ${value.toFixed(1)} / 5`
@@ -150,7 +151,7 @@ const chartOptions = computed<any>(() => ({
 }))
 
 const chartData = computed(() => {
-  const datasets: any[] = [
+  const datasets: ChartDataset<'radar', number[]>[] = [
     {
       label: '本次品鉴',
       data: currentData.value,

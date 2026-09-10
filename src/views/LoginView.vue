@@ -42,7 +42,7 @@ async function submit() {
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center p-4 bg-[var(--color-cream)]">
+  <div class="min-h-[100dvh] flex items-center justify-center p-4 bg-[var(--color-cream)]">
     <div class="w-full max-w-sm glass-panel rounded-2xl p-8">
       <h2 class="text-2xl font-bold text-[var(--color-wood)] text-center mb-2">一盏茶</h2>
       <p class="text-sm text-[var(--color-wood-light)] text-center mb-8">

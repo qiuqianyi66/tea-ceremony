@@ -24,7 +24,7 @@ const typeCoverage = computed(() => Math.round((tastedTypes.value.size / 6) * 10
 </script>
 
 <template>
-  <div class="min-h-screen p-4 sm:p-8">
+  <div class="min-h-[100dvh] p-4 sm:p-8">
     <div class="flex items-center justify-between mb-6">
       <h2 class="text-3xl font-bold text-[var(--color-wood)]"><IconSprout class="inline-block -mt-1 w-7 h-7" /> 茶修档案</h2>
       <button @click="router.push('/')" class="inline-flex min-h-11 items-center text-[var(--color-wood-light)] hover:text-[var(--color-wood)]">返回</button>

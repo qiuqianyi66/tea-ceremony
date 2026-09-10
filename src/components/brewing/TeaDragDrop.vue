@@ -15,6 +15,13 @@ import type { TeaWare } from '@/types/teaware'
 import { useTeaStore } from '@/stores/tea'
 import { playTeaDrop } from '@/composables/useAudio'
 
+// vuedraggable 无官方事件类型，定义用到的最小结构（AGENTS.md 禁 any）
+type DragEventLike = {
+  item: HTMLElement
+  newIndex: number
+  oldIndex: number
+}
+
 // 类型定义
 interface TeaItem {
   id: string
@@ -93,7 +100,7 @@ const draggableOptions = {
   handle: '.tea-drag-handle',
   forceFallback: true,  // 移动端兼容
   fallbackTolerance: 3,
-  onStart: (evt: any) => {
+  onStart: (evt: DragEventLike) => {
     const teaData = evt.item.dataset.tea ? JSON.parse(evt.item.dataset.tea) : null
     if (teaData) {
       draggedTea.value = teaData
@@ -107,7 +114,7 @@ const draggableOptions = {
     isOverVessel.value = false
     document.body.style.userSelect = ''
   },
-  onAdd: (evt: any) => {
+  onAdd: (evt: DragEventLike) => {
     // 放入茶器区时触发
     if (draggedTea.value) {
       playTeaDrop(0.8)
@@ -133,7 +140,7 @@ const vesselDropOptions = {
   },
   sort: false,
   animation: 200,
-  onDragOver: (evt: any) => {
+  onDragOver: (evt: DragEventLike) => {
     if (draggedTea.value) {
       dropZoneActive.value = true
       isOverVessel.value = true
@@ -143,7 +150,7 @@ const vesselDropOptions = {
     isOverVessel.value = false
     if (!dropZoneActive.value) dropZoneActive.value = false
   },
-  onDrop: (evt: any) => {
+  onDrop: (evt: DragEventLike) => {
     isOverVessel.value = false
     // onAdd 会处理实际逻辑
   },

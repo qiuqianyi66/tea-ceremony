@@ -87,7 +87,7 @@ function startBrew() {
 </script>
 
 <template>
-  <div class="tea-room-page min-h-screen flex flex-col">
+  <div class="tea-room-page min-h-[100dvh] flex flex-col">
     <div class="room-mist room-mist-a" aria-hidden="true"></div>
     <div class="room-mist room-mist-b" aria-hidden="true"></div>
     <div class="room-lantern" aria-hidden="true"><span></span></div>

@@ -177,7 +177,7 @@ const categoryColors: Record<string, string> = {
 </script>
 
 <template>
-  <div class="min-h-screen p-4 sm:p-8">
+  <div class="min-h-[100dvh] p-4 sm:p-8">
     <!-- 标题 -->
     <div class="flex items-center justify-between mb-6">
       <div>

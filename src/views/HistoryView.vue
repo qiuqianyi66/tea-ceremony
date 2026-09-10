@@ -39,7 +39,7 @@ async function retrySync() {
 </script>
 
 <template>
-  <div class="min-h-screen p-4 sm:p-8">
+  <div class="min-h-[100dvh] p-4 sm:p-8">
     <div class="flex items-center justify-between mb-8">
       <h2 class="text-3xl font-bold text-[var(--color-wood)]">品鉴历史</h2>
       <div class="flex items-center gap-4">

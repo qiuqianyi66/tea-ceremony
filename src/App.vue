@@ -3,7 +3,7 @@ import { RouterView } from 'vue-router'
 </script>
 
 <template>
-  <div class="min-h-screen bg-[var(--color-cream)]">
+  <div class="min-h-[100dvh] bg-[var(--color-cream)]">
     <RouterView v-slot="{ Component, route }">
       <Transition name="page">
         <component :is="Component" :key="route.fullPath" />

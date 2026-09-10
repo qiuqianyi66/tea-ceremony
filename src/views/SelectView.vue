@@ -69,7 +69,7 @@ const types = getAllTypes()
 </script>
 
 <template>
-  <div class="min-h-screen p-4 sm:p-8 pb-28">
+  <div class="min-h-[100dvh] p-4 sm:p-8 pb-28">
     <h2 class="text-3xl font-bold text-[var(--color-wood)] mb-8">选茶</h2>
 
     <div class="flex flex-wrap gap-3 mb-8">
@@ -121,7 +121,7 @@ const types = getAllTypes()
     <div class="fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-sm border-t">
       <button @click="confirm" :disabled="!selectedTea"
         class="w-full max-w-md mx-auto block py-4 rounded-lg text-xl transition-all"
-        :class="selectedTea ? 'bg-[var(--color-wood)] text-[var(--color-cream)] hover:bg-[var(--color-wood-light)]' : 'bg-gray-200 text-gray-400 cursor-not-allowed'">
+        :class="selectedTea ? 'bg-[var(--color-wood)] text-[var(--color-cream)] hover:bg-[var(--color-wood-light)]' : 'bg-[#E8E2D8] text-[#B5AC9C] cursor-not-allowed'">
         {{ selectedTea ? `选择 ${selectedTea.name}` : '请选择一种茶叶' }}
       </button>
     </div>

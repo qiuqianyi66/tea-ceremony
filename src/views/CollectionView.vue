@@ -92,7 +92,7 @@ function markWareImgFailed(id: string) { wareImgFailed[id] = true }
 </script>
 
 <template>
-  <div class="min-h-screen p-4 sm:p-8">
+  <div class="min-h-[100dvh] p-4 sm:p-8">
     <div class="flex items-center justify-between mb-8">
       <h2 class="text-3xl font-bold text-[var(--color-wood)]">我的茶柜</h2>
       <button @click="router.push('/')" class="text-[var(--color-wood-light)] hover:text-[var(--color-wood)]">返回</button>

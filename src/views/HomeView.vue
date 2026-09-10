@@ -126,6 +126,7 @@ function shareTea(tea: Tea) {
     origin: tea.origin,
     flavor: tea.flavor,
     description: tea.description,
+    story: tea.story,
   }
   const url = buildTeaShareUrl(encodeTeaShare(data))
   window.open(url, '_blank', 'noopener')

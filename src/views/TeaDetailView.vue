@@ -60,13 +60,14 @@ function shareTea() {
     origin: tea.value.origin,
     flavor: tea.value.flavor,
     description: tea.value.description,
+    story: tea.value.story,
   }
   window.open(buildTeaShareUrl(encodeTeaShare(data)), '_blank', 'noopener')
 }
 </script>
 
 <template>
-  <div v-if="tea" class="min-h-screen pb-16">
+  <div v-if="tea" class="min-h-[100dvh] pb-16">
     <!-- 顶部 Hero：汤色渐变 + 茶图背景（加载失败时保持纯渐变） -->
     <header class="relative overflow-hidden px-4 pt-10 pb-8"
       :style="{ background: `linear-gradient(160deg, ${tea.soupColorMin} 0%, ${tea.soupColorMax} 100%)` }">
@@ -187,7 +188,7 @@ function shareTea() {
   </div>
 
   <!-- 茶不存在 -->
-  <div v-else class="flex min-h-screen flex-col items-center justify-center px-4 text-center">
+  <div v-else class="flex min-h-[100dvh] flex-col items-center justify-center px-4 text-center">
     <p class="mb-2 text-lg font-bold text-[var(--color-wood)]">这款茶不存在</p>
     <p class="mb-6 text-sm text-[var(--color-wood-light)]">链接可能有误，或这款茶还未收录。</p>
     <button @click="router.push('/')"
