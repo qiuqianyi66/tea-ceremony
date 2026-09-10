@@ -43,11 +43,11 @@ async function retrySync() {
       <h2 class="text-3xl font-bold text-[var(--color-wood)]">品鉴历史</h2>
       <div class="flex items-center gap-4">
         <button
-          class="text-xs px-3 py-1.5 rounded-full border border-[var(--color-wood-light)]/30 text-[var(--color-wood-light)] hover:bg-white/60 disabled:opacity-50"
+          class="inline-flex min-h-11 items-center text-xs px-3 rounded-full border border-[var(--color-wood-light)]/30 text-[var(--color-wood-light)] hover:bg-white/60 disabled:opacity-50"
           :disabled="isSyncing"
           @click="retrySync"
         >{{ isSyncing ? '同步中…' : '重试同步' }}</button>
-        <button @click="router.push('/')" class="text-[var(--color-wood-light)] hover:text-[var(--color-wood)]">返回</button>
+        <button @click="router.push('/')" class="inline-flex min-h-11 items-center text-[var(--color-wood-light)] hover:text-[var(--color-wood)]">返回</button>
       </div>
     </div>
 

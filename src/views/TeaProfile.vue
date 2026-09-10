@@ -27,7 +27,7 @@ const typeCoverage = computed(() => Math.round((tastedTypes.value.size / 6) * 10
   <div class="min-h-screen p-4 sm:p-8">
     <div class="flex items-center justify-between mb-6">
       <h2 class="text-3xl font-bold text-[var(--color-wood)]"><IconSprout class="inline-block -mt-1 w-7 h-7" /> 茶修档案</h2>
-      <button @click="router.push('/')" class="text-[var(--color-wood-light)] hover:text-[var(--color-wood)]">返回</button>
+      <button @click="router.push('/')" class="inline-flex min-h-11 items-center text-[var(--color-wood-light)] hover:text-[var(--color-wood)]">返回</button>
     </div>
 
     <!-- 当前境界 -->
@@ -94,7 +94,7 @@ const typeCoverage = computed(() => Math.round((tastedTypes.value.size / 6) * 10
       <h3 class="text-base font-bold text-[var(--color-wood)] mb-3"><IconBookOpen class="inline-block -mt-1 w-4 h-4" /> 近期茶记</h3>
       <div v-if="store.history.length === 0" class="text-center text-[var(--color-wood-light)] py-8">
         <p>还没有品鉴记录</p>
-        <button @click="router.push('/select')" class="mt-2 text-[var(--color-tea-gold)] hover:underline">开始品茶</button>
+        <button @click="router.push('/select')" class="mt-2 inline-flex min-h-11 items-center text-[var(--color-tea-gold)] hover:underline">开始品茶</button>
       </div>
       <div v-else class="space-y-2">
         <div v-for="r in store.history.slice(0, 5)" :key="r.id"

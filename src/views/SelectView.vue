@@ -74,12 +74,12 @@ const types = getAllTypes()
 
     <div class="flex flex-wrap gap-3 mb-8">
       <button @click="filterTeas(null)"
-        class="px-4 py-2 rounded-full transition-colors"
+        class="px-4 py-3 rounded-full transition-colors"
         :class="!selectedType ? 'bg-[var(--color-wood)] text-[var(--color-cream)]' : 'bg-[var(--color-paper)] text-[var(--color-wood)]'">
         全部
       </button>
       <button v-for="t in types" :key="t" @click="filterTeas(t)"
-        class="px-4 py-2 rounded-full transition-colors"
+        class="px-4 py-3 rounded-full transition-colors"
         :class="selectedType === t ? 'bg-[var(--color-wood)] text-[var(--color-cream)]' : 'bg-[var(--color-paper)] text-[var(--color-wood)]'">
         {{ t }}
       </button>

@@ -75,7 +75,7 @@ function shareTea() {
       <div v-if="tea.image && !imgFailed[tea.id]" class="absolute inset-0"
         :style="{ background: 'linear-gradient(160deg, rgba(255,255,255,0.75), rgba(255,255,255,0.85))' }"></div>
       <div class="relative mx-auto max-w-2xl">
-        <button @click="router.back()" class="mb-4 text-sm text-[var(--color-wood)]/70 hover:text-[var(--color-wood)]">← 返回</button>
+        <button @click="router.back()" class="mb-4 inline-flex min-h-11 items-center text-sm text-[var(--color-wood)]/70 hover:text-[var(--color-wood)]">← 返回</button>
         <p class="text-xs tracking-[0.3em] text-[var(--color-wood)]/60">{{ tea.type }} · {{ tea.process }}</p>
         <h1 class="mt-2 text-4xl font-bold font-serif text-[var(--color-wood)]">{{ tea.name }}</h1>
         <p class="mt-2 text-sm text-[var(--color-wood)]/70">{{ tea.origin }} · 海拔 {{ tea.altitude }}</p>

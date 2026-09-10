@@ -519,8 +519,8 @@ onUnmounted(() => {
   flex-direction: column;
   justify-content: center;
   gap: 5px;
-  width: 2.7rem;
-  height: 2.7rem;
+  width: 2.75rem;
+  height: 2.75rem;
   padding: 0 0.7rem;
   border-radius: 10px;
   background: rgba(14, 24, 20, 0.32);
@@ -951,7 +951,7 @@ onUnmounted(() => {
   background: none;
   border: 1px solid rgba(245, 241, 230, 0.3);
   border-radius: 999px;
-  padding: 0.6rem 1.8rem;
+  padding: 0.75rem 1.8rem;
   font-family: inherit;
   font-size: 0.85rem;
   letter-spacing: 0.15em;

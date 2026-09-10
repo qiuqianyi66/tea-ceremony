@@ -167,7 +167,7 @@ const categoryColors: Record<string, string> = {
         <h2 class="text-3xl font-bold text-[var(--color-wood)]"><IconMap class="inline-block mr-2 -mt-1" :size="26" />中国茶产区地图</h2>
         <p class="text-sm text-[var(--color-wood-light)] mt-1">点击省份查看名茶与茶文化 · 四大茶区 {{ teaRegions.length }} 个产茶省份</p>
       </div>
-      <button @click="$router.push('/')" class="text-[var(--color-wood-light)] hover:text-[var(--color-wood)] text-sm">返回首页</button>
+      <button @click="$router.push('/')" class="inline-flex min-h-11 items-center text-[var(--color-wood-light)] hover:text-[var(--color-wood)] text-sm">返回首页</button>
     </div>
 
     <!-- 四大茶区图例 -->
@@ -201,7 +201,7 @@ const categoryColors: Record<string, string> = {
                 {{ selectedRegion.zone }}
               </span>
             </div>
-            <button @click="selectedProvince = null" class="text-[var(--color-wood-light)] hover:text-[var(--color-wood)]" aria-label="关闭省份详情"><IconX :size="18" /></button>
+            <button @click="selectedProvince = null" class="inline-flex min-h-11 items-center text-[var(--color-wood-light)] hover:text-[var(--color-wood)]" aria-label="关闭省份详情"><IconX :size="18" /></button>
           </div>
 
           <!-- 气候 -->
