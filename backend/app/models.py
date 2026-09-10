@@ -1,6 +1,6 @@
 """数据库模型定义 — V2.0 文化知识图谱版"""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, Float, DateTime, JSON, ForeignKey, Text, Boolean
 from sqlalchemy.orm import relationship
 from app.database import Base
@@ -31,7 +31,7 @@ class Tea(Base):
     soup_color_min = Column(String(20), comment="浅汤色")
     soup_color_max = Column(String(20), comment="深汤色")
     dry_tea_color = Column(String(20), comment="干茶色")
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
     region = relationship("TeaRegion", back_populates="teas")
     process = relationship("TeaProcess", back_populates="teas")
@@ -163,7 +163,7 @@ class UserV2(Base):
     preferred_temp = Column(Integer, comment="偏好水温")
     preferred_aroma = Column(JSON, default=list, comment="偏好香型")
     preferred_ware_id = Column(Integer, nullable=True, comment="常用茶器")
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
 
 # ============ 10. 品鉴记录（升级版）============
@@ -188,7 +188,7 @@ class TastingRecordV2(Base):
     notes = Column(Text, comment="品鉴笔记")
     weather = Column(String(50), comment="天气")
     mood = Column(String(50), comment="心情")
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
 
 # ============ 11. 水源 ============
@@ -240,7 +240,7 @@ class CultureDocument(Base):
     source_type = Column(String(50), comment="来源类型")
     chunk_index = Column(Integer, default=0, comment="切片序号")
     embedding = Column(JSON, nullable=True, comment="向量（预留）")
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
 
 # ============ 15. 茶园种植（离线同步）============
@@ -260,7 +260,7 @@ class GardenPlant(Base):
     status = Column(String(20), default="growing", comment="状态: growing/harvested/dead")
     harvest_count = Column(Integer, default=0, comment="已采摘次数")
     harvested_at = Column(DateTime, nullable=True, comment="上次采摘时间")
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
 
 # ============ 向后兼容别名 ============

@@ -3,7 +3,7 @@ Pydantic 数据验证模型 — V2.0
 """
 
 from datetime import datetime
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 
 
@@ -25,7 +25,7 @@ class TeaBase(BaseModel):
 class TeaResponse(TeaBase):
     id: int
     created_at: datetime
-    class Config: from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class RegionBase(BaseModel):
@@ -40,7 +40,7 @@ class RegionBase(BaseModel):
 
 class RegionResponse(RegionBase):
     id: int
-    class Config: from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PersonBase(BaseModel):
@@ -55,7 +55,7 @@ class PersonBase(BaseModel):
 
 class PersonResponse(PersonBase):
     id: int
-    class Config: from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PoemBase(BaseModel):
@@ -69,7 +69,7 @@ class PoemBase(BaseModel):
 
 class PoemResponse(PoemBase):
     id: int
-    class Config: from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class RecordCreate(BaseModel):
@@ -94,7 +94,7 @@ class RecordResponse(RecordCreate):
     id: int
     user_id: Optional[int] = None
     created_at: datetime
-    class Config: from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserCreate(BaseModel):
@@ -113,7 +113,7 @@ class UserResponse(BaseModel):
     level: int
     xp: int
     preferred_type: Optional[str] = None
-    class Config: from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class TokenResponse(BaseModel):
     access_token: str
@@ -138,4 +138,4 @@ class GardenPlantResponse(GardenPlantCreate):
     id: int
     user_id: Optional[int] = None
     created_at: datetime
-    class Config: from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
