@@ -39,6 +39,15 @@ def test_records_require_auth(client):
     assert res.status_code == 401
 
 
+def test_collection_routes_no_redirect(client):
+    """集合路由应直达 200，无尾斜杠 307 重定向（消除每次同步多一跳）。"""
+    headers, _ = _register_and_login(client)
+    created = client.post("/api/records", json=_sample_record(), headers=headers, follow_redirects=False)
+    assert created.status_code == 200
+    listed = client.get("/api/records", headers=headers, follow_redirects=False)
+    assert listed.status_code == 200
+
+
 def test_create_and_list_records(client):
     headers, user_id = _register_and_login(client)
     created = client.post("/api/records", json=_sample_record(), headers=headers)

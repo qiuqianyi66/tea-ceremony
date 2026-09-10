@@ -12,7 +12,7 @@ from app.schemas import RecordCreate, RecordResponse
 router = APIRouter()
 
 
-@router.post("/", response_model=RecordResponse)
+@router.post("", response_model=RecordResponse)
 def create_record(data: RecordCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     if data.client_id:
         existing = db.query(TastingRecord).filter(
@@ -28,7 +28,7 @@ def create_record(data: RecordCreate, db: Session = Depends(get_db), user: User 
     return record
 
 
-@router.get("/", response_model=list[RecordResponse])
+@router.get("", response_model=list[RecordResponse])
 def list_records(skip: int = 0, limit: int = 50, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     limit = min(max(limit, 1), 100)
     return db.query(TastingRecord).filter(TastingRecord.user_id == user.id).order_by(TastingRecord.created_at.desc()).offset(skip).limit(limit).all()
