@@ -8,7 +8,7 @@
 
 | 文件 | 来源 URL | 授权 | 作者/摄影师 |
 |------|----------|------|-------------|
-| teas/green-longjing.jpg | https://www.pexels.com/photo/dried-green-tea-leaves-in-spoon-on-table-6694150/ | Pexels License | Pexels（无需署名） |
+| teas/green-longjing.jpg | https://www.pexels.com/photo/dried-green-tea-leaves-in-spoon-on-table-6694150/ | Pexels License | Pexels（无需署名）·经本地增强（压暗+暗角，2026-09-10） |
 | teas/green-biluochun.jpg | https://www.pexels.com/photo/set-of-cups-next-to-green-tea-leaves-8952015/ | Pexels License | Pexels（无需署名） |
 | teas/green-huangshanmaofeng.jpg | https://www.pexels.com/photo/person-putting-green-tea-leaves-into-a-kettle-8952095/ | Pexels License | Pexels（无需署名） |
 | teas/green-xinyangmaojian.jpg | https://www.pexels.com/photo/a-clear-teapot-with-green-tea-leaves-6101210/ | Pexels License | Pexels（无需署名） |
