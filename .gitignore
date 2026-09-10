@@ -59,3 +59,6 @@ blob-report/
 .user_screenshot.png
 
 break_preview.png
+
+# verify-gardens 运行产物（四园晴雨截图）
+verify_garden_*.png
