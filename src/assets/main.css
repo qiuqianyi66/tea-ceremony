@@ -197,3 +197,11 @@ body {
   border-radius: 2px;
 }
 
+/* 尊重系统减弱动效偏好（prefers-reduced-motion）：动画与过渡降为瞬时 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
