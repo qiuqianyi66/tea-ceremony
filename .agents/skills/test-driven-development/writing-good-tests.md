@@ -147,6 +147,17 @@ BEFORE adding a mock or test helper:
     Unmock it or delete the assertion.
 ```
 
+## Behavior Survives Refactor
+
+The gold signal that a test is honest: **rename an internal function and the test still passes.** If renaming a private helper, reordering a private method, or extracting an internal class makes tests fail — you were testing implementation, not behavior. Rewrite the test to drive the same outcome through the public interface.
+
+Concretely:
+- **Never call private methods directly.** `class.#internal()`, underscored functions, or test-only exposure exist for production reasons; tests reach them via the public entry point that calls them.
+- **Don't assert on internal data shapes** the user never sees. Assert the observable result — the emitted query, the persisted row, the rendered element, the returned value — not the private object's fields.
+- **Internal collaborators stay real.** Use the real class. Only cross-process / external boundaries get doubles: network, clock, filesystem, DB driver, third-party SDKs. See Principle 2 for how to mock at that layer.
+
+This is the other half of Principle 1 (name the break): a test that breaks on every internal rename is a change detector in disguise — it fires on redesign and sleeps through real bugs.
+
 ## Tests Ship With the Implementation
 
 The TDD cycle — failing test, minimal implementation, refactor — is what

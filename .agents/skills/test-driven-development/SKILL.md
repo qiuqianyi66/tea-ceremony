@@ -195,6 +195,12 @@ Keep tests green. Don't add behavior.
 
 Next failing test for next feature.
 
+## Vertical Slices
+
+One test → one implementation → next test. **Never "RED: write tests 1..N, then GREEN: implement all".** Bulk-written tests describe imagined behavior you committed to before the code told you what the real shape was — they pass when behavior breaks and fail when nothing does. Each RED→GREEN cycle responds to what the previous cycle just taught you about the interface.
+
+If a feature spans layers (schema + API + UI + tests), cut it as a tracer bullet: one narrow path through every layer, demoable on its own, sized to a fresh context. Wide mechanical refactors (rename a column, retype a shared symbol that thousands of call sites use) are the exception — use expand-contract instead: land the new form beside the old one, migrate call sites in CI-green batches, then delete the old form once nothing references it.
+
 ## Good Tests
 
 | Quality | Good | Bad |
