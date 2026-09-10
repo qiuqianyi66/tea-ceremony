@@ -85,10 +85,11 @@ const types = getAllTypes()
       </button>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div v-for="tea in visibleTeas" :key="tea.id"
-        @click="selectTea(tea)"
-        class="p-6 rounded-xl cursor-pointer transition-all duration-300 border-2"
+    <template v-if="visibleTeas.length > 0">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div v-for="tea in visibleTeas" :key="tea.id"
+          @click="selectTea(tea)"
+          class="p-6 rounded-xl cursor-pointer transition-all duration-300 border-2"
         :class="selectedTea?.id === tea.id ? 'border-[var(--color-tea-gold)] shadow-lg scale-105' : 'border-transparent bg-white hover:shadow-md'">
         <img v-if="tea.image && !imgFailed[tea.id]" :src="tea.image" loading="lazy" @error="markImgFailed(tea.id)"
           class="w-full h-24 object-cover rounded-lg mb-4" :alt="tea.name" />
@@ -111,8 +112,10 @@ const types = getAllTypes()
             </div>
           </div>
         </div>
+        </div>
       </div>
-    </div>
+    </template>
+    <p v-else class="py-12 text-center text-sm text-[var(--color-wood-light)]">该分类暂无茶——等一盏新茶入席</p>
     <p v-if="isLoading" class="text-center text-sm text-[var(--color-wood-light)] mt-6">正在同步茶叶目录…</p>
 
     <div class="fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-sm border-t">
