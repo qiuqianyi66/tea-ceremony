@@ -317,7 +317,7 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q   # 后端全量
 
 * `3D_SPEC.md` — 3D 茶空间约束（改 three/ 前必读）
 
-* `DESIGN_SPEC.md`、`REQUIREMENTS.md` — 设计与需求基线
+* `DESIGN_SPEC.md` — 设计基线（REQUIREMENTS.md 已删除，需求基线以 V2_UPGRADE.md + V3_PLAN.md 为准）
 
 * `TESTING_SPEC.md` — 涉及测试时
 
