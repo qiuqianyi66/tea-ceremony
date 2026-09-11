@@ -3,21 +3,21 @@
 from app.models import Tea, TeaPerson, TeaRegion
 
 
-def _make_tea(db_session, **kw) -> Tea:
+async def _make_tea(db_session, **kw) -> Tea:
     defaults = dict(name="测试茶", category="绿茶", origin="浙江杭州")
     defaults.update(kw)
     tea = Tea(**defaults)
     db_session.add(tea)
-    db_session.commit()
+    await db_session.commit()
     return tea
 
 
-def test_tea_detail_returns_related_people(db_session, client):
-    tea = _make_tea(db_session, id=1)
+async def test_tea_detail_returns_related_people(db_session, client):
+    tea = await _make_tea(db_session, id=1)
     lu = TeaPerson(id=1, name="陆羽", dynasty="唐", related_tea_ids=["1"])
     zhao = TeaPerson(id=2, name="赵州", dynasty="唐", related_tea_ids=["2"])
     db_session.add_all([lu, zhao])
-    db_session.commit()
+    await db_session.commit()
 
     res = client.get("/api/culture/teas/1/detail")
     assert res.status_code == 200
@@ -33,12 +33,12 @@ def test_tea_detail_missing_returns_404(db_session, client):
     assert res.status_code == 404
 
 
-def test_tea_graph_returns_nodes_and_edges(db_session, client):
-    tea = _make_tea(db_session, id=1)
+async def test_tea_graph_returns_nodes_and_edges(db_session, client):
+    tea = await _make_tea(db_session, id=1)
     region = TeaRegion(id=1, name="西湖产区", province="浙江")
     tea.region_id = 1
     db_session.add(region)
-    db_session.commit()
+    await db_session.commit()
 
     res = client.get("/api/culture/graph/1")
     assert res.status_code == 200
@@ -47,9 +47,8 @@ def test_tea_graph_returns_nodes_and_edges(db_session, client):
     assert body["edges"] == [{"source": "tea_1", "target": "region_1", "relation": "产自"}]
 
 
-def test_culture_search_matches_tea(db_session, client):
-    _make_tea(db_session, name="西湖龙井")
-    db_session.commit()
+async def test_culture_search_matches_tea(db_session, client):
+    await _make_tea(db_session, name="西湖龙井")
 
     res = client.get("/api/culture/search", params={"q": "龙井"})
     assert res.status_code == 200

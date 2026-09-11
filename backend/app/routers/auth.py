@@ -2,7 +2,8 @@
 
 import logging
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from passlib.hash import bcrypt
 from jose import jwt
 from datetime import datetime, timedelta, timezone
@@ -26,8 +27,9 @@ def create_access_token(user_id: int) -> str:
 
 
 @router.post("/register", response_model=TokenResponse)
-def register(data: UserCreate, db: Session = Depends(get_db)):
-    existing = db.query(User).filter(User.username == data.username).first()
+async def register(data: UserCreate, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(User).filter(User.username == data.username))
+    existing = result.scalar_one_or_none()
     if existing:
         raise HTTPException(status_code=400, detail="用户名已存在")
 
@@ -39,8 +41,8 @@ def register(data: UserCreate, db: Session = Depends(get_db)):
         xp=0,
     )
     db.add(user)
-    db.commit()
-    db.refresh(user)
+    await db.commit()
+    await db.refresh(user)
 
     token = create_access_token(user.id)
     return TokenResponse(
@@ -50,8 +52,9 @@ def register(data: UserCreate, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=TokenResponse)
-def login(data: UserLogin, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.username == data.username).first()
+async def login(data: UserLogin, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(User).filter(User.username == data.username))
+    user = result.scalar_one_or_none()
     if not user or not bcrypt.verify(data.password, user.hashed_password):
         # 统一文案避免用户枚举；记录失败以便排查异常登录尝试
         logger.info("登录失败: username=%s", data.username)

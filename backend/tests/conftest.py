@@ -1,4 +1,4 @@
-"""pytest 共享夹具：SQLite 内存库 + 依赖覆盖 + TestClient。
+"""pytest 共享夹具：SQLite 异步内存库 + 依赖覆盖 + TestClient。
 
 说明：
 - API 测试使用 SQLite 内存库（StaticPool 保证单连接共享），避免依赖外部 PostgreSQL。
@@ -11,60 +11,62 @@ import os
 
 # 必须在 import app 之前设置，否则 main.py 启动校验会失败。
 os.environ.setdefault("SECRET_KEY", "test-secret-key-for-pytest")
-os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
+os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///:memory:")
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
 
 from app.database import Base, get_db
 import main as app_main
 
-# SQLite 内存库：StaticPool 让所有连接共享同一个内存库，避免数据"消失"。
-test_engine = create_engine(
-    "sqlite://",
+# SQLite 异步内存库：StaticPool 让所有连接共享同一个内存库。
+test_engine = create_async_engine(
+    "sqlite+aiosqlite://",
     connect_args={"check_same_thread": False},
     poolclass=StaticPool,
 )
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
+TestingSessionLocal = async_sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
 
 
-def override_get_db():
+async def override_get_db():
     db = TestingSessionLocal()
     try:
         yield db
     finally:
-        db.close()
+        await db.close()
 
 
 app_main.app.dependency_overrides[get_db] = override_get_db
 
 
 @pytest.fixture(scope="session", autouse=True)
-def _db_schema():
+async def _db_schema():
     """会话级：创建一次表结构，测试结束后清理。"""
-    Base.metadata.create_all(bind=test_engine)
+    async with test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
     yield
-    Base.metadata.drop_all(bind=test_engine)
+    async with test_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
 
 
 @pytest.fixture()
-def db_session():
+async def db_session():
     """函数级：每个测试独立的数据库会话，并用例间清空数据。"""
     session = TestingSessionLocal()
     try:
         yield session
     finally:
-        session.close()
-        for table in reversed(Base.metadata.sorted_tables):
-            session.execute(table.delete())
-        session.commit()
+        await session.close()
+        async with test_engine.connect() as conn:
+            for table in reversed(Base.metadata.sorted_tables):
+                await conn.execute(table.delete())
+            await conn.commit()
 
 
 @pytest.fixture()
 def client():
-    """FastAPI 测试客户端，绑定 SQLite 内存库。"""
+    """FastAPI 测试客户端，绑定 SQLite 异步内存库。"""
     with TestClient(app_main.app) as c:
         yield c

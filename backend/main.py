@@ -75,10 +75,10 @@ def root():
 
 
 @app.get("/health")
-def health():
+async def health():
     try:
-        with engine.connect() as connection:
-            connection.execute(text("SELECT 1"))
+        async with engine.connect() as connection:
+            await connection.execute(text("SELECT 1"))
     except Exception as error:
         # 健康检查失败时返回 503，便于 Docker/Kubernetes 正确摘除实例。
         raise HTTPException(status_code=503, detail="数据库连接不可用") from error
