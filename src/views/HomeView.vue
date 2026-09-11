@@ -77,12 +77,8 @@ function tryStartAudio() {
   })
 }
 
-// 滚动入场：IntersectionObserver 观察 .flow-section，进入视口加 .in-view
-const flowRefs = ref<HTMLElement[]>([])
+// 滚动入场：IntersectionObserver 观察 .flow-section，进入视口归位
 let observer: IntersectionObserver | null = null
-function onFlowMounted(el: Element) {
-  flowRefs.value.push(el as HTMLElement)
-}
 
 onMounted(() => {
   tryStartAudio()
@@ -98,10 +94,12 @@ onMounted(() => {
         }
       }
     },
-    { threshold: 0.12 },
+    { threshold: 0.1 },
   )
   requestAnimationFrame(() => {
-    flowRefs.value.forEach((el) => observer?.observe(el))
+    document.querySelectorAll('.flow-section, .map-banner, .entry-card').forEach((el) => {
+      observer?.observe(el)
+    })
   })
 })
 
@@ -123,7 +121,7 @@ onUnmounted(() => observer?.disconnect())
     </header>
 
     <main class="content-flow">
-      <section ref="onFlowMounted" class="flow-section">
+      <section class="flow-section">
         <div class="flow-head">
           <h2 class="flow-title"><IconCupSoda class="inline-block -mt-1" /> 今日宜饮</h2>
           <button class="flow-more" @click="go('/select')">全部茶叶 →</button>
@@ -143,7 +141,7 @@ onUnmounted(() => observer?.disconnect())
         </div>
       </section>
 
-      <button ref="onFlowMounted" class="map-banner" @click="go('/map')">
+      <button class="map-banner" @click="go('/map')">
         <div class="map-text">
           <h2 class="map-title"><IconMap class="inline-block -mt-1" /> 中国茶产区地图</h2>
           <p class="map-desc">19 省名茶产地 · 一图遍览茶山风土</p>
@@ -151,7 +149,7 @@ onUnmounted(() => observer?.disconnect())
         <span class="map-arrow">→</span>
       </button>
 
-      <section ref="onFlowMounted" class="flow-section">
+      <section class="flow-section">
         <div class="flow-head">
           <h2 class="flow-title"><IconScrollText class="inline-block -mt-1" /> 今日茶诗</h2>
           <button class="flow-more" @click="nextPoem">换一首 ↻</button>
@@ -163,7 +161,7 @@ onUnmounted(() => observer?.disconnect())
         </div>
       </section>
 
-      <section ref="onFlowMounted" class="flow-section">
+      <section class="flow-section">
         <div class="flow-head">
           <h2 class="flow-title"><IconUser class="inline-block -mt-1" /> 茶人故事</h2>
           <button class="flow-more" @click="nextMaster">换一位 ↻</button>
@@ -181,7 +179,7 @@ onUnmounted(() => observer?.disconnect())
         </div>
       </section>
 
-      <section ref="onFlowMounted" class="entry-grid entry-grid-3">
+      <section class="entry-grid entry-grid-3">
         <button class="entry-card" @click="go('/graph')">
           <IconShare2 class="entry-icon" />
           <span class="entry-label">茶文化图谱</span>
@@ -252,12 +250,12 @@ onUnmounted(() => observer?.disconnect())
   display: flex; flex-direction: column; gap: 1.6rem;
 }
 .flow-section, .map-banner, .entry-card {
-  /* 滚动入场：初始透明 + 上移，进入视口后 .in-view 触发 */
-  opacity: 0; transform: translateY(24px);
+  /* 滚动入场：初始上移，进入视口后归位（不做隐藏，避免 observer 失败时内容消失） */
+  opacity: 1; transform: translateY(24px);
   transition: opacity 0.8s ease, transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .flow-section.in-view, .map-banner.in-view, .entry-card.in-view {
-  opacity: 1; transform: translateY(0);
+  transform: translateY(0);
 }
 .flow-section {
   background: rgba(16, 26, 22, 0.68); backdrop-filter: blur(14px);
