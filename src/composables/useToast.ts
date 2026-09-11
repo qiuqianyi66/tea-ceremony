@@ -1,36 +1,19 @@
 /**
- * 轻量 toast：替代 alert()，非阻塞、自动消失。
+ * 轻量 toast：基于 uiStore 的单一来源封装，替代 alert()，非阻塞、自动消失。
  * 用法：const { toast, toasts } = useToast(); toast('保存成功', 'success')
- * 模板里渲染 toasts 数组即可。
+ * 全局渲染由 App.vue 挂载的 ToastContainer 负责。
  */
-import { reactive } from 'vue'
+import { useUiStore } from '@/stores/ui'
 
 export type ToastType = 'success' | 'error' | 'info'
 
-export interface ToastItem {
-  id: number
-  message: string
-  type: ToastType
-}
-
-const toasts = reactive<ToastItem[]>([])
-let nextId = 1
-
-function push(message: string, type: ToastType = 'info', duration = 2600) {
-  const id = nextId++
-  toasts.push({ id, message, type })
-  setTimeout(() => {
-    const idx = toasts.findIndex(t => t.id === id)
-    if (idx >= 0) toasts.splice(idx, 1)
-  }, duration)
-}
-
 export function useToast() {
+  const ui = useUiStore()
   return {
-    toasts,
-    toast: push,
-    success: (m: string, d?: number) => push(m, 'success', d),
-    error: (m: string, d?: number) => push(m, 'error', d),
-    info: (m: string, d?: number) => push(m, 'info', d),
+    toasts: ui.toasts,
+    toast: (message: string, type: ToastType = 'info', duration = 2600) => ui.showToast(message, type, duration),
+    success: (m: string, d?: number) => ui.showToast(m, 'success', d),
+    error: (m: string, d?: number) => ui.showToast(m, 'error', d),
+    info: (m: string, d?: number) => ui.showToast(m, 'info', d),
   }
 }

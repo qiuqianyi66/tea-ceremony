@@ -28,5 +28,12 @@ export const useRecordStore = defineStore('record', () => {
     history.value = history.value.filter(r => r.id !== id)
   }
 
-  return { history, loaded, load, add, remove, setAll }
+  /** 重试离线同步队列，成功后刷新本地列表 */
+  async function syncPending(): Promise<{ synced: number; failed: number }> {
+    const result = await historyStorage.syncPending()
+    await load()
+    return result
+  }
+
+  return { history, loaded, load, add, remove, setAll, syncPending }
 })

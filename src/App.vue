@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
+import { ToastContainer } from '@/components/ui'
 </script>
 
 <template>
@@ -9,6 +10,7 @@ import { RouterView } from 'vue-router'
         <component :is="Component" :key="route.fullPath" />
       </Transition>
     </RouterView>
+    <ToastContainer />
   </div>
 </template>
 

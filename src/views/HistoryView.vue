@@ -2,11 +2,12 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTeaStore } from '@/stores/tea'
-import { historyStorage } from '@/services/storage'
+import { useRecordStore } from '@/stores/record'
 import { getScoreLevel } from '@/services/scoring'
 
 const router = useRouter()
 const store = useTeaStore()
+const recordStore = useRecordStore()
 const isSyncing = ref(false)
 const syncMessage = ref('')
 
@@ -25,8 +26,7 @@ async function retrySync() {
   isSyncing.value = true
   syncMessage.value = ''
   try {
-    const result = await historyStorage.syncPending()
-    await store.loadHistory()
+    const result = await recordStore.syncPending()
     syncMessage.value = result.failed > 0
       ? `已同步 ${result.synced} 条，仍有 ${result.failed} 条待重试`
       : result.synced > 0 ? `已同步 ${result.synced} 条记录` : '暂无需要同步的记录'
@@ -100,12 +100,12 @@ async function retrySync() {
       </div>
     </div>
 
-    <div v-if="store.history.length === 0" class="text-center text-[var(--color-wood-light)] py-12">
+    <div v-if="recordStore.history.length === 0" class="text-center text-[var(--color-wood-light)] py-12">
       <p class="text-lg">暂无品鉴记录</p>
     </div>
 
     <div v-else class="space-y-4">
-      <div v-for="record in store.history" :key="record.id"
+      <div v-for="record in recordStore.history" :key="record.id"
         class="p-4 bg-white rounded-lg shadow-sm">
         <div class="flex justify-between items-start">
           <div>

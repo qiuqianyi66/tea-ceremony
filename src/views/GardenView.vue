@@ -9,10 +9,10 @@ import { useRoute, useRouter } from 'vue-router'
 import { getRegionById } from '@/data/gardenRegions'
 import { getTeaById } from '@/data/teas'
 import {
-  plantTea, waterPlant, prunePlant, harvestPlant, getPlantsByRegion,
   getGrowthStage, getGrowthStageInfo, getCurrentWaterLevel,
-  getPlantDays, isGrowthPaused, refreshAllPlantStatuses, syncPendingGarden,
+  getPlantDays, isGrowthPaused,
 } from '@/services/garden'
+import { useGardenStore } from '@/stores/garden'
 import type { PlantedTea, GardenRegion } from '@/types/garden'
 import type { Tea } from '@/types/tea'
 import type { WeatherMode } from '@/components/three/garden-weather'
@@ -29,11 +29,12 @@ const currentRegion = computed<GardenRegion | undefined>(() =>
   regionId.value ? getRegionById(regionId.value) : undefined
 )
 
-const plants = ref<PlantedTea[]>([])
+const garden = useGardenStore()
+const plants = computed(() => garden.plants)
+const loading = computed(() => garden.loading)
 const showPlantDialog = ref(false)
 const showPlantDetail = ref(false)
 const selectedPlant = ref<PlantedTea | null>(null)
-const loading = ref(true)
 
 const scene3dRef = ref<{ playWater?: (id: number) => void; setWeather?: (m: WeatherMode) => void; setAudioEnabled?: (on: boolean) => void }>()
 const weatherMode = ref<'sunny' | 'rain'>('sunny')
@@ -55,15 +56,11 @@ const regionTeas = computed<Tea[]>(() => {
     .filter((t): t is Tea => t !== undefined)
 })
 
-const matureCount = computed(() => plants.value.filter(p => getGrowthStage(p) === 'mature').length)
+const matureCount = computed(() => garden.matureCount)
 
 async function loadPlants() {
   if (!regionId.value) return
-  loading.value = true
-  await refreshAllPlantStatuses()
-  plants.value = await getPlantsByRegion(regionId.value)
-  loading.value = false
-  void syncPendingGarden()
+  await garden.load(regionId.value)
 }
 
 function openPlantDialog() { showPlantDialog.value = true }
@@ -71,9 +68,8 @@ function closePlantDialog() { showPlantDialog.value = false }
 
 async function confirmPlant(teaId: string) {
   if (!regionId.value) return
-  await plantTea(regionId.value, teaId)
   showPlantDialog.value = false
-  await loadPlants()
+  await garden.plant(teaId)
 }
 
 function openPlantDetail(plant: PlantedTea) {
@@ -91,26 +87,25 @@ function onSelectPlant3D(id: number) {
 }
 
 async function doWater() {
-  if (!selectedPlant.value?.id) return
-  scene3dRef.value?.playWater?.(selectedPlant.value.id)
+  // 先取 id 再关弹窗：closePlantDetail 会置空 selectedPlant，原实现
+  // 在置空后读 selectedPlant.value.id 抛 TypeError 被 catch 吞掉，浇水从未生效。
+  const id = selectedPlant.value?.id
+  if (!id) return
+  scene3dRef.value?.playWater?.(id)
   closePlantDetail()
-  try { await waterPlant(selectedPlant.value.id) }
-  catch (e) { console.warn('[GardenView] 浇水同步失败（离线？）', e) }
-  await loadPlants()
+  await garden.water(id)
 }
 
 async function doHarvest() {
   if (!selectedPlant.value?.id) return
-  await harvestPlant(selectedPlant.value.id)
-  await loadPlants()
+  await garden.harvest(selectedPlant.value.id)
   const updated = plants.value.find(p => p.id === selectedPlant.value?.id)
   if (updated) selectedPlant.value = updated
 }
 
 async function doPrune() {
   if (!selectedPlant.value?.id) return
-  await prunePlant(selectedPlant.value.id)
-  await loadPlants()
+  await garden.prune(selectedPlant.value.id)
   const updated = plants.value.find(p => p.id === selectedPlant.value?.id)
   if (updated) selectedPlant.value = updated
 }
@@ -130,7 +125,7 @@ const showPavilion = ref(false)
 const pavilionQuote = computed(() => (regionId.value ? PAVILION_QUOTES[regionId.value] : undefined))
 function togglePavilion() { showPavilion.value = !showPavilion.value }
 
-onMounted(() => { if (regionId.value) loadPlants() })
+onMounted(() => { if (regionId.value) void loadPlants() })
 </script>
 
 <template>
