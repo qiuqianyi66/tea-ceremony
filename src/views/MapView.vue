@@ -7,7 +7,7 @@ import { CanvasRenderer } from 'echarts/renderers'
 import type { ECharts, EChartsOption } from 'echarts'
 import chinaMapUrl from '@/data/china-map.json?url'
 import { teaRegions, getTeaRegion, type TeaRegion } from '@/data/tea-regions'
-import { TEA_REGIONS, type TeaRegion as MountainRegion } from '@/data/teaRegions'
+import { TEA_REGIONS, type TeaRegion as MountainRegion } from '@/data/tea-mountain-regions'
 
 // ==================== ECharts 地图 ====================
 echarts.use([MapChart, TooltipComponent, CanvasRenderer])

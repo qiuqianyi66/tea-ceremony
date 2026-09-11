@@ -3,10 +3,10 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { teas } from '@/data/teas'
 import { getTeaMastersForTea } from '@/data/teaMasters'
-import { TEA_REGIONS } from '@/data/teaRegions'
+import { TEA_REGIONS } from '@/data/tea-mountain-regions'
 import { getProcessByTeaType } from '@/data/teaProcesses'
 import type { Tea } from '@/types/tea'
-import type { TeaRegion } from '@/data/teaRegions'
+import type { TeaRegion } from '@/data/tea-mountain-regions'
 
 const router = useRouter()
 const selectedTea = ref<Tea | null>(null)
