@@ -10,6 +10,9 @@ const router = useRouter()
 
 <template>
   <div class="garden-home">
+    <button class="back-home" @click="router.push('/')" aria-label="返回首页">
+      <IconArrowLeft :size="18" /><span>返回</span>
+    </button>
     <div class="garden-header">
       <h1 class="garden-title font-serif">我的茶园</h1>
       <p class="garden-sub">选一片茶山，种下属于你的茶</p>
@@ -39,7 +42,18 @@ const router = useRouter()
   background: linear-gradient(160deg, #0f1a14 0%, #1a2420 100%);
   color: #f5f1e6;
   padding: 2rem 1rem;
+  position: relative;
 }
+.back-home {
+  position: fixed; top: 1rem; left: 1rem; z-index: 50;
+  display: flex; align-items: center; gap: 0.4rem;
+  padding: 0.55rem 0.9rem; border-radius: 8px;
+  background: rgba(13,20,16,0.6); backdrop-filter: blur(10px);
+  border: 1px solid rgba(245,241,230,0.18);
+  color: rgba(245,241,230,0.8); font-size: 0.82rem; cursor: pointer;
+  transition: background 0.2s, color 0.2s; font-family: inherit;
+}
+.back-home:hover { background: rgba(201,169,110,0.25); color: #f5f1e6; }
 .garden-header { text-align: center; margin-bottom: 2rem; }
 .garden-title { font-size: 2rem; font-weight: 300; letter-spacing: 0.2em; margin: 0 0 0.5rem; }
 .garden-sub { font-size: 0.85rem; color: rgba(245,241,230,0.5); letter-spacing: 0.15em; margin: 0; }
