@@ -7,6 +7,7 @@ import { ref, computed } from 'vue'
 import { authApi } from '@/services/api'
 import { historyStorage } from '@/services/storage'
 import { syncPendingGarden } from '@/services/garden'
+import { loadAuth, saveAuth, clearAuth } from '@/services/authStorage'
 
 export interface UserInfo {
   id: number
@@ -22,23 +23,15 @@ export const useAuthStore = defineStore('auth', () => {
   const isLoggedIn = computed(() => !!token.value)
 
   function loadFromStorage() {
-    try {
-      const saved = localStorage.getItem('tea-auth')
-      if (saved) {
-        const data = JSON.parse(saved)
-        token.value = data.token
-        user.value = data.user
-      }
-    } catch {}
+    const saved = loadAuth()
+    if (saved) {
+      token.value = saved.token
+      user.value = saved.user as UserInfo
+    }
   }
 
   function saveToStorage() {
-    try {
-      localStorage.setItem('tea-auth', JSON.stringify({
-        token: token.value,
-        user: user.value,
-      }))
-    } catch {}
+    saveAuth({ token: token.value ?? '', user: user.value })
   }
 
   async function login(username: string, password: string): Promise<boolean> {
@@ -85,7 +78,7 @@ export const useAuthStore = defineStore('auth', () => {
   function logout() {
     token.value = null
     user.value = null
-    try { localStorage.removeItem('tea-auth') } catch {}
+    clearAuth()
   }
 
   // 初始化时加载

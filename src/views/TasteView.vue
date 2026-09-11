@@ -11,10 +11,12 @@ import TasteTrendChart from '@/components/tasting/TasteTrendChart.vue'
 import TastingCard from '@/components/tasting/TastingCard.vue'
 import TasteStepIndicator from './taste/TasteStepIndicator.vue'
 import TasteObserveStep from './taste/TasteObserveStep.vue'
+import { useToast } from '@/composables/useToast'
 import type { TastingRecord, TasteDimensions } from '@/types/tasting'
 
 const router = useRouter()
 const store = useTeaStore()
+const { error: toastError } = useToast()
 
 // ============ 三步骤控制 ============
 type TastingStep = 'observe' | 'aroma' | 'taste' | 'result'
@@ -196,7 +198,7 @@ const shareMessage = ref('')
 async function submit() {
   if (isSaving.value) return
   if (!store.currentTea) {
-    alert('未选择茶叶，无法保存品鉴记录')
+    toastError('未选择茶叶，无法保存品鉴记录')
     return
   }
 
