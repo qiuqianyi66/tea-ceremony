@@ -7,6 +7,7 @@ import { BrewPhase } from '@/types/brewing'
 import { useParticleSystem } from '@/composables/useParticles'
 import { useAudio } from '@/composables/useAudio'
 import TeaBrewScene3D from '@/components/three/TeaBrewScene3D.vue'
+import CeremonyProgress from './brew/CeremonyProgress.vue'
 
 const router = useRouter()
 const store = useTeaStore()
@@ -387,16 +388,7 @@ const phaseDescription = computed(() => {
     <p class="text-sm text-[var(--color-wood-light)] mb-6">{{ phaseDescription }}</p>
 
     <!-- 工夫茶仪式进度 -->
-    <div class="ceremony-progress" aria-label="冲泡流程进度">
-      <div v-for="(step, index) in ceremonySteps" :key="step.phase" class="ceremony-step">
-        <div class="ceremony-dot" :class="{ active: index === ceremonyStepIndex, done: index < ceremonyStepIndex }">
-          <IconCheck v-if="index < ceremonyStepIndex" class="w-3.5 h-3.5" />
-          <span v-else>{{ index + 1 }}</span>
-        </div>
-        <span :class="index <= ceremonyStepIndex ? 'text-[var(--color-wood)]' : 'text-[var(--color-wood-light)]/50'">{{ step.label }}</span>
-        <div v-if="index < ceremonySteps.length - 1" class="ceremony-line" :class="{ filled: index < ceremonyStepIndex }"></div>
-      </div>
-    </div>
+    <CeremonyProgress :steps="ceremonySteps" :current-index="ceremonyStepIndex" />
 
     <!-- ======== 冲泡动画区域（非 IDLE）======== -->
     <div v-if="!isIdle" class="relative w-64 h-64 mb-6">
@@ -624,29 +616,6 @@ const phaseDescription = computed(() => {
 .brew-dark button:not(:disabled):hover {
   border-color: rgba(201, 169, 110, 0.8) !important;
   box-shadow: 0 0 20px rgba(201, 169, 110, 0.25);
-}
-
-.brew-dark :deep(.ceremony-dot) {
-  background: rgba(42, 31, 21, 0.9) !important;
-  border: 2px solid rgba(201, 169, 110, 0.4);
-  color: #b8a080;
-}
-.brew-dark :deep(.ceremony-dot.active) {
-  background: linear-gradient(135deg, #c9a96e, #8b6b3a) !important;
-  border-color: #e8c87a;
-  color: #1a120a;
-  box-shadow: 0 0 16px rgba(201, 169, 110, 0.5);
-}
-.brew-dark :deep(.ceremony-dot.done) {
-  background: rgba(201, 169, 110, 0.3) !important;
-  border-color: rgba(201, 169, 110, 0.6);
-  color: #c9a96e;
-}
-.brew-dark :deep(.ceremony-line) {
-  background: rgba(201, 169, 110, 0.15);
-}
-.brew-dark :deep(.ceremony-line.filled) {
-  background: linear-gradient(90deg, #c9a96e, rgba(201, 169, 110, 0.3));
 }
 
 .brew-dark input[type="range"] {
