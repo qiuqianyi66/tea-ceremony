@@ -38,16 +38,19 @@ const router = createRouter({
       path: '/brew',
       name: 'brew',
       component: () => import('../views/BrewView.vue'),
+      meta: { requiresTea: true },
     },
     {
       path: '/taste',
       name: 'taste',
       component: () => import('../views/TasteView.vue'),
+      meta: { requiresTea: true },
     },
     {
       path: '/tools',
       name: 'tools',
       component: () => import('../views/ToolSelect.vue'),
+      meta: { requiresTea: true },
     },
     {
       path: '/login',
@@ -108,9 +111,11 @@ const router = createRouter({
 })
 
 router.beforeEach((to) => {
-  const teaStore = useTeaStore()
-  if ((to.name === 'brew' || to.name === 'taste' || to.name === 'tools') && !teaStore.currentTea) {
-    return { name: 'select' }
+  if (to.meta.requiresTea) {
+    const teaStore = useTeaStore()
+    if (!teaStore.currentTea) {
+      return { name: 'select' }
+    }
   }
 })
 
