@@ -2,6 +2,8 @@
 import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTeaStore } from '@/stores/tea'
+import { useTasteStore } from '@/stores/taste'
+import { useBrewStore } from '@/stores/brew'
 import { getSoupColor } from '@/data/teas'
 import { getScoreLevel, explainProcessFactor } from '@/services/scoring'
 import { WATER_TYPES } from '@/data/constants'
@@ -16,6 +18,10 @@ import type { TastingRecord, TasteDimensions } from '@/types/tasting'
 
 const router = useRouter()
 const store = useTeaStore()
+const taste = useTasteStore()
+const brew = useBrewStore()
+// 八维评分直连 tasteStore、冲泡展示直连 brewStore；teaStore 只保留茶叶/茶器/记录业务
+const brewState = brew.state
 const { error: toastError } = useToast()
 
 // ============ 三步骤控制 ============
@@ -25,7 +31,7 @@ const step = ref<TastingStep>('observe')
 // ============ 观色 ============
 const soupColor = computed(() => {
   if (!store.currentTea) return '#F5F0E8'
-  return getSoupColor(store.currentTea, store.brewState.steepTime)
+  return getSoupColor(store.currentTea, brewState.steepTime)
 })
 
 // ============ 闻香 ============
@@ -161,7 +167,7 @@ function buildQuickDimensions(): TasteDimensions {
 // 新手快评任一选择变化 → 实时写回八维（雷达图/综合分即时反馈）；专业模式不干预
 watch([firstSip, selectedFeelTags], () => {
   if (isExpertMode.value) return
-  Object.assign(store.tasteDimensions, buildQuickDimensions())
+  Object.assign(taste.dimensions, buildQuickDimensions())
 }, { deep: true })
 
 // ============ 笔记 ============
@@ -181,9 +187,9 @@ const processExplanation = computed(() => {
   const tea = store.currentTea
   if (!tea) return null
   return explainProcessFactor(
-    store.brewState.currentTemp,
+    brewState.currentTemp,
     tea.bestTemp,
-    store.brewState.steepTime,
+    brewState.steepTime,
     tea.bestTime,
     store.selectedTeaWare,
     waterFactor.value,
@@ -222,7 +228,7 @@ async function submit() {
   // AI 生成茶记
   generateTastingNote(
     store.currentTea?.name || '',
-    store.tasteDimensions,
+    taste.dimensions,
     finalScore.value,
   ).then(comment => { aiComment.value = comment })
 }
@@ -241,7 +247,7 @@ const stepTitle = computed(() => {
 const currentDimensions = computed(() => {
   const dims: Record<string, number> = {}
   for (const d of dimensions) {
-    dims[d.key] = store.tasteDimensions[d.key]
+    dims[d.key] = taste.dimensions[d.key]
   }
   return dims
 })
@@ -274,7 +280,7 @@ const averageDimensions = computed(() => {
     <h2 class="text-3xl font-bold text-[var(--color-wood)] mb-2">品鉴</h2>
 
     <p class="text-lg text-[var(--color-wood)] mb-1">
-      {{ store.currentTea?.name }} · 第 {{ store.brewState.infusionsDone }} 泡
+      {{ store.currentTea?.name }} · 第 {{ brewState.infusionsDone }} 泡
     </p>
     <p class="text-sm text-[var(--color-wood-light)] mb-8">{{ stepTitle }}</p>
 
@@ -383,12 +389,12 @@ const averageDimensions = computed(() => {
               class="w-5 h-5 text-[var(--color-tea-gold)] shrink-0"
             />
             <label class="block text-sm text-[var(--color-wood)] flex-1">
-              {{ d.label }} <span class="text-[var(--color-tea-gold)] font-bold">({{ store.tasteDimensions[d.key] }})</span>
+              {{ d.label }} <span class="text-[var(--color-tea-gold)] font-bold">({{ taste.dimensions[d.key] }})</span>
             </label>
           </div>
           <input
             type="range"
-            v-model.number="store.tasteDimensions[d.key]"
+            v-model.number="taste.dimensions[d.key]"
             min="1"
             max="5"
             class="w-full h-2 bg-[var(--color-paper)] rounded-lg appearance-none cursor-pointer accent-[var(--color-tea-gold)]"
@@ -484,8 +490,8 @@ const averageDimensions = computed(() => {
           </template>
         </p>
         <p v-if="processExplanation" class="mb-6 text-[11px] leading-5 text-[var(--color-wood-light)]">
-          温度 {{ store.brewState.currentTemp }}°C（宜 {{ store.currentTea?.bestTemp }}°C，{{ processExplanation.tempFactor >= 1 ? '无扣减' : '−' + Math.round((1 - processExplanation.tempFactor) * 100) + '%' }}）
-          · 时间 {{ store.brewState.steepTime }}s（宜 {{ store.currentTea?.bestTime }}s，{{ processExplanation.timeFactor >= 1 ? '无扣减' : '−' + Math.round((1 - processExplanation.timeFactor) * 100) + '%' }}）
+          温度 {{ brewState.currentTemp }}°C（宜 {{ store.currentTea?.bestTemp }}°C，{{ processExplanation.tempFactor >= 1 ? '无扣减' : '−' + Math.round((1 - processExplanation.tempFactor) * 100) + '%' }}）
+          · 时间 {{ brewState.steepTime }}s（宜 {{ store.currentTea?.bestTime }}s，{{ processExplanation.timeFactor >= 1 ? '无扣减' : '−' + Math.round((1 - processExplanation.timeFactor) * 100) + '%' }}）
           <template v-if="processExplanation.wareName">· {{ processExplanation.wareName }}补偿 +{{ Math.round(processExplanation.compensation * 100) }}%</template>
           · 水 ×{{ processExplanation.waterFactor }} → {{ (processExplanation.factor * 100).toFixed(0) }}%
         </p>
@@ -529,7 +535,7 @@ const averageDimensions = computed(() => {
                 class="w-4 h-4 mx-auto mb-1 text-[var(--color-tea-gold)]"
               />
               <p class="text-xs text-[var(--color-wood-light)]">{{ d.short }}</p>
-              <p class="text-lg font-bold text-[var(--color-wood)]">{{ store.tasteDimensions[d.key] }}</p>
+              <p class="text-lg font-bold text-[var(--color-wood)]">{{ taste.dimensions[d.key] }}</p>
             </div>
           </div>
           <p v-if="tastingNotes" class="text-[var(--color-wood-light)] mt-2 italic">
