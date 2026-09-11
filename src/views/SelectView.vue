@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { teas, getAllTypes } from '@/data/teas'
@@ -36,7 +36,6 @@ function pickMood(id: string) {
   selectedTea.value = null
 }
 
-// 茶图加载失败记录：失败后降级为渐变色块
 const imgFailed = reactive<Record<string, boolean>>({})
 function markImgFailed(id: string) { imgFailed[id] = true }
 
@@ -49,7 +48,6 @@ onMounted(async () => {
   try {
     const remoteTeas = await teasApi.list()
     if (remoteTeas.length > 0) {
-      // 远程数据负责更新数据库字段，本地资料保留视觉细节、故事和茶人关联。
       const localByName = new Map(teas.map(tea => [tea.name, tea]))
       catalog.value = remoteTeas.map(remoteTea => {
         const localTea = localByName.get(remoteTea.name)
@@ -59,7 +57,6 @@ onMounted(async () => {
       })
     }
   } catch (error) {
-    // API 不可用时保留内置目录，保证离线仍可开始品茶。
     console.warn('[SelectView] 茶叶目录同步失败，使用本地目录:', error)
   } finally {
     isLoading.value = false
@@ -90,75 +87,271 @@ const types = getAllTypes()
 </script>
 
 <template>
-  <div class="min-h-[100dvh] p-4 sm:p-8 pb-28">
-    <h2 class="text-3xl font-bold text-[var(--color-wood)] mb-4">选茶</h2>
+  <div class="select-root">
+    <!-- 顶部栏 -->
+    <header class="select-topbar">
+      <button class="back-btn" @click="router.push('/')">
+        <IconArrowLeft :size="18" /><span>首页</span>
+      </button>
+      <h1 class="select-title">选茶</h1>
+      <div class="w-16"></div>
+    </header>
 
-    <!-- 苏格拉底式追问 -->
-    <div class="mb-6 p-4 rounded-xl bg-[var(--color-paper)]/60">
-      <p class="text-sm text-[var(--color-wood)] mb-3">此刻想要什么感受？</p>
-      <div class="flex flex-wrap gap-2">
-        <button v-for="m in moodOptions" :key="m.id" @click="pickMood(m.id)"
-          class="px-3 py-2 rounded-full text-sm transition-colors"
-          :class="selectedMood === m.id
-            ? 'bg-[var(--color-tea-gold)] text-white'
-            : 'bg-white text-[var(--color-wood)] border border-[var(--color-paper)]'">
-          {{ m.label }}
+    <main class="select-content">
+      <!-- 苏格拉底式追问 -->
+      <section class="mood-panel">
+        <p class="mood-label">此刻想要什么感受？</p>
+        <div class="mood-row">
+          <button v-for="m in moodOptions" :key="m.id" @click="pickMood(m.id)"
+            class="mood-btn"
+            :class="{ active: selectedMood === m.id }">
+            {{ m.label }}
+          </button>
+        </div>
+      </section>
+
+      <!-- 茶类筛选 -->
+      <div class="type-row">
+        <button @click="filterTeas(null)"
+          class="type-btn"
+          :class="{ active: !selectedType }">
+          全部
+        </button>
+        <button v-for="t in types" :key="t" @click="filterTeas(t)"
+          class="type-btn"
+          :class="{ active: selectedType === t }">
+          {{ t }}
         </button>
       </div>
-    </div>
 
-    <div class="flex flex-wrap gap-3 mb-8">
-      <button @click="filterTeas(null)"
-        class="px-4 py-3 rounded-full transition-colors"
-        :class="!selectedType ? 'bg-[var(--color-wood)] text-[var(--color-cream)]' : 'bg-[var(--color-paper)] text-[var(--color-wood)]'">
-        全部
-      </button>
-      <button v-for="t in types" :key="t" @click="filterTeas(t)"
-        class="px-4 py-3 rounded-full transition-colors"
-        :class="selectedType === t ? 'bg-[var(--color-wood)] text-[var(--color-cream)]' : 'bg-[var(--color-paper)] text-[var(--color-wood)]'">
-        {{ t }}
-      </button>
-    </div>
-
-    <template v-if="visibleTeas.length > 0">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div v-for="tea in visibleTeas" :key="tea.id"
-          @click="selectTea(tea)"
-          class="p-6 rounded-xl cursor-pointer transition-all duration-300 border-2"
-        :class="selectedTea?.id === tea.id ? 'border-[var(--color-tea-gold)] shadow-lg scale-105' : 'border-transparent bg-white hover:shadow-md'">
-        <img v-if="tea.image && !imgFailed[tea.id]" :src="tea.image" loading="lazy" @error="markImgFailed(tea.id)"
-          class="w-full h-24 object-cover rounded-lg mb-4" :alt="tea.name" />
-        <div v-else class="w-full h-24 rounded-lg mb-4"
-          :style="{ background: `linear-gradient(135deg, ${tea.soupColorMin}, ${tea.soupColorMax})` }"></div>
-        <h3 class="text-xl font-bold font-serif text-[var(--color-wood)] mb-2">{{ tea.name }}</h3>
-        <p class="text-sm text-[var(--color-wood-light)] mb-2">{{ tea.type }} · {{ tea.origin }}</p>
-        <p class="text-sm text-[var(--color-wood-light)] opacity-80">{{ tea.description }}</p>
-        <div class="flex flex-wrap gap-2 mt-3">
-          <span v-for="f in tea.flavor" :key="f" class="px-2 py-1 text-xs bg-[var(--color-paper)] text-[var(--color-wood)] rounded">{{ f }}</span>
-        </div>
-        <!-- 相关茶人 -->
-        <div v-if="selectedTea?.id === tea.id" class="mt-3 pt-3 border-t border-[var(--color-paper)]">
-          <div v-for="master in teaMasters(tea)" :key="master.id"
-            class="flex items-center gap-2 mb-1">
-            <component :is="`Icon${master.avatar}`" class="w-6 h-6 text-[var(--color-tea-gold)] shrink-0" />
-            <div>
-              <p class="text-xs font-bold text-[var(--color-wood)]">{{ master.name }}（{{ master.dynasty }}）· {{ master.title }}</p>
-              <p class="text-[10px] text-[var(--color-wood-light)] italic">"{{ master.quote.slice(0, 20) }}…"</p>
+      <!-- 茶叶网格 -->
+      <template v-if="visibleTeas.length > 0">
+        <div class="tea-grid">
+          <div v-for="tea in visibleTeas" :key="tea.id"
+            class="tea-card"
+            :class="{ selected: selectedTea?.id === tea.id }"
+            @click="selectTea(tea)">
+            <img v-if="tea.image && !imgFailed[tea.id]" :src="tea.image" loading="lazy"
+              @error="markImgFailed(tea.id)"
+              class="tea-img" :alt="tea.name" />
+            <div v-else class="tea-img-fallback"
+              :style="{ background: `linear-gradient(135deg, ${tea.soupColorMin}, ${tea.soupColorMax})` }"></div>
+            <div class="tea-body">
+              <h3 class="tea-name">{{ tea.name }}</h3>
+              <p class="tea-origin">{{ tea.type }} · {{ tea.origin }}</p>
+              <p class="tea-desc">{{ tea.description }}</p>
+              <div class="flavor-row">
+                <span v-for="f in tea.flavor" :key="f" class="flavor-pill">{{ f }}</span>
+              </div>
+            </div>
+            <!-- 相关茶人（选中时展开） -->
+            <div v-if="selectedTea?.id === tea.id" class="masters-panel">
+              <div v-for="master in teaMasters(tea)" :key="master.id"
+                class="master-row">
+                <component :is="`Icon${master.avatar}`" class="master-icon" />
+                <div>
+                  <p class="master-name">{{ master.name }}（{{ master.dynasty }}）· {{ master.title }}</p>
+                  <p class="master-quote">"{{ master.quote.slice(0, 24) }}…"</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-        </div>
-      </div>
-    </template>
-    <p v-else class="py-12 text-center text-sm text-[var(--color-wood-light)]">该分类暂无茶——等一盏新茶入席</p>
-    <p v-if="isLoading" class="text-center text-sm text-[var(--color-wood-light)] mt-6">正在同步茶叶目录…</p>
+      </template>
+      <p v-else class="empty-hint">该分类暂无茶——等一盏新茶入席</p>
+      <p v-if="isLoading" class="loading-hint">正在同步茶叶目录…</p>
+    </main>
 
-    <div class="fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-sm border-t">
+    <!-- 底部确认栏 -->
+    <footer class="confirm-bar">
       <button @click="confirm" :disabled="!selectedTea"
-        class="w-full max-w-md mx-auto block py-4 rounded-lg text-xl transition-all"
-        :class="selectedTea ? 'bg-[var(--color-wood)] text-[var(--color-cream)] hover:bg-[var(--color-wood-light)]' : 'bg-[#E8E2D8] text-[#B5AC9C] cursor-not-allowed'">
+        class="confirm-btn"
+        :class="{ disabled: !selectedTea }">
         {{ selectedTea ? `选择 ${selectedTea.name}` : '请选择一种茶叶' }}
       </button>
-    </div>
+    </footer>
   </div>
 </template>
+
+<style scoped>
+.select-root {
+  min-height: 100dvh;
+  background: linear-gradient(160deg, #0f1a14 0%, #1a2420 50%, #0d1410 100%);
+  color: #f5f1e6;
+  font-family: var(--font-sans);
+  padding-bottom: 6rem;
+}
+
+/* 顶部栏 */
+.select-topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.4rem 1.6rem 1rem;
+}
+.back-btn {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(245,241,230,0.15);
+  color: #f5f1e6; padding: 0.5rem 1rem; border-radius: 999px;
+  font-size: 0.85rem; cursor: pointer; transition: background 0.25s;
+  min-height: 2.75rem; font-family: inherit;
+}
+.back-btn:hover { background: rgba(255,255,255,0.15); }
+.select-title {
+  font-family: var(--font-serif);
+  font-size: 1.5rem; letter-spacing: 0.35em; margin: 0;
+}
+
+.select-content {
+  max-width: 72rem; margin: 0 auto; padding: 0 1.2rem;
+}
+
+/* 感受选择 */
+.mood-panel {
+  padding: 1.1rem 1.2rem; margin-bottom: 1.5rem;
+  border-radius: 1rem;
+  background: rgba(16, 26, 22, 0.6);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(245, 241, 230, 0.1);
+}
+.mood-label {
+  font-size: 0.85rem; letter-spacing: 0.1em;
+  color: rgba(245, 241, 230, 0.7); margin: 0 0 0.7rem;
+}
+.mood-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.mood-btn {
+  padding: 0.5rem 1.1rem; border-radius: 999px;
+  font-size: 0.85rem; cursor: pointer;
+  background: rgba(245, 241, 230, 0.06);
+  border: 1px solid rgba(245, 241, 230, 0.12);
+  color: rgba(245, 241, 230, 0.75);
+  transition: all 0.25s; font-family: inherit;
+  min-height: 2.5rem;
+}
+.mood-btn:hover { border-color: rgba(201, 169, 110, 0.5); }
+.mood-btn.active {
+  background: rgba(201, 169, 110, 0.85);
+  border-color: transparent; color: #1a120a; font-weight: 500;
+}
+
+/* 茶类筛选 */
+.type-row {
+  display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem;
+}
+.type-btn {
+  padding: 0.5rem 1.1rem; border-radius: 999px;
+  font-size: 0.85rem; cursor: pointer;
+  background: rgba(245, 241, 230, 0.06);
+  border: 1px solid rgba(245, 241, 230, 0.12);
+  color: rgba(245, 241, 230, 0.7);
+  transition: all 0.25s; font-family: inherit;
+  min-height: 2.5rem;
+}
+.type-btn:hover { border-color: rgba(201, 169, 110, 0.4); }
+.type-btn.active {
+  background: rgba(201, 169, 110, 0.2);
+  border-color: rgba(201, 169, 110, 0.7);
+  color: #e8d5b0;
+}
+
+/* 茶叶网格 */
+.tea-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+.tea-card {
+  padding: 1.2rem; border-radius: 1rem; cursor: pointer;
+  background: rgba(16, 26, 22, 0.6);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(245, 241, 230, 0.1);
+  transition: all 0.28s ease;
+}
+.tea-card:hover {
+  border-color: rgba(201, 169, 110, 0.45);
+  transform: translateY(-2px);
+}
+.tea-card.selected {
+  border-color: rgba(201, 169, 110, 0.8);
+  background: rgba(20, 34, 28, 0.75);
+  box-shadow: 0 0 24px rgba(201, 169, 110, 0.15);
+}
+.tea-img {
+  width: 100%; height: 120px; object-fit: cover;
+  border-radius: 0.7rem; margin-bottom: 0.9rem;
+}
+.tea-img-fallback {
+  width: 100%; height: 120px; border-radius: 0.7rem; margin-bottom: 0.9rem;
+}
+.tea-name {
+  font-family: var(--font-serif);
+  font-size: 1.25rem; color: #f3efe4; margin: 0 0 0.3rem;
+}
+.tea-origin {
+  font-size: 0.78rem; letter-spacing: 0.08em;
+  color: rgba(201, 169, 110, 0.9); margin: 0 0 0.5rem;
+}
+.tea-desc {
+  font-size: 0.82rem; line-height: 1.6;
+  color: rgba(245, 241, 230, 0.6); margin: 0 0 0.7rem;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.flavor-row { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.flavor-pill {
+  font-size: 0.7rem; color: rgba(245, 241, 230, 0.7);
+  background: rgba(245, 241, 230, 0.08);
+  padding: 0.15rem 0.55rem; border-radius: 999px;
+}
+
+/* 相关茶人 */
+.masters-panel {
+  margin-top: 0.9rem; padding-top: 0.9rem;
+  border-top: 1px solid rgba(245, 241, 230, 0.1);
+}
+.master-row { display: flex; gap: 0.6rem; margin-bottom: 0.5rem; }
+.master-icon {
+  width: 1.5rem; height: 1.5rem; flex-shrink: 0;
+  color: rgba(201, 169, 110, 0.9);
+}
+.master-name {
+  font-size: 0.78rem; color: #e8d5b0; margin: 0;
+}
+.master-quote {
+  font-size: 0.7rem; color: rgba(245, 241, 230, 0.45);
+  margin: 0.15rem 0 0; font-style: italic;
+}
+
+/* 空态 / 加载 */
+.empty-hint, .loading-hint {
+  text-align: center; padding: 3rem 0;
+  font-size: 0.85rem; color: rgba(245, 241, 230, 0.45);
+}
+
+/* 底部确认栏 */
+.confirm-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  padding: 1rem 1.2rem 1.2rem;
+  background: linear-gradient(to top, rgba(13, 20, 16, 0.95) 60%, transparent);
+  backdrop-filter: blur(8px);
+}
+.confirm-btn {
+  width: 100%; max-width: 28rem; margin: 0 auto;
+  display: block; padding: 1rem; border-radius: 999px;
+  font-size: 1.05rem; letter-spacing: 0.1em;
+  font-family: inherit; cursor: pointer; transition: all 0.25s;
+  border: none;
+}
+.confirm-btn:not(.disabled) {
+  background: rgba(201, 169, 110, 0.95);
+  color: #1a120a; font-weight: 500;
+}
+.confirm-btn:not(.disabled):hover { background: #d4b87a; transform: translateY(-1px); }
+.confirm-btn.disabled {
+  background: rgba(245, 241, 230, 0.1);
+  color: rgba(245, 241, 230, 0.35); cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  .select-topbar { padding: 1rem 1.1rem 0.8rem; }
+  .select-content { padding: 0 0.9rem; }
+  .tea-grid { grid-template-columns: 1fr; }
+}
+</style>
