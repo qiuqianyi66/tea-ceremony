@@ -1,7 +1,9 @@
 /**
  * HTTP 基础层：统一请求/超时/错误/认证 token 注入
  */
-import { getAuthToken } from './authStorage'
+import { getAuthToken, clearAuth } from './authStorage'
+import { useUiStore } from '@/stores/ui'
+import router from '@/router'
 
 // 生产环境通过 Nginx 代理到 /api；开发环境可通过 VITE_API_URL 指向后端。
 // 统一补齐 /api，避免把 http://localhost:8000 配置成不带前缀的错误地址。
@@ -16,6 +18,37 @@ export class ApiError extends Error {
   ) {
     super(message)
     this.name = 'ApiError'
+  }
+}
+
+/**
+ * 统一错误拦截（副作用，仍会抛 ApiError 由调用方处理）：
+ * 401 → 清 token 跳登录；403 / 404 / 500 → toast 提示。
+ * 登录/注册接口的 401 是正常业务错误（账号密码不对），不触发全局跳转。
+ * 网络错误不在此处 toast：records/garden 依赖失败降级离线存储，全局提示会刷屏。
+ */
+function handleHttpError(status: number, path: string) {
+  if (path.startsWith('/auth/')) return
+  const ui = useUiStore()
+
+  if (status === 401) {
+    clearAuth()
+    if (router.currentRoute.value.name !== 'login') {
+      void router.push({ name: 'login' })
+    }
+    return
+  }
+
+  switch (status) {
+    case 403:
+      ui.showToast('无权限执行此操作', 'error')
+      break
+    case 404:
+      ui.showToast('请求的资源不存在', 'error')
+      break
+    case 500:
+      ui.showToast('服务器开小差了，请稍后重试', 'error')
+      break
   }
 }
 
@@ -40,6 +73,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     if (!res.ok) {
       const errText = await res.text().catch(() => '')
       const message = errText || res.statusText || '请求失败'
+      handleHttpError(res.status, path)
       throw new ApiError(`API ${res.status}: ${message}`, res.status)
     }
 

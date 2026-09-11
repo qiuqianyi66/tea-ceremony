@@ -6,9 +6,11 @@ import { useTeaStore } from '@/stores/tea'
 import { TeaType, type Tea } from '@/types/tea'
 import { getTeaMastersForTea } from '@/data/teaMasters'
 import { teasApi } from '@/services/api'
+import { useToast } from '@/composables/useToast'
 
 const router = useRouter()
 const store = useTeaStore()
+const { info: toastInfo } = useToast()
 
 const selectedType = ref<TeaType | null>(null)
 const selectedTea = ref<Tea | null>(null)
@@ -58,6 +60,7 @@ onMounted(async () => {
     }
   } catch (error) {
     console.warn('[SelectView] 茶叶目录同步失败，使用本地目录:', error)
+    toastInfo('网络不可用，已使用本地茶目录')
   } finally {
     isLoading.value = false
   }

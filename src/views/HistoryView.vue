@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useTeaStore } from '@/stores/tea'
 import { useRecordStore } from '@/stores/record'
 import { getScoreLevel } from '@/services/scoring'
+import { EmptyState } from '@/components/ui'
 
 const router = useRouter()
 const store = useTeaStore()
@@ -100,9 +101,11 @@ async function retrySync() {
       </div>
     </div>
 
-    <div v-if="recordStore.history.length === 0" class="text-center text-[var(--color-wood-light)] py-12">
-      <p class="text-lg">暂无品鉴记录</p>
-    </div>
+    <EmptyState
+      v-if="recordStore.history.length === 0"
+      title="暂无品鉴记录"
+      description="完成一次冲泡品鉴后，记录会出现在这里"
+    />
 
     <div v-else class="space-y-4">
       <div v-for="record in recordStore.history" :key="record.id"
