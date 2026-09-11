@@ -9,6 +9,8 @@ import { generateTastingNote } from '@/services/teaAI'
 import TasteRadarChart from '@/components/tasting/TasteRadarChart.vue'
 import TasteTrendChart from '@/components/tasting/TasteTrendChart.vue'
 import TastingCard from '@/components/tasting/TastingCard.vue'
+import TasteStepIndicator from './taste/TasteStepIndicator.vue'
+import TasteObserveStep from './taste/TasteObserveStep.vue'
 import type { TastingRecord, TasteDimensions } from '@/types/tasting'
 
 const router = useRouter()
@@ -275,50 +277,14 @@ const averageDimensions = computed(() => {
     <p class="text-sm text-[var(--color-wood-light)] mb-8">{{ stepTitle }}</p>
 
     <!-- 步骤指示器 -->
-    <div class="flex gap-2 mb-8">
-      <div
-        v-for="(s, i) in ['observe', 'aroma', 'taste', 'result']" :key="s"
-        class="flex items-center gap-2"
-      >
-        <div
-          class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all"
-          :class="step === s
-            ? 'bg-[var(--color-wood)] text-[var(--color-cream)]'
-            : ['observe', 'aroma', 'taste', 'result'].indexOf(step) > i
-              ? 'bg-[var(--color-tea-gold)] text-white'
-              : 'bg-[#E8E2D8] text-[#B5AC9C]'"
-        >
-          {{ ['观', '闻', '品', '果'][i] }}
-        </div>
-        <div v-if="i < 3" class="w-6 h-0.5" :class="['observe', 'aroma', 'taste', 'result'].indexOf(step) > i ? 'bg-[var(--color-tea-gold)]' : 'bg-gray-200'"></div>
-      </div>
-    </div>
+    <TasteStepIndicator :current="(['observe','aroma','taste','result'] as const).indexOf(step)" />
 
     <!-- ======== ① 观色 ======== -->
-    <div v-if="step === 'observe'" class="flex flex-col items-center">
-      <div class="w-48 h-48 rounded-2xl shadow-lg mb-6 transition-colors duration-500 relative"
-        :style="{ backgroundColor: soupColor }">
-        <component
-          :is="`Icon${`Steam`}`"
-          class="absolute top-4 right-4 w-8 h-8 text-white/60 animate-bounce"
-        />
-      </div>
-      <div class="flex items-center gap-2 mb-2">
-        <span class="text-sm text-[var(--color-wood)]">你的茶汤</span>
-        <span class="w-8 h-8 rounded-full shadow-inner" :style="{ backgroundColor: soupColor }"></span>
-        <template v-if="store.currentTea">
-          <span class="text-xs text-[var(--color-wood-light)] ml-2">正常范围</span>
-          <span class="w-5 h-5 rounded-full" :style="{ backgroundColor: store.currentTea.soupColorMin }"></span>
-          <span class="text-[var(--color-wood-light)] text-xs">至</span>
-          <span class="w-5 h-5 rounded-full" :style="{ backgroundColor: store.currentTea.soupColorMax }"></span>
-        </template>
-      </div>
-      <button @click="step = 'aroma'"
-        class="px-8 py-3 bg-[var(--color-wood)] text-[var(--color-cream)] rounded-lg hover:bg-[var(--color-wood-light)] transition-colors flex items-center gap-2">
-        <IconChevronRight class="w-5 h-5" />
-        观色完成，继续闻香
-      </button>
-    </div>
+    <TasteObserveStep v-if="step === 'observe'"
+      :soup-color="soupColor"
+      :soup-min="store.currentTea?.soupColorMin"
+      :soup-max="store.currentTea?.soupColorMax"
+      @next="step = 'aroma'" />
 
     <!-- ======== ② 闻香 ======== -->
     <div v-if="step === 'aroma'" class="w-full max-w-md">
