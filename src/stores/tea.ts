@@ -6,16 +6,18 @@ import { defineStore } from 'pinia'
 import { ref, computed, toRaw } from 'vue'
 import type { Tea } from '@/types/tea'
 import type { TeaWare } from '@/types/teaware'
-import type { BrewState } from '@/types/brewing'
 import type { TasteDimensions, TastingRecord, Achievement } from '@/types/tasting'
-import { BrewPhase } from '@/types/brewing'
 import { calculateProcessFactor, calculateOverallScore, generateRecordId } from '@/services/scoring'
 import { historyStorage, achievementStorage, xpStorage, collectedWareStorage, settingsStorage } from '@/services/storage'
 import { ACHIEVEMENTS, WATER_TYPES, TEA_LEVELS } from '@/data/constants'
 import { getAllTypes, getTeaById } from '@/data/teas'
 import { TeaType } from '@/types/tea'
+import { useBrewStore } from './brew'
+import { useTasteStore } from './taste'
+import { useRecordStore } from './record'
 
 export const useTeaStore = defineStore('tea', () => {
+  const brewStore = useBrewStore()
   const DEFAULT_COLLECTED_WARE_IDS = new Set(['gaiwan', 'yixing', 'glass'])
 
   // ============ 当前茶叶 ============
@@ -50,33 +52,19 @@ export const useTeaStore = defineStore('tea', () => {
     userXp.value = await xpStorage.load()
   }
 
-  // ============ 冲泡状态 ============
-  const brewState = ref<BrewState>({
-    phase: BrewPhase.IDLE,
-    currentTemp: 20,
-    targetTemp: 80,
-    steepTime: 0,
-    infusionsDone: 0,
-    teaWeight: 3,
-  })
+  // ============ 冲泡状态（委托给 brewStore）============
+  const brewState = computed(() => brewStore.state)
 
   // ============ 当前水源 ============
   const waterType = ref<string>('purified')
 
-  // ============ 品鉴维度 ============
-  const tasteDimensions = ref<TasteDimensions>({
-    bitterness: 3,
-    sweetness: 3,
-    aftertaste: 3,
-    body: 3,
-    aroma: 3,
-    rhyme: 3,
-    shape: 3,
-    mind: 3,
-  })
+  // ============ 品鉴维度（委托给 tasteStore）============
+  const tasteStore = useTasteStore()
+  const tasteDimensions = computed(() => tasteStore.dimensions)
 
-  // ============ 历史记录 ============
-  const history = ref<TastingRecord[]>([])
+  // ============ 历史记录（委托给 recordStore）============
+  const recordStore = useRecordStore()
+  const history = computed(() => recordStore.history)
 
   // ============ 成就系统 ============
   const achievements = ref<Achievement[]>([])
@@ -241,14 +229,7 @@ export const useTeaStore = defineStore('tea', () => {
   function selectTea(tea: Tea) {
     currentTea.value = tea
     selectedTeaWare.value = null
-    brewState.value = {
-      phase: BrewPhase.IDLE,
-      currentTemp: 20,
-      targetTemp: tea.bestTemp,
-      steepTime: 0,
-      infusionsDone: 0,
-      teaWeight: 3,
-    }
+    brewStore.resetForTea(tea.bestTemp)
     resetTasteDimensions()
   }
 
@@ -257,70 +238,24 @@ export const useTeaStore = defineStore('tea', () => {
   }
 
   function setTeaWeight(weight: number) {
-    brewState.value.teaWeight = Math.max(1, Math.min(8, weight))
+    brewStore.setTeaWeight(weight)
   }
 
   function setTargetTemp(temp: number) {
-    brewState.value.targetTemp = Math.max(20, Math.min(100, temp))
+    brewStore.setTargetTemp(temp)
   }
 
-  function startHeating() {
-    brewState.value.phase = BrewPhase.HEATING
-  }
+  function startHeating() { brewStore.startHeating() }
+  function updateTemp(temp: number) { brewStore.updateTemp(temp) }
+  function completeWarming() { brewStore.completeWarming() }
+  function completeRinsing() { brewStore.completeRinsing() }
+  function startSteeping() { brewStore.startSteeping() }
+  function updateSteepTime(time: number) { brewStore.updateSteepTime(time) }
+  function stopSteeping() { brewStore.stopSteeping() }
+  function nextInfusion() { brewStore.nextInfusion() }
+  function resetBrew() { brewStore.reset() }
 
-  function updateTemp(temp: number) {
-    brewState.value.currentTemp = Math.min(temp, brewState.value.targetTemp)
-    if (brewState.value.currentTemp >= brewState.value.targetTemp) {
-      brewState.value.phase = BrewPhase.WARMING
-    }
-  }
-
-  function completeWarming() {
-    brewState.value.phase = BrewPhase.RINSING
-  }
-
-  function completeRinsing() {
-    brewState.value.phase = BrewPhase.READY
-    brewState.value.steepTime = 0
-  }
-
-  function startSteeping() {
-    brewState.value.phase = BrewPhase.STEEPING
-    brewState.value.steepTime = 0
-  }
-
-  function updateSteepTime(time: number) {
-    brewState.value.steepTime = time
-  }
-
-  function stopSteeping() {
-    brewState.value.phase = BrewPhase.DONE
-    brewState.value.infusionsDone++
-  }
-
-  function nextInfusion() {
-    brewState.value.phase = BrewPhase.STEEPING
-    brewState.value.steepTime = 0
-  }
-
-  function resetBrew() {
-    brewState.value.phase = BrewPhase.IDLE
-    brewState.value.steepTime = 0
-    brewState.value.currentTemp = 20
-  }
-
-  function resetTasteDimensions() {
-    tasteDimensions.value = {
-      bitterness: 3,
-      sweetness: 3,
-      aftertaste: 3,
-      body: 3,
-      aroma: 3,
-      rhyme: 3,
-      shape: 3,
-      mind: 3,
-    }
-  }
+  function resetTasteDimensions() { tasteStore.reset() }
 
   function calculateScore(): number {
     return calculateOverallScore(tasteDimensions.value, processFactor.value)
@@ -348,7 +283,8 @@ export const useTeaStore = defineStore('tea', () => {
       weather,
       mood,
     }
-    history.value = await historyStorage.add(record)
+    const allRecords = await historyStorage.add(record)
+    recordStore.setAll(allRecords)
 
     const xpGain = 10 + Math.round(Math.max(0, record.overallScore - 5) * 4)
     await addXp(xpGain)
@@ -358,7 +294,7 @@ export const useTeaStore = defineStore('tea', () => {
   }
 
   async function loadHistory() {
-    history.value = await historyStorage.load()
+    await recordStore.load()
     await initAchievements()
     await loadXp()
     const savedWareIds = await collectedWareStorage.load()
