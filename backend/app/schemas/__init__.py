@@ -9,6 +9,7 @@ from app.schemas.culture import PersonBase, PersonResponse, PoemBase, PoemRespon
 from app.schemas.record import RecordCreate, RecordResponse
 from app.schemas.user import UserCreate, UserLogin, UserResponse, TokenResponse
 from app.schemas.garden import GardenPlantCreate, GardenPlantResponse
+from app.schemas.ware import TeaWareResponse
 
 __all__ = [
     "TeaBase",
@@ -27,4 +28,5 @@ __all__ = [
     "TokenResponse",
     "GardenPlantCreate",
     "GardenPlantResponse",
+    "TeaWareResponse",
 ]
