@@ -270,7 +270,7 @@ const averageDimensions = computed(() => {
 </script>
 
 <template>
-  <div class="min-h-[100dvh] p-4 sm:p-8 flex flex-col items-center">
+  <div class="taste-dark min-h-[100dvh] p-4 sm:p-8 flex flex-col items-center">
     <h2 class="text-3xl font-bold text-[var(--color-wood)] mb-2">品鉴</h2>
 
     <p class="text-lg text-[var(--color-wood)] mb-1">
@@ -610,3 +610,33 @@ const averageDimensions = computed(() => {
     </Teleport>
   </div>
 </template>
+
+<style scoped>
+.taste-dark {
+  --color-wood: #e8d5b0;
+  --color-wood-light: #b8a080;
+  --color-cream: #1a120a;
+  --color-paper: #2a1f15;
+  --color-tea-gold: #c9a96e;
+  --color-ink: #f5e6c8;
+  background: linear-gradient(160deg, #0f1a14 0%, #1a2420 50%, #0d1410 100%);
+  color: #e8d5b0;
+}
+.taste-dark :deep(.glass-panel) {
+  background: rgba(26, 18, 12, 0.72) !important;
+  backdrop-filter: blur(16px) saturate(1.2);
+  border: 1px solid rgba(201, 169, 110, 0.25) !important;
+}
+.taste-dark :deep(bg-white), .taste-dark :deep(.bg-white) {
+  background: rgba(245, 241, 230, 0.06) !important;
+}
+.taste-dark button {
+  border-color: rgba(201, 169, 110, 0.4);
+}
+.taste-dark textarea {
+  background: rgba(245, 241, 230, 0.06);
+  color: #e8d5b0;
+  border-color: rgba(201, 169, 110, 0.25);
+}
+.taste-dark textarea::placeholder { color: rgba(232, 213, 176, 0.35); }
+</style>
