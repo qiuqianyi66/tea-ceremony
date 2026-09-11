@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { teas, getAllTypes } from '@/data/teas'
@@ -14,6 +14,27 @@ const selectedType = ref<TeaType | null>(null)
 const selectedTea = ref<Tea | null>(null)
 const catalog = ref<Tea[]>(teas)
 const isLoading = ref(false)
+
+/** 苏格拉底式追问：此刻想要什么感受？映射到推荐茶类 */
+const moodOptions = [
+  { id: 'refresh', label: '提神醒神', types: [TeaType.GREEN, TeaType.OOLONG] },
+  { id: 'calm', label: '静心安神', types: [TeaType.WHITE, TeaType.YELLOW] },
+  { id: 'warm', label: '暖身暖胃', types: [TeaType.RED, TeaType.DARK] },
+  { id: 'relax', label: '放松享受', types: [TeaType.OOLONG, TeaType.RED] },
+] as const
+const selectedMood = ref<string | null>(null)
+
+function pickMood(id: string) {
+  if (selectedMood.value === id) {
+    selectedMood.value = null
+    selectedType.value = null
+  } else {
+    selectedMood.value = id
+    const mood = moodOptions.find(m => m.id === id)
+    if (mood) selectedType.value = mood.types[0]
+  }
+  selectedTea.value = null
+}
 
 // 茶图加载失败记录：失败后降级为渐变色块
 const imgFailed = reactive<Record<string, boolean>>({})
@@ -70,7 +91,21 @@ const types = getAllTypes()
 
 <template>
   <div class="min-h-[100dvh] p-4 sm:p-8 pb-28">
-    <h2 class="text-3xl font-bold text-[var(--color-wood)] mb-8">选茶</h2>
+    <h2 class="text-3xl font-bold text-[var(--color-wood)] mb-4">选茶</h2>
+
+    <!-- 苏格拉底式追问 -->
+    <div class="mb-6 p-4 rounded-xl bg-[var(--color-paper)]/60">
+      <p class="text-sm text-[var(--color-wood)] mb-3">此刻想要什么感受？</p>
+      <div class="flex flex-wrap gap-2">
+        <button v-for="m in moodOptions" :key="m.id" @click="pickMood(m.id)"
+          class="px-3 py-2 rounded-full text-sm transition-colors"
+          :class="selectedMood === m.id
+            ? 'bg-[var(--color-tea-gold)] text-white'
+            : 'bg-white text-[var(--color-wood)] border border-[var(--color-paper)]'">
+          {{ m.label }}
+        </button>
+      </div>
+    </div>
 
     <div class="flex flex-wrap gap-3 mb-8">
       <button @click="filterTeas(null)"
