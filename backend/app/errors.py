@@ -12,6 +12,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app.exceptions import BusinessError
+
 logger = logging.getLogger("tea.errors")
 
 STATUS_CODES: dict[int, str] = {
@@ -46,6 +48,14 @@ def register_error_handlers(app: FastAPI) -> None:
         return JSONResponse(
             status_code=exc.status_code,
             content=error_payload(exc.status_code, detail),
+        )
+
+    @app.exception_handler(BusinessError)
+    async def business_exception_handler(request: Request, exc: BusinessError) -> JSONResponse:
+        """业务异常（service 层抛出）→ 对应状态码 + 中文 detail。"""
+        return JSONResponse(
+            status_code=exc.status_code,
+            content=error_payload(exc.status_code, exc.detail, exc.code),
         )
 
     @app.exception_handler(RequestValidationError)

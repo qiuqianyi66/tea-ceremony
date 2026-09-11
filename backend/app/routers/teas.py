@@ -1,29 +1,20 @@
-"""茶叶数据 API"""
+"""茶叶数据 API — 薄路由，业务在 service 层。"""
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.models import Tea
 from app.schemas import TeaResponse
+from app.services import tea_service
 
 router = APIRouter()
 
 
 @router.get("/", response_model=list[TeaResponse])
 async def list_teas(type: str | None = None, db: AsyncSession = Depends(get_db)):
-    stmt = select(Tea)
-    if type:
-        stmt = stmt.filter(Tea.category == type)
-    result = await db.execute(stmt)
-    return result.scalars().all()
+    return await tea_service.list_teas(db, type)
 
 
 @router.get("/{tea_id}", response_model=TeaResponse)
 async def get_tea(tea_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Tea).filter(Tea.id == tea_id))
-    tea = result.scalar_one_or_none()
-    if not tea:
-        raise HTTPException(status_code=404, detail="茶叶不存在")
-    return tea
+    return await tea_service.get_tea_detail(db, tea_id)
