@@ -19,6 +19,9 @@
 | AI 茶灵 | 茶文化 RAG 检索 + LLM 对话（走后端代理），网络不可用时降级规则回复 | `src/services/teaAI.ts` |
 | 茶器 | 泡茶器具（盖碗、紫砂壶、玻璃杯等），影响工艺系数 | `src/data/teawares.ts` |
 | 水源 | 冲泡用水（纯净水、矿泉水、山泉水），影响工艺系数 | `src/data/waters.ts` |
+| 业务异常 | service 层抛出的统一异常（BadRequest 400 / Unauthorized 401 / NotFound 404 / Conflict 409），router 不直接 raise HTTPException | `backend/app/exceptions.py` |
+| Service 层 | 后端业务逻辑下沉层：CRUD、幂等、密码哈希、JWT 签发；router 只做参数与响应 | `backend/app/services/` |
+| 幂等创建 | 品鉴记录 / 茶园种植按 `user_id + client_id` 去重，重复提交返回同一条 | `backend/app/services/record_service.py` |
 
 ---
 
@@ -71,7 +74,7 @@ backend/
 │   ├── routers/    API 路由
 │   ├── models/     SQLAlchemy ORM
 │   ├── schemas/    Pydantic 请求/响应
-│   ├── services/   业务逻辑（RAG 检索等）
+│   ├── services/   业务逻辑（base CRUD + 四域 service + 文化检索/AI 代理）
 │   └── core/       配置、安全、数据库
 ├── migrations/     Alembic 迁移
 └── seeds/          初始数据

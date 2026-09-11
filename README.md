@@ -69,8 +69,8 @@ tea-ceremony/
 │  ├─ data/               # 茶叶、茶器、茶人、节气和文化资料
 │  └─ router/             # 路由和冲泡流程守卫
 ├─ backend/
-│  ├─ app/routers/         # auth、teas、records、culture API
-│  ├─ app/services/        # 茶文化检索与文本切分
+│  ├─ app/routers/         # auth、teas、teawares、records、garden、culture、ai API（薄路由）
+│  ├─ app/services/        # 业务 service（base CRUD + tea/record/garden/auth + 文化检索/AI 代理）
 │  └─ seeds/               # 初始茶叶与文化数据
 ├─ .github/               # CI、Issue 和 PR 模板
 ├─ docker-compose.yml
