@@ -470,6 +470,8 @@ docker compose down
 
 * 开工前调研（GitHub 高 star 同类项目）必须用横纵分析框架：先纵向梳理同类项目的历史演进与关键转折，再横向用统一维度对比差异，两轴合看后再规划任务；禁止只收集 star 数 / 链接就开工。
 
+* 技能返回"不支持某平台/某能力"时，禁止直接对用户说做不到就完事：先判断是否有通用工具能补齐（如 yt-dlp 下抖音/B站、PyAV 抽帧、自写脚本绕过），自行下载到本地再做后续分析；只有通用工具真实失败（403/风控/需登录/付费墙）才回报限制。
+
 ## 13. 来源与维护
 
 本融合版基于：AGENTS.md 开放标准（agents.md）、TechSpokes 规范 v3（章节顺序 / 解析可靠性）、TheRealSeanDonahoe agents-md（行为脚手架 / 学习记录）、awesome-agents-md（七段内容结构）、eugeniughelbur agents-md（边界三层 / 不覆盖人类内容）、bysiber agents-md-tools（lint 十条 / 密钥排除）、ai-boost agents_md_author（写作纪律 / 命令溯源）、agentsmd.io 最佳实践（活文档 / 迭代）。
