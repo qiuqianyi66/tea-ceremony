@@ -48,10 +48,13 @@ export function damp(current: number, target: number, lambda: number, dt: number
  *
  * @param phase 当前冲泡阶段（响应式 Ref）
  * @param isPouringOut 是否正在出汤（响应式 Ref）
+ * @param pourWaterOverride 用户拖拽注水进度（0~1，拖拽中接管；≤0 时按 phase 自动）。
+ *   READY 阶段默认不自动注水，必须由用户拖一次才注入——「一次拖动完成注水」。
  */
 export function useBrewAnimation(
   phase: Ref<BrewPhase>,
   isPouringOut: Ref<boolean>,
+  pourWaterOverride?: Ref<number>,
 ): BrewAnimationState & { update: (dt: number) => void } {
   const pourWater = ref(0)
   const addLeaves = ref(0)
@@ -72,15 +75,17 @@ export function useBrewAnimation(
 
   function updateTargets(): void {
     const p = phase.value
-    // 入水：温杯/醒茶/准备/浸泡阶段均有水
+    // 入水：温杯/醒茶/浸泡阶段有水（READY 待命不自动注水，等用户拖拽）
     targets.pourWater = [
       BrewPhase.WARMING,
       BrewPhase.RINSING,
-      BrewPhase.READY,
       BrewPhase.STEEPING,
     ].includes(p)
       ? 1
       : 0
+    // 用户拖拽进度接管（READY 阶段向右拖壶嘴注水）：取拖拽与 phase 自动值的较大者
+    const drag = pourWaterOverride?.value ?? 0
+    if (drag > 0) targets.pourWater = Math.max(targets.pourWater, Math.min(1, drag))
     // 放茶：醒茶/浸泡阶段有茶叶
     targets.addLeaves = [BrewPhase.RINSING, BrewPhase.STEEPING].includes(p) ? 1 : 0
     // 闷泡：浸泡阶段盖子盖上

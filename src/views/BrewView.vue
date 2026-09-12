@@ -8,6 +8,7 @@ import { BrewPhase } from '@/types/brewing'
 import { useParticleSystem } from '@/composables/useParticles'
 import { useAudio } from '@/composables/useAudio'
 import TeaBrewScene3D from '@/components/three/TeaBrewScene3D.vue'
+import { BREW_SKIN_LIST, type BrewSkinId } from '@/components/three/brewSkins'
 import CeremonyProgress from './brew/CeremonyProgress.vue'
 
 const router = useRouter()
@@ -22,6 +23,9 @@ const audio = useAudio()
 const isHeadless = computed(
   () => typeof navigator !== 'undefined' && (navigator.webdriver === true || /HeadlessChrome/i.test(navigator.userAgent)),
 )
+
+// 环境皮肤：湖畔烟雨为默认（雨雾氛围最出片，也与项目茶山资产最接近）
+const brewSkin = ref<BrewSkinId>('lake-rain')
 
 // ============ Canvas 粒子系统 ============
 const particleCanvas = useParticleSystem({ width: 256, height: 256 })
@@ -119,6 +123,7 @@ onUnmounted(() => {
   stopHeating()
   if (warmTimer) clearTimeout(warmTimer)
   if (outflowTimer) clearTimeout(outflowTimer)
+  if (finaleTimer) clearTimeout(finaleTimer)
   if (steepInterval) clearInterval(steepInterval)
   if (rinseInterval) clearInterval(rinseInterval)
 })
@@ -139,6 +144,21 @@ const pourSpeed = ref(0.5)
 let pourPointerStartX = 0
 let pourPointerStartedAt = 0
 let outflowTimer: ReturnType<typeof setTimeout> | null = null
+
+// 捧杯收尾：最后一泡出汤后停 2 秒，浮一句情绪文案再进品鉴
+const FINALE_LINES = ['这一口是热的', '日常琐碎即浪漫', '雨落在湖上']
+const finaleLine = ref('')
+const showFinale = ref(false)
+let finaleTimer: ReturnType<typeof setTimeout> | null = null
+
+function goTasteAfterFinale() {
+  finaleLine.value = FINALE_LINES[Math.floor(Math.random() * FINALE_LINES.length)] ?? FINALE_LINES[0]!
+  showFinale.value = true
+  finaleTimer = setTimeout(() => {
+    showFinale.value = false
+    router.push('/taste')
+  }, 2000)
+}
 
 const canGesturePour = computed(() => brewState.phase === BrewPhase.READY)
 const pourGestureStyle = computed(() => ({
@@ -188,6 +208,12 @@ const recommendedSteepTime = computed(() => {
 const isIdle = computed(() => brewState.phase === BrewPhase.IDLE)
 const hasTeaWare = computed(() => store.selectedTeaWare !== null)
 const isPouring = computed(() => [BrewPhase.WARMING, BrewPhase.RINSING, BrewPhase.STEEPING].includes(brewState.phase))
+
+// 拖拽注水进度同步给 3D：拖拽中实时传 0~1，松手/非拖拽阶段传 -1 交回 phase 自动。
+// 让 3D 真手与茶壶倾斜跟着手指走，而不是按 phase 自动满姿态。
+const pourProgress3D = computed(() =>
+  isPourGestureActive.value ? pourGestureProgress.value / 100 : -1,
+)
 
 // ============ 升温计时（备器页已 startHeating，本页挂载后接续递增水温）============
 function ensureHeatingInterval() {
@@ -293,16 +319,13 @@ function stopSteeping() {
   audio.playPourTea(1.5)  // 出汤声
   isPouringOut.value = true
   if (outflowTimer) clearTimeout(outflowTimer)
-  outflowTimer = setTimeout(() => { isPouringOut.value = false }, 1800)
-}
-
-function finishOutflow() {
-  if (outflowTimer) {
-    clearTimeout(outflowTimer)
+  // 出汤动画 1.8s 后自动推进下一泡或捧杯收尾，不等用户再点「出汤完成」。
+  // 流程：煮水自动 → 醒茶自动倒计时 → READY 拖一次注水 → 浸泡 → 出汤全自动。
+  outflowTimer = setTimeout(() => {
+    isPouringOut.value = false
     outflowTimer = null
-  }
-  isPouringOut.value = false
-  handleMainAction()
+    handleMainAction()
+  }, 1800)
 }
 
 function handleMainAction() {
@@ -324,7 +347,7 @@ function handleMainAction() {
       startSteeping()
     } else {
       audio.playSuccess()
-      router.push('/taste')
+      goTasteAfterFinale()
     }
   }
 }
@@ -384,7 +407,25 @@ const phaseDescription = computed(() => {
       :target-temp="brewState.targetTemp"
       :is-pouring-out="isPouringOut"
       :infusion="currentInfusion"
+      :skin="brewSkin"
+      :pour-progress="pourProgress3D"
     />
+    <!-- 环境皮肤切换：右上角极小文字按钮，验证三套氛围用 -->
+    <div class="fixed top-3 right-3 z-40 flex gap-2 text-xs">
+      <button
+        v-for="s in BREW_SKIN_LIST"
+        :key="s.id"
+        type="button"
+        @click="brewSkin = s.id"
+        class="px-2 py-1 rounded-full transition-all"
+        :class="brewSkin === s.id
+          ? 'bg-[var(--color-tea-gold)]/80 text-[#1a120a]'
+          : 'text-[var(--color-wood-light)]/70 hover:text-[var(--color-wood)]'"
+      >
+        {{ s.label }}
+      </button>
+    </div>
+
     <h2 class="text-3xl font-bold text-[var(--color-wood)] mb-2">冲泡</h2>
     <p v-if="store.currentTea" class="text-lg text-[var(--color-wood)] mb-1">
       {{ store.currentTea.name }}
@@ -492,9 +533,6 @@ const phaseDescription = computed(() => {
         </div>
         <div class="outflow-drop"></div>
         <p class="outflow-label">出汤 · 第 {{ completedInfusion }} 泡</p>
-        <button type="button" class="outflow-next" @click="finishOutflow">
-          {{ brewState.infusionsDone < totalInfusions ? '出汤完成 · 下一泡' : '出汤完成 · 开始品鉴' }}
-        </button>
       </div>
 
       <!-- 茶汤色展示（浸泡/出汤时）-->
@@ -579,6 +617,18 @@ const phaseDescription = computed(() => {
         {{ i }}
       </div>
     </div>
+
+    <!-- 胶片颗粒 + 暗角：全屏 overlay（pointer-events-none），压掉 3D CG 干净感，
+         模拟视频里的实拍颗粒。opacity 默认 0.05，留作质感旋钮；reduced-transparency 下降零 -->
+    <div class="film-vignette" aria-hidden="true"></div>
+    <div class="film-grain" aria-hidden="true"></div>
+
+    <!-- 捧杯收尾：最后一泡出汤后浮一句情绪文案，2 秒后自动进品鉴 -->
+    <transition name="finale-fade">
+      <div v-if="showFinale" class="finale-line" aria-live="polite">
+        <p>{{ finaleLine }}</p>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -592,6 +642,9 @@ const phaseDescription = computed(() => {
   --color-paper: #2a1f15;
   --color-tea-gold: #c9a96e;
   --color-ink: #f5e6c8;
+  /* 胶片颗粒强度旋钮：参考 three.js FilmPass noise 默认 0.02、上限约 0.08，
+     本场景实拍感取 0.04 起步，范围 0.03~0.05 可调（抖音截图感） */
+  --grain-opacity: 0.04;
   color: #e8d5b0;
 }
 
@@ -629,5 +682,65 @@ const phaseDescription = computed(() => {
   background: linear-gradient(135deg, #e8c87a, #c9a96e) !important;
   box-shadow: 0 0 12px rgba(232, 200, 122, 0.5);
   border: none !important;
+}
+
+/* 胶片颗粒：SVG feTurbulence 噪点平铺，steps 跳动模拟逐帧颗粒。
+   强度由 --grain-opacity 控制（默认 0.04，范围 0.03~0.05）。 */
+.film-grain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+  opacity: var(--grain-opacity, 0.04);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+  animation: grain-jitter 0.5s steps(3) infinite;
+}
+
+.film-vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 49;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.42) 100%);
+}
+
+@keyframes grain-jitter {
+  0% { background-position: 0 0; }
+  33% { background-position: -40px 20px; }
+  66% { background-position: 30px -30px; }
+  100% { background-position: 0 0; }
+}
+
+/* 捧杯收尾文案：居中浮起，停留 2 秒 */
+.finale-line {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 60;
+}
+.finale-line p {
+  font-size: 1.6rem;
+  letter-spacing: 0.1em;
+  color: #f0e0c0;
+  text-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
+}
+.finale-fade-enter-active,
+.finale-fade-leave-active {
+  transition: opacity 0.6s ease;
+}
+.finale-fade-enter-from,
+.finale-fade-leave-to {
+  opacity: 0;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .film-grain,
+  .film-vignette {
+    opacity: 0;
+  }
 }
 </style>

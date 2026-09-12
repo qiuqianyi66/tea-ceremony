@@ -14,7 +14,7 @@ test.beforeEach(async ({ page }) => {
   page.on('pageerror', err => console.log('[PAGEERROR]', err.stack || err.message))
 })
 
-/** 走完冲泡流程（西湖龙井 3 泡），到达「开始品鉴」并跳转品鉴页。 */
+/** 走完冲泡流程（西湖龙井 3 泡），自动停 2 秒浮文案后进 /taste。 */
 async function completeBrewing(page: Page) {
   // 备器页（/tools）确认后即开始煮水，进入 /brew 已是 HEATING；
   // 自动升温到目标温度（约 5s）→ 自动进入 WARMING，温杯按钮在可点击前由 Playwright 自动等待
@@ -23,17 +23,17 @@ async function completeBrewing(page: Page) {
   // WARMING → 0.8s 后 RINSING（醒茶 5s 倒计时）→ 自动 READY
   await page.getByRole('button', { name: /开始冲泡/ }).click()
 
-  // 循环 3 泡：STEEPING 主按钮出汤 → 出汤完成推进下一泡
+  // 循环 3 泡：STEEPING 主按钮出汤 → 1.8s 后自动进下一泡浸泡（不再点「出汤完成」）
   for (let infusion = 1; infusion <= 3; infusion++) {
     await page.getByRole('button', { name: /出汤 \(/ }).click()
     if (infusion < 3) {
-      await page.getByRole('button', { name: '出汤完成 · 下一泡' }).click()
+      // 自动推进到下一泡 STEEPING，主按钮再次变回「出汤 (Ns)」
+      await page.getByRole('button', { name: /出汤 \(/ }).waitFor({ timeout: 15000 })
     }
   }
 
-  // 最后一泡结束 → 出汤完成进入品鉴
-  await page.getByRole('button', { name: '出汤完成 · 开始品鉴' }).click()
-  await page.waitForURL('**/taste')
+  // 最后一泡出汤后自动停 2 秒浮情绪文案 → 自动跳转 /taste
+  await page.waitForURL('**/taste', { timeout: 15000 })
 }
 
 test('完整品鉴流程：首页→入席→选茶→选器→冲泡→品鉴→保存', async ({ page }) => {
