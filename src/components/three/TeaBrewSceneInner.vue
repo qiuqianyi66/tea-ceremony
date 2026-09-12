@@ -12,35 +12,13 @@ import * as THREE from 'three'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import { BrewPhase } from '@/types/brewing'
 import { useBrewAnimation, smoothstep } from '@/composables/useBrewAnimation'
-import bgUrl from '@/assets/tearoom-bg.jpg'
+import { BREW_SKINS, type BrewSkin, type BrewSkinId } from './brewSkins'
 import zishaUrl from '@/assets/zisha-albedo.jpg'
 import porcelainUrl from '@/assets/blue-white-porcelain.jpg'
 
-// 场景背景：夜色暖光茶室实景（程序生成，贴合「夜色暖光·炭火煮茶」基调）。
-// 作为 scene.background 铺满视口，3D 桌面/茶具位于其前，露出远景暖光，消除"浮空"感。
+// 场景背景由皮肤系统 applySkin 管理（程序化天幕渐变）。
 // 注意：直接在 setup 赋值 scene.background 不生效，需在 onRender 每帧强制设置（TresJS 渲染循环持有 scene）。
 const sceneCtx = useTresContext()
-let bgTex: THREE.Texture | null = null
-{
-  const img = new Image()
-  img.onload = () => {
-    const canvas = document.createElement('canvas')
-    canvas.width = img.width
-    canvas.height = img.height
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-    ctx.drawImage(img, 0, 0)
-    const tex = new THREE.CanvasTexture(canvas)
-    tex.colorSpace = THREE.SRGBColorSpace
-    bgTex = tex
-    const scene = sceneCtx.scene.value
-    if (scene) {
-      scene.background = tex
-    }
-  }
-  img.onerror = () => console.warn('[TeaBrewScene] 背景图加载失败，回退纯色背景')
-  img.src = bgUrl
-}
 
 // 陶壶紫砂贴图：照片级紫砂泥材质（细密砂砾颗粒/哑光温润），替代纯色，提升茶壶真实感。
 // Image → Canvas → CanvasTexture 异步加载，加载完成后经 shallowRef 响应更新材质 map。
@@ -109,17 +87,25 @@ watch([zishaTex, porcelainTex], () => {
   })
 })
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   phase: BrewPhase
   soupColor: string
   currentTemp: number
   targetTemp: number
   isPouringOut: boolean
   infusion: number
-}>()
+  skin?: BrewSkinId
+  /** 用户拖拽注水进度 0~1；<0 表示不接管（按 phase 自动）。READY 阶段拖壶嘴时传实时进度 */
+  pourProgress?: number
+}>(), { skin: 'lake-rain', pourProgress: -1 })
 
 // 泡茶动画状态机（入水/放茶/闷泡/倒茶/喝茶）
-const anim = useBrewAnimation(toRef(props, 'phase'), toRef(props, 'isPouringOut'))
+// 第三个参数：拖拽进度接管注水（READY 阶段一次拖动完成注水）
+const anim = useBrewAnimation(
+  toRef(props, 'phase'),
+  toRef(props, 'isPouringOut'),
+  toRef(props, 'pourProgress'),
+)
 
 // ==================== 坐标常量（position/scale 用 Vector3 实例；rotation 一律用数组） ====================
 // 构图：整套茶席沿 z 后移 SET_Z，远离相机，露出近景桌面边缘，
@@ -127,8 +113,12 @@ const anim = useBrewAnimation(toRef(props, 'phase'), toRef(props, 'isPouringOut'
 const SET_Z = -0.7
 // 相机：降低并前移、视线中心下移，让桌面占据画面主体，压缩桌下深色地面的留白比例；
 // fov 略增到 42 让近景桌面更舒展（避免桌面只堆在上半幅、下方一大片死黑地面）。
-const camPos = new THREE.Vector3(0, 1.85, 6.1)
-const camLook = new THREE.Vector3(0, 1.28, -0.5)
+// 相机：第一人称 POV · 30° 高俯视（抖音短视频俯拍茶桌构图）。
+// look 压向桌面中心，抬高相机到 y=3.5、z=4.2：
+// 垂直差 3.5-1.15=2.35 / 水平差 4.2-0=4.2 → atan(0.56)≈29.2°。
+// 相机拉近让桌面占满画面下半，桌腿少露、桌下死黑减少。
+const camPos = new THREE.Vector3(0, 3.5, 4.2)
+const camLook = new THREE.Vector3(0, 1.15, 0)
 const keyLightPos = new THREE.Vector3(3.2, 5.5, 4)
 const rimLightPos = new THREE.Vector3(-3, 2, -2)
 const floorPos = new THREE.Vector3(0, -0.001, 1.5)
@@ -299,6 +289,7 @@ function initTeaLeaves() {
 onMounted(() => {
   initTeaLeaves()
   setupRenderPipeline()
+  applySkin(BREW_SKINS[props.skin ?? 'lake-rain'])
 })
 
 // ==================== 渲染管线：ACES 色调映射 + 软阴影 + 程序化 IBL ====================
@@ -351,6 +342,132 @@ function setupRenderPipeline() {
     key.shadow.normalBias = 0.02
   }
 }
+// ==================== 环境皮肤（三套：暖灯茶室 / 山顶日出 / 湖畔烟雨） ====================
+// 皮肤只切氛围参数：背景 / 雾 / 灯光方向与色温 / 曝光 / 雨。器物三套共用，不动。
+const gradientCache = new Map<string, THREE.CanvasTexture>()
+function makeSkyGradient(top: string, bottom: string): THREE.CanvasTexture {
+  const key = `${top}|${bottom}`
+  const cached = gradientCache.get(key)
+  if (cached) return cached
+  const c = document.createElement('canvas')
+  c.width = 32
+  c.height = 256
+  const gctx = c.getContext('2d')!
+  const g = gctx.createLinearGradient(0, 0, 0, 256)
+  g.addColorStop(0, top)
+  g.addColorStop(1, bottom)
+  gctx.fillStyle = g
+  gctx.fillRect(0, 0, 32, 256)
+  const tex = new THREE.CanvasTexture(c)
+  tex.colorSpace = THREE.SRGBColorSpace
+  gradientCache.set(key, tex)
+  return tex
+}
+
+// 程序化雨丝（湖畔烟雨皮肤用）：LineSegments 短竖线下落，零外部资源
+const RAIN_COUNT = 300
+const rainPositions = new Float32Array(RAIN_COUNT * 6)
+const rainSpeeds = new Float32Array(RAIN_COUNT)
+for (let i = 0; i < RAIN_COUNT; i++) {
+  const x = (Math.random() - 0.5) * 8
+  const y = Math.random() * 4 + 1
+  const z = (Math.random() - 0.5) * 6 - 1
+  rainPositions[i * 6] = x
+  rainPositions[i * 6 + 1] = y
+  rainPositions[i * 6 + 2] = z
+  rainPositions[i * 6 + 3] = x
+  rainPositions[i * 6 + 4] = y - 0.18
+  rainPositions[i * 6 + 5] = z
+  rainSpeeds[i] = 2 + Math.random() * 2
+}
+const rainGeometry = new THREE.BufferGeometry()
+rainGeometry.setAttribute('position', new THREE.BufferAttribute(rainPositions, 3))
+const rainLines = new THREE.LineSegments(
+  rainGeometry,
+  new THREE.LineBasicMaterial({ color: 0xb4c8d8, transparent: true, opacity: 0.32 }),
+)
+rainLines.visible = false
+
+// ==================== 程序化真手（零外部模型：手掌盒体 + 胶囊手指 + 袖套） ====================
+// 只露手不露脸，从画面下方伸入；按动画信号换姿态，不绑骨骼、低多边形。
+const handGroup = new THREE.Group()
+const handSkinMat = new THREE.MeshStandardMaterial({ color: '#c89070', roughness: 0.75, envMapIntensity: 0.4 })
+const handSleeveMat = new THREE.MeshStandardMaterial({ color: '#2a3540', roughness: 0.9 })
+{
+  const palm = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.17, 0.045), handSkinMat)
+  palm.castShadow = true
+  handGroup.add(palm)
+  // 四指（关节简化为单节胶囊，指尖略向外散）
+  const fingerGeo = new THREE.CapsuleGeometry(0.018, 0.085, 4, 8)
+  const fingerXs = [-0.048, -0.016, 0.016, 0.048]
+  for (const fx of fingerXs) {
+    const f = new THREE.Mesh(fingerGeo, handSkinMat)
+    f.position.set(fx, 0.135, 0)
+    f.castShadow = true
+    handGroup.add(f)
+  }
+  // 拇指（斜伸）
+  const thumb = new THREE.Mesh(new THREE.CapsuleGeometry(0.02, 0.06, 4, 8), handSkinMat)
+  thumb.position.set(-0.085, -0.01, 0.02)
+  thumb.rotation.z = 0.9
+  thumb.castShadow = true
+  handGroup.add(thumb)
+  // 袖口（深靛蓝布袖，与茶巾同色；短一截让皮肤露出）
+  const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.09, 0.08, 16), handSleeveMat)
+  cuff.position.set(0, -0.14, 0)
+  handGroup.add(cuff)
+}
+// 手默认藏在画面下方镜头外
+handGroup.position.set(0, -0.5, 4.2)
+handGroup.rotation.x = -1.0
+handGroup.visible = true
+handGroup.scale.setScalar(0.9)
+
+// 手部姿态目标（世界坐标；rest 在画面外下方）
+const handTarget = new THREE.Vector3(0, -0.5, 4.2)
+
+// 当前强制背景（每帧同步，防 TresJS 渲染循环重置 scene.background）
+let activeBg: THREE.Texture | null = null
+// 当前皮肤的蒸汽浓度倍率（indoor-storm 热气氤氲 1.7，其余 1）
+let steamBoost = 1
+
+function applySkin(s: BrewSkin) {
+  const scene = sceneCtx.scene.value
+  if (!scene) return
+
+  activeBg = makeSkyGradient(s.gradientTop, s.gradientBottom)
+  if (activeBg) scene.background = activeBg
+
+  if (scene.fog) {
+    const fog = scene.fog as THREE.Fog
+    fog.color.set(s.fogColor)
+    fog.near = s.fogNear
+    fog.far = s.fogFar
+  }
+  if (ambientLight.value) {
+    ambientLight.value.color.set(s.ambient.color)
+    ambientLight.value.intensity = s.ambient.intensity
+  }
+  if (keyLight.value) {
+    keyLight.value.position.set(s.key.position[0], s.key.position[1], s.key.position[2])
+    keyLight.value.color.set(s.key.color)
+    keyLight.value.intensity = s.key.intensity
+  }
+  if (rimLight.value) {
+    rimLight.value.color.set(s.rim.color)
+    rimLight.value.intensity = s.rim.intensity
+  }
+  const renderer = (sceneCtx.renderer as { instance?: THREE.WebGLRenderer }).instance
+  if (renderer) renderer.toneMappingExposure = s.exposure
+  rainLines.visible = s.rain
+  steamBoost = s.steamBoost ?? 1
+}
+
+watch(
+  () => props.skin,
+  (id) => applySkin(BREW_SKINS[id ?? 'lake-rain']),
+)
+
 // 空间纵深元素（茶柜 / 挂轴 / 炭火暖光斑）
 const cabinetPos = new THREE.Vector3(-3.2, 1.55, -2.2)
 const shelfPos = new THREE.Vector3(0, 1.75, -2.15)
@@ -371,6 +488,8 @@ const flameSeed: number[] = flameSlots.map(() => Math.random() * Math.PI * 2)
 // ==================== Three 对象引用（模板绑定） ====================
 const kettleGroup = ref<THREE.Group | null>(null)   // 茶壶组（出汤倾斜）
 const keyLight = ref<THREE.DirectionalLight | null>(null) // 主方向光（投影）
+const ambientLight = ref<THREE.AmbientLight | null>(null) // 环境光（皮肤切色温）
+const rimLight = ref<THREE.DirectionalLight | null>(null) // 轮廓光（皮肤切色温）
 const flameLight = ref<THREE.PointLight | null>(null) // 炉火光源
 const flameMeshes = ref<THREE.Mesh[]>([])           // 外焰片数组（v-for）
 const innerFlameMeshes = ref<THREE.Mesh[]>([])      // 内层焰心数组（v-for）
@@ -566,9 +685,10 @@ const steamPoints = new THREE.Points(
   new THREE.PointsMaterial({
     size: 0.22,
     map: softCircleTex,
-    color: '#fff4e0',
+    // 蒸汽压暗一档：暖灯下纯白 additive 会在盖碗上炸成死白斑，改暖灰降低过曝
+    color: '#e0d4c0',
     transparent: true,
-    opacity: 0.15,
+    opacity: 0.12,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
     sizeAttenuation: true,
@@ -659,17 +779,20 @@ onRender(({ delta, elapsed }) => {
   // 水壶倾斜：入水时向盖碗倾斜（负方向）；出汤时水壶不动，由盖碗倾斜倒茶
   tiltTarget = -0.44 * smoothstep(anim.pourWater.value)
   // 每帧强制设置场景背景（TresJS 渲染循环持有 scene，直接 setup 赋值不生效）
-  if (bgTex && sceneCtx.scene.value && sceneCtx.scene.value.background !== bgTex) {
-    sceneCtx.scene.value.background = bgTex
+  // 背景由当前皮肤的程序化天幕渐变决定
+  const bgScene = sceneCtx.scene.value
+  if (activeBg && bgScene && bgScene.background !== activeBg) {
+    bgScene.background = activeBg
   }
   // 闷泡时蒸汽增强（基于 anim.steep progress）
   if (anim.steep.value > 0.1) {
     steamTargetOpacity = Math.max(steamTargetOpacity, 0.35 + anim.steep.value * 0.25)
   }
 
-  // 蒸汽：平滑透明度 + 上飘循环
+  // 蒸汽：平滑透明度（按皮肤 steamBoost 放大室内雨夜热气）+ 上飘循环
   if (steamMat.value) {
-    steamMat.value.opacity += (steamTargetOpacity - steamMat.value.opacity) * Math.min(1, delta * 3)
+    const steamTarget = steamTargetOpacity * steamBoost
+    steamMat.value.opacity += (steamTarget - steamMat.value.opacity) * Math.min(1, delta * 3)
     for (let i = 0; i < STEAM_COUNT; i++) {
       const vel = steamVel[i] ?? 0.4
       const top = steamTop[i] ?? 4.0
@@ -696,12 +819,14 @@ onRender(({ delta, elapsed }) => {
     const pulse = 0.75 + 0.4 * Math.sin(elapsed * 13 + (flameSeed[i] ?? 0))
     m.scale.set(1, 0.5 + flameTargetIntensity * pulse, 1)
   })
-  if (flameLight.value) flameLight.value.intensity = flameTargetIntensity * 3.0
+  // 压过强 bloom：炉火光与辉光整体降一档，避免 additive 火焰在 ACES 下炸白过曝。
+  // 旧值 3.0 / 0.35+0.35 偏亮，实拍胶片感应压暗部、让高光收住。
+  if (flameLight.value) flameLight.value.intensity = flameTargetIntensity * 2.0
   if (stoveGlow.value) {
     const mat = stoveGlow.value.material as THREE.SpriteMaterial
-    const glow = 0.35 + flameTargetIntensity * (0.35 + 0.12 * Math.sin(elapsed * 9))
+    const glow = 0.22 + flameTargetIntensity * (0.25 + 0.1 * Math.sin(elapsed * 9))
     mat.opacity = glow
-    const s = 1.05 + flameTargetIntensity * (0.2 + 0.08 * Math.sin(elapsed * 9))
+    const s = 1.05 + flameTargetIntensity * (0.18 + 0.06 * Math.sin(elapsed * 9))
     stoveGlow.value.scale.set(s, s, 1)
   }
 
@@ -738,6 +863,44 @@ onRender(({ delta, elapsed }) => {
     k.position.y = 1.28 + Math.sin(elapsed * 1.2) * 0.012
   }
   if (pourStream.value) pourStream.value.visible = tiltTarget > 0.3
+
+  // 雨丝（湖畔烟雨皮肤可见时）：下落 + 触底重生
+  if (rainLines.visible) {
+    for (let i = 0; i < RAIN_COUNT; i++) {
+      const v = rainSpeeds[i] ?? 2
+      const idx = i * 6
+      rainPositions[idx + 1] = (rainPositions[idx + 1] ?? 0) - v * delta
+      rainPositions[idx + 4] = (rainPositions[idx + 4] ?? 0) - v * delta
+      if ((rainPositions[idx + 4] ?? 0) < 1.0) {
+        const x = (Math.random() - 0.5) * 8
+        const y = 4.5
+        const z = (Math.random() - 0.5) * 6 - 1
+        rainPositions[idx] = x
+        rainPositions[idx + 1] = y
+        rainPositions[idx + 2] = z
+        rainPositions[idx + 3] = x
+        rainPositions[idx + 4] = y - 0.18
+        rainPositions[idx + 5] = z
+      }
+    }
+    const rainAttr = rainGeometry.getAttribute('position')
+    if (rainAttr) rainAttr.needsUpdate = true
+  }
+
+  // 真手姿态：按动画信号选动作位置，damp 滑过去；无事时缩回画面外
+  // z 往镜头方向 +0.3：手不被器物挡住，露在器物前方
+  if (anim.drink.value > 0.1) {
+    handTarget.set(1.5, 1.4 - anim.drink.value * 0.15, -0.3 - anim.drink.value * 0.35)
+  } else if (anim.fairnessPour.value > 0.1) {
+    handTarget.set(0.45, 1.4, -0.18)
+  } else if (anim.pourOut.value > 0.1) {
+    handTarget.set(-0.35, 1.5, -0.4)
+  } else if (anim.pourWater.value > 0.1) {
+    handTarget.set(-1.45, 1.55, -0.35)
+  } else {
+    handTarget.set(0, -0.5, 4.2)
+  }
+  handGroup.position.lerp(handTarget, 1 - Math.exp(-4 * delta))
 })
 </script>
 
@@ -747,7 +910,7 @@ onRender(({ delta, elapsed }) => {
 
   <!-- 灯光：夜色暖光氛围。环境光压低（0.22），环境反射由 scene.environment(IBL) 承担，
        避免旧值 0.55 把明暗对比抹平；主方向光投影（唯一投影灯）。 -->
-  <TresAmbientLight :color="'#ffe8d0'" :intensity="0.22" />
+  <TresAmbientLight ref="ambientLight" :color="'#ffe8d0'" :intensity="0.22" />
   <TresDirectionalLight
     ref="keyLight"
     :position="keyLightPos"
@@ -755,7 +918,7 @@ onRender(({ delta, elapsed }) => {
     :intensity="1.6"
     :cast-shadow="true"
   />
-  <TresDirectionalLight :position="rimLightPos" :color="'#8a7a66'" :intensity="0.5" />
+  <TresDirectionalLight ref="rimLight" :position="rimLightPos" :color="'#8a7a66'" :intensity="0.5" />
 
   <!-- 茶室环境：背景由 scene.background 提供（夜色暖光茶室实景图），不再需要 3D 墙。
        仅保留地面承接茶席光影。 -->
@@ -1096,6 +1259,12 @@ onRender(({ delta, elapsed }) => {
 
   <!-- 蒸汽粒子（原生 THREE.Points，TresJS 5.8 无 TresPoints 标签） -->
   <primitive :object="steamPoints" />
+
+  <!-- 雨丝（湖畔烟雨皮肤，默认隐藏） -->
+  <primitive :object="rainLines" />
+
+  <!-- 程序化真手（按动画姿态，无事时缩回画面外） -->
+  <primitive :object="handGroup" />
 
   <!-- 茶叶粒子（放茶动画）。TresJS 5 原生对象用小写 primitive 标签（TresPrimitive 无法解析） -->
   <primitive v-if="teaLeavesPoints" :object="teaLeavesPoints" />

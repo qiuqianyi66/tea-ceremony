@@ -11,6 +11,7 @@
 import { computed } from 'vue'
 import { TresCanvas } from '@tresjs/core'
 import { BrewPhase } from '@/types/brewing'
+import type { BrewSkinId } from './brewSkins'
 import TeaBrewSceneInner from './TeaBrewSceneInner.vue'
 
 const isHeadless = computed(() => {
@@ -27,6 +28,8 @@ defineProps<{
   targetTemp: number
   isPouringOut: boolean
   infusion: number
+  skin?: BrewSkinId
+  pourProgress?: number
 }>()
 </script>
 
@@ -46,6 +49,8 @@ defineProps<{
         :target-temp="targetTemp"
         :is-pouring-out="isPouringOut"
         :infusion="infusion"
+        :skin="skin"
+        :pour-progress="pourProgress"
       />
     </TresCanvas>
   </div>
