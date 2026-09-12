@@ -69,8 +69,8 @@ tea-ceremony/
 │  ├─ data/               # teas, teaware, solar terms and cultural archives
 │  └─ router/             # routes and brewing-flow guards
 ├─ backend/
-│  ├─ app/routers/        # auth, teas, records, culture, ai API
-│  ├─ app/services/       # cultural retrieval and text chunking
+│  ├─ app/routers/        # auth, teas, teawares, records, garden, culture, ai API (thin routers)
+│  ├─ app/services/       # business services (base CRUD + tea/record/garden/auth + culture retrieval/AI proxy)
 │  └─ seeds/              # seed teas and cultural data
 ├─ .github/               # CI, issue and PR templates
 ├─ docker-compose.yml
