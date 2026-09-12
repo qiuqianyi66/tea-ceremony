@@ -2,6 +2,7 @@
 import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTeaStore } from '@/stores/tea'
+import { useProgressStore } from '@/stores/progress'
 import { TEA_LEVELS } from '@/data/constants'
 import { teas } from '@/data/teas'
 import { teawares } from '@/data/teawares'
@@ -9,6 +10,7 @@ import TasteProfileSection from '@/components/tasting/TasteProfileSection.vue'
 
 const router = useRouter()
 const store = useTeaStore()
+const progress = useProgressStore()
 
 onMounted(() => {
   store.loadHistory()
@@ -19,7 +21,7 @@ const tastedTypes = computed(() => new Set(store.history.map(r => {
   return t?.type
 }).filter(Boolean)))
 const totalTastings = computed(() => store.history.length)
-const unlockedWareCount = computed(() => teawares.filter(w => store.isTeaWareUnlocked(w.id)).length)
+const unlockedWareCount = computed(() => teawares.filter(w => progress.isTeaWareUnlocked(w.id)).length)
 const typeCoverage = computed(() => Math.round((tastedTypes.value.size / 6) * 100))
 </script>
 
@@ -32,18 +34,18 @@ const typeCoverage = computed(() => Math.round((tastedTypes.value.size / 6) * 10
 
     <!-- 当前境界 -->
     <div class="glass-panel rounded-2xl p-6 mb-6 text-center">
-      <component :is="`Icon${store.currentLevel.icon}`" class="w-12 h-12 mx-auto mb-2 text-[var(--color-tea-gold)]" />
-      <p class="text-2xl font-bold text-[var(--color-wood)] mb-1">{{ store.currentLevel.name }}</p>
-      <p class="text-sm text-[var(--color-wood-light)] mb-4">{{ store.currentLevel.desc }}</p>
-      <p class="text-xs text-[var(--color-wood-light)]">茶修经验 {{ store.userXp }}</p>
-      <div v-if="store.nextLevel" class="mt-3">
+      <component :is="`Icon${progress.currentLevel.icon}`" class="w-12 h-12 mx-auto mb-2 text-[var(--color-tea-gold)]" />
+      <p class="text-2xl font-bold text-[var(--color-wood)] mb-1">{{ progress.currentLevel.name }}</p>
+      <p class="text-sm text-[var(--color-wood-light)] mb-4">{{ progress.currentLevel.desc }}</p>
+      <p class="text-xs text-[var(--color-wood-light)]">茶修经验 {{ progress.userXp }}</p>
+      <div v-if="progress.nextLevel" class="mt-3">
         <div class="w-full h-2 bg-[var(--color-paper)] rounded-full overflow-hidden">
           <div class="h-full bg-gradient-to-r from-[var(--color-tea-gold)] to-[var(--color-wood)] rounded-full transition-all"
-            :style="{ width: `${Math.min(100, (store.userXp / store.xpForNextLevel) * 100)}%` }">
+            :style="{ width: `${Math.min(100, (progress.userXp / progress.xpForNextLevel) * 100)}%` }">
           </div>
         </div>
         <p class="text-xs text-[var(--color-wood-light)] mt-1">
-          下一境：{{ store.nextLevel.name }}（{{ store.userXp }}/{{ store.xpForNextLevel }}）
+          下一境：{{ progress.nextLevel.name }}（{{ progress.userXp }}/{{ progress.xpForNextLevel }}）
         </p>
       </div>
       <p v-else class="text-xs text-[var(--color-tea-gold)] mt-2">已达至境</p>
@@ -55,10 +57,10 @@ const typeCoverage = computed(() => Math.round((tastedTypes.value.size / 6) * 10
       <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
         <div v-for="(level, i) in TEA_LEVELS" :key="level.id"
           class="glass-panel rounded-xl p-3 text-center transition-all"
-          :class="store.userXp >= level.minXp
+          :class="progress.userXp >= level.minXp
             ? 'opacity-100'
             : 'opacity-40 grayscale'">
-          <component :is="`Icon${level.icon}`" class="w-7 h-7 mb-1 mx-auto" :class="store.userXp >= level.minXp ? 'text-[var(--color-tea-gold)]' : ''" />
+          <component :is="`Icon${level.icon}`" class="w-7 h-7 mb-1 mx-auto" :class="progress.userXp >= level.minXp ? 'text-[var(--color-tea-gold)]' : ''" />
           <p class="text-xs font-bold text-[var(--color-wood)]">{{ level.name }}</p>
           <p class="text-[10px] text-[var(--color-wood-light)]">{{ level.desc }}</p>
           <p class="mt-1 text-[10px] leading-4 text-[var(--color-tea-gold)]/80">{{ level.essence }}</p>

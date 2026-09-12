@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useTeaStore } from '@/stores/tea'
 import { useTasteStore } from '@/stores/taste'
 import { useBrewStore } from '@/stores/brew'
+import { useProgressStore } from '@/stores/progress'
 import { getSoupColor } from '@/data/teas'
 import { getScoreLevel, explainProcessFactor } from '@/services/scoring'
 import { WATER_TYPES } from '@/data/constants'
@@ -20,6 +21,7 @@ const router = useRouter()
 const store = useTeaStore()
 const taste = useTasteStore()
 const brew = useBrewStore()
+const progress = useProgressStore()
 // 八维评分直连 tasteStore、冲泡展示直连 brewStore；teaStore 只保留茶叶/茶器/记录业务
 const brewState = brew.state
 const { error: toastError } = useToast()
@@ -595,19 +597,19 @@ const averageDimensions = computed(() => {
     <!-- 成就解锁通知 -->
     <Teleport to="body">
       <div
-        v-if="store.newAchievement"
+        v-if="progress.newAchievement"
         class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-2xl shadow-2xl p-8 text-center animate-[fadeIn_0.3s_ease-out]"
       >
-        <component :is="`Icon${store.achievements.find(a => a.id === store.newAchievement)?.icon}`" class="w-12 h-12 mx-auto mb-3 text-[var(--color-tea-gold)]" />
+        <component :is="`Icon${progress.achievements.find(a => a.id === progress.newAchievement)?.icon}`" class="w-12 h-12 mx-auto mb-3 text-[var(--color-tea-gold)]" />
         <p class="text-xl font-bold text-[var(--color-wood)] mb-1">成就解锁！</p>
         <p class="text-lg text-[var(--color-tea-gold)] font-bold mb-1">
-          {{ store.achievements.find(a => a.id === store.newAchievement)?.name }}
+          {{ progress.achievements.find(a => a.id === progress.newAchievement)?.name }}
         </p>
         <p class="text-sm text-[var(--color-wood-light)] mb-6">
-          {{ store.achievements.find(a => a.id === store.newAchievement)?.description }}
+          {{ progress.achievements.find(a => a.id === progress.newAchievement)?.description }}
         </p>
         <button
-          @click="store.dismissNewAchievement()"
+          @click="progress.dismissNewAchievement()"
           class="px-8 py-2 bg-[var(--color-wood)] text-[var(--color-cream)] rounded-lg hover:bg-[var(--color-wood-light)]"
         >
           知道了

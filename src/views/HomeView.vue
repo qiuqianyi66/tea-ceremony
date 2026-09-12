@@ -7,6 +7,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useTeaStore } from '@/stores/tea'
+import { useProgressStore } from '@/stores/progress'
 import { getCurrentSolarTerm } from '@/data/solarTerms'
 import { teas } from '@/data/teas'
 import { TEA_POEMS, type TeaPoem } from '@/data/teaPoems'
@@ -20,11 +21,12 @@ import HomeTeaCard from './home/HomeTeaCard.vue'
 const router = useRouter()
 const auth = useAuthStore()
 const teaStore = useTeaStore()
+const progress = useProgressStore()
 const term = getCurrentSolarTerm()
 
 const termChecked = ref(false)
 async function doCheckIn() {
-  const ok = await teaStore.checkInSolarTerm(term.id)
+  const ok = await progress.checkInSolarTerm(term.id)
   if (ok) termChecked.value = true
 }
 
@@ -82,8 +84,8 @@ let observer: IntersectionObserver | null = null
 
 onMounted(() => {
   tryStartAudio()
-  teaStore.loadSolarCheckins().then(() => {
-    termChecked.value = !!teaStore.solarCheckins[term.id]
+  progress.loadSolarCheckins().then(() => {
+    termChecked.value = !!progress.solarCheckins[term.id]
   })
   observer = new IntersectionObserver(
     (entries) => {

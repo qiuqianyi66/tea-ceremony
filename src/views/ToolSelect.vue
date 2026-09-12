@@ -2,12 +2,16 @@
 import { computed, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTeaStore } from '@/stores/tea'
+import { useBrewStore } from '@/stores/brew'
+import { useProgressStore } from '@/stores/progress'
 import { teawares } from '@/data/teawares'
 import { WATER_TYPES } from '@/data/constants'
 import type { TeaWare } from '@/types/teaware'
 
 const router = useRouter()
 const store = useTeaStore()
+const brew = useBrewStore()
+const progress = useProgressStore()
 
 const currentTeaName = computed(() => store.currentTea?.name ?? '未知')
 const currentTeaType = computed(() => store.currentTea?.type ?? '')
@@ -17,17 +21,17 @@ const imgFailed = reactive<Record<string, boolean>>({})
 function markImgFailed(id: string) { imgFailed[id] = true }
 
 function selectWare(ware: TeaWare) {
-  if (!store.isTeaWareUnlocked(ware.id)) return
+  if (!progress.isTeaWareUnlocked(ware.id)) return
   store.selectTeaWare(ware)
 }
 
 // 备器页是冲泡前唯一的参数设定入口：水温 / 投茶量在此调整后带入冲泡页
 function onTempSlider(value: string) {
-  store.setTargetTemp(parseInt(value))
+  brew.setTargetTemp(parseInt(value))
 }
 
 function onWeightSlider(value: string) {
-  store.setTeaWeight(parseFloat(value))
+  brew.setTeaWeight(parseFloat(value))
 }
 
 function backToSelect() {
@@ -37,7 +41,7 @@ function backToSelect() {
 function confirm() {
   if (!store.selectedTeaWare) return
   // 确认备器即开始煮水，再进入全屏冲泡页（冲泡页挂载后接续升温计时）
-  store.startHeating()
+  brew.startHeating()
   router.push('/brew')
 }
 </script>
@@ -66,14 +70,14 @@ function confirm() {
           @click="selectWare(ware)"
           class="p-4 rounded-xl border-2 transition-all text-center relative"
           :class="[
-            !store.isTeaWareUnlocked(ware.id)
+            !progress.isTeaWareUnlocked(ware.id)
               ? 'border-transparent bg-gray-100 opacity-60 cursor-not-allowed'
               : store.selectedTeaWare?.id === ware.id
                 ? 'border-[var(--color-tea-gold)] bg-[var(--color-paper)] shadow-md scale-105'
                 : 'border-transparent bg-white hover:shadow-md'
           ]"
         >
-          <div v-if="!store.isTeaWareUnlocked(ware.id)" class="absolute inset-0 flex items-center justify-center bg-white/40 rounded-xl z-10">
+          <div v-if="!progress.isTeaWareUnlocked(ware.id)" class="absolute inset-0 flex items-center justify-center bg-white/40 rounded-xl z-10">
             <IconLock class="w-5 h-5 text-[var(--color-wood-light)]" />
           </div>
           <img v-if="ware.image && !imgFailed[ware.id]" :src="ware.image" loading="lazy" @error="markImgFailed(ware.id)"
@@ -82,7 +86,7 @@ function confirm() {
           <p class="text-sm font-bold text-[var(--color-wood)]">{{ ware.name }}</p>
           <p class="text-xs text-[var(--color-wood-light)] mt-1">{{ ware.material }}</p>
           <p class="text-xs text-[var(--color-wood-light)]">{{ ware.capacity }}ml</p>
-          <p v-if="!store.isTeaWareUnlocked(ware.id)" class="text-[10px] text-[var(--color-tea-gold)] mt-1">{{ ware.unlockHint }}</p>
+          <p v-if="!progress.isTeaWareUnlocked(ware.id)" class="text-[10px] text-[var(--color-tea-gold)] mt-1">{{ ware.unlockHint }}</p>
         </button>
       </div>
     </div>
@@ -109,14 +113,14 @@ function confirm() {
     <div class="w-full max-w-lg mb-8">
       <h3 class="text-base font-bold text-[var(--color-wood)] mb-3"><IconThermometer class="inline-block -mt-1" /> 目标水温</h3>
       <label class="block text-sm text-[var(--color-wood)] mb-2">
-        目标水温：<strong>{{ store.brewState.targetTemp }}°C</strong>
+        目标水温：<strong>{{ brew.state.targetTemp }}°C</strong>
         <span v-if="store.currentTea" class="text-[var(--color-tea-gold)]">
           （建议 {{ store.currentTea.bestTemp }}°C）
         </span>
       </label>
       <input
         type="range" min="20" max="100" step="1"
-        :value="store.brewState.targetTemp"
+        :value="brew.state.targetTemp"
         @input="onTempSlider(($event.target as HTMLInputElement).value)"
         class="w-full h-2 bg-[var(--color-paper)] rounded-lg appearance-none cursor-pointer"
       />
@@ -131,12 +135,12 @@ function confirm() {
     <div class="w-full max-w-lg mb-8">
       <h3 class="text-base font-bold text-[var(--color-wood)] mb-3"><IconLeaf class="inline-block -mt-1" /> 投茶量</h3>
       <label class="block text-sm text-[var(--color-wood)] mb-2">
-        投茶量：<strong>{{ store.brewState.teaWeight }}g</strong>
+        投茶量：<strong>{{ brew.state.teaWeight }}g</strong>
         <span class="text-[var(--color-tea-gold)]">（建议 3g）</span>
       </label>
       <input
         type="range" min="1" max="8" step="0.5"
-        :value="store.brewState.teaWeight"
+        :value="brew.state.teaWeight"
         @input="onWeightSlider(($event.target as HTMLInputElement).value)"
         class="w-full h-2 bg-[var(--color-paper)] rounded-lg appearance-none cursor-pointer"
       />

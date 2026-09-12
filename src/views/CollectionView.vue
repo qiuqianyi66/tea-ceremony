@@ -2,6 +2,7 @@
 import { computed, onMounted, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTeaStore } from '@/stores/tea'
+import { useProgressStore } from '@/stores/progress'
 import { teas, getTeaById } from '@/data/teas'
 import { teawares } from '@/data/teawares'
 import { SOLAR_TERMS } from '@/data/solarTerms'
@@ -11,10 +12,11 @@ import { encodeTeaShare, buildTeaShareUrl } from '@/services/share'
 
 const router = useRouter()
 const store = useTeaStore()
+const progress = useProgressStore()
 
 onMounted(() => {
   store.loadHistory()
-  store.loadSolarCheckins()
+  progress.loadSolarCheckins()
 })
 
 // ============ 茶图鉴：全部茶叶 + 解锁状态 ============
@@ -29,7 +31,7 @@ const teaJournal = computed(() => {
 
 // ============ 节气打卡进度 ============
 const solarCheckedCount = computed(() =>
-  SOLAR_TERMS.filter(t => store.solarCheckins[t.id]).length,
+  SOLAR_TERMS.filter(t => progress.solarCheckins[t.id]).length,
 )
 
 // ============ 分享名茶知识卡 ============
@@ -81,7 +83,7 @@ const bestScore = computed(() => {
 
 // ============ 已解锁茶器 ============
 const unlockedWares = computed(() =>
-  teawares.filter(w => store.isTeaWareUnlocked(w.id)),
+  teawares.filter(w => progress.isTeaWareUnlocked(w.id)),
 )
 
 // 茶图加载失败记录：茶图鉴降级为渐变色块；茶器图降级为 lucide 图标（key 用 ware.id）
@@ -169,9 +171,9 @@ function markWareImgFailed(id: string) { wareImgFailed[id] = true }
       <div class="grid grid-cols-4 sm:grid-cols-8 gap-2">
         <div v-for="t in SOLAR_TERMS" :key="t.id"
           class="rounded-lg p-2 text-center"
-          :class="store.solarCheckins[t.id] ? 'glass-panel' : 'bg-white/40 border border-dashed border-[#d8cfc0]'">
-          <p class="text-xs font-bold" :class="store.solarCheckins[t.id] ? 'text-[var(--color-wood)]' : 'text-[#b5ac9c]'">{{ t.name }}</p>
-          <p class="text-[10px] leading-none mt-0.5"><IconCheck v-if="store.solarCheckins[t.id]" class="inline-block w-3 h-3 text-[var(--color-tea-gold)]" /><span v-else>·</span></p>
+          :class="progress.solarCheckins[t.id] ? 'glass-panel' : 'bg-white/40 border border-dashed border-[#d8cfc0]'">
+          <p class="text-xs font-bold" :class="progress.solarCheckins[t.id] ? 'text-[var(--color-wood)]' : 'text-[#b5ac9c]'">{{ t.name }}</p>
+          <p class="text-[10px] leading-none mt-0.5"><IconCheck v-if="progress.solarCheckins[t.id]" class="inline-block w-3 h-3 text-[var(--color-tea-gold)]" /><span v-else>·</span></p>
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
 /**
  * 茶叶状态管理 - 基于 Dexie.js (IndexedDB) 异步存储
  * 域划分：冲泡 brewStore / 品鉴 tasteStore / 历史 recordStore / 成长 progressStore
- * 本 store 只保留：选茶/茶器、工艺系数、评分与记录编排
+ * 本 store 只保留：选茶/茶器、工艺系数、评分与记录编排；冲泡/品鉴/成长状态直连各域 store。
  */
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
@@ -22,51 +22,21 @@ export const useTeaStore = defineStore('tea', () => {
   const recordStore = useRecordStore()
   const progress = useProgressStore()
 
-  // ============ 当前茶叶 ============
+  // ============ 当前茶叶 / 茶器 / 水源 ============
   const currentTea = ref<Tea | null>(null)
-
-  // ============ 当前茶器 ============
   const selectedTeaWare = ref<TeaWare | null>(null)
-
-  // ============ 冲泡状态（委托给 brewStore）============
-  const brewState = computed(() => brewStore.state)
-
-  // ============ 当前水源 ============
   const waterType = ref<string>('purified')
-
-  // ============ 品鉴维度（委托给 tasteStore）============
-  const tasteDimensions = computed(() => tasteStore.dimensions)
 
   // ============ 历史记录（委托给 recordStore）============
   const history = computed(() => recordStore.history)
-
-  // ============ 成长进度（委托给 progressStore）============
-  const userXp = computed(() => progress.userXp)
-  const currentLevel = computed(() => progress.currentLevel)
-  const nextLevel = computed(() => progress.nextLevel)
-  const xpForNextLevel = computed(() => progress.xpForNextLevel)
-  const achievements = computed(() => progress.achievements)
-  const newAchievement = computed(() => progress.newAchievement)
-  const collectedTeaWareIds = computed(() => progress.collectedTeaWareIds)
-  const solarCheckins = computed(() => progress.solarCheckins)
-
-  function addXp(amount: number) { return progress.addXp(amount) }
-  function loadXp() { return progress.loadXp() }
-  function initAchievements() { return progress.initAchievements() }
-  function checkAchievements(record: TastingRecord) { return progress.checkAchievements(record) }
-  function dismissNewAchievement() { progress.dismissNewAchievement() }
-  function isTeaWareUnlocked(wareId: string) { return progress.isTeaWareUnlocked(wareId) }
-  function checkTeaWareUnlock() { return progress.checkTeaWareUnlock() }
-  function loadSolarCheckins() { return progress.loadSolarCheckins() }
-  function checkInSolarTerm(termId: string) { return progress.checkInSolarTerm(termId) }
 
   // ============ 计算属性 ============
   const processFactor = computed(() => {
     if (!currentTea.value) return 1
     return calculateProcessFactor(
-      brewState.value.currentTemp,
+      brewStore.state.currentTemp,
       currentTea.value.bestTemp,
-      brewState.value.steepTime,
+      brewStore.state.steepTime,
       currentTea.value.bestTime,
       selectedTeaWare.value,
       WATER_TYPES.find(w => w.id === waterType.value)?.factor ?? 1.0,
@@ -85,28 +55,8 @@ export const useTeaStore = defineStore('tea', () => {
     selectedTeaWare.value = ware
   }
 
-  function setTeaWeight(weight: number) {
-    brewStore.setTeaWeight(weight)
-  }
-
-  function setTargetTemp(temp: number) {
-    brewStore.setTargetTemp(temp)
-  }
-
-  function startHeating() { brewStore.startHeating() }
-  function updateTemp(temp: number) { brewStore.updateTemp(temp) }
-  function completeWarming() { brewStore.completeWarming() }
-  function completeRinsing() { brewStore.completeRinsing() }
-  function startSteeping() { brewStore.startSteeping() }
-  function updateSteepTime(time: number) { brewStore.updateSteepTime(time) }
-  function stopSteeping() { brewStore.stopSteeping() }
-  function nextInfusion() { brewStore.nextInfusion() }
-  function resetBrew() { brewStore.reset() }
-
-  function resetTasteDimensions() { tasteStore.reset() }
-
   function calculateScore(): number {
-    return calculateOverallScore(tasteDimensions.value, processFactor.value)
+    return calculateOverallScore(tasteStore.dimensions, processFactor.value)
   }
 
   async function saveRecord(aromaType?: string, notes?: string, weather?: string, mood?: string): Promise<TastingRecord> {
@@ -120,10 +70,10 @@ export const useTeaStore = defineStore('tea', () => {
       teaApiId: currentTea.value.apiId,
       teaName: currentTea.value.name,
       date: new Date().toISOString(),
-      brewTemp: brewState.value.currentTemp,
-      brewTime: brewState.value.steepTime,
-      infusions: brewState.value.infusionsDone,
-      dimensions: { ...tasteDimensions.value },
+      brewTemp: brewStore.state.currentTemp,
+      brewTime: brewStore.state.steepTime,
+      infusions: brewStore.state.infusionsDone,
+      dimensions: { ...tasteStore.dimensions },
       overallScore: calculateScore(),
       processFactor: processFactor.value,
       aromaType,
@@ -151,39 +101,13 @@ export const useTeaStore = defineStore('tea', () => {
   return {
     currentTea,
     selectedTeaWare,
-    brewState,
-    tasteDimensions,
     history,
-    achievements,
-    newAchievement,
-    solarCheckins,
-    loadSolarCheckins,
-    checkInSolarTerm,
     processFactor,
+    waterType,
     selectTea,
     selectTeaWare,
-    setTeaWeight,
-    setTargetTemp,
-    startHeating,
-    updateTemp,
-    completeWarming,
-    completeRinsing,
-    startSteeping,
-    updateSteepTime,
-    stopSteeping,
-    nextInfusion,
-    resetBrew,
-    resetTasteDimensions,
     calculateScore,
     saveRecord,
     loadHistory,
-    dismissNewAchievement,
-    collectedTeaWareIds,
-    isTeaWareUnlocked,
-    waterType,
-    userXp,
-    currentLevel,
-    nextLevel,
-    xpForNextLevel,
   }
 })

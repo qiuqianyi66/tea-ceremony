@@ -12,7 +12,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import draggable from 'vuedraggable'
 import type { Tea } from '@/types/tea'
 import type { TeaWare } from '@/types/teaware'
-import { useTeaStore } from '@/stores/tea'
+import { useBrewStore } from '@/stores/brew'
 import { playTeaDrop } from '@/composables/useAudio'
 
 // vuedraggable 无官方事件类型，定义用到的最小结构（AGENTS.md 禁 any）
@@ -36,7 +36,7 @@ interface DraggedTeaData {
   source: 'wall' | 'vessel'
 }
 
-const store = useTeaStore()
+const brew = useBrewStore()
 
 // Props
 interface Props {
@@ -119,7 +119,7 @@ const draggableOptions = {
     if (draggedTea.value) {
       playTeaDrop(0.8)
       props.onTeaDropped?.(draggedTea.value, teaAmount.value)
-      store.setTeaWeight(teaAmount.value)
+      brew.setTeaWeight(teaAmount.value)
     }
     // 移除克隆节点（我们不需要在茶器区显示列表）
     if (evt.item.parentNode) {

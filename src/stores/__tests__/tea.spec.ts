@@ -6,6 +6,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useTeaStore } from '@/stores/tea'
+import { useProgressStore } from '@/stores/progress'
+import { useTasteStore } from '@/stores/taste'
 import { historyStorage, initDB, db } from '@/services/storage'
 import { recordsApi } from '@/services/api'
 import { teas } from '@/data/teas'
@@ -29,6 +31,7 @@ describe('teaStore.saveRecord 离线保存闭环', () => {
 
   it('保存成功：记录写入本地 IndexedDB 且同步状态为 synced', async () => {
     const store = useTeaStore()
+    const progress = useProgressStore()
     store.selectTea(longjing)
     vi.spyOn(recordsApi, 'create').mockResolvedValue({ id: 1 } as never)
 
@@ -39,11 +42,12 @@ describe('teaStore.saveRecord 离线保存闭环', () => {
     expect(store.history).toHaveLength(1)
     expect(store.history[0]?.syncStatus).toBe('synced')
     // 首次品鉴获得 XP（基础 10）
-    expect(store.userXp).toBeGreaterThanOrEqual(10)
+    expect(progress.userXp).toBeGreaterThanOrEqual(10)
   })
 
   it('后端同步失败：记录保留本地、标记 failed，且可重试成功', async () => {
     const store = useTeaStore()
+    const progress = useProgressStore()
     store.selectTea(longjing)
     vi.spyOn(recordsApi, 'create').mockRejectedValue(new Error('network down'))
 
@@ -64,6 +68,7 @@ describe('teaStore.saveRecord 离线保存闭环', () => {
 
   it('同茶同日重复保存不产生重复记录（幂等）', async () => {
     const store = useTeaStore()
+    const progress = useProgressStore()
     store.selectTea(longjing)
     vi.spyOn(recordsApi, 'create').mockResolvedValue({ id: 1 } as never)
 
@@ -76,6 +81,8 @@ describe('teaStore.saveRecord 离线保存闭环', () => {
 
   it('记录包含正确的评分、工艺系数与八维评分', async () => {
     const store = useTeaStore()
+    const progress = useProgressStore()
+    const taste = useTasteStore()
     store.selectTea(longjing)
     vi.spyOn(recordsApi, 'create').mockResolvedValue({ id: 1 } as never)
 
@@ -84,11 +91,12 @@ describe('teaStore.saveRecord 离线保存闭环', () => {
 
     expect(record.overallScore).toBe(expectedScore)
     expect(record.processFactor).toBe(store.processFactor)
-    expect(record.dimensions).toEqual(store.tasteDimensions)
+    expect(record.dimensions).toEqual(taste.dimensions)
   })
 
   it('首次品鉴解锁 first_brew 成就', async () => {
     const store = useTeaStore()
+    const progress = useProgressStore()
     // 真实场景由 App 启动时 loadHistory 初始化成就列表。
     await store.loadHistory()
     store.selectTea(longjing)
@@ -96,13 +104,14 @@ describe('teaStore.saveRecord 离线保存闭环', () => {
 
     await store.saveRecord()
 
-    const firstBrew = store.achievements.find(a => a.id === 'first_brew')
+    const firstBrew = progress.achievements.find(a => a.id === 'first_brew')
     expect(firstBrew?.unlocked).toBe(true)
-    expect(store.newAchievement).toBe('first_brew')
+    expect(progress.newAchievement).toBe('first_brew')
   })
 
   it('未选茶时保存记录抛出错误', async () => {
     const store = useTeaStore()
+    const progress = useProgressStore()
     await expect(store.saveRecord()).rejects.toThrow('未选择茶叶')
   })
 })
@@ -117,37 +126,39 @@ describe('teaStore 节气打卡', () => {
 
   it('首次打卡当前节气成功并写入 IndexedDB', async () => {
     const store = useTeaStore()
-    await store.loadSolarCheckins()
+    const progress = useProgressStore()
+    await progress.loadSolarCheckins()
 
-    const ok = await store.checkInSolarTerm('liqiu')
+    const ok = await progress.checkInSolarTerm('liqiu')
 
     expect(ok).toBe(true)
-    expect(store.solarCheckins['liqiu']).toBeTruthy()
+    expect(progress.solarCheckins['liqiu']).toBeTruthy()
     // 持久化：重新加载仍能读回
-    const reloaded = useTeaStore()
-    await reloaded.loadSolarCheckins()
-    expect(reloaded.solarCheckins['liqiu']).toBeTruthy()
+    await progress.loadSolarCheckins()
+    expect(progress.solarCheckins['liqiu']).toBeTruthy()
   })
 
   it('同一节气重复打卡返回 false 且不覆盖原记录', async () => {
     const store = useTeaStore()
-    await store.loadSolarCheckins()
+    const progress = useProgressStore()
+    await progress.loadSolarCheckins()
 
-    await store.checkInSolarTerm('liqiu')
-    const firstDate = store.solarCheckins['liqiu']
-    const ok = await store.checkInSolarTerm('liqiu')
+    await progress.checkInSolarTerm('liqiu')
+    const firstDate = progress.solarCheckins['liqiu']
+    const ok = await progress.checkInSolarTerm('liqiu')
 
     expect(ok).toBe(false)
-    expect(store.solarCheckins['liqiu']).toBe(firstDate)
+    expect(progress.solarCheckins['liqiu']).toBe(firstDate)
   })
 
   it('不同节气可分别打卡，互不影响', async () => {
     const store = useTeaStore()
-    await store.loadSolarCheckins()
+    const progress = useProgressStore()
+    await progress.loadSolarCheckins()
 
-    await store.checkInSolarTerm('liqiu')
-    await store.checkInSolarTerm('bailu')
+    await progress.checkInSolarTerm('liqiu')
+    await progress.checkInSolarTerm('bailu')
 
-    expect(Object.keys(store.solarCheckins).sort()).toEqual(['bailu', 'liqiu'])
+    expect(Object.keys(progress.solarCheckins).sort()).toEqual(['bailu', 'liqiu'])
   })
 })

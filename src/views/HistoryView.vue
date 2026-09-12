@@ -3,12 +3,14 @@ import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTeaStore } from '@/stores/tea'
 import { useRecordStore } from '@/stores/record'
+import { useProgressStore } from '@/stores/progress'
 import { getScoreLevel } from '@/services/scoring'
 import { EmptyState } from '@/components/ui'
 
 const router = useRouter()
 const store = useTeaStore()
 const recordStore = useRecordStore()
+const progress = useProgressStore()
 const isSyncing = ref(false)
 const syncMessage = ref('')
 
@@ -61,21 +63,21 @@ async function retrySync() {
       <div class="glass-panel rounded-xl p-4 mb-4">
         <div class="flex items-center justify-between mb-2">
           <div class="flex items-center gap-2">
-            <component :is="`Icon${store.currentLevel.icon}`" class="w-8 h-8 text-[var(--color-tea-gold)]" />
+            <component :is="`Icon${progress.currentLevel.icon}`" class="w-8 h-8 text-[var(--color-tea-gold)]" />
             <div>
-              <p class="text-sm font-bold text-[var(--color-wood)]">{{ store.currentLevel.name }}</p>
-              <p class="text-xs text-[var(--color-wood-light)]">经验 {{ store.userXp }}</p>
+              <p class="text-sm font-bold text-[var(--color-wood)]">{{ progress.currentLevel.name }}</p>
+              <p class="text-xs text-[var(--color-wood-light)]">经验 {{ progress.userXp }}</p>
             </div>
           </div>
-          <div v-if="store.nextLevel" class="text-right">
-            <p class="text-xs text-[var(--color-wood-light)]">下一级：{{ store.nextLevel.name }}</p>
-            <p class="text-xs text-[var(--color-tea-gold)]">{{ store.userXp }} / {{ store.xpForNextLevel }}</p>
+          <div v-if="progress.nextLevel" class="text-right">
+            <p class="text-xs text-[var(--color-wood-light)]">下一级：{{ progress.nextLevel.name }}</p>
+            <p class="text-xs text-[var(--color-tea-gold)]">{{ progress.userXp }} / {{ progress.xpForNextLevel }}</p>
           </div>
         </div>
         <!-- 经验条 -->
-        <div v-if="store.nextLevel" class="w-full h-2 bg-white rounded-full overflow-hidden">
+        <div v-if="progress.nextLevel" class="w-full h-2 bg-white rounded-full overflow-hidden">
           <div class="h-full bg-gradient-to-r from-[var(--color-tea-gold)] to-[var(--color-wood)] rounded-full transition-all duration-500"
-            :style="{ width: `${Math.min(100, (store.userXp / store.xpForNextLevel) * 100)}%` }">
+            :style="{ width: `${Math.min(100, (progress.userXp / progress.xpForNextLevel) * 100)}%` }">
           </div>
         </div>
       </div>
@@ -83,12 +85,12 @@ async function retrySync() {
       <h3 class="text-lg font-bold text-[var(--color-wood)] mb-3">
         成就
         <span class="text-sm text-[var(--color-wood-light)] font-normal">
-          （{{ store.achievements.filter(a => a.unlocked).length }}/{{ store.achievements.length }}）
+          （{{ progress.achievements.filter(a => a.unlocked).length }}/{{ progress.achievements.length }}）
         </span>
       </h3>
       <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
         <div
-          v-for="ach in store.achievements" :key="ach.id"
+          v-for="ach in progress.achievements" :key="ach.id"
           class="p-3 rounded-xl text-center transition-all"
           :class="ach.unlocked
             ? 'bg-[var(--color-paper)] shadow-sm'
