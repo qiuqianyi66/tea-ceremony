@@ -9,6 +9,9 @@
 
 import os
 
+# 测试环境禁用 Sentry：避免其后台线程在进程退出时等待发送队列导致 pytest 挂起
+os.environ["SENTRY_DSN"] = ""
+
 # 必须在 import app 之前设置，否则 main.py 启动校验会失败。
 os.environ.setdefault("SECRET_KEY", "test-secret-key-for-pytest")
 os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///:memory:")
@@ -43,12 +46,13 @@ app_main.app.dependency_overrides[get_db] = override_get_db
 
 @pytest.fixture(scope="session", autouse=True)
 async def _db_schema():
-    """会话级：创建一次表结构，测试结束后清理。"""
+    """会话级：创建一次表结构，测试结束后清理并释放连接（否则 aiosqlite worker 线程残留，进程退出挂起）。"""
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
+    await test_engine.dispose()
 
 
 @pytest.fixture()
