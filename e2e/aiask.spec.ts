@@ -9,7 +9,7 @@
 import { test, expect } from '@playwright/test'
 
 test('AIAsk：空输入时发送按钮禁用', async ({ page }) => {
-  await page.goto('/ai')
+  await page.goto('ai')
 
   await expect(page.getByText('有什么关于茶的问题想问？')).toBeVisible()
   const sendBtn = page.getByRole('button', { name: '发送' })
@@ -17,7 +17,7 @@ test('AIAsk：空输入时发送按钮禁用', async ({ page }) => {
 })
 
 test('AIAsk：建议问题点击直接发送并收到回复', async ({ page }) => {
-  await page.goto('/ai')
+  await page.goto('ai')
 
   await page.getByRole('button', { name: '绿茶用什么茶器最好？' }).click()
   // 点建议直接发送：用户气泡 + AI 规则回复（绿茶类基准参数）
@@ -26,7 +26,7 @@ test('AIAsk：建议问题点击直接发送并收到回复', async ({ page }) =
 })
 
 test('AIAsk：提问收到规则降级回复（茶类参数）', async ({ page }) => {
-  await page.goto('/ai')
+  await page.goto('ai')
 
   await page.getByPlaceholder('问茶灵一个问题...').fill('绿茶怎么泡')
   await page.getByRole('button', { name: '发送' }).click()
@@ -39,7 +39,7 @@ test('AIAsk：提问收到规则降级回复（茶类参数）', async ({ page }
 })
 
 test('AIAsk：茶名提问回复含冲泡参数且无"绿茶茶"回归', async ({ page }) => {
-  await page.goto('/ai')
+  await page.goto('ai')
 
   await page.getByPlaceholder('问茶灵一个问题...').fill('西湖龙井怎么泡')
   await page.getByRole('button', { name: '发送' }).click()
@@ -52,7 +52,7 @@ test('AIAsk：茶名提问回复含冲泡参数且无"绿茶茶"回归', async (
 })
 
 test('AIAsk：关闭按钮返回首页', async ({ page }) => {
-  await page.goto('/ai')
+  await page.goto('ai')
   await page.getByRole('button', { name: '关闭茶灵' }).click()
-  await expect(page).toHaveURL('/')
+  await expect(page).toHaveURL(/\/$/)
 })

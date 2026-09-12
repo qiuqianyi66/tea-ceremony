@@ -8,7 +8,7 @@
 import { test, expect } from '@playwright/test'
 
 test('茶歇：进入即开始计时并显示呼吸引导', async ({ page }) => {
-  await page.goto('/break')
+  await page.goto('break')
 
   await expect(page.locator('.break-timer')).toHaveText('05:00')
   // 呼吸引导文字（吸气/呼气二选一）
@@ -18,7 +18,7 @@ test('茶歇：进入即开始计时并显示呼吸引导', async ({ page }) => 
 })
 
 test('茶歇：暂停停表，计时文字保持不变', async ({ page }) => {
-  await page.goto('/break')
+  await page.goto('break')
 
   // 先等计时走起来（05:00 → 04:5x）
   await page.waitForFunction(() => {
@@ -35,7 +35,7 @@ test('茶歇：暂停停表，计时文字保持不变', async ({ page }) => {
 })
 
 test('茶歇：继续后计时继续走', async ({ page }) => {
-  await page.goto('/break')
+  await page.goto('break')
 
   await page.waitForFunction(() => {
     const el = document.querySelector('.break-timer')
@@ -53,7 +53,7 @@ test('茶歇：继续后计时继续走', async ({ page }) => {
 })
 
 test('茶歇：结束茶歇进入结束态并可回首页', async ({ page }) => {
-  await page.goto('/break')
+  await page.goto('break')
 
   await page.getByRole('button', { name: '结束茶歇' }).click()
 
@@ -62,5 +62,5 @@ test('茶歇：结束茶歇进入结束态并可回首页', async ({ page }) => 
   await expect(page.locator('.finish-poet')).toBeVisible()
 
   await page.getByRole('button', { name: '回到首页' }).click()
-  await expect(page).toHaveURL('/')
+  await expect(page).toHaveURL(/\/$/)
 })
