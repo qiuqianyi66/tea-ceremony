@@ -67,3 +67,6 @@ break_preview.png
 verify_garden_*.png
 
 verify_icons_*.png
+
+# 临时工作目录（抖音素材抓取等会话产物，不入库）
+/.tmp/
