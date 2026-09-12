@@ -81,7 +81,7 @@ export const TEA_MASTERS: TeaMaster[] = [
     avatar: 'FileText',
     description: '陆游（1125-1210），南宋诗人。一生创作三百余首茶诗，是中国历史上写茶诗最多的诗人。',
     contribution: '以三百余首茶诗记录了南宋时期的茶事活动，为后世研究宋代茶文化提供了珍贵史料。',
-    quote: '建溪官茶天下绝，独有骑火品方奇。',
+    quote: '建溪官茶天下绝，香味欲全须小雪。',
     relatedTeas: ['shuixian', 'dahongpao', 'tieluohan'],
   },
   {
@@ -103,7 +103,7 @@ export const TEA_MASTERS: TeaMaster[] = [
     avatar: 'Droplet',
     description: '张又新，唐代学者。著《煎茶水记》，是中国最早系统评水的专著，对后世茶道中的"水为茶之母"理念影响深远。',
     contribution: '撰《煎茶水记》，将天下水分为七等：镇江中泠泉第一、无锡惠山泉第二、虎跑泉第三……为品水论泉之祖。',
-    quote: '夫茶烹于所产处，无不佳也，盖水土之宜。',
+    quote: '夫茶烹于所产处，无不佳也，盖水土之宜。离其处，水功其半，然善烹洁器，全其功也。',
     relatedTeas: ['longjing', 'biluochun'],
   },
   {
@@ -125,7 +125,7 @@ export const TEA_MASTERS: TeaMaster[] = [
     avatar: 'ScrollText',
     description: '许次纾（1549-1604），明代茶学家。著《茶疏》，是明代最杰出的茶学著作之一。',
     contribution: '撰《茶疏》，提出"产茶、采茶、制茶、藏茶、烹茶、品茶"的系统理论，对明代茶文化贡献卓越。',
-    quote: '茶滋于水，水藉乎器，汤成于火。四者相须，缺一不可。',
+    quote: '茶滋于水，水藉乎器，汤成于火。四者相须，缺一则废。',
     relatedTeas: ['longjing', 'tieguanyin'],
   },
   {
@@ -136,7 +136,7 @@ export const TEA_MASTERS: TeaMaster[] = [
     avatar: 'TreePine',
     description: '文震亨（1585-1645），明代文人、造园家。著《长物志》，其中"茶寮"一卷详述明代文人茶空间布置。',
     contribution: '在《长物志》中提出"茶寮"概念——专设一间茶室用于品茶，对后世日本茶道"茶室"产生了深远影响。',
-    quote: '构一斗室，相傍书斋，内设茶具，以供长日清谈。',
+    quote: '构一斗室，相傍山斋，内设茶具，教一童专主茶役，以供长日清谈，寒宵兀坐。幽人首务，不可少废者。',
     relatedTeas: ['shuixian', 'dahongpao'],
   },
   {
@@ -147,19 +147,8 @@ export const TEA_MASTERS: TeaMaster[] = [
     avatar: 'Landmark',
     description: '吴觉农（1897-1988），中国现代茶学奠基人，被誉为"当代茶圣"。',
     contribution: '创建中国第一个茶叶研究所、第一所茶叶学校，主编《茶经述评》，为中国茶产业现代化做出卓越贡献。',
-    quote: '中国茶业之复兴，必先立其本，本立而道生。',
+    quote: '中国茶业如睡狮一般，一朝醒来，决不会长落人后，愿大家努力罢！',
     relatedTeas: ['longjing', 'qimenhong'],
-  },
-  {
-    id: 'wang_mian',
-    name: '王冕',
-    dynasty: '元',
-    title: '茶禅诗人',
-    avatar: 'Flower',
-    description: '王冕（1287-1359），元代诗人、画家。以其高洁的品格和茶诗闻名。',
-    contribution: '以茶诗传世，将茶的清雅与文人品格融为一体，作品中充满隐逸情怀。',
-    quote: '不要人夸好颜色，只留清气满乾坤。',
-    relatedTeas: ['baimudan'],
   },
   {
     id: 'ouyangxiu',
@@ -169,7 +158,7 @@ export const TEA_MASTERS: TeaMaster[] = [
     avatar: 'BookOpen',
     description: '欧阳修（1007-1072），北宋文坛领袖。一生爱茶，在《归田录》中记载了宋代茶事。',
     contribution: '在《归田录》中详记宋代贡茶制度，提出"茶之品无有贵于龙凤者"的著名论断。',
-    quote: '吾年向老，世味渐薄。惟于茶，不能忘情。',
+    quote: '吾年向老世味薄，所好未衰惟饮茶。',
     relatedTeas: ['longjing'],
   },
   {
@@ -191,7 +180,7 @@ export const TEA_MASTERS: TeaMaster[] = [
     avatar: 'Mountain',
     description: '范成大（1126-1193），南宋诗人。晚年隐居石湖，以茶为伴，写有多首茶诗。',
     contribution: '在《吴郡志》中记载了宋代苏州茶事，为研究宋代茶史提供了珍贵资料。',
-    quote: '茶烟袅袅出山扉，半掩柴门待客归。',
+    quote: '胡蝶双双入菜花，日长无客到田家。鸡飞过篱犬吠窦，知有行商来买茶。',
     relatedTeas: ['biluochun'],
   },
   {
@@ -202,7 +191,7 @@ export const TEA_MASTERS: TeaMaster[] = [
     avatar: 'Leaf',
     description: '杨万里（1127-1206），南宋诗人。一生作诗两万余首，其中茶诗数十首。',
     contribution: '以清新自然的笔触描写日常饮茶，将茶融入生活的每一处细节。',
-    quote: '老夫平生爱煮茶，五年不到故人家。山中酒薄不敢饮，一碗清泉煎碧芽。',
+    quote: '鹰爪新茶蟹眼汤，松风鸣雪兔毫霜。',
     relatedTeas: ['longjing'],
   },
   {
@@ -224,7 +213,7 @@ export const TEA_MASTERS: TeaMaster[] = [
     avatar: 'Landmark',
     description: '张岱（1597-1679），明末清初文学家、史学家。精于品茶，自称"茶痴"。',
     contribution: '在《陶庵梦忆》中记载了明代末年江南茶事的繁华景象，是研究明代茶文化的珍贵史料。',
-    quote: '余尝见一贵人，饮茶三碗而神采顿生，曰：此非茶，乃灵液也。',
+    quote: '慕汶老久，今日不畅饮汶老茶，决不去。',
     relatedTeas: ['longjing', 'biluochun'],
   },
   {
@@ -235,7 +224,7 @@ export const TEA_MASTERS: TeaMaster[] = [
     avatar: 'Paintbrush',
     description: '金农（1687-1763），清代画家，扬州八怪之首。嗜茶如命，画中常以茶入题。',
     contribution: '将茶与文人画结合，创作了大量以茶为主题的绘画作品，诗画相映成趣。',
-    quote: '柴门反关无俗客，纱帽笼头自煎吃。',
+    quote: '草铺绿罽地无尘，朝日熹微榆火新。两串春团三道印，不知茶宴赴何人。',
     relatedTeas: ['shuixian', 'dahongpao'],
   },
   {
