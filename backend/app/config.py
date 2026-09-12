@@ -18,9 +18,14 @@ CORS_ORIGINS = [
     if origin.strip()
 ]
 
-# 限流（内存滑动窗口）
+# 限流（滑动窗口；配置 REDIS_URL 时多实例共享计数，未配置则进程内存 + Redis 不可用自动降级）
 RATE_LIMIT_MAX = int(os.environ.get("RATE_LIMIT_MAX", "300"))
 RATE_LIMIT_WINDOW = int(os.environ.get("RATE_LIMIT_WINDOW", "60"))
+REDIS_URL = os.environ.get("REDIS_URL", "")
+
+# Sentry 错误追踪（配置 SENTRY_DSN 时启用；请求体不上传，避免登录密码泄漏）
+SENTRY_DSN = os.environ.get("SENTRY_DSN", "")
+SENTRY_TRACES_SAMPLE_RATE = float(os.environ.get("SENTRY_TRACES_SAMPLE_RATE", "1.0"))
 
 # AI 代理（OpenRouter，OpenAI 兼容）
 # - 注册 key（免费，每天约 50 次免费模型调用）后填入 .env 的 AI_PROXY_KEY

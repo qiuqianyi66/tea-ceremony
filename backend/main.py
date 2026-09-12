@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
 from app.config import SECRET_KEY, DATABASE_URL, CORS_ORIGINS, DEV_MODE
+from app.config import SENTRY_DSN, SENTRY_TRACES_SAMPLE_RATE
 from app.errors import register_error_handlers
 from app.middleware import AccessLogMiddleware, RateLimitMiddleware
 
@@ -34,6 +35,21 @@ if not DATABASE_URL:
 # 配置校验通过后再创建数据库引擎和加载路由。
 from app.database import engine
 from app.routers import teas, teawares, records, auth, culture, ai, garden
+
+# ============ Sentry 错误追踪 ============
+# 配置 SENTRY_DSN 后启用：未捕获异常自动上报（聚合/上下文/告警）。
+# max_request_body_size="never"：登录接口请求体含密码，禁止上传；send_default_pii=False 不收集用户隐私。
+if SENTRY_DSN:
+    import sentry_sdk
+
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        release="tea@1.0.0",
+        environment="development" if DEV_MODE else "production",
+        traces_sample_rate=SENTRY_TRACES_SAMPLE_RATE,
+        send_default_pii=False,
+        max_request_body_size="never",
+    )
 
 # CORS 来源
 # ============ FastAPI 应用 ============

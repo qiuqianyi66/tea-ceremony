@@ -37,6 +37,17 @@ def error_payload(status_code: int, detail: Any, code: str | None = None) -> dic
     }
 
 
+def _capture_exception(exc: Exception) -> None:
+    """配置了 SENTRY_DSN 时上报未捕获异常；未初始化时安全 no-op。"""
+    try:
+        import sentry_sdk
+
+        if sentry_sdk.get_client().is_active():
+            sentry_sdk.capture_exception(exc)
+    except Exception:
+        pass
+
+
 def register_error_handlers(app: FastAPI) -> None:
     """注册统一异常处理器（HTTP / 校验 / 未捕获）。"""
 
@@ -75,6 +86,8 @@ def register_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(Exception)
     async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
         logger.exception("未捕获异常: %s %s", request.method, request.url.path)
+        # 自定义 Exception handler 会拦截异常传播，Sentry 中间件收不到，需手动上报
+        _capture_exception(exc)
         return JSONResponse(
             status_code=500,
             content=error_payload(500, "服务器内部错误，请稍后重试", "INTERNAL_ERROR"),
