@@ -31,7 +31,14 @@ const path = require('path')
   await page.getByRole('button', { name: /山泉|泉水|纯净|山涧|雨水|井水/ }).first().click()
   await page.getByRole('button', { name: '开始冲泡 →' }).click()
   await page.waitForURL('**/brew')
-  await page.waitForTimeout(6000) // 等 3D 场景与火焰稳定
+  await page.waitForTimeout(6000) // 等 3D 场景与火焰稳定（此间自动完成 煮水→温杯→醒茶）
+
+  // 手验证：水温到 target 自动 WARMING → 0.8s 自动温杯 → RINSING 5s 醒茶倒计时。
+  // 在 RINSING 窗口（注水动画与提壶手型仍在）抓「手在壶把位」，不等「温杯」按钮（已不可点）。
+  await page.getByRole('button', { name: /醒茶中/ }).waitFor({ timeout: 20000 })
+  await page.waitForTimeout(500) // 等手滑到壶把位
+  await page.screenshot({ path: path.join(outDir, 'brew_hand_pour.png') })
+  console.log('shot hand')
 
   const skins = [
     ['湖畔烟雨', 'lake-rain'],
@@ -44,14 +51,6 @@ const path = require('path')
     await page.screenshot({ path: path.join(outDir, `brew_${id}.png`) })
     console.log('shot', id)
   }
-
-  // 手验证：回湖畔烟雨，等水温到目标后点温杯，手应在提壶位
-  await page.getByRole('button', { name: '湖畔烟雨' }).click()
-  await page.waitForTimeout(9000) // 等水从常温升到目标温
-  await page.getByRole('button', { name: /温杯/ }).click()
-  await page.waitForTimeout(1500) // 等手滑到壶把位
-  await page.screenshot({ path: path.join(outDir, 'brew_hand_pour.png') })
-  console.log('shot hand')
 
   console.log('ERRORS:', JSON.stringify(errors))
   await browser.close()

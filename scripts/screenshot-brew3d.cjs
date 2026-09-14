@@ -55,8 +55,8 @@ const { chromium } = require('@playwright/test')
   await page.waitForTimeout(3200)
   await page.screenshot({ path: 'docs/screenshots/brew-3d-heating.png' })
 
-  // 推进到 STEEPING（浸泡，茶汤色渐浓 + 入水/放茶/闷泡动画）
-  await page.getByRole('button', { name: /温杯/ }).click()
+  // 零点击：自动温杯 + 醒茶 5s 后自动 READY，等主按钮变「开始冲泡」再推进到 STEEPING
+  await page.getByRole('button', { name: /开始冲泡/ }).waitFor({ timeout: 20000 })
   await page.getByRole('button', { name: /开始冲泡/ }).click()
   await page.waitForTimeout(3000)
   await page.screenshot({ path: 'docs/screenshots/brew-3d-steeping.png', timeout: 60000 })

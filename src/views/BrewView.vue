@@ -80,6 +80,17 @@ watch(() => brewState.phase, (newPhase, oldPhase) => {
   if (oldPhase === BrewPhase.HEATING && newPhase !== BrewPhase.HEATING) {
     stopHeating()
   }
+  // 零点击闭环：水温到 target 自动进 WARMING 后，0.8s 注水动画期间停在 WARMING
+  // （主按钮显示「温杯中…」disabled，防止重复触发），随后自动完成温杯并进入醒茶倒计时。
+  if (newPhase === BrewPhase.WARMING) {
+    audio.playPourWater(1.0) // 注水声效随自动触发点播放，与注水动画同步
+    if (warmTimer) clearTimeout(warmTimer)
+    warmTimer = setTimeout(() => {
+      warmTimer = null
+      brew.completeWarming()
+      startRinsing()
+    }, 800)
+  }
   syncParticlesToPhase(newPhase)
 })
 
@@ -360,7 +371,7 @@ const mainActionLabel = computed(() => {
     case BrewPhase.HEATING:
       return `${brewState.currentTemp}°C`
     case BrewPhase.WARMING:
-      return '温杯'
+      return '温杯中…'
     case BrewPhase.RINSING:
       return `醒茶中 ${rinseCountdown.value}s`
     case BrewPhase.READY:
@@ -387,7 +398,7 @@ const phaseDescription = computed(() => {
     case BrewPhase.READY:
       return `水已沸，茶器已备，推荐浸泡 ${recommendedSteepTime.value} 秒`
     case BrewPhase.STEEPING:
-      return `第${currentInfusion.value}泡 · 推荐 ${recommendedSteepTime.value} 秒`
+      return `第${currentInfusion.value}泡 · 自动续水 · 推荐 ${recommendedSteepTime.value} 秒`
     case BrewPhase.DONE:
       return `第${currentInfusion.value}泡（${brewState.steepTime}s）完成`
   }
@@ -561,7 +572,7 @@ const phaseDescription = computed(() => {
         {{ brewState.phase === BrewPhase.STEEPING ? brewState.steepTime + 's' : brewState.currentTemp + '°C' }}
       </p>
       <p class="text-sm text-[var(--color-wood-light)]">
-        <template v-if="brewState.phase === BrewPhase.WARMING">点击按钮用热水温润茶器</template>
+        <template v-if="brewState.phase === BrewPhase.WARMING">自动温杯中…</template>
         <template v-else-if="brewState.phase === BrewPhase.RINSING">醒茶中，倒去第一泡</template>
         <template v-else-if="brewState.phase === BrewPhase.STEEPING">
           目标 {{ recommendedSteepTime }}s · 投茶 {{ brewState.teaWeight }}g · 茶汤显色 {{ teaStrength }}%
@@ -578,7 +589,7 @@ const phaseDescription = computed(() => {
     <!-- ======== 主按钮 ======== -->
     <button
       @click="handleMainAction"
-      :disabled="brewState.phase === BrewPhase.HEATING || brewState.phase === BrewPhase.RINSING"
+      :disabled="brewState.phase === BrewPhase.HEATING || brewState.phase === BrewPhase.RINSING || brewState.phase === BrewPhase.WARMING"
       class="mt-4 px-10 py-4 rounded-lg text-xl transition-all duration-300"
       :class="isIdle && !store.selectedTeaWare
         ? 'bg-[#E8E2D8] text-[#B5AC9C] cursor-not-allowed'

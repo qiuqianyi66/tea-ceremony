@@ -17,10 +17,8 @@ test.beforeEach(async ({ page }) => {
 /** 走完冲泡流程（西湖龙井 3 泡），自动停 2 秒浮文案后进 /taste。 */
 async function completeBrewing(page: Page) {
   // 备器页（/tools）确认后即开始煮水，进入 /brew 已是 HEATING；
-  // 自动升温到目标温度（约 5s）→ 自动进入 WARMING，温杯按钮在可点击前由 Playwright 自动等待
-  await page.getByRole('button', { name: /温杯/ }).click()
-
-  // WARMING → 0.8s 后 RINSING（醒茶 5s 倒计时）→ 自动 READY
+  // 零点击：自动升温到目标温度（约 5s）→ 自动温杯 0.8s → 醒茶 5s 倒计时 → 自动 READY，
+  // 直接等主按钮变「开始冲泡」再注水。
   await page.getByRole('button', { name: /开始冲泡/ }).click()
 
   // 循环 3 泡：STEEPING 主按钮出汤 → 1.8s 后自动进下一泡浸泡（不再点「出汤完成」）
