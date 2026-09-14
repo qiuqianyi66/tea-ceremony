@@ -7,6 +7,8 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useThemeStore } from './theme'
 import { getCurrentSolarTerm } from '@/data/solarTerms'
+import { switchAmbient } from '@/composables/useAudio'
+import { getThemeById } from '@/data/themes'
 
 export interface TeaRoomState {
   roomId: string
@@ -41,6 +43,8 @@ export const useTeaRoomStore = defineStore('teaRoom', () => {
       if (roomId === 'song') theme.setTheme('song')
       else if (roomId === 'ming') theme.setTheme('ming')
       else if (roomId === 'mountain') theme.setTheme('mountain')
+      // 主题环境音接线（T1.2）：山林茶舍 → 雨声·鸟鸣·松风；宋式/明式 → 古琴
+      switchAmbient(getThemeById(roomId).ambientSound)
     }
   }
 

@@ -16,7 +16,7 @@ import { ref, onUnmounted } from 'vue'
 
 // ============ 类型定义 ============
 
-type AmbientTrack = 'guqin' | 'xiao' | 'water' | 'night'
+type AmbientTrack = 'guqin' | 'xiao' | 'water' | 'night' | 'rain' | 'wind'
 
 type SfxSprite =
   | 'boil'       // 咕嘟沸腾声
@@ -129,20 +129,185 @@ function initHowler() {
 
 // ============ 环境音控制 ============
 
-const ambientTracks: Record<AmbientTrack, { webm: string; mp3: string; name: string }> = {
+const ambientTracks: Record<Exclude<AmbientTrack, 'rain' | 'wind'>, { webm: string; mp3: string; name: string }> = {
   guqin: { webm: '/audio/ambient/guqin.webm', mp3: '/audio/ambient/guqin.mp3', name: '古琴·流泉' },
   xiao: { webm: '/audio/ambient/xiao.webm', mp3: '/audio/ambient/xiao.mp3', name: '洞箫·梅花三弄' },
   water: { webm: '/audio/ambient/water.webm', mp3: '/audio/ambient/water.mp3', name: '山涧流水' },
   night: { webm: '/audio/ambient/night.webm', mp3: '/audio/ambient/night.mp3', name: '夜·虫鸣' },
 }
 
-/** 切换环境音轨 */
-function switchAmbient(track: AmbientTrack) {
+/** rain / wind 走程序化合成（零素材零依赖），其余走 Howler 音轨 */
+function isSyntheticTrack(track: AmbientTrack): track is 'rain' | 'wind' {
+  return track === 'rain' || track === 'wind'
+}
+
+// ============ 程序化环境层（rain / wind，T1.2）============
+// public/audio/ 缺失，Howler 环境音轨静默；主题 ambientSound 的 rain/wind 由本层合成。
+// 复用 3D 茶园 ambient-audio 已验证思路：风声 = 噪声 + 低通 + LFO 起伏；雨声 = 噪声 + 带通；鸟鸣 = 随机滑音。
+
+interface SynthAmbientLayer {
+  kind: 'rain' | 'wind'
+  ctx: AudioContext
+  master: GainNode
+  sources: AudioScheduledSourceNode[]
+  birdTimer: ReturnType<typeof setInterval> | null
+}
+
+let synthLayer: SynthAmbientLayer | null = null
+
+/** 安全获取 AudioContext；测试 / 无 AudioContext 环境返回 null（合成静默但不报错） */
+function ensureSynthCtx(): AudioContext | null {
+  if (typeof window === 'undefined') return null
+  const AC: typeof AudioContext | undefined =
+    window.AudioContext ??
+    (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+  if (!AC) return null
+  const ctx = new AC()
+  if (ctx.state === 'suspended') void ctx.resume()
+  return ctx
+}
+
+/** 合成层目标音量（受 环境音量 × 主音量 × 静音 影响） */
+function synthTargetGain(): number {
+  if (state.value.isMuted) return 0
+  return state.value.ambientVolume * state.value.masterVolume
+}
+
+/** 启动合成环境层：风声常驻（雨时更轻），雨层仅 rain 时叠加，鸟鸣仅 rain 时调度 */
+function startSynthAmbient(kind: 'rain' | 'wind', paused: boolean) {
+  stopSynthAmbient()
+  const ctx = ensureSynthCtx()
+  if (!ctx) return
+
+  const master = ctx.createGain()
+  master.gain.value = paused ? 0 : synthTargetGain()
+  master.connect(ctx.destination)
+
+  const sources: AudioScheduledSourceNode[] = []
+  let birdTimer: ReturnType<typeof setInterval> | null = null
+
+  // 风声层：白噪声 + 低通 420Hz + 0.08Hz LFO 缓慢起伏
+  const windNoise = ctx.createBufferSource()
+  windNoise.buffer = createNoiseBuffer(ctx, 4)
+  windNoise.loop = true
+  const windFilter = ctx.createBiquadFilter()
+  windFilter.type = 'lowpass'
+  windFilter.frequency.value = 420
+  const windGain = ctx.createGain()
+  windGain.gain.value = kind === 'wind' ? 0.18 : 0.06
+  windNoise.connect(windFilter).connect(windGain).connect(master)
+  windNoise.start()
+  sources.push(windNoise)
+  const windLfo = ctx.createOscillator()
+  windLfo.frequency.value = 0.08
+  const windLfoGain = ctx.createGain()
+  windLfoGain.gain.value = 180
+  windLfo.connect(windLfoGain).connect(windFilter.frequency)
+  windLfo.start()
+  sources.push(windLfo)
+
+  if (kind === 'rain') {
+    // 雨声层：白噪声 + 带通 1400Hz
+    const rainNoise = ctx.createBufferSource()
+    rainNoise.buffer = createNoiseBuffer(ctx, 4)
+    rainNoise.loop = true
+    const rainFilter = ctx.createBiquadFilter()
+    rainFilter.type = 'bandpass'
+    rainFilter.frequency.value = 1400
+    rainFilter.Q.value = 0.6
+    const rainGain = ctx.createGain()
+    rainGain.gain.value = 0.45
+    rainNoise.connect(rainFilter).connect(rainGain).connect(master)
+    rainNoise.start()
+    sources.push(rainNoise)
+
+    // 鸟鸣：随机短促滑音（山林茶舍的"鸟鸣"）
+    birdTimer = setInterval(() => {
+      if (!synthLayer || Math.random() > 0.75) return
+      const t0 = ctx.currentTime
+      const count = 1 + Math.floor(Math.random() * 2)
+      for (let i = 0; i < count; i++) {
+        const t = t0 + i * (0.09 + Math.random() * 0.06)
+        const freq = 2500 + Math.random() * 1600
+        const osc = ctx.createOscillator()
+        osc.type = 'sine'
+        osc.frequency.setValueAtTime(freq, t)
+        osc.frequency.exponentialRampToValueAtTime(freq * (1.25 + Math.random() * 0.3), t + 0.07)
+        const gain = ctx.createGain()
+        gain.gain.setValueAtTime(0, t)
+        gain.gain.linearRampToValueAtTime(0.05 + Math.random() * 0.05, t + 0.015)
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.1)
+        osc.connect(gain).connect(master)
+        osc.start(t)
+        osc.stop(t + 0.14)
+      }
+    }, 3500 + Math.random() * 4000)
+  }
+
+  synthLayer = { kind, ctx, master, sources, birdTimer }
+}
+
+function stopSynthAmbient() {
+  if (!synthLayer) return
+  if (synthLayer.birdTimer) clearInterval(synthLayer.birdTimer)
+  for (const src of synthLayer.sources) {
+    try { src.stop() } catch { /* 已停止 */ }
+  }
+  synthLayer.ctx.close().catch(() => {})
+  synthLayer = null
+}
+
+function pauseSynthAmbient() {
+  if (!synthLayer) return
+  const t = synthLayer.ctx.currentTime
+  synthLayer.master.gain.cancelScheduledValues(t)
+  synthLayer.master.gain.setTargetAtTime(0, t, 0.15)
+}
+
+function resumeSynthAmbient() {
+  if (!synthLayer) return
+  const t = synthLayer.ctx.currentTime
+  synthLayer.master.gain.cancelScheduledValues(t)
+  synthLayer.master.gain.setTargetAtTime(synthTargetGain(), t, 0.15)
+}
+
+/** 主音量 / 环境音量 / 静音变化时同步合成层 */
+function syncSynthAmbientVolume() {
+  if (!synthLayer) return
+  const t = synthLayer.ctx.currentTime
+  synthLayer.master.gain.cancelScheduledValues(t)
+  synthLayer.master.gain.setTargetAtTime(
+    state.value.ambientPlaying ? synthTargetGain() : 0, t, 0.1)
+}
+
+function stopHowlerAmbient() {
+  if (ambientHowl) {
+    ambientHowl.stop()
+    ambientHowl.unload()
+    ambientHowl = null
+  }
+}
+
+/** 切换环境音轨：rain / wind 走合成层，其余走 Howler */
+export function switchAmbient(track: AmbientTrack) {
+  const wasPlaying = state.value.ambientPlaying
+
+  if (isSyntheticTrack(track)) {
+    // 切到合成环境层：停掉 Howler 环境音（若在播），按播放状态启/停合成层
+    stopHowlerAmbient()
+    if (wasPlaying) startSynthAmbient(track, false)
+    else stopSynthAmbient()
+    state.value.currentAmbient = track
+    state.value.ambientPlaying = wasPlaying
+    return
+  }
+
+  // Howler 音轨（public/audio/ 缺失时静默，保留结构以接入素材）
+  stopSynthAmbient()
   initHowler()
   if (!ambientHowl) return
 
   const src = [ambientTracks[track].webm, ambientTracks[track].mp3]
-  const wasPlaying = state.value.ambientPlaying
 
   // 无缝切换：先停止当前，换源，再播放
   ambientHowl.stop()
@@ -163,6 +328,21 @@ function switchAmbient(track: AmbientTrack) {
 
 /** 播放/暂停环境音 */
 function toggleAmbient() {
+  const current = state.value.currentAmbient
+
+  // 合成层（rain / wind）
+  if (current && isSyntheticTrack(current)) {
+    if (state.value.ambientPlaying) {
+      pauseSynthAmbient()
+      state.value.ambientPlaying = false
+    } else {
+      if (!synthLayer) startSynthAmbient(current, false)
+      resumeSynthAmbient()
+      state.value.ambientPlaying = true
+    }
+    return
+  }
+
   initHowler()
   if (!ambientHowl) return
 
@@ -179,6 +359,7 @@ function toggleAmbient() {
 
 function stopAmbient() {
   ambientHowl?.stop()
+  stopSynthAmbient()
   state.value.ambientPlaying = false
 }
 
@@ -397,6 +578,7 @@ function setMasterVolume(v: number) {
   Howler.volume(vol)
   ambientHowl?.volume(state.value.ambientVolume * vol)
   sfxHowl?.volume(state.value.sfxVolume * vol)
+  syncSynthAmbientVolume()
 }
 
 function setSfxVolume(v: number) {
@@ -409,11 +591,13 @@ function setAmbientVolume(v: number) {
   const vol = Math.max(0, Math.min(1, v))
   state.value.ambientVolume = vol
   ambientHowl?.volume(vol * state.value.masterVolume)
+  syncSynthAmbientVolume()
 }
 
 function toggleMute() {
   state.value.isMuted = !state.value.isMuted
   Howler.mute(state.value.isMuted)
+  syncSynthAmbientVolume()
 }
 
 // ============ 基于时段自动切换环境音 ============
@@ -439,6 +623,7 @@ function dispose() {
   stopAmbient()
   stopCrackleSynthesis()
   stopBoilSynth()
+  stopSynthAmbient()
   ambientHowl?.unload()
   sfxHowl?.unload()
   ambientHowl = null

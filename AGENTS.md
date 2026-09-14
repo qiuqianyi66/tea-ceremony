@@ -514,4 +514,6 @@ docker compose down
 
 * 2026-09-14 冲泡页零点击闭环（煮水→温杯→醒茶→出汤全自动，仅 READY 拖一次注水）+ 移动端窄屏触控适配（新增 scripts/verify-brew-mobile.cjs 断言 ≥44px 与无横向滚动）+ .brew-dark 浏览器表面定制（选区/滚动条/焦点环，滚动条双机制：::-webkit-scrollbar + scrollbar-color）；后端健康检查补 /api/health 别名，E2E 健康页改 page.route 确定性 mock。
 
+* 2026-09-14 主题环境音接线（T1.2）：useAudio 新增程序化合成环境层（雨声/风声/鸟鸣，零素材，复用 3D 茶园已验证思路），themes.ambientSound 接通——山林茶舍兑现「雨声·鸟鸣·松风」，宋式/明式保持古琴；Howler 环境音轨因 public/audio/ 素材缺失静默，属已知限制，新增环境音一律走合成层。
+
 *本文件是活文档，项目架构或流程变更时同步更新。*

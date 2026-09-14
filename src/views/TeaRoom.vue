@@ -4,9 +4,9 @@ import { useRouter } from 'vue-router'
 import { useTeaRoomStore } from '@/stores/teaRoom'
 import { useThemeStore } from '@/stores/theme'
 import { useAuthStore } from '@/stores/auth'
-import { startAmbient, stopAll } from '@/composables/useAudio'
+import { startAmbient, switchAmbient, stopAll } from '@/composables/useAudio'
 import { getCurrentSolarTerm, getSeasonName } from '@/data/solarTerms'
-import { TEA_ROOM_THEMES } from '@/data/themes'
+import { TEA_ROOM_THEMES, getThemeById } from '@/data/themes'
 
 const router = useRouter()
 const room = useTeaRoomStore()
@@ -40,6 +40,8 @@ function generateGreeting() {
 }
 
 onMounted(() => {
+  // 按当前茶室主题设置环境音（山林茶舍 → 雨声·鸟鸣·松风），再启动
+  switchAmbient(getThemeById(room.currentRoom.id).ambientSound)
   startAmbient()
   generateGreeting()
 })
