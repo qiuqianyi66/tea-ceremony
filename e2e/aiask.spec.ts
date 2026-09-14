@@ -8,6 +8,12 @@
  */
 import { test, expect } from '@playwright/test'
 
+// 规则降级路径测试：显式拦截 /api/ai/* 模拟「后端不可达」，
+// 不依赖本机/CI 是否真实运行后端——后端在跑时真实 LLM 回复无法确定性断言。
+test.beforeEach(async ({ page }) => {
+  await page.route('**/api/ai/*', route => route.abort())
+})
+
 test('AIAsk：空输入时发送按钮禁用', async ({ page }) => {
   await page.goto('ai')
 
