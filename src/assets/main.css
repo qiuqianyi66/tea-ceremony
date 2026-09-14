@@ -243,6 +243,14 @@ body:has(.brew-dark)::-webkit-scrollbar-thumb:hover {
   background: #5a4030;
 }
 
+/* 标准属性滚动条着色：现代 Chrome 默认 overlay 滚动条会忽略 ::-webkit-scrollbar，
+   需用 scrollbar-color/scrollbar-width（Firefox 同样支持）；body:has 命中视口，.brew-dark 命中内层。 */
+body:has(.brew-dark),
+.brew-dark {
+  scrollbar-width: thin;
+  scrollbar-color: #3a2a1a transparent;
+}
+
 /* 尊重系统减弱动效偏好（prefers-reduced-motion）：动画与过渡降为瞬时 */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
