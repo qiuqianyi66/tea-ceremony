@@ -3,7 +3,7 @@
  * - brew-3d-heating.png：HEATING 阶段（炉火 + 蒸汽 + 夜色暖光）
  * - brew-3d-steeping.png：STEEPING 阶段（茶汤色 + 蒸汽）
  *
- * 用法：node scripts/screenshot-brew3d.cjs（需本地 preview :4173）
+ * 用法：node scripts/screenshot-brew3d.cjs（需本地 dev :5173）
  * 注：截图脚本用非 headless UA + webdriver=false 绕过 headless 检测，以捕获真实 3D 效果。
  */
 const { chromium } = require('@playwright/test')
@@ -61,8 +61,10 @@ const { chromium } = require('@playwright/test')
   await page.waitForTimeout(3000)
   await page.screenshot({ path: 'docs/screenshots/brew-3d-steeping.png', timeout: 60000 })
 
-  // DONE：等倒计时结束自动出汤（倒茶 + 喝茶动画）
-  await page.waitForTimeout(15000)
+  // DONE：点击出汤快进（浸泡 40-90s 不值得等），等「出汤 · 第 N 泡」标记出现立即截图
+  // ——出汤动画约 1.8s 后自动进下一泡，盲等或长等待都会错过。
+  await page.getByRole('button', { name: /出汤 \(/ }).click()
+  await page.getByText(/出汤 · 第 \d+ 泡/).waitFor({ timeout: 10000 })
   await page.screenshot({ path: 'docs/screenshots/brew-3d-done.png', timeout: 60000 })
 
   await browser.close()
