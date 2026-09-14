@@ -510,4 +510,6 @@ docker compose down
 
 * 2026-09-12 依据鱼皮团队研发规范（liyupi/ai-guide）新增「上线」必守小节：上线前健壮性/安全性/稳定性自查、工作日上线窗口、上线后完整回归 + 群内周知 + 监控告警 + 观察一周。
 
+* 2026-09-14 冲泡页零点击闭环（煮水→温杯→醒茶→出汤全自动，仅 READY 拖一次注水）+ 移动端窄屏触控适配（新增 scripts/verify-brew-mobile.cjs 断言 ≥44px 与无横向滚动）+ .brew-dark 浏览器表面定制（选区/滚动条/焦点环，滚动条双机制：::-webkit-scrollbar + scrollbar-color）；后端健康检查补 /api/health 别名，E2E 健康页改 page.route 确定性 mock。
+
 *本文件是活文档，项目架构或流程变更时同步更新。*
