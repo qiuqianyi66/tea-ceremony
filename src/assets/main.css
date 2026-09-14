@@ -227,6 +227,22 @@ a {
   border-radius: 2px;
 }
 
+/* brew 页视口滚动条（内容溢出时页面级滚动）：视口滚动条挂在 body 上，不在 .brew-dark 内，
+   需在 body 上用 :has 命中冲泡页；与 .brew-dark 内层滚动条规则互补。 */
+body:has(.brew-dark)::-webkit-scrollbar {
+  width: 8px;
+}
+body:has(.brew-dark)::-webkit-scrollbar-track {
+  background: transparent;
+}
+body:has(.brew-dark)::-webkit-scrollbar-thumb {
+  background: #3a2a1a;
+  border-radius: 4px;
+}
+body:has(.brew-dark)::-webkit-scrollbar-thumb:hover {
+  background: #5a4030;
+}
+
 /* 尊重系统减弱动效偏好（prefers-reduced-motion）：动画与过渡降为瞬时 */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
