@@ -150,3 +150,28 @@
 4. 🟡 **封装独立组件**（TeaSoup + ToolSelect）— 2 天
 5. 🔴 **AI 茶师**（需 API）— 3 天
 6. 🔴 **Docker 部署** — 1 天
+
+---
+
+## 十、竞品对照（2026-09-14 · 四维产品分析）
+
+> 来源：公开资料调研（2026-09-14 搜索）。用于确认「一盏茶」的差异化位置与可借鉴做法，不推倒现有功能。
+
+| 竞品 | 形态 | 精华（可借鉴） | 糟粕（机会点） |
+|---|---|---|---|
+| Mini Chashitsu（itch.io） | 手绘风 3D 茶室体验 | 小而美的茶室氛围、季节场景、环境音 | 单机玩具，无记录与成长 |
+| 1Tea（1tea.app） | 手势驱动功夫茶计时器 | 无按钮交互、环境音把冲泡变冥想 | 纯工具，无仪式感与文化深度 |
+| 潮汐 / Now冥想 / 清花 | 冥想+计时商业应用 | 订阅制成熟、内容运营强；清花离线无广告 | 与茶文化无关，泛化无差异 |
+| Medito / Zen! / ZenMoment | 开源冥想应用 | 免费无广告社区驱动、隐私优先（localStorage 无账户） | 无茶事场景 |
+| Chado | 茶道+冥想内容订阅 | 茶道仪式+冥想组合验证了需求 | 纯内容，无交互体验 |
+
+差异化结论：**“完整仪式闭环（选茶→冲泡→品鉴→记录→成长）”在茶道体验赛道基本空白**——竞品要么只讲茶（内容站）、要么只计时（工具）、要么只冥想（泛化）。「一盏茶」的数字茶室定位 + 离线优先 + 可分享品鉴卡在此赛道稀缺；稀缺不等于有人用，需以真实试用与数据验证（见 V3_ROADMAP §7.5）。
+
+参考来源：
+- Mini Chashitsu: https://kelvin0v0.itch.io/mini-chashitsu
+- 1Tea: https://1tea.app/
+- 潮汐: http://m.appchina.com/app/io.moreless.tide
+- 清花: https://apps.apple.com/ca/app/%E6%B8%85%E8%8A%B1/id6747118945
+- Medito: https://blog.csdn.net/gitblog_00024/article/details/139018415
+- Chado: https://chado-ceremony-website.lovable.app/
+- ekkomi center me（抹茶+冥想 RCT）: https://mhealth.jmir.org/2024/1/e63078/pdf

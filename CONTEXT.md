@@ -22,6 +22,7 @@
 | 业务异常 | service 层抛出的统一异常（BadRequest 400 / Unauthorized 401 / NotFound 404 / Conflict 409），router 不直接 raise HTTPException | `backend/app/exceptions.py` |
 | Service 层 | 后端业务逻辑下沉层：CRUD、幂等、密码哈希、JWT 签发；router 只做参数与响应 | `backend/app/services/` |
 | 幂等创建 | 品鉴记录 / 茶园种植按 `user_id + client_id` 去重，重复提交返回同一条 | `backend/app/services/record_service.py` |
+| 目标用户 | 茶小白 / 有品茶习惯的人 / 冥想·慢生活人群；功能取舍以“三类用户能否完成一席完整茶事”为准 | 定位见 README |
 
 ---
 

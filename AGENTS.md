@@ -486,6 +486,8 @@ docker compose down
 
 * 冲泡页零点击闭环与移动端触控基准：煮水→温杯→醒茶→出汤全自动，用户仅 READY 拖一次注水；禁止为温杯/醒茶/出汤加回手动确认按钮；移动端触控目标 ≥44px，用 `scripts/verify-brew-mobile.cjs` 断言。
 
+* 新功能立项 / 已有功能评审先过四维甄别（自由分析 / 用户视角 / 竞品视角 / 伪需求甄别）；“团队自己会不会用”是硬门槛，高投入低价值的功能优先降级或砍，禁止为“看起来有用”的功能投入。
+
 ## 13. 来源与维护
 
 本融合版基于：AGENTS.md 开放标准（agents.md）、TechSpokes 规范 v3（章节顺序 / 解析可靠性）、TheRealSeanDonahoe agents-md（行为脚手架 / 学习记录）、awesome-agents-md（七段内容结构）、eugeniughelbur agents-md（边界三层 / 不覆盖人类内容）、bysiber agents-md-tools（lint 十条 / 密钥排除）、ai-boost agents_md_author（写作纪律 / 命令溯源）、agentsmd.io 最佳实践（活文档 / 迭代）。
