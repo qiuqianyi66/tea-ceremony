@@ -85,6 +85,11 @@ describe('useAudio 环境音（rain/wind 合成层）', () => {
     expect(audio.state.value.isMuted).toBe(true)
   })
 
+  it('磬声 playQing（T3.2）：无 AudioContext 环境静默不抛错', () => {
+    expect(() => audio.playQing()).not.toThrow()
+    expect(() => audio.playQing(0.5)).not.toThrow()
+  })
+
   it('首次 toggle（无 currentAmbient）：默认切到 guqin（全新模块）', async () => {
     vi.resetModules()
     const fresh = await import('../useAudio')

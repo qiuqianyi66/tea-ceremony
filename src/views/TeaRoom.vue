@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { useTeaRoomStore } from '@/stores/teaRoom'
 import { useThemeStore } from '@/stores/theme'
 import { useAuthStore } from '@/stores/auth'
-import { startAmbient, switchAmbient, stopAll } from '@/composables/useAudio'
+import { startAmbient, switchAmbient, stopAll, playQing } from '@/composables/useAudio'
 import { getCurrentSolarTerm, getSeasonName } from '@/data/solarTerms'
 import { TEA_ROOM_THEMES, getThemeById } from '@/data/themes'
 
@@ -37,6 +37,12 @@ function generateGreeting() {
   greeting.value = greetings[Math.floor(Math.random() * greetings.length)]!
   showGreeting.value = true
   setTimeout(() => { showGreeting.value = false }, 5000)
+}
+
+// 入席：关闭迎宾引导；明式茶室敲一声磬（T3.2）
+function enterTeaSeat() {
+  showGreeting.value = false
+  if (room.currentRoom.id === 'ming') playQing()
 }
 
 onMounted(() => {
@@ -134,7 +140,7 @@ function startBrew() {
           <p class="text-lg text-[var(--color-wood)] leading-relaxed">{{ greeting }}</p>
           <button
             class="mt-5 px-5 py-2 rounded-full bg-[var(--color-wood)] text-[var(--color-cream)] text-sm hover:bg-[var(--color-wood-light)] transition-colors"
-            @click="showGreeting = false"
+            @click="enterTeaSeat"
           >进入茶席</button>
         </div>
       </div>

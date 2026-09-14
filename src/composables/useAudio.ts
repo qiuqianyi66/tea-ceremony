@@ -570,6 +570,45 @@ function synthSuccess(volume = 1) {
   })
 }
 
+/** 磬声（一次性，T3.2）：禅意磬/钵音，基频 + 非谐波泛音，长衰减（约 3s）
+ * 无 AudioContext 环境（如测试/被禁）静默降级，不抛错。 */
+function synthQing(volume = 1) {
+  const ctx = ensureSynthCtx()
+  if (!ctx) return
+  const t = ctx.currentTime
+  const base = 392 // G4，清越磬音
+  // 磬为非谐波打击乐：基频 + 2.76×/5.4× 泛音
+  const partials: Array<[number, number]> = [
+    [1, 0.5],
+    [2.76, 0.16],
+    [5.4, 0.05],
+  ]
+  for (const [ratio, amp] of partials) {
+    const osc = ctx.createOscillator()
+    osc.type = 'sine'
+    osc.frequency.value = base * ratio
+    const g = ctx.createGain()
+    g.gain.setValueAtTime(0, t)
+    g.gain.linearRampToValueAtTime(0.1 * amp * volume, t + 0.008)
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 3.2)
+    osc.connect(g).connect(ctx.destination)
+    osc.start(t)
+    osc.stop(t + 3.3)
+  }
+  // 敲击瞬态：短促高频噪声
+  const noise = ctx.createBufferSource()
+  noise.buffer = createNoiseBuffer(ctx, 0.03)
+  const hp = ctx.createBiquadFilter()
+  hp.type = 'highpass'
+  hp.frequency.value = 3000
+  const ng = ctx.createGain()
+  ng.gain.setValueAtTime(0.05 * volume, t)
+  ng.gain.exponentialRampToValueAtTime(0.001, t + 0.03)
+  noise.connect(hp).connect(ng).connect(ctx.destination)
+  noise.start(t)
+  noise.stop(t + 0.04)
+}
+
 // ============ 音量控制 ============
 
 function setMasterVolume(v: number) {
@@ -680,6 +719,7 @@ export function useAudio() {
     playOutflow,
     playSip,
     playSuccess,
+    playQing,
 
     // 合成音效 (火焰噼啪)
     startCrackleSynthesis,
@@ -710,3 +750,4 @@ export const startCrackle = () => startCrackleSynthesis()
 export const stopCrackle = () => stopCrackleSynthesis()
 export const stopAll = () => dispose()
 export const playTeaDrop = (volume = 1) => playTeaDropSfx(volume)
+export const playQing = (volume = 1) => synthQing(volume)
