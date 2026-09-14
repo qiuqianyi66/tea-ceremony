@@ -12,12 +12,15 @@ function daysAgo(days: number): string {
 }
 
 describe('garden.harvestPlant 采摘逻辑', () => {
+  let upsertSpy: ReturnType<typeof vi.spyOn>
   beforeEach(async () => {
     await initDB()
     await db.gardenPlants.clear()
+    // 默认已登录：同步守卫依赖 getAuthToken（游客不发起上行）
+    localStorage.setItem('tea-auth', JSON.stringify({ token: 'test-token', user: {} }))
     // 同步走本地标记即可（单测不依赖后端），默认上传成功。
     vi.restoreAllMocks()
-    vi.spyOn(gardenApi, 'upsert').mockResolvedValue({} as never)
+    upsertSpy = vi.spyOn(gardenApi, 'upsert').mockResolvedValue({} as never)
   })
 
   it('成熟期（≥10 天）可采摘：状态转恢复期、计数 +1、记录时间', async () => {
@@ -80,5 +83,12 @@ describe('garden.harvestPlant 采摘逻辑', () => {
     expect(after?.status).toBe('growing')
     expect(after?.syncStatus).toBe('failed')
     expect(after?.syncError).toBeTruthy()
+  })
+
+  it('未登录（游客）：不调用后端 upsert，记录保持 pending 待登录后同步', async () => {
+    localStorage.removeItem('tea-auth')
+    const plant = await plantTea('hangzhou', 'longjing')
+    expect(upsertSpy).not.toHaveBeenCalled()
+    expect((await db.gardenPlants.get(plant.id!))?.syncStatus).toBe('pending')
   })
 })

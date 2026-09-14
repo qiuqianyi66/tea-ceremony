@@ -5,6 +5,7 @@
  */
 import { db, initDB } from './storage'
 import { gardenApi } from './api'
+import { getAuthToken } from './authStorage'
 import type { PlantedTea, GrowthStage, GrowthStageInfo } from '@/types/garden'
 
 // ============ 生长周期配置（14 天） ============
@@ -172,6 +173,9 @@ export async function refreshAllPlantStatuses(): Promise<void> {
 async function syncPlant(plant: PlantedTea): Promise<void> {
   if (!plant.id) return
   await db.gardenPlants.put({ ...plant, syncStatus: 'pending', syncError: undefined })
+  // 未登录（游客）不发起后端同步：后端可达时 upsert 返回 401 会触发全局跳登录。
+  // 保持 pending，登录后 syncPendingGarden() 补同步。
+  if (!getAuthToken()) return
   try {
     await gardenApi.upsert({ ...plant, syncStatus: 'pending' })
     await db.gardenPlants.put({ ...plant, syncStatus: 'synced', syncError: undefined })
@@ -185,6 +189,8 @@ async function syncPlant(plant: PlantedTea): Promise<void> {
 /** 批量重试未同步的茶园记录（登录后 / 网络恢复时调用） */
 export async function syncPendingGarden(): Promise<{ synced: number; failed: number }> {
   await initDB()
+  // 未登录时无可同步对象（游客阶段不发起上传），直接返回
+  if (!getAuthToken()) return { synced: 0, failed: 0 }
   const pending = await db.gardenPlants
     .filter(plant => plant.syncStatus === 'pending' || plant.syncStatus === 'failed')
     .toArray()

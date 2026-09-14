@@ -3,6 +3,7 @@
 import type { TastingRecord } from '@/types/tasting'
 import { db, initDB } from './db'
 import { recordsApi } from '../api'
+import { getAuthToken } from '../authStorage'
 
 export const historyStorage = {
   /** 加载所有记录（按日期倒序） */
@@ -40,6 +41,10 @@ export const historyStorage = {
     const pendingRecord = { ...record, syncStatus: 'pending' as const }
     await db.tastings.put(pendingRecord)
 
+    // 未登录（游客）不发起后端同步：后端可达时 /records 返回 401，会触发全局跳登录。
+    // 记录保持 pending，登录后 syncPending() 补同步。
+    if (!getAuthToken()) return this.load()
+
     try {
       await recordsApi.create(pendingRecord)
       await db.tastings.put({ ...pendingRecord, syncStatus: 'synced', syncError: undefined })
@@ -55,6 +60,8 @@ export const historyStorage = {
   /** 登录或网络恢复后，重试尚未同步的本地记录。 */
   async syncPending(): Promise<{ synced: number; failed: number }> {
     await initDB()
+    // 未登录时无可同步对象（游客阶段不落 pending 上传），直接返回
+    if (!getAuthToken()) return { synced: 0, failed: 0 }
     const pending = await db.tastings
       .filter(record => record.syncStatus === 'pending' || record.syncStatus === 'failed')
       .toArray()

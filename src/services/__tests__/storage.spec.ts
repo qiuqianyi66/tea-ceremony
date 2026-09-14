@@ -41,6 +41,8 @@ function makeRecord(overrides: Partial<TastingRecord> = {}): TastingRecord {
 
 beforeEach(async () => {
   createMock.mockReset()
+  // 默认已登录：同步守卫依赖 getAuthToken（游客不发起上行）
+  localStorage.setItem('tea-auth', JSON.stringify({ token: 'test-token', user: {} }))
   await db.tastings.clear()
 })
 
@@ -81,6 +83,16 @@ describe('add：本地保存 + 云同步', () => {
 
     expect(createMock).toHaveBeenCalledTimes(1)
     expect(await db.tastings.count()).toBe(1)
+  })
+
+  it('未登录（游客）：不调用 recordsApi.create，记录保持 pending 待登录后同步', async () => {
+    localStorage.removeItem('tea-auth')
+    await historyStorage.add(makeRecord())
+
+    expect(createMock).not.toHaveBeenCalled()
+    const saved = await db.tastings.toArray()
+    expect(saved[0]!.syncStatus).toBe('pending')
+    expect(saved[0]!.syncError).toBeUndefined()
   })
 })
 
@@ -123,5 +135,14 @@ describe('syncPending：离线记录重试', () => {
 
     const saved = await db.tastings.toArray()
     expect(saved.every(r => r.syncStatus === 'failed')).toBe(true)
+  })
+
+  it('未登录：syncPending 不调用 create，直接返回 0/0', async () => {
+    localStorage.removeItem('tea-auth')
+    await db.tastings.put({ ...makeRecord(), syncStatus: 'pending' })
+
+    const result = await historyStorage.syncPending()
+    expect(result).toEqual({ synced: 0, failed: 0 })
+    expect(createMock).not.toHaveBeenCalled()
   })
 })

@@ -18,6 +18,8 @@ describe('teaStore.saveRecord 离线保存闭环', () => {
   beforeEach(async () => {
     setActivePinia(createPinia())
     vi.restoreAllMocks()
+    // 默认已登录：recordsApi 同步守卫依赖 getAuthToken（游客不发起上行）
+    localStorage.setItem('tea-auth', JSON.stringify({ token: 'test-token', user: {} }))
     // 确保数据库打开并清空，保证用例隔离。
     await initDB()
     await Promise.all([
