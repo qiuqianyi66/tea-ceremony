@@ -428,7 +428,7 @@ const phaseDescription = computed(() => {
         :key="s.id"
         type="button"
         @click="brewSkin = s.id"
-        class="px-2 py-1 rounded-full transition-all"
+        class="min-w-[44px] min-h-[44px] px-3 flex items-center justify-center rounded-full transition-all"
         :class="brewSkin === s.id
           ? 'bg-[var(--color-tea-gold)]/80 text-[#1a120a]'
           : 'text-[var(--color-wood-light)]/70 hover:text-[var(--color-wood)]'"

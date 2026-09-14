@@ -6,7 +6,7 @@
  * 注意（TresJS 5 坑）：Tres 元素的 rotation 是只读属性，直接传 Vector3 实例会触发
  * "Cannot assign to read only property 'rotation'" 海量报错 → 必须传 [x,y,z] 数组字面量。
  */
-import { computed, onMounted, ref, shallowRef, toRef, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, shallowRef, toRef, watch } from 'vue'
 import { useLoop, useTresContext } from '@tresjs/core'
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
@@ -119,6 +119,20 @@ const SET_Z = -0.7
 // 相机拉近让桌面占满画面下半，桌腿少露、桌下死黑减少。
 const camPos = new THREE.Vector3(0, 3.5, 4.2)
 const camLook = new THREE.Vector3(0, 1.15, 0)
+// 相机 fov：随视口宽高比适配。竖屏（手机 390×844 等）下水平视场自然收窄，
+// 固定 43 会把桌面两侧裁出画外，按 aspect 增大 fov 补偿横向视野；
+// 桌面 16:9 保持 43，窄屏上限 72（避免鱼眼失真）。
+const viewportAspect = ref(
+  typeof window !== 'undefined' ? window.innerWidth / window.innerHeight : 16 / 9,
+)
+function syncViewportAspect() {
+  viewportAspect.value = window.innerWidth / window.innerHeight
+}
+const camFov = computed(() => {
+  const aspect = viewportAspect.value
+  if (aspect >= 1) return 43
+  return Math.min(72, Math.round(43 * Math.pow(1.6 / aspect, 0.35)))
+})
 const keyLightPos = new THREE.Vector3(3.2, 5.5, 4)
 const rimLightPos = new THREE.Vector3(-3, 2, -2)
 const floorPos = new THREE.Vector3(0, -0.001, 1.5)
@@ -290,6 +304,12 @@ onMounted(() => {
   initTeaLeaves()
   setupRenderPipeline()
   applySkin(BREW_SKINS[props.skin ?? 'lake-rain'])
+  syncViewportAspect()
+  window.addEventListener('resize', syncViewportAspect)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', syncViewportAspect)
 })
 
 // ==================== 渲染管线：ACES 色调映射 + 软阴影 + 程序化 IBL ====================
@@ -906,7 +926,7 @@ onRender(({ delta, elapsed }) => {
 
 <template>
   <!-- 相机 -->
-  <TresPerspectiveCamera :position="camPos" :fov="43" :look-at="camLook" />
+  <TresPerspectiveCamera :position="camPos" :fov="camFov" :look-at="camLook" />
 
   <!-- 灯光：夜色暖光氛围。环境光压低（0.22），环境反射由 scene.environment(IBL) 承担，
        避免旧值 0.55 把明暗对比抹平；主方向光投影（唯一投影灯）。 -->
