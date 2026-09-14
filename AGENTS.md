@@ -224,6 +224,18 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q   # 后端全量
 
 * 不提交 `node_modules/`、`dist/`、`.env`、`__pycache__/`、`.venv/`、`test-results/`、`playwright-report/`。
 
+### 上线
+
+* 只发主分支、已过审代码；发版 / 部署生产前必须按「边界」确认。
+
+* 上线前必须自查三项：健壮性（友好错误提示、输入校验）、安全性（防越权）、稳定性（失败重试 / 容错）。
+
+* 尽量周二 ~ 周四工作日上线，保证出问题当天能修。
+
+* 上线后必须跑完整回归，重点测权限；群内周知 + 配置监控告警 + 更新部署文档。
+
+* 上线不是终点：至少观察一周，持续收反馈、看数据，准备下一轮迭代。
+
 ### 茶文化
 
 
@@ -472,6 +484,8 @@ docker compose down
 
 * 技能返回"不支持某平台/某能力"时，禁止直接对用户说做不到就完事：先判断是否有通用工具能补齐（如 yt-dlp 下抖音/B站、PyAV 抽帧、自写脚本绕过），自行下载到本地再做后续分析；只有通用工具真实失败（403/风控/需登录/付费墙）才回报限制。
 
+* 冲泡页零点击闭环与移动端触控基准：煮水→温杯→醒茶→出汤全自动，用户仅 READY 拖一次注水；禁止为温杯/醒茶/出汤加回手动确认按钮；移动端触控目标 ≥44px，用 `scripts/verify-brew-mobile.cjs` 断言。
+
 ## 13. 来源与维护
 
 本融合版基于：AGENTS.md 开放标准（agents.md）、TechSpokes 规范 v3（章节顺序 / 解析可靠性）、TheRealSeanDonahoe agents-md（行为脚手架 / 学习记录）、awesome-agents-md（七段内容结构）、eugeniughelbur agents-md（边界三层 / 不覆盖人类内容）、bysiber agents-md-tools（lint 十条 / 密钥排除）、ai-boost agents_md_author（写作纪律 / 命令溯源）、agentsmd.io 最佳实践（活文档 / 迭代）。
@@ -493,5 +507,7 @@ docker compose down
 * 2026-09-10 吸收 mattpocock/skills 工程纪律入「切片与重构纪律」节（垂直 tracer bullet / 行为测试三规则 / 宽重构 expand-contract / CONTEXT+ADR 沉淀）；安装 humanlayer/show-me 到 `.agents/skills/show-me/`，用于代码与架构的视觉化解释。
 
 * 2026-09-10 前端设计规范改由全局技能 `frontend-design-spec` 承载（跨项目通用，不再以仓库内 `FRONTEND_DESIGN_SPEC.md` 形式存在）；AGENTS.md 前端设计节按该技能补齐（Design Read 安静约束 / 体系选择 / 新增禁令条目 / 质量底线与工程规范条目 / 审计 9 条 / impeccable 命令表），全局 `~/.claude/CLAUDE.md` 同步新增「前端设计规范（通用）」一节。
+
+* 2026-09-12 依据鱼皮团队研发规范（liyupi/ai-guide）新增「上线」必守小节：上线前健壮性/安全性/稳定性自查、工作日上线窗口、上线后完整回归 + 群内周知 + 监控告警 + 观察一周。
 
 *本文件是活文档，项目架构或流程变更时同步更新。*
