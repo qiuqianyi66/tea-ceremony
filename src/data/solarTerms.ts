@@ -259,11 +259,26 @@ export const SOLAR_TERMS: SolarTerm[] = [
   },
 ]
 
-/** 获取当前节气 */
-export function getCurrentSolarTerm(): SolarTerm {
-  const now = new Date()
-  const month = now.getMonth() + 1
-  const day = now.getDate()
+/** 获取某日期所属节气（按公历线性序：1 月落在上一节气年区间） */
+export function getSolarTermByDate(date: string | Date): SolarTerm {
+  // 仅取年月日：ISO 日期字符串（如 '2026-09-14T10:00:00.000Z'）若经 Date 解析会受时区影响，
+  // 直接取 Y-M-D 段，保证与记录落库日期一致、与所在时区无关。
+  let month: number
+  let day: number
+  if (typeof date === 'string') {
+    const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(date)
+    if (match) {
+      month = Number(match[2])
+      day = Number(match[3])
+    } else {
+      const d = new Date(date)
+      month = d.getMonth() + 1
+      day = d.getDate()
+    }
+  } else {
+    month = date.getMonth() + 1
+    day = date.getDate()
+  }
 
   // 节气年从立春（2 月）起，到大寒（次年 1 月）止。
   // 将 1 月的小寒、大寒折算到 12 月之后（13xx），保证跨年比较单调有序，
@@ -271,7 +286,8 @@ export function getCurrentSolarTerm(): SolarTerm {
   const ordOf = (m: number, d: number): number => (m === 1 ? (m + 12) * 100 + d : m * 100 + d)
   const current = ordOf(month, day)
 
-  // 立春之前（1/1 ~ 2/3）无已到来节气，默认上一节气年的大寒
+  // 立春之前（1/1 ~ 2/3）无已到来节气，默认上一节气年的大寒；
+  // 实际按线性序：1/1~1/5 冬至、1/6~1/19 小寒、1/20~2/3 大寒。
   let result: SolarTerm = SOLAR_TERMS[SOLAR_TERMS.length - 1]!
   for (const term of SOLAR_TERMS) {
     if (ordOf(term.month, term.day) <= current) {
@@ -281,6 +297,11 @@ export function getCurrentSolarTerm(): SolarTerm {
     }
   }
   return result
+}
+
+/** 获取当前节气 */
+export function getCurrentSolarTerm(): SolarTerm {
+  return getSolarTermByDate(new Date())
 }
 
 /** 获取季节名称 */

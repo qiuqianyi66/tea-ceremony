@@ -51,6 +51,10 @@ async function retrySync() {
           :disabled="isSyncing"
           @click="retrySync"
         >{{ isSyncing ? '同步中…' : '重试同步' }}</button>
+        <button
+          class="inline-flex min-h-11 items-center text-xs px-3 rounded-full border border-[var(--color-wood-light)]/30 text-[var(--color-wood-light)] hover:bg-white/60"
+          @click="router.push('/growth')"
+        >成长看板</button>
         <button @click="router.push('/')" class="inline-flex min-h-11 min-w-11 items-center justify-center text-[var(--color-wood-light)] hover:text-[var(--color-wood)]">返回</button>
       </div>
     </div>

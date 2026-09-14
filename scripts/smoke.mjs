@@ -1,5 +1,5 @@
 const baseUrl = (process.argv[2] || 'http://127.0.0.1:4173').replace(/\/$/, '')
-const routes = ['/', '/select', '/tools', '/brew', '/taste', '/login', '/collection', '/ai', '/map', '/graph', '/tearoom', '/profile', '/history']
+const routes = ['/', '/select', '/tools', '/brew', '/taste', '/login', '/collection', '/ai', '/map', '/graph', '/tearoom', '/profile', '/history', '/growth']
 
 let failed = false
 

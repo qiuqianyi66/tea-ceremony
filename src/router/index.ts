@@ -98,6 +98,11 @@ const router = createRouter({
       component: () => import('../views/HistoryView.vue'),
     },
     {
+      path: '/growth',
+      name: 'growth',
+      component: () => import('../views/GrowthView.vue'),
+    },
+    {
       path: '/share',
       name: 'share',
       component: () => import('../views/ShareView.vue'),
