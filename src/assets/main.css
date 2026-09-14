@@ -202,6 +202,31 @@ a {
   border-radius: 2px;
 }
 
+/* 深色茶席页（.brew-dark）暗色版浏览器表面定制：只作用于冲泡页，不污染全局浅色主题。
+   选区 = 茶金实底深字；滚动条 = 8px 深棕 thumb + 透明 track；焦点环 = 茶金 2px。 */
+.brew-dark ::selection {
+  background: #c9a96e;
+  color: #1a120a;
+}
+.brew-dark ::-webkit-scrollbar {
+  width: 8px;
+}
+.brew-dark ::-webkit-scrollbar-track {
+  background: transparent;
+}
+.brew-dark ::-webkit-scrollbar-thumb {
+  background: #3a2a1a;
+  border-radius: 4px;
+}
+.brew-dark ::-webkit-scrollbar-thumb:hover {
+  background: #5a4030;
+}
+.brew-dark :focus-visible {
+  outline: 2px solid #c9a96e;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
 /* 尊重系统减弱动效偏好（prefers-reduced-motion）：动画与过渡降为瞬时 */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
