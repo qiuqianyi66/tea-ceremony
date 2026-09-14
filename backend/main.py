@@ -91,6 +91,7 @@ def root():
 
 
 @app.get("/health")
+@app.get("/api/health")
 async def health():
     try:
         async with engine.connect() as connection:
