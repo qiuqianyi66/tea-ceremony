@@ -1,94 +1,76 @@
 /**
- * 茶园采摘逻辑单测：src/services/garden.ts
- * 覆盖：成熟期可采 → 恢复期 + 计数 + 时间；未成熟不可采；重复采摘幂等。
+ * 茶园生长计算单测（纯函数）：src/services/garden.ts
+ * T4.1 养成降级后仅保留生长阶段/湿度等纯计算（3D 场景引用），无 DB/网络依赖。
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { initDB, db } from '@/services/storage'
-import { gardenApi } from '@/services/api'
-import { harvestPlant, plantTea, getGrowthStage } from '@/services/garden'
+import { describe, expect, it } from 'vitest'
+import {
+  getPlantDays, getGrowthStage, getGrowthStageInfo,
+  getGrowthProgress, getCurrentWaterLevel, isPlantDead, isGrowthPaused,
+  GROWTH_STAGES, DEAD_WATER, DEAD_DAYS,
+} from '@/services/garden'
+import type { PlantedTea } from '@/types/garden'
+
+function makePlant(overrides: Partial<PlantedTea> = {}): PlantedTea {
+  const now = Date.now()
+  return {
+    regionId: 'hangzhou',
+    teaId: 'longjing',
+    plantedAt: new Date(now).toISOString(),
+    lastWateredAt: new Date(now).toISOString(),
+    waterLevel: 100,
+    pruned: false,
+    status: 'growing',
+    harvestCount: 0,
+    ...overrides,
+  }
+}
 
 function daysAgo(days: number): string {
   return new Date(Date.now() - days * 86400000).toISOString()
 }
 
-describe('garden.harvestPlant 采摘逻辑', () => {
-  let upsertSpy: ReturnType<typeof vi.spyOn>
-  beforeEach(async () => {
-    await initDB()
-    await db.gardenPlants.clear()
-    // 默认已登录：同步守卫依赖 getAuthToken（游客不发起上行）
-    localStorage.setItem('tea-auth', JSON.stringify({ token: 'test-token', user: {} }))
-    // 同步走本地标记即可（单测不依赖后端），默认上传成功。
-    vi.restoreAllMocks()
-    upsertSpy = vi.spyOn(gardenApi, 'upsert').mockResolvedValue({} as never)
+describe('garden 生长计算（纯函数）', () => {
+  it('getPlantDays：按真实时间计算种植天数，非负', () => {
+    expect(getPlantDays(makePlant())).toBe(0)
+    expect(getPlantDays(makePlant({ plantedAt: daysAgo(3.5) }))).toBeGreaterThan(3)
+    expect(getPlantDays(makePlant({ plantedAt: daysAgo(3.5) }))).toBeLessThan(4)
   })
 
-  it('成熟期（≥10 天）可采摘：状态转恢复期、计数 +1、记录时间', async () => {
-    const plant = await plantTea('hangzhou', 'longjing')
-    // 改为 12 天前种植，处于成熟期
-    plant.plantedAt = daysAgo(12)
-    await db.gardenPlants.put(plant)
-
-    expect(getGrowthStage(plant)).toBe('mature')
-
-    await harvestPlant(plant.id!)
-
-    const after = await db.gardenPlants.get(plant.id!)
-    expect(after?.status).toBe('harvested')
-    expect(after?.harvestCount).toBe(1)
-    expect(after?.harvestedAt).toBeTruthy()
-    // 采摘后进入恢复期
-    expect(getGrowthStage(after!)).toBe('recovery')
+  it('getGrowthStage：按 14 天周期返回阶段（萌芽/幼苗/成长/成熟/恢复/枯萎）', () => {
+    expect(getGrowthStage(makePlant())).toBe('sprout')
+    expect(getGrowthStage(makePlant({ plantedAt: daysAgo(3) }))).toBe('seedling')
+    expect(getGrowthStage(makePlant({ plantedAt: daysAgo(7) }))).toBe('growing')
+    expect(getGrowthStage(makePlant({ plantedAt: daysAgo(12) }))).toBe('mature')
+    expect(getGrowthStage(makePlant({ status: 'harvested' }))).toBe('recovery')
+    expect(getGrowthStage(makePlant({ status: 'dead' }))).toBe('sprout')
   })
 
-  it('未成熟（萌芽期）不可采摘：状态与计数不变', async () => {
-    const plant = await plantTea('hangzhou', 'longjing')
-    await harvestPlant(plant.id!)
-    const after = await db.gardenPlants.get(plant.id!)
-    expect(after?.status).toBe('growing')
-    expect(after?.harvestCount).toBe(0)
-    expect(after?.harvestedAt).toBeUndefined()
+  it('getGrowthStageInfo：recovery 返回恢复期信息，其余命中配置表', () => {
+    expect(getGrowthStageInfo(makePlant({ status: 'harvested' }))?.label).toBe('恢复期')
+    expect(getGrowthStageInfo(makePlant())?.label).toBe('萌芽期')
+    expect(GROWTH_STAGES.length).toBe(4)
   })
 
-  it('已采摘（恢复期）重复调用幂等：计数不重复累加', async () => {
-    const plant = await plantTea('hangzhou', 'longjing')
-    plant.plantedAt = daysAgo(12)
-    await db.gardenPlants.put(plant)
-
-    await harvestPlant(plant.id!)
-    await harvestPlant(plant.id!)
-
-    const after = await db.gardenPlants.get(plant.id!)
-    expect(after?.harvestCount).toBe(1)
+  it('getGrowthProgress：按天数归一化到 0-1，已采/枯萎为 1', () => {
+    expect(getGrowthProgress(makePlant())).toBe(0)
+    expect(getGrowthProgress(makePlant({ plantedAt: daysAgo(7) }))).toBeCloseTo(0.5)
+    expect(getGrowthProgress(makePlant({ status: 'harvested' }))).toBe(1)
   })
 
-  it('不存在记录调用不抛错', async () => {
-    await expect(harvestPlant(99999)).resolves.toBeUndefined()
+  it('getCurrentWaterLevel：随天数衰减、封顶 0-100', () => {
+    expect(getCurrentWaterLevel(makePlant())).toBe(100)
+    const decayed = getCurrentWaterLevel(makePlant({ lastWateredAt: daysAgo(2), waterLevel: 100 }))
+    expect(decayed).toBeGreaterThan(50)
+    expect(decayed).toBeLessThan(70)
+    const longAgo = getCurrentWaterLevel(makePlant({ lastWateredAt: daysAgo(30), waterLevel: 100 }))
+    expect(longAgo).toBe(0)
   })
 
-  it('种植/采摘后同步标记为 synced（离线优先上行）', async () => {
-    const plant = await plantTea('hangzhou', 'longjing')
-    expect((await db.gardenPlants.get(plant.id!))?.syncStatus).toBe('synced')
-
-    plant.plantedAt = daysAgo(12)
-    await db.gardenPlants.put(plant)
-    await harvestPlant(plant.id!)
-    expect((await db.gardenPlants.get(plant.id!))?.syncStatus).toBe('synced')
-  })
-
-  it('后端不可达时本地操作不受影响，标记 failed 可后续重试', async () => {
-    vi.spyOn(gardenApi, 'upsert').mockRejectedValue(new Error('网络不可用'))
-    const plant = await plantTea('hangzhou', 'longjing')
-    const after = await db.gardenPlants.get(plant.id!)
-    expect(after?.status).toBe('growing')
-    expect(after?.syncStatus).toBe('failed')
-    expect(after?.syncError).toBeTruthy()
-  })
-
-  it('未登录（游客）：不调用后端 upsert，记录保持 pending 待登录后同步', async () => {
-    localStorage.removeItem('tea-auth')
-    const plant = await plantTea('hangzhou', 'longjing')
-    expect(upsertSpy).not.toHaveBeenCalled()
-    expect((await db.gardenPlants.get(plant.id!))?.syncStatus).toBe('pending')
+  it('isPlantDead / isGrowthPaused：低湿度 + 持续天数判定', () => {
+    expect(isPlantDead(makePlant())).toBe(false)
+    // 湿度低于 DEAD_WATER 且超过 DEAD_DAYS 未浇水 → 枯萎
+    expect(isPlantDead(makePlant({ lastWateredAt: daysAgo(DEAD_DAYS + 1), waterLevel: DEAD_WATER - 1 }))).toBe(true)
+    // 生长暂停阈值高于枯萎阈值：仅湿度低未够天数不算枯萎，但算暂停
+    expect(isGrowthPaused(makePlant({ lastWateredAt: daysAgo(5), waterLevel: 100 }))).toBe(true)
   })
 })

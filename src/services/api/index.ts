@@ -7,5 +7,4 @@
 export { authApi } from './auth'
 export { recordsApi, toRecordDto, type RecordCreateDto } from './records'
 export { teasApi } from './teas'
-export { gardenApi, toGardenPlantDto, type GardenPlantCreateDto } from './garden'
 export { ApiError } from '../http'

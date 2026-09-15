@@ -15,7 +15,7 @@ const router = useRouter()
     </button>
     <div class="garden-header">
       <h1 class="garden-title font-serif">我的茶园</h1>
-      <p class="garden-sub">选一片茶山，种下属于你的茶</p>
+      <p class="garden-sub">选一片茶山，入山赏四时之景</p>
     </div>
     <div class="region-grid">
       <div v-for="region in gardenRegions" :key="region.id"

@@ -5,7 +5,6 @@
 import Dexie from 'dexie'
 import type { TastingRecord } from '@/types/tasting'
 import type { Achievement } from '@/types/tasting'
-import type { PlantedTea } from '@/types/garden'
 
 // ============ 数据库定义 ============
 
@@ -15,7 +14,6 @@ class TeaCeremonyDB extends Dexie {
   settings!: Dexie.Table<{ key: string; value: unknown; migratedAt?: string }, string>
   userXp!: Dexie.Table<{ key: string; value: number }, string>
   collectedWare!: Dexie.Table<{ id: string; unlockedAt: string }, string>
-  gardenPlants!: Dexie.Table<PlantedTea, number>
 
   constructor() {
     super('teaCeremonyDB')
@@ -63,8 +61,7 @@ class TeaCeremonyDB extends Dexie {
       settings: '++id, key',
       userXp: '++id, key',
       collectedWare: '++id, id, unlockedAt',
-      gardenPlants: '++id, regionId, teaId, status, plantedAt',
-    })
+          })
   }
 }
 

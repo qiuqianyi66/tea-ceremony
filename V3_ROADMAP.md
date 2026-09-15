@@ -38,7 +38,7 @@
 | 品鉴 | TasteView + TeaSynesthesiaView | 八维口感评分 × 冲泡工艺系数；茶通感（六境）视图 |
 | 记录 | HistoryView | 品鉴历史日志 |
 | 成长 | AIAsk + TeaGraph + TeaBreak + HealthView | AI 茶灵（teaAI.ts，网络不可用降级规则回复）；茶图谱（22 位茶人 src/data/teaMasters.ts）；茶歇；茶与健康 |
-| 空间 | TeaRoom + GardenView + MapView | 3D 茶室；3D 茶园四产区（src/data/gardenRegions.ts：hangzhou/wuyishan/yunnan/fuding），含地形、成垄茶行、茶亭、竹篱笆、石块小径、天气（云/晨雾/雨天）、动物、环境音、浇水/采摘交互、后端同步（commit 系列：cc94a96→1456187→ecec561→4a87ed1→a1326ac→8980996→0dae836→33b4ae6）；产区地图（MapView + src/data/china-map.json + teaRegions.ts 52 条） |
+| 空间 | TeaRoom + GardenView + MapView | 3D 茶室；3D 茶园四产区（src/data/gardenRegions.ts：hangzhou/wuyishan/yunnan/fuding），含地形、成垄茶行、茶亭、竹篱笆、石块小径、天气（云/晨雾/雨天）、动物、环境音、茶亭叙事（T4.1 降级纯观赏后：养成交互与后端同步已删，3D 景观由预设程序化生成，commit 系列：cc94a96→1456187→ecec561→4a87ed1→a1326ac→8980996→0dae836→33b4ae6→T4.1）；产区地图（MapView + src/data/china-map.json + teaRegions.ts 52 条） |
 | 分享 | ShareView | 品鉴卡只读页，base64url 编解码 + 防御性校验，qrcode 生成 |
 | 用户 | LoginView + 后端 /api/auth | 登录，需登录接口依赖 get_current_user |
 | 节气 | src/data/solarTerms.ts | 24 节气数据 |
@@ -315,7 +315,7 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q   # 后端全量
 | 项 | 判定 | 去向 | 验收 |
 |---|---|---|---|
 | 成长数据看板 | 真需求（高价值低投入） | 已完成（2026-09-14，T1.1） | 复用既有 TasteTrendChart/TasteRadarChart + 原生条图；空态/加载/错误态齐全；growth.spec 16 测 + e2e/growth.spec + 截图 |
-| 3D 茶园养成（浇水/采摘/后端同步） | 伪需求高风险 | 降级为纯观赏（先评审再动手） | verify-gardens ERRORS:[]；pytest 过；迁移往返过 |
+| 3D 茶园养成（浇水/采摘/后端同步） | 伪需求高风险 | ✅ 已降级纯观赏（2026-09-15，T4.1） | verify-gardens ERRORS:[]；e2e garden 2 例（无养成入口+茶亭叙事）；garden.spec 纯函数 6 测；后端 garden 域已删、PG 表保留 |
 | 产区地图 | 展示型 | 接“产区→茶→冲泡”链路 | 链路走通；数据无编造 |
 | 茶图谱 / 茶与健康页 | 内容装饰 | 并入茶详情与修习入口 | smoke 过；无死链 |
 | 节气数据 | 无入口场景 | 节气茶单（首页按节气推荐 3 款） | 映射无编造 |

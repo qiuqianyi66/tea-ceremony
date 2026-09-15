@@ -183,8 +183,8 @@ onUnmounted(() => observer?.disconnect())
       <section class="entry-grid entry-grid-3">
         <button class="entry-card" @click="go('/garden')">
           <IconSprout class="entry-icon" />
-          <span class="entry-label">我的茶园</span>
-          <span class="entry-desc">种茶养茶，14天长成</span>
+          <span class="entry-label">3D 茶园</span>
+          <span class="entry-desc">赏四时之景</span>
         </button>
         <button class="entry-card" @click="go('/ai')">
           <IconBot class="entry-icon" />

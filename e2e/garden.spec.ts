@@ -1,8 +1,9 @@
 /**
- * E2E 茶园流程测试：地区选择 → 进入 3D 茶园 → 种茶 → 植物详情 → 浇水
+ * E2E 茶园纯观赏流程测试（T4.1 养成降级后）：
+ * 地区选择 → 进入 3D 茶园 → 无养成按钮 → 天气切换 → 茶亭叙事 → 返回
  *
- * 断言只落在 UI 层（顶栏/弹窗/卡片列表），不依赖 WebGL 渲染结果，
- * 保证 CI 稳定性；3D 场景本身由 scripts/verify-gardens.cjs 截图验证。
+ * 断言只落在 UI 层（顶栏/茶亭/按钮），不依赖 WebGL 渲染结果；
+ * 3D 场景本身由 scripts/verify-gardens.cjs 截图验证。
  */
 
 import { test, expect } from '@playwright/test'
@@ -13,7 +14,7 @@ test.beforeEach(async ({ page }) => {
   page.on('pageerror', err => console.log('[PAGEERROR]', err.stack || err.message))
 })
 
-test('茶园：地区选择 → 进入 3D 茶园 → 种茶 → 详情 → 浇水', async ({ page }) => {
+test('茶园：地区选择 → 进入 3D 茶园 → 无养成入口 → 天气切换 → 返回', async ({ page }) => {
   // ============ 1. 地区选择页 ============
   await page.goto('garden')
   await expect(page.getByRole('heading', { name: '我的茶园' })).toBeVisible()
@@ -26,27 +27,18 @@ test('茶园：地区选择 → 进入 3D 茶园 → 种茶 → 详情 → 浇�
   // ============ 2. 进入杭州茶园（3D 场景 + 顶栏） ============
   await page.getByText('杭州·西湖龙井茶园', { exact: true }).click()
   await page.waitForURL('**/garden/hangzhou')
-  await expect(page.getByText('已种 0 棵 · 0 棵可采')).toBeVisible()
   // 3D canvas 已挂载（WebGL 渲染结果不断言，只看容器存在）
   await expect(page.locator('canvas').first()).toBeVisible({ timeout: 20_000 })
 
-  // ============ 3. 种茶 ============
-  await page.getByRole('button', { name: /种茶/ }).click()
-  await expect(page.getByRole('heading', { name: '种下一棵茶' })).toBeVisible()
-  // 地区茶种列表非空（西湖龙井为首选）
-  await expect(page.getByText('西湖龙井', { exact: true })).toBeVisible()
-  await page.getByRole('button', { name: '种下' }).click()
-  // 底部出现该茶卡片
-  await expect(page.getByText('已种 1 棵 · 0 棵可采')).toBeVisible({ timeout: 20_000 })
+  // ============ 3. 养成入口已移除（降级纯观赏） ============
+  await expect(page.getByRole('button', { name: /种茶/ })).toHaveCount(0)
+  await expect(page.locator('.plant-card')).toHaveCount(0)
 
-  // ============ 4. 植物详情 → 浇水 ============
-  await page.locator('.plant-card').first().click()
-  await expect(page.getByRole('button', { name: /浇水/ })).toBeVisible()
-  // 湿度 100%（刚种下）
-  await expect(page.getByText('100%', { exact: true }).first()).toBeVisible()
-  await page.getByRole('button', { name: /浇水/ }).click()
-  // 浇水后详情关闭、底部卡片仍在
-  await expect(page.locator('.plant-card').first()).toBeVisible()
+  // ============ 4. 天气切换（晴天 ↔ 雨天） ============
+  const rainBtn = page.locator('.ambient-btn-3d[title="切换到雨天"]')
+  await expect(rainBtn).toBeVisible()
+  await rainBtn.click()
+  await expect(page.locator('.ambient-btn-3d[title="切换到晴天"]')).toBeVisible()
 
   // ============ 5. 返回地区选择 ============
   await page.getByRole('button', { name: /茶园/ }).click()

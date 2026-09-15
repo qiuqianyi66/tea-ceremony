@@ -15,7 +15,6 @@ from app.models.culture import (
 from app.models.ware import TeaWareV2
 from app.models.user import UserV2, TeaJourney
 from app.models.record import TastingRecordV2
-from app.models.garden import GardenPlant, WaterSource
 from app.models.knowledge import CultureDocument
 
 # 向后兼容别名（老代码用 User/TastingRecord/TeaWare，新代码优先用 V2 真名）
