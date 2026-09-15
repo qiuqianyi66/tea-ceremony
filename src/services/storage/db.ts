@@ -5,6 +5,7 @@
 import Dexie from 'dexie'
 import type { TastingRecord } from '@/types/tasting'
 import type { Achievement } from '@/types/tasting'
+import type { TrackEvent } from '@/types/tracking'
 
 // ============ 数据库定义 ============
 
@@ -14,6 +15,7 @@ class TeaCeremonyDB extends Dexie {
   settings!: Dexie.Table<{ key: string; value: unknown; migratedAt?: string }, string>
   userXp!: Dexie.Table<{ key: string; value: number }, string>
   collectedWare!: Dexie.Table<{ id: string; unlockedAt: string }, string>
+  trackingEvents!: Dexie.Table<TrackEvent, number>
 
   constructor() {
     super('teaCeremonyDB')
@@ -62,6 +64,16 @@ class TeaCeremonyDB extends Dexie {
       userXp: '++id, key',
       collectedWare: '++id, id, unlockedAt',
           })
+
+    // 版本 5：行为埋点（T2.2）——纯本地事件日志，只存结构化行为，不存用户输入
+    this.version(5).stores({
+      tastings: '++id, teaId, date, overallScore, [teaId+date], brewTemp, steepTime',
+      achievements: '++id, id, unlocked',
+      settings: '++id, key',
+      userXp: '++id, key',
+      collectedWare: '++id, id, unlockedAt',
+      trackingEvents: '++id, category, event, ts',
+    })
   }
 }
 

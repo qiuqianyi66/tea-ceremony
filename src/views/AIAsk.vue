@@ -1,9 +1,15 @@
 <script setup lang="ts">
-import { ref, nextTick } from 'vue'
+import { ref, nextTick, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { askTeaMaster } from '@/services/teaAI'
+import { track } from '@/services/tracking'
 
 const router = useRouter()
+
+onMounted(() => {
+  // 埋点：页面打开（茶灵使用信号，供 T2.4 去留决策）
+  void track({ category: 'ai', event: 'ai_page_open', label: 'page_open' })
+})
 
 interface ChatMsg { role: 'user' | 'ai'; content: string }
 const messages = ref<ChatMsg[]>([])

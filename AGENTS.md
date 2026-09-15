@@ -524,6 +524,8 @@ docker compose down
 
 * 2026-09-15 图谱并入茶详情（T4.5，方案 b）：TeaDetailView 新增「文化关联」区块（工艺/推荐茶器/相关茶人，数据源同 TeaGraph）；茶器判定与图谱页共用 teaProcesses.getRecommendedTeaware（TeaGraph 删除本地 getTeaWare）；移除 /graph 导航入口（首页 navItems + entry-card、茶室「探索茶文化」），保留路由与页面（URL 直达无死链）。
 
+* 2026-09-15 埋点落地 T2.2（茶灵去留数据源）：新增 src/services/tracking.ts + IndexedDB v5 trackingEvents 表（纯本地、无网络外发、只存结构化事件不存用户输入、2000 条封顶裁剪最旧、白名单校验、track 永不 reject）；teaAI 三出口（askTeaMaster/recommendTea/generateTastingNote）按 success/degraded 埋点 + AIAsk 页面打开事件；tracking.spec 8 例（含 fetch spy 断言无外发）+ perf 2 例（2000 条汇总 5.8ms）+ e2e 埋点断言（route abort → ai_ask:degraded 落库）；ADR-006 记录本地埋点决策。
+
 * 2026-09-15 四维甄别落地 T4.1（3D 茶园降级纯观赏）：删后端 garden 域（router/service/schema/model，PG 表保留无迁移）+ 前端养成链路（stores/garden.ts、services/api/garden.ts、PlantDialog/PlantDetailDialog、IndexedDB gardenPlants 表、登录/上线 syncPendingGarden 同步）；services/garden.ts 只留生长计算纯函数（TeaGardenSceneInner 死代码依赖 getGrowthStage，types/garden.ts 全保留）；GardenView 重写纯观赏（:plants="[]" 恒空，天气/音效/茶亭保留），入口文案「我的茶园/种茶养茶」改「3D 茶园/赏四时之景」；e2e garden 重写 2 例（无养成入口 + 茶亭叙事）、garden 单测改纯函数 6 例；验证全绿（114 单测/31 pytest/四园截图 ERRORS:[]）。
 
 * 2026-09-15 环境教训：PowerShell 脚本往 .vue 写含 JS 模板字符串的代码（如 `/tea/${id}`）时，双引号字符串会做 `$` 插值破坏代码——改用单引号 here-string（@'...'@）或 Edit 工具，且动手前先探测行尾（HomeView 是 LF、TeaRoom/MapView/TeaDetailView 是 CRLF，混合存在）。vite preview 可能绑定 IPv6 ::1，`node scripts/smoke.mjs http://localhost:4173`（默认 127.0.0.1 会全部 fetch failed）。

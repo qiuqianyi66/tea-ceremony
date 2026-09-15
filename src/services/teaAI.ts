@@ -8,6 +8,7 @@ import type { TasteDimensions, TastingRecord } from '@/types/tasting'
 import { teas } from '@/data/teas'
 import { teawares } from '@/data/teawares'
 import { getCurrentSolarTerm } from '@/data/solarTerms'
+import { track } from '@/services/tracking'
 
 // ============ LLM 调用 ============
 
@@ -127,9 +128,13 @@ export async function recommendTea(input: RecommendInput): Promise<{ tea: Tea; r
     if (match) {
       const teaName = match[1]!.trim()
       const found = teas.find(t => teaName.includes(t.name) || t.name.includes(teaName))
-      if (found) return { tea: found, reason: llmResult.replace(/推荐茶品[：:].+?\n/, '').trim() }
+      if (found) {
+        void track({ category: 'ai', event: 'ai_recommend', label: 'recommend', result: 'success' })
+        return { tea: found, reason: llmResult.replace(/推荐茶品[：:].+?\n/, '').trim() }
+      }
     }
   }
+  void track({ category: 'ai', event: 'ai_recommend', label: 'recommend', result: 'degraded' })
   return ruleBasedRecommend(input)
 }
 
@@ -218,7 +223,12 @@ export async function generateTastingNote(
 综合评分：${score}/10
 请写一段品茶记。`
   const llmResult = await callLLM(TASTING_SYSTEM_PROMPT, userPrompt)
-  return llmResult || ruleBasedNote(teaName, dimensions, score)
+  if (llmResult) {
+    void track({ category: 'ai', event: 'ai_tasting_note', label: 'tasting_note', result: 'success' })
+    return llmResult
+  }
+  void track({ category: 'ai', event: 'ai_tasting_note', label: 'tasting_note', result: 'degraded' })
+  return ruleBasedNote(teaName, dimensions, score)
 }
 
 // ============ 工具函数 ============
@@ -361,10 +371,19 @@ export async function askTeaMaster(question: string, history: ChatMessage[] = []
     })
     lastCallTime = Date.now()
 
-    if (!res.ok) return ruleBasedReply(question)
+    if (!res.ok) {
+      void track({ category: 'ai', event: 'ai_ask', label: 'ask', result: 'degraded' })
+      return ruleBasedReply(question)
+    }
     const data = await res.json()
-    return data.content || ruleBasedReply(question)
+    if (!data.content) {
+      void track({ category: 'ai', event: 'ai_ask', label: 'ask', result: 'degraded' })
+      return ruleBasedReply(question)
+    }
+    void track({ category: 'ai', event: 'ai_ask', label: 'ask', result: 'success' })
+    return data.content
   } catch {
+    void track({ category: 'ai', event: 'ai_ask', label: 'ask', result: 'degraded' })
     return ruleBasedReply(question)
   }
 }

@@ -62,3 +62,34 @@ test('AIAsk：关闭按钮返回首页', async ({ page }) => {
   await page.getByRole('button', { name: '关闭茶灵' }).click()
   await expect(page).toHaveURL(/\/$/)
 })
+
+test('AIAsk：提问后本地埋点写入 ai_ask 事件（route abort → 降级）', async ({ page }) => {
+  await page.goto('ai')
+  await page.getByPlaceholder('问茶灵一个问题...').fill('西湖龙井怎么泡')
+  await page.getByRole('button', { name: '发送' }).click()
+  // 规则降级回复出现（route abort → fetch 失败 → ruleBasedReply）
+  await expect(page.locator('.ai-ai-bubble').last()).toContainText('西湖龙井', { timeout: 15_000 })
+
+  // 等待埋点落库后读取 IndexedDB trackingEvents
+  await page.waitForTimeout(500)
+  const events = await page.evaluate(async () => {
+    return new Promise<Array<{ event: string; result?: string }>>((resolve, reject) => {
+      const req = indexedDB.open('teaCeremonyDB')
+      req.onsuccess = () => {
+        const conn = req.result
+        const tx = conn.transaction('trackingEvents', 'readonly')
+        const all = tx.objectStore('trackingEvents').getAll()
+        all.onsuccess = () => resolve(all.result)
+        all.onerror = () => reject(all.error)
+      }
+      req.onerror = () => reject(req.error)
+    })
+  })
+
+  const askEvents = events.filter(e => e.event === 'ai_ask')
+  expect(askEvents.length).toBeGreaterThan(0)
+  // 本用例 mock 了 AI 接口不可达 → 走规则降级
+  expect(askEvents[0].result).toBe('degraded')
+  // 页面打开事件也已记录（茶灵使用信号）
+  expect(events.some(e => e.event === 'ai_page_open')).toBe(true)
+})
