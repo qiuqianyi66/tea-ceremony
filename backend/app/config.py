@@ -27,11 +27,11 @@ REDIS_URL = os.environ.get("REDIS_URL", "")
 SENTRY_DSN = os.environ.get("SENTRY_DSN", "")
 SENTRY_TRACES_SAMPLE_RATE = float(os.environ.get("SENTRY_TRACES_SAMPLE_RATE", "1.0"))
 
-# AI 代理（OpenRouter，OpenAI 兼容）
-# - 注册 key（免费，每天约 50 次免费模型调用）后填入 .env 的 AI_PROXY_KEY
-# - 默认模型：免费池中实测中文稳定的模型；免费档会动态变化，可在 .env 改 AI_PROXY_MODEL
+# AI 代理（DeepSeek 官方 API，OpenAI 兼容；浏览器不直连，统一经后端转发）
+# - 在 https://platform.deepseek.com 申请 key 后填入 .env 的 AI_PROXY_KEY
+# - 模型名：deepseek-flash（官方当前默认；旧名 deepseek-v4-flash 已退役，由 V4.1-Flash 服务）
 # - 未配置 key 时后端返回 401/502，前端自动降级到规则引擎（离线兜底不受影响）
-AI_PROXY_URL = os.environ.get("AI_PROXY_URL", "https://openrouter.ai/api/v1/chat/completions")
-AI_PROXY_MODEL = os.environ.get("AI_PROXY_MODEL", "inclusionai/ling-3.0-flash-sante:free")
+AI_PROXY_URL = os.environ.get("AI_PROXY_URL", "https://api.deepseek.com/chat/completions")
+AI_PROXY_MODEL = os.environ.get("AI_PROXY_MODEL", "deepseek-flash")
 AI_PROXY_KEY = os.environ.get("AI_PROXY_KEY", "")
 AI_PROXY_TIMEOUT = int(os.environ.get("AI_PROXY_TIMEOUT", "30"))

@@ -524,6 +524,8 @@ docker compose down
 
 * 2026-09-15 图谱并入茶详情（T4.5，方案 b）：TeaDetailView 新增「文化关联」区块（工艺/推荐茶器/相关茶人，数据源同 TeaGraph）；茶器判定与图谱页共用 teaProcesses.getRecommendedTeaware（TeaGraph 删除本地 getTeaWare）；移除 /graph 导航入口（首页 navItems + entry-card、茶室「探索茶文化」），保留路由与页面（URL 直达无死链）。
 
+* 2026-09-15 AI 代理切换 DeepSeek 官方 API：.env 配 AI_PROXY_URL=https://api.deepseek.com/chat/completions + AI_PROXY_MODEL=deepseek-flash + AI_PROXY_KEY（.env 已 gitignore 不入库）；config.py 与 .env.example 默认值同步改（OpenRouter → DeepSeek，旧名 deepseek-v4-flash 已退役由 V4.1-Flash 服务）；实测 HTTP 200；未配 key 时前端规则引擎兜底不变；.env 操作规则：读值不回显、写键用 PowerShell 整行正则替换。
+
 * 2026-09-15 埋点落地 T2.2（茶灵去留数据源）：新增 src/services/tracking.ts + IndexedDB v5 trackingEvents 表（纯本地、无网络外发、只存结构化事件不存用户输入、2000 条封顶裁剪最旧、白名单校验、track 永不 reject）；teaAI 三出口（askTeaMaster/recommendTea/generateTastingNote）按 success/degraded 埋点 + AIAsk 页面打开事件；tracking.spec 8 例（含 fetch spy 断言无外发）+ perf 2 例（2000 条汇总 5.8ms）+ e2e 埋点断言（route abort → ai_ask:degraded 落库）；ADR-006 记录本地埋点决策。
 
 * 2026-09-15 四维甄别落地 T4.1（3D 茶园降级纯观赏）：删后端 garden 域（router/service/schema/model，PG 表保留无迁移）+ 前端养成链路（stores/garden.ts、services/api/garden.ts、PlantDialog/PlantDetailDialog、IndexedDB gardenPlants 表、登录/上线 syncPendingGarden 同步）；services/garden.ts 只留生长计算纯函数（TeaGardenSceneInner 死代码依赖 getGrowthStage，types/garden.ts 全保留）；GardenView 重写纯观赏（:plants="[]" 恒空，天气/音效/茶亭保留），入口文案「我的茶园/种茶养茶」改「3D 茶园/赏四时之景」；e2e garden 重写 2 例（无养成入口 + 茶亭叙事）、garden 单测改纯函数 6 例；验证全绿（114 单测/31 pytest/四园截图 ERRORS:[]）。
