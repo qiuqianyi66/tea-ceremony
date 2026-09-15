@@ -520,4 +520,10 @@ docker compose down
 
 * 2026-09-14 明式茶室磬声（T3.2）：useAudio 新增 synthQing（Web Audio 合成磬/钵音：基频 + 非谐波泛音 + 敲击瞬态，长衰减，无 AC 环境静默降级），明式茶室入席（迎宾引导「进入茶席」）敲一声磬。
 
+* 2026-09-15 产区地图链路（T4.4）：MapView 名茶卡片按 name 精确匹配 teas 库（40 款匹配 23 款），匹配到的整卡可点跳 `/tea/:id`，未收录（普洱茶/都匀毛尖等 17 款）不跳转不编造；新增 tea-regions.findTeaByName + 4 例映射回归测试（名称唯一性/防数据漂移）。
+
+* 2026-09-15 图谱并入茶详情（T4.5，方案 b）：TeaDetailView 新增「文化关联」区块（工艺/推荐茶器/相关茶人，数据源同 TeaGraph）；茶器判定与图谱页共用 teaProcesses.getRecommendedTeaware（TeaGraph 删除本地 getTeaWare）；移除 /graph 导航入口（首页 navItems + entry-card、茶室「探索茶文化」），保留路由与页面（URL 直达无死链）。
+
+* 2026-09-15 环境教训：PowerShell 脚本往 .vue 写含 JS 模板字符串的代码（如 `/tea/${id}`）时，双引号字符串会做 `$` 插值破坏代码——改用单引号 here-string（@'...'@）或 Edit 工具，且动手前先探测行尾（HomeView 是 LF、TeaRoom/MapView/TeaDetailView 是 CRLF，混合存在）。vite preview 可能绑定 IPv6 ::1，`node scripts/smoke.mjs http://localhost:4173`（默认 127.0.0.1 会全部 fetch failed）。
+
 *本文件是活文档，项目架构或流程变更时同步更新。*

@@ -97,3 +97,10 @@ export const TEA_PROCESSES: TeaProcess[] = [
 export function getProcessByTeaType(teaType: string): TeaProcess | undefined {
   return TEA_PROCESSES.find(p => p.teaType === teaType)
 }
+
+/** 推荐茶器：按茶类给主流冲泡器（绿茶/白茶→盖碗，黑茶/红茶→紫砂壶，其余→盖碗） */
+export function getRecommendedTeaware(teaType: string): string {
+  if (teaType === '绿茶' || teaType === '白茶') return '盖碗'
+  if (teaType === '黑茶' || teaType === '红茶') return '紫砂壶'
+  return '盖碗'
+}

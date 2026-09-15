@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { teas } from '@/data/teas'
 import { getTeaMastersForTea } from '@/data/teaMasters'
 import { TEA_REGIONS } from '@/data/tea-mountain-regions'
-import { getProcessByTeaType } from '@/data/teaProcesses'
+import { getProcessByTeaType, getRecommendedTeaware } from '@/data/teaProcesses'
 import type { Tea } from '@/types/tea'
 import type { TeaRegion } from '@/data/tea-mountain-regions'
 
@@ -42,7 +42,7 @@ const nodes = computed(() => {
   else i++
 
   // 茶器
-  result.push({ id: 'ware', label: getTeaWare(t), type: 'ware', x: centerX + radius * Math.cos(angleStep * i), y: centerY + radius * Math.sin(angleStep * i++) })
+  result.push({ id: 'ware', label: getRecommendedTeaware(t.type), type: 'ware', x: centerX + radius * Math.cos(angleStep * i), y: centerY + radius * Math.sin(angleStep * i++) })
 
   return result
 })
@@ -59,12 +59,6 @@ function getRegionByTea(t: Tea): TeaRegion | undefined {
     if (r.famousFor?.includes(t.name)) return r
   }
   return undefined
-}
-
-function getTeaWare(t: Tea): string {
-  if (t.type === '绿茶' || t.type === '白茶') return '盖碗'
-  if (t.type === '黑茶' || t.type === '红茶') return '紫砂壶'
-  return '盖碗'
 }
 
 function selectTea(tea: Tea) {
@@ -146,7 +140,7 @@ function selectTea(tea: Tea) {
         </div>
         <div class="flex justify-between py-1 border-b border-[var(--color-paper)]">
           <span class="text-[var(--color-wood-light)]">推荐茶器</span>
-          <span class="text-[var(--color-wood)]">{{ getTeaWare(selectedTea) }}</span>
+          <span class="text-[var(--color-wood)]">{{ getRecommendedTeaware(selectedTea.type) }}</span>
         </div>
         <div class="py-1">
           <span class="text-[var(--color-wood-light)]">相关茶人</span>

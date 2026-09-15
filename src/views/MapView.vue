@@ -6,11 +6,20 @@ import { TooltipComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import type { ECharts, EChartsOption } from 'echarts'
 import chinaMapUrl from '@/data/china-map.json?url'
-import { teaRegions, getTeaRegion, type TeaRegion } from '@/data/tea-regions'
+import { teaRegions, getTeaRegion, findTeaByName, type TeaRegion } from '@/data/tea-regions'
+import { useRouter } from 'vue-router'
 import { TEA_REGIONS, type TeaRegion as MountainRegion } from '@/data/tea-mountain-regions'
 
 // ==================== ECharts 地图 ====================
 echarts.use([MapChart, TooltipComponent, CanvasRenderer])
+
+const router = useRouter()
+
+/** 产区名茶 → 茶详情（T4.4：未收录的不跳转，不编造映射） */
+function goTeaByName(name: string): void {
+  const tea = findTeaByName(name)
+  if (tea) void router.push(`/tea/${tea.id}`)
+}
 
 const mapContainer = ref<HTMLDivElement | null>(null)
 const chartInstance = shallowRef<ECharts | null>(null)
@@ -235,7 +244,9 @@ const categoryColors: Record<string, string> = {
             <p class="text-xs text-[var(--color-wood-light)] mb-2"><IconLeaf :size="13" class="inline-block mr-1 -mt-0.5" />代表名茶（{{ selectedRegion.famousTeas.length }}）</p>
             <div class="space-y-2">
               <div v-for="tea in selectedRegion.famousTeas" :key="tea.name"
-                class="bg-[var(--color-paper)] rounded-lg p-3">
+                :class="findTeaByName(tea.name) ? 'cursor-pointer hover:shadow-md transition-all' : ''"
+                class="bg-[var(--color-paper)] rounded-lg p-3"
+                @click="goTeaByName(tea.name)">
                 <div class="flex items-center justify-between mb-1">
                   <span class="font-bold text-sm text-[var(--color-wood)]">{{ tea.name }}</span>
                   <span class="text-[10px] px-2 py-0.5 rounded-full text-white"
@@ -245,6 +256,7 @@ const categoryColors: Record<string, string> = {
                 </div>
                 <p class="text-[11px] text-[var(--color-wood-light)] mb-1"><IconMapPin :size="12" class="inline-block mr-1 -mt-0.5" />{{ tea.origin }}</p>
                 <p class="text-xs text-[var(--color-wood)]/80 leading-relaxed">{{ tea.description }}</p>
+                <p v-if="findTeaByName(tea.name)" class="mt-2 text-xs text-[var(--color-tea-gold)]">查看详情 →</p>
               </div>
             </div>
           </div>

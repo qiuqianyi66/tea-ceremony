@@ -7,6 +7,14 @@
 /** 六大茶类 + 再加工茶 */
 export type TeaCategory = '绿茶' | '白茶' | '黄茶' | '乌龙茶' | '红茶' | '黑茶' | '再加工茶'
 
+import { teas } from './teas'
+import type { Tea } from '@/types/tea'
+
+/** 按名称精确匹配茶库（产区名茶 → 茶详情跳转；未收录返回 undefined，不编造映射） */
+export function findTeaByName(name: string): Tea | undefined {
+  return teas.find((t) => t.name === name)
+}
+
 /** 四大茶区 */
 export type TeaZone = '华南茶区' | '西南茶区' | '江南茶区' | '江北茶区'
 

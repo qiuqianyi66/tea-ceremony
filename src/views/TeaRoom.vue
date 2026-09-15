@@ -187,8 +187,7 @@ function startBrew() {
       <!-- 快速入口 -->
       <div class="flex gap-3 text-xs text-[var(--color-wood-light)]">
         <button @click="startBrew" class="hover:text-[var(--color-wood)]">直接选茶 →</button>
-        <button @click="router.push('/graph')" class="hover:text-[var(--color-wood)]">探索茶文化</button>
-      </div>
+        </div>
     </div>
   </div>
 </template>

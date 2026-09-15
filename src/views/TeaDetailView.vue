@@ -12,6 +12,8 @@ import { getTeaById } from '@/data/teas'
 import { getSimilarTeas } from '@/services/teaRecommend'
 import { encodeTeaShare, buildTeaShareUrl } from '@/services/share'
 import { gardenRegions } from '@/data/gardenRegions'
+import { getTeaMastersForTea } from '@/data/teaMasters'
+import { getProcessByTeaType, getRecommendedTeaware } from '@/data/teaProcesses'
 import type { Tea } from '@/types/tea'
 
 const route = useRoute()
@@ -25,6 +27,16 @@ const region = computed(() =>
 )
 
 const similarTeas = computed(() => (tea.value ? getSimilarTeas(tea.value.id) : []))
+
+/** 文化关联（T4.5：图谱内容并入详情——工艺/茶器/茶人；无数据不编造） */
+const culturalLinks = computed(() => {
+  if (!tea.value) return null
+  return {
+    masters: getTeaMastersForTea(tea.value.id),
+    process: getProcessByTeaType(tea.value.type)?.name.replace('制作工艺', '') ?? null,
+    teaware: getRecommendedTeaware(tea.value.type),
+  }
+})
 
 // 茶图加载失败记录：Hero 降级为纯渐变、相似茶卡降级为渐变色块
 const imgFailed = reactive<Record<string, boolean>>({})
@@ -152,6 +164,32 @@ function shareTea() {
         </div>
       </section>
 
+      <!-- 文化关联（T4.5：图谱内容并入详情——工艺/茶器/茶人） -->
+      <section v-if="culturalLinks" class="mt-6">
+        <h2 class="mb-3 text-lg font-bold text-[var(--color-wood)]"><IconBookOpen class="inline-block -mt-1 w-5 h-5" /> 文化关联</h2>
+        <div class="glass-panel rounded-2xl p-5">
+          <div class="space-y-3 text-sm">
+            <div class="flex items-start justify-between gap-4 py-1 border-b border-[var(--color-paper)]">
+              <span class="text-[var(--color-wood-light)] shrink-0">制茶工艺</span>
+              <span class="text-[var(--color-wood)] text-right">{{ culturalLinks.process || '—' }}</span>
+            </div>
+            <div class="flex items-start justify-between gap-4 py-1 border-b border-[var(--color-paper)]">
+              <span class="text-[var(--color-wood-light)] shrink-0">推荐茶器</span>
+              <span class="text-[var(--color-wood)]">{{ culturalLinks.teaware }}</span>
+            </div>
+            <div class="py-1">
+              <span class="text-[var(--color-wood-light)]">相关茶人</span>
+              <div class="mt-1.5 flex flex-wrap gap-1.5">
+                <span v-for="m in culturalLinks.masters" :key="m.id"
+                  class="px-2.5 py-1 text-xs bg-[var(--color-paper)] text-[var(--color-wood)] rounded-full">
+                  {{ m.name }}（{{ m.dynasty }}）
+                </span>
+                <span v-if="culturalLinks.masters.length === 0" class="text-xs text-[var(--color-wood-light)]">暂无史料记载</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
       <!-- 相似茶推荐 -->
       <section v-if="similarTeas.length > 0" class="mt-6">
         <h2 class="mb-3 text-lg font-bold text-[var(--color-wood)]"><IconShare2 class="inline-block -mt-1 w-5 h-5" /> 同类好茶</h2>

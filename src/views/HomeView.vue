@@ -51,7 +51,6 @@ function nextMaster() { todayMaster.value = pickRandom(TEA_MASTERS) }
 interface NavItem { icon: string; label: string; desc: string; path: string }
 const navItems: NavItem[] = [
   { icon: 'Map', label: '茶产区地图', desc: '遍览 19 省名茶', path: '/map' },
-  { icon: 'Share2', label: '茶文化图谱', desc: '茶与人 · 茶与诗', path: '/graph' },
   { icon: 'CupSoda', label: '选茶入席', desc: '挑一款今日之茶', path: '/select' },
   { icon: 'Heart', label: '茶修成长', desc: '品茶进阶之路', path: '/profile' },
   { icon: 'BookOpen', label: '我的茶柜', desc: '收藏与品鉴记录', path: '/collection' },
@@ -182,11 +181,6 @@ onUnmounted(() => observer?.disconnect())
       </section>
 
       <section class="entry-grid entry-grid-3">
-        <button class="entry-card" @click="go('/graph')">
-          <IconShare2 class="entry-icon" />
-          <span class="entry-label">茶文化图谱</span>
-          <span class="entry-desc">茶与人 · 茶与诗 · 茶与器</span>
-        </button>
         <button class="entry-card" @click="go('/garden')">
           <IconSprout class="entry-icon" />
           <span class="entry-label">我的茶园</span>
