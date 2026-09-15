@@ -31,7 +31,11 @@ function daysAgo(days: number): string {
 
 describe('garden 生长计算（纯函数）', () => {
   it('getPlantDays：按真实时间计算种植天数，非负', () => {
-    expect(getPlantDays(makePlant())).toBe(0)
+    // makePlant 与 getPlantDays 各取一次 Date.now()，跨毫秒时差会让 toBe(0) 偶发失败，
+    // 改断言"当天内、接近 0"（0.01 天 ≈ 14 分钟，两次调用不可能差这么久）
+    const fresh = getPlantDays(makePlant())
+    expect(fresh).toBeGreaterThanOrEqual(0)
+    expect(fresh).toBeLessThan(0.01)
     expect(getPlantDays(makePlant({ plantedAt: daysAgo(3.5) }))).toBeGreaterThan(3)
     expect(getPlantDays(makePlant({ plantedAt: daysAgo(3.5) }))).toBeLessThan(4)
   })

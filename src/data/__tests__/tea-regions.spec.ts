@@ -13,8 +13,13 @@ describe('findTeaByName（T4.4 产区名茶 → 茶详情）', () => {
   })
 
   it('未收录茶名返回 undefined（不编造映射）', () => {
-    expect(findTeaByName('普洱茶')).toBeUndefined()
     expect(findTeaByName('不存在的茶')).toBeUndefined()
+  })
+
+  it('全部产区名茶均已收录到茶库（40/40 可跳转）', () => {
+    const all = teaRegions.flatMap((r) => r.famousTeas)
+    const unmatched = all.filter((f) => !findTeaByName(f.name))
+    expect(unmatched).toEqual([])
   })
 
   it('全部产区名茶中能被匹配的，在茶库中名称唯一（跳转目标无歧义）', () => {
