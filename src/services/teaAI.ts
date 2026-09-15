@@ -15,15 +15,7 @@ import { track } from '@/services/tracking'
 // 统一走后端 AI 代理（浏览器不直连第三方服务）；后端不可用时降级到规则引擎。
 const API_BASE = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
 
-let lastCallTime = 0
-const MIN_INTERVAL = 15000  // 15秒间隔（免费版限制）
-
 async function callLLM(systemPrompt: string, userPrompt: string): Promise<string | null> {
-  const now = Date.now()
-  const wait = MIN_INTERVAL - (now - lastCallTime)
-  if (wait > 0) await new Promise(r => setTimeout(r, wait))
-  lastCallTime = Date.now()
-
   try {
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 8000)
@@ -359,17 +351,12 @@ export async function askTeaMaster(question: string, history: ChatMessage[] = []
   ]
 
   try {
-    const now = Date.now()
-    const wait = Math.max(0, 15000 - (now - lastCallTime))
-    if (wait > 0) await new Promise(r => setTimeout(r, wait))
-
     const res = await fetch(`${API_BASE}/ai/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: AbortSignal.timeout(8000),
       body: JSON.stringify({ messages }),
     })
-    lastCallTime = Date.now()
 
     if (!res.ok) {
       void track({ category: 'ai', event: 'ai_ask', label: 'ask', result: 'degraded' })
