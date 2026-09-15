@@ -56,15 +56,6 @@ class TeaCeremonyDB extends Dexie {
       collectedWare: '++id, id, unlockedAt',
     })
 
-    // 版本 4：茶园系统——种植的茶树
-    this.version(4).stores({
-      tastings: '++id, teaId, date, overallScore, [teaId+date], brewTemp, steepTime',
-      achievements: '++id, id, unlocked',
-      settings: '++id, key',
-      userXp: '++id, key',
-      collectedWare: '++id, id, unlockedAt',
-          })
-
     // 版本 5：行为埋点（T2.2）——纯本地事件日志，只存结构化行为，不存用户输入
     this.version(5).stores({
       tastings: '++id, teaId, date, overallScore, [teaId+date], brewTemp, steepTime',

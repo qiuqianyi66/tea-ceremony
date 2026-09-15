@@ -10,8 +10,10 @@ import { test, expect } from '@playwright/test'
 
 // 规则降级路径测试：显式拦截 /api/ai/* 模拟「后端不可达」，
 // 不依赖本机/CI 是否真实运行后端——后端在跑时真实 LLM 回复无法确定性断言。
+// /api/culture/* 一并拦截：fetchRAGContext 的 RAG 检索在后端未起时会打 proxy error 噪音。
 test.beforeEach(async ({ page }) => {
   await page.route('**/api/ai/*', route => route.abort())
+  await page.route('**/api/culture/*', route => route.abort())
 })
 
 test('AIAsk：空输入时发送按钮禁用', async ({ page }) => {
