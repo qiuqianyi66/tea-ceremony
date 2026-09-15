@@ -532,4 +532,6 @@ docker compose down
 
 * 2026-09-15 环境教训：PowerShell 脚本往 .vue 写含 JS 模板字符串的代码（如 `/tea/${id}`）时，双引号字符串会做 `$` 插值破坏代码——改用单引号 here-string（@'...'@）或 Edit 工具，且动手前先探测行尾（HomeView 是 LF、TeaRoom/MapView/TeaDetailView 是 CRLF，混合存在）。vite preview 可能绑定 IPv6 ::1，`node scripts/smoke.mjs http://localhost:4173`（默认 127.0.0.1 会全部 fetch failed）。
 
+* 2026-09-15 git commit 教训：PowerShell 双引号包 commit message 时，message 内含中文单引号（如「'普洱茶'」）会被 shell 截断成 pathspec 报错，feat commit 静默失败、已 staged 文件并入下一个 commit——commit message 一律避免引号，或用单引号 here-string @'...'@ 传参。
+
 *本文件是活文档，项目架构或流程变更时同步更新。*
