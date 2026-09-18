@@ -140,8 +140,7 @@ TEST_DATABASE_URL=postgresql://... python -m pytest tests/test_migrations.py -q 
 
 ## 后续路线图
 
-- 增加真实茶汤与茶器图片，补充项目演示短视频
-- 品鉴记录可视化数据看板（个人成长曲线）
+- 增加真实茶汤与茶器图片（茶叶图已落地 21 张 Pexels 可商用素材，仍有部分茶复用通用占位图），补充项目演示短视频
 - 生产环境接入 Redis 分布式限流与外部错误追踪（Sentry）
 
 ## 素材致谢

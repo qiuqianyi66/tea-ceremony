@@ -64,6 +64,10 @@ describe('toShareData', () => {
     expect(share.weather).toBe('晴')
     expect(share.mood).toBe('安静')
   })
+
+  it('写入分享格式版本 version: 1（防未来 schema 变更旧链接被误读）', () => {
+    expect(toShareData(makeRecord()).version).toBe(1)
+  })
 })
 
 describe('encodeShareData / decodeShareData 往返', () => {
@@ -138,6 +142,21 @@ describe('decodeShareData 防御非法输入', () => {
       processFactor: 0.9,
     })).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
     expect(decodeShareData(wrongType)).toBeNull()
+  })
+
+  it('未知版本（version !== 1）拒绝，防未来 schema 变更旧链接被误读', () => {
+    const v2 = { ...toShareData(makeRecord()), version: 2 }
+    expect(decodeShareData(encodeShareData(v2))).toBeNull()
+    const bad = { ...toShareData(makeRecord()), version: '1' }
+    expect(decodeShareData(encodeShareData(bad as unknown as TastingCardShareData))).toBeNull()
+  })
+
+  it('旧链接（无 version 字段）仍兼容解码', () => {
+    const legacy = toShareData(makeRecord())
+    delete (legacy as { version?: number }).version
+    const decoded = decodeShareData(encodeShareData(legacy))
+    expect(decoded).not.toBeNull()
+    expect(decoded?.version).toBeUndefined()
   })
 })
 

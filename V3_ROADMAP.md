@@ -23,16 +23,16 @@
 | PWA | vite-plugin-pwa | 离线优先，静态资源注意缓存策略 |
 | 后端 | FastAPI + SQLAlchemy 2.0 + Alembic + PostgreSQL + Pydantic v2 | 入口 `backend/main.py`，路由在 `backend/app/routers/` |
 | 部署 | Docker Compose + Nginx + GitHub Pages Demo | `docker-compose.yml`、`nginx.conf` |
-| 测试 | Vitest（67 用例）+ fake-indexeddb + Playwright + pytest + Alembic 迁移测试 | CI 7 job 合并门禁 |
+| 测试 | Vitest（125 用例）+ fake-indexeddb + Playwright + pytest + Alembic 迁移测试 | CI 7 job 合并门禁 |
 
-### 1.2 已完成功能盘点（来源：src/views 19 个视图、src/components/three 15 个组件、git log）
+### 1.2 已完成功能盘点（来源：src/views 28 个视图、src/components/three 15 个组件、git log）
 
 按业务闭环组织：入席 → 选茶 → 备器 → 煮水 → 冲泡 → 品鉴记录 → 个人成长。
 
 | 环节 | 落点 | 现状 |
 |---|---|---|
 | 入席 | HomeView | 茶山雾景 Hero 视频（Pexels 38238683，远程加载，离线降级静态图）+ 入席入口 |
-| 选茶 | SelectView + TeaDetailView | 49 款茶（src/data/teas.ts），含详情页 |
+| 选茶 | SelectView + TeaDetailView | 66 款茶（src/data/teas.ts，T4.4 补全 17 款产区名茶），含详情页 |
 | 备器 | ToolSelect + CollectionView | 6 款茶器（src/data/teawares.ts），解锁与收藏 |
 | 煮水/冲泡 | BrewView + 3D 冲泡场景 | TeaBrewScene3D / TeaBrewSceneInner 已上线，tsparticles 冲泡粒子 |
 | 品鉴 | TasteView + TeaSynesthesiaView | 八维口感评分 × 冲泡工艺系数；茶通感（六境）视图 |
@@ -55,7 +55,7 @@
 
 | 文件 | 数量 | 说明 |
 |---|---|---|
-| teas.ts | 49 款 | 六大茶类 |
+| teas.ts | 66 款 | 六大茶类 |
 | teawares.ts | 6 款 | 茶器 |
 | teaMasters.ts | 21 位 | 茶人（乾隆重复记录已合并，2026-09-10） |
 | gardenRegions.ts | 4 产区 | hangzhou / wuyishan / yunnan / fuding |
@@ -74,7 +74,7 @@
 | 四 | AI 代理 | 完成 |
 | 五 | GitHub 专业度 | 完成 |
 | 六 | 简历 | 暂缓（用户明确不做，见 7.4） |
-| — | 视觉升级（3D 茶席 / 泡茶动画 / 产区地图 / 晨雾茶山） | 推进中，收尾见 7.1 P0 |
+| — | 视觉升级（3D 茶席 / 泡茶动画 / 产区地图 / 晨雾茶山） | 已完成（P0-1 截图审计全过；T4.4 产区链路 40/40） |
 
 ---
 
@@ -90,7 +90,7 @@
 | 环节 | 落点 | 状态 |
 |---|---|---|
 | 入境 | HomeView（Hero 茶山雾景） | 已实现 |
-| 识茶 | SelectView + TeaDetailView（49 茶） | 已实现 |
+| 识茶 | SelectView + TeaDetailView（66 茶） | 已实现 |
 | 备器 | ToolSelect（6 器） | 已实现 |
 | 烹水 | BrewView（水温/水类型） | 已实现 |
 | 冲泡 | BrewView + TeaBrewScene3D | 已实现，动画完成度待 P0 过检（见 7.1-P0-1） |
@@ -112,7 +112,7 @@
 | 设计令牌 | AGENTS.md 已立禁令与色板（4.2） | ✅ 已统一：色令牌（f455fa9）/字体角色（0f9414b）/触控目标（f7fb744）；四方向审计补五态/排版（89dd072/d330c58）；J 批次复核：audit-touch 10→0 违规、浏览器表面定制 5/5（补 underline-offset，e0c0686）、禁纯灰 bg-gray-200 全清 | 完成 | `node scripts/scan-emoji.cjs` 零命中；`node scripts/audit-touch.cjs` 零违规；逐页截图对比令牌；正文对比度 ≥ 4.5:1 |
 | 素材 | 29 张可商用图 + 1 视频已落地（第 6 章）；通用图覆盖的茶暂以本地增强替代 | 补专图**暂缓**（Pexels 全站 robots 拒自动访问、电商图库版权不可商用）；SOURCES.md 归并规则随数据同步维护 | P1·暂缓 | 若重启：每张新图登记 SOURCES.md 且 ≤ 体积上限；抽查归并关系与 teas.ts 一致 |
 | 茶文化深度 | 49 茶/21 茶人/24 节气数据齐；冲泡参数在茶类常识范围内 | ✅ 已完成：产区风土叙事（544621e）、参数全量比对归因（P1-1）、六境/节气叙事（5ec33ec）、茶人去重+来源标注（e35f1b8，22→21 位） | 完成 | 抽样 10 款茶参数与 tea-tasting 基准表一致；数据无编造（标来源）；无"待核实"悬空 |
-| 测试覆盖 | 81 Vitest + 22 E2E + 后端 34 过 1 跳 + verify-* 脚本群 | ✅ 已完成：分享链路 E2E 9 用例（1838801）；四方向审计脚本入库；test_culture 4 用例（3697d9b）；test_records 防 307（5f76ba7）；scoring explain 3 用例（b254bc7）；AIAsk/茶歇 E2E 补强 9 用例（723490c）；E2E 全量 22/22 实跑通过 | 完成 | 改动提交前跑对应 verify 脚本；分享卡 E2E 覆盖编码/解码/非法输入；后端 pytest 全量过 |
+| 测试覆盖 | 125 Vitest + 28 E2E + 后端 31 过 1 跳 + verify-* 脚本群 | ✅ 已完成：分享链路 E2E 9 用例（1838801）；四方向审计脚本入库；test_culture 4 用例（3697d9b）；test_records 防 307（5f76ba7）；scoring explain 3 用例（b254bc7）；AIAsk/茶歇 E2E 补强 9 用例（723490c）；E2E 全量 28/28 实跑通过 | 完成 | 改动提交前跑对应 verify 脚本；分享卡 E2E 覆盖编码/解码/非法输入；后端 pytest 全量过 |
 | 规范合规（AGENTS.md 全量扫描） | J 批次三轮 + 视觉审计：any 全局清零（e0c0686 等 12 处）、手绘 SVG→lucide（e0c0686）、min-h-screen→100dvh 17 处（aeb8531）、分享 story 链路对齐 3 处、10 页视觉禁令 0 违规（913a5ff）、E2E 13/13（本轮实跑） | ✅ 完成 | type-check/build/81 单测/后端 pytest 全绿；`node scripts/audit-touch.cjs` 与 `node scripts/scan-emoji.cjs` 零命中；全局 grep 无 `\bany\b` 残留 |
 | 性能基线 | 首屏 load 114ms、传输 878KB（图片 407KB）；JS 2.29MB 按需 chunk；3D 纹理 34MB 按需加载（fe3133f）；2D 背景图压缩 hero 599→290KB、tearoom-bg 684→145KB（5d4bc19，首屏 1187→878KB -26%） | ✅ 完成 | docs/PERF_BASELINE.md 为重测对照基准；改动后重测首屏并更新文档；3D 贴图不压 |
 | 后端链路 | FastAPI 路由 + /api/ai 代理（OpenRouter 真实 LLM，6f8b809）+ /culture/search RAG + records 同步基础 | ✅ 已实测闭环：AI 代理无直连（test_ai 5 用例）；RAG 检索真实返回；修复 detail/graph 500 与 records 307（3697d9b/5f76ba7）；真实 Postgres 端到端实测 pending→failed→登录→synced→落库；AI 代理切 OpenRouter 真实 LLM（6f8b809，key 走 .env 不入库，未配置 502→前端规则兜底保留） | 完成 | 真实 Postgres 往返幂等（同 client_id 同 id）；用户隔离（B 看不到 A）；无 307/500 |
@@ -191,7 +191,7 @@
 
 ```
 npm run type-check   # 类型检查（最小门槛）
-npm run test         # Vitest 单测（改了逻辑/store/service，当前 67 用例）
+npm run test         # Vitest 单测（改了逻辑/store/service，当前 125 用例）
 npm run build        # 生产构建（含类型检查）
 npm run test:e2e     # Playwright E2E（改了流程/路由）
 node scripts/verify-gardens.cjs   # 3D 茶园四园晴雨截图验证，期望 ERRORS: []
@@ -261,9 +261,9 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q   # 后端全量
 
 | 缺口 | 状态 | 处理 |
 |---|---|---|
-| Hero 视频层最终 Playwright 截图验收 | Organizer 任务遗留（o_000191zvXWa，90%） | P0-2 收尾，见 7.1 |
+| Hero 视频层截图验收 | ✅ 已收尾：P0-1 逐页截图审计含首页（28+2 张全过）；HomeHero 三级降级（视频→静态图）实测生效 | 完成 |
 | 通用图覆盖的茶补专图 | 已标注 SOURCES.md 文末 | P1 逐款补 Pexels 专图，每张登记 + 过体积上限 |
-| 图片加载失败兜底（占位/背景色） | 现状待核实 | P0-2 一并核查并补齐 |
+| 图片加载失败兜底 | ✅ 已补齐：SelectView/ToolSelect/CollectionView/HomeTeaCard/TeaDetailView 六处 @error 降级 + 3D 贴图 onerror 回退纯色 | 完成 |
 
 ---
 
@@ -271,7 +271,7 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q   # 后端全量
 
 > 原则：功能不在多在于精。P0 只做打磨与收尾，不新增功能；P1 深化已有功能；P2 远期增量。每项带验收标准。
 
-### 7.1 P0 打磨（当前，做完再进 P1）
+### 7.1 P0 打磨（✅ 已完成：P0-1 视觉收尾 / P0-2 素材收尾 / P0-3 设计令牌，2026-09-14/15 全部过检）
 
 | 项 | 目标 | 验收标准 |
 |---|---|---|
@@ -316,12 +316,12 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q   # 后端全量
 |---|---|---|---|
 | 成长数据看板 | 真需求（高价值低投入） | 已完成（2026-09-14，T1.1） | 复用既有 TasteTrendChart/TasteRadarChart + 原生条图；空态/加载/错误态齐全；growth.spec 16 测 + e2e/growth.spec + 截图 |
 | 3D 茶园养成（浇水/采摘/后端同步） | 伪需求高风险 | ✅ 已降级纯观赏（2026-09-15，T4.1） | verify-gardens ERRORS:[]；e2e garden 2 例（无养成入口+茶亭叙事）；garden.spec 纯函数 6 测；后端 garden 域已删、PG 表保留 |
-| 产区地图 | 展示型 | 接“产区→茶→冲泡”链路 | 链路走通；数据无编造 |
-| 茶图谱 / 茶与健康页 | 内容装饰 | 并入茶详情与修习入口 | smoke 过；无死链 |
+| 产区地图 | 展示型→真需求 | ✅ 已完成（2026-09-15，T4.4）：名茶卡片按 name 精确匹配茶库，40/40 全可跳 /tea/:id；17 款未收录名茶补全进 teas.ts | tea-regions.spec 5 例（40/40 全匹配 + 名称唯一 + 防数据漂移） |
+| 茶图谱 / 茶与健康页 | 内容装饰→并入详情 | ✅ 已完成（2026-09-15，T4.5）：TeaDetailView 新增「文化关联」区块（工艺/推荐茶器/相关茶人）；/graph 导航入口移除、路由保留（URL 直达无死链） | smoke 过；无死链 |
 | 节气数据 | 无入口场景 | 节气茶单（首页按节气推荐 3 款） | 映射无编造 |
 | 登录 / 云同步扩展 | 伪需求高风险 | 暂缓，待场景验证 | 文档登记，无新代码 |
 | 社交增量（好友/点赞/评论） | 伪需求 | 保持不做 | 文档登记 |
-| AI 茶灵 | 待验证 | 埋点已完成（2026-09-15，T2.2：本地事件日志），待真实试用数据（T2.3）定去留 | tracking.spec 8 例 + perf 2 例（2000 条汇总 5.8ms）；e2e 埋点断言；白名单校验、无网络外发 |
+| AI 茶灵 | 待验证 | 埋点✅（2026-09-15，T2.2 本地事件日志）；代理切 DeepSeek 官方 API（deepseek-flash，key 走 .env）；15s 调用限流已移除；待真实试用数据（T2.3）定去留 | tracking.spec 8 例 + perf 2 例；e2e 埋点断言；白名单校验、无网络外发；e2e aiask 6 例全绿（route abort，不耗 token） |
 
 ---
 
@@ -352,7 +352,7 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q   # 后端全量
 
 ### 8.6 分享卡
 - 症状：URL 超长被截断、非法数据注入 /share、schema 变更后旧分享卡失效。
-- 处理：share.ts 纯函数 base64url，/share 只读页防御性校验（AGENTS.md 硬约束）；分享数据带版本字段（现状待核实，P1 补）；数据量增长超 URL 上限时改短链方案（P2）。
+- 处理：share.ts 纯函数 base64url，/share 只读页防御性校验（AGENTS.md 硬约束）；分享数据带版本字段（已补 2026-09-18：TastingCardShareData.version=1，decode 校验未知版本拒绝、旧链接兼容，share.spec +3 例）；数据量增长超 URL 上限时改短链方案（P2）。
 
 ### 8.7 设计
 - 症状：跳门禁链直接写码、引入禁令内元素（emoji 图标/AI 紫/eyebrow/玻璃拟态装饰等）。

@@ -7,6 +7,8 @@ import type { TastingRecord, TasteDimensions } from '@/types/tasting'
 
 /** 分享用品鉴卡数据快照（不含内部 id / 同步字段，可安全放进 URL） */
 export interface TastingCardShareData {
+  /** 分享格式版本：encode 写入 1；decode 时未知版本拒绝（防未来 schema 变更后旧链接被误读） */
+  version?: number
   teaName: string
   date: string
   brewTemp: number
@@ -26,6 +28,7 @@ const DIMENSION_KEYS = ['bitterness', 'sweetness', 'aftertaste', 'body', 'aroma'
 /** 从完整品鉴记录提取分享快照（剔除内部 id / 同步字段）。 */
 export function toShareData(record: TastingRecord): TastingCardShareData {
   return {
+    version: 1,
     teaName: record.teaName,
     date: record.date,
     brewTemp: record.brewTemp,
@@ -89,8 +92,11 @@ function validateShareData(raw: unknown): TastingCardShareData | null {
   for (const key of optional) {
     if (r[key] !== undefined && typeof r[key] !== 'string') return null
   }
+  // 版本校验：旧链接（无 version）兼容放行；未知版本拒绝，避免未来 schema 变更后被误读
+  if (r.version !== undefined && r.version !== 1) return null
 
   const result: TastingCardShareData = {
+    version: r.version === undefined ? undefined : 1,
     teaName: r.teaName,
     date: r.date,
     brewTemp: r.brewTemp,
