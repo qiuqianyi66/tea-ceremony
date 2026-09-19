@@ -17,6 +17,8 @@ USER appuser
 
 EXPOSE 8000
 
-# --proxy-headers：解析 Nginx 传入的 X-Forwarded-*，否则全用户共享一个限流 key、日志无真实 IP
-# --forwarded-allow-ips=172.16.0.0/12：只信任 Docker 内网网段的 XFF（Compose 默认 172.x）
-CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips", "172.16.0.0/12"]
+# P1-11：生产 4 worker（gunicorn + UvicornWorker，FastAPI 官方推荐）。
+# --forwarded-allow-ips=172.16.0.0/12：UvicornWorker 据此启用 proxy headers，
+# 只信任 Docker 内网网段的 XFF（Compose 默认 172.x），否则全用户共享一个限流 key、日志无真实 IP。
+# 限流计数经 Redis 共享（REDIS_URL 配置时）；未配 Redis 时 4 worker 各自内存限流（部署文档注明）。
+CMD ["gunicorn", "main:app", "-k", "uvicorn.workers.UvicornWorker", "-w", "4", "-b", "0.0.0.0:8000", "--forwarded-allow-ips", "172.16.0.0/12"]

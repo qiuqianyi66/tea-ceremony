@@ -1,7 +1,9 @@
 """AI 代理路由：把第三方 LLM 请求收敛到后端，浏览器不直连外部服务。
 
-- 供应商：OpenRouter（OpenAI 兼容接口），默认走免费模型路由 openrouter/free。
+- 供应商：DeepSeek 官方 API（OpenAI 兼容接口）。
 - 统一超时 / 失败处理：第三方不可用时返回 502，前端据此降级到规则引擎。
+- 熔断（P1-13）：连续 5 次失败后开启 30s，期间不再调用 LLM，直接快速失败（<100ms），
+  防止 DeepSeek 故障时所有请求都等 30s 超时形成雪崩；30s 后半开放行一次探测。
 - 端点：/api/ai/recommend（荐茶）、/api/ai/note（茶记）、/api/ai/chat（问答）。
 """
 
@@ -12,6 +14,7 @@ from typing import List
 import httpx
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
+from pybreaker import CircuitBreaker
 
 from app.config import (
     AI_PROXY_KEY,
@@ -24,6 +27,15 @@ from app.config import (
 logger = logging.getLogger("tea.ai")
 
 router = APIRouter()
+
+# 熔断器（P1-13）：连续 5 次失败后开启 30s，期间不再调用 LLM 直接快速失败（<100ms）。
+# 说明：pybreaker 1.4.1 的 call_async/calling 对 asyncio 有缺陷（call_async 引用未定义的
+# gen；calling 在 await 场景下错误处理失真），故只用其公开状态机 API
+# （open() / close() / current_state，open 后 reset_timeout 自动转 half-open 放行探测），
+# 失败计数由本模块用 asyncio.Lock 维护。
+ai_breaker = CircuitBreaker(fail_max=5, reset_timeout=30)
+_ai_failures = 0
+_ai_failures_lock = asyncio.Lock()
 
 
 class ChatMessage(BaseModel):
@@ -51,7 +63,7 @@ class AIResponse(BaseModel):
     content: str
 
 
-async def _proxy(messages: list[dict]) -> str:
+async def _call_llm(messages: list[dict]) -> str:
     """调用 LLM 并返回回复文本；任何失败抛 502。
 
     重试策略（P0-7）：网络错误与 5xx 为瞬时故障，退避 0.5 * 2**n 秒后重试 1 次；
@@ -91,6 +103,36 @@ async def _proxy(messages: list[dict]) -> str:
 
             logger.warning("LLM 返回非 200: %s", res.status_code)
             raise HTTPException(status_code=502, detail="AI 服务暂不可用，请稍后重试")
+
+
+async def _proxy(messages: list[dict]) -> str:
+    """熔断保护的 LLM 调用入口（P1-13）。
+
+    - 熔断开启（open）：不调用 LLM，直接 502 快速失败，前端降级规则引擎。
+    - 调用失败：计数 +1，连续 fail_max 次后 open（30s 内快速失败）。
+    - 调用成功：清零失败计数；半开状态下的探测成功会关闭熔断。
+    """
+    global _ai_failures
+    if ai_breaker.current_state == "open":
+        logger.warning("AI 熔断开启，快速失败（30s 后自动探测恢复）")
+        raise HTTPException(status_code=502, detail="AI 服务暂不可用，请稍后重试")
+
+    try:
+        content = await _call_llm(messages)
+    except HTTPException:
+        async with _ai_failures_lock:
+            _ai_failures += 1
+            if _ai_failures >= ai_breaker.fail_max:
+                ai_breaker.open()
+                _ai_failures = 0
+                logger.warning("AI 连续失败 %d 次，熔断开启 %ds", ai_breaker.fail_max, ai_breaker.reset_timeout)
+        raise
+
+    async with _ai_failures_lock:
+        _ai_failures = 0
+        if ai_breaker.current_state == "half-open":
+            ai_breaker.close()
+    return content
 
 
 @router.post("/recommend", response_model=AIResponse)

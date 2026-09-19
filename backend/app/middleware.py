@@ -36,6 +36,9 @@ logger = logging.getLogger("tea.middleware")
 # Redis 不可用时的降级时长（秒）：降级期内不再尝试 Redis，避免每次请求重复失败开销
 DEGRADE_SECONDS = 60
 
+# 限流豁免路径：健康/就绪/存活/监控探针不应被限流（探针被 429 会导致误摘除/误告警）
+EXEMPT_PATHS = frozenset({"/health", "/api/health", "/live", "/ready", "/metrics"})
+
 
 class RateStore(Protocol):
     """限流计数存储接口。返回 True 表示本次请求已超限。"""
@@ -156,7 +159,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         return "rate", self.max_requests, self.window
 
     async def dispatch(self, request: Request, call_next):
-        if request.url.path == "/health":
+        if request.url.path in EXEMPT_PATHS:
             return await call_next(request)
 
         ip = request.client.host if request.client else "unknown"

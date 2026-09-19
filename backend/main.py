@@ -5,8 +5,11 @@ FastAPI + SQLAlchemy + PostgreSQL
 
 import logging
 
+from asgi_correlation_id import CorrelationIdMiddleware, correlation_id
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
+from pythonjsonlogger.json import JsonFormatter
 from sqlalchemy import text
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
@@ -15,11 +18,28 @@ from app.config import SENTRY_DSN, SENTRY_TRACES_SAMPLE_RATE
 from app.errors import register_error_handlers
 from app.middleware import AccessLogMiddleware, RateLimitMiddleware
 
-# ============ 日志 ============
+# ============ 日志（P1-1：JSON 结构化 + request_id 贯穿链路） ============
+class RequestIdJsonFormatter(JsonFormatter):
+    """JSON 日志格式化：输出 asctime/levelname/name/message + request_id（无则 "-"）。
+
+    直接以 python-json-logger 的 JsonFormatter 输出 JSON 行，可用 jq 解析；
+    request_id 从 asgi-correlation-id 的 contextvar 读取，跨中间件/路由/异常处理一致。
+    """
+
+    def add_fields(self, log_record, record, message_dict):
+        super().add_fields(log_record, record, message_dict)
+        log_record["request_id"] = correlation_id.get() or "-"
+
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
 )
+# basicConfig 只在首次调用时生效；把 root 的 handler 统一换成 JSON formatter
+for handler in logging.root.handlers:
+    handler.setFormatter(
+        RequestIdJsonFormatter("%(asctime)s %(levelname)s %(name)s %(message)s")
+    )
 logger = logging.getLogger("tea.main")
 
 # ============ 环境变量校验 ============
@@ -81,6 +101,8 @@ app.add_middleware(AccessLogMiddleware)
 app.add_middleware(RateLimitMiddleware)
 # TrustedHost 放最外层：Host 头不在 ALLOWED_HOSTS 直接 400，防 Host 头缓存投毒/重置链接投毒
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=ALLOWED_HOSTS)
+# P1-1：request_id 中间件放最内层（最先执行），生成/透传 X-Request-ID 并写入日志 contextvar
+app.add_middleware(CorrelationIdMiddleware)
 
 # 统一错误格式
 register_error_handlers(app)
@@ -93,15 +115,24 @@ app.include_router(records.router, prefix="/api/records", tags=["品鉴记录"])
 app.include_router(culture.router, prefix="/api/culture", tags=["茶文化"])
 app.include_router(ai.router, prefix="/api/ai", tags=["茶灵 AI"])
 
+# P1-2：Prometheus /metrics（SRE 四信号：延迟/流量/错误/饱和），默认指标暴露文本格式
+Instrumentator().instrument(app).expose(app, endpoint="/metrics", include_in_schema=False)
+
 
 @app.get("/")
 def root():
     return {"message": "一盏茶 API", "version": "1.0.0"}
 
 
-@app.get("/health")
-@app.get("/api/health")
-async def health():
+@app.get("/live")
+async def live():
+    """存活探针（P1-12）：进程活着即 200，不查依赖——DB 抖动不应触发容器重启。"""
+    return {"status": "ok"}
+
+
+@app.get("/ready")
+async def ready():
+    """就绪探针（P1-12）：DB 不可用返回 503，编排系统据此摘除实例。"""
     try:
         async with engine.connect() as connection:
             await connection.execute(text("SELECT 1"))
@@ -109,3 +140,10 @@ async def health():
         # 健康检查失败时返回 503，便于 Docker/Kubernetes 正确摘除实例。
         raise HTTPException(status_code=503, detail="数据库连接不可用") from error
     return {"status": "ok", "database": "ok", "dev_mode": DEV_MODE}
+
+
+@app.get("/health")
+@app.get("/api/health")
+async def health():
+    """兼容旧探针：语义与 /ready 一致（查 DB）。"""
+    return await ready()

@@ -50,7 +50,9 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      # P1-12：容器存活探针用 /live（纯 200，不查依赖）——DB 抖动不应触发容器重启；
+      # 就绪判断用 /ready（查 DB），由外部编排/负载均衡决定是否摘流量。
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/live')"]
       interval: 10s
       timeout: 5s
       retries: 5

@@ -8,6 +8,14 @@ from fastapi.testclient import TestClient
 from app.routers import ai
 
 
+@pytest.fixture(autouse=True)
+def _reset_breaker():
+    """每个测试前后重置熔断器，避免失败计数跨测试累积导致意外熔断。"""
+    ai.ai_breaker.close()
+    yield
+    ai.ai_breaker.close()
+
+
 class FakeResponse:
     def __init__(self, status_code: int, json_data: dict | None = None):
         self.status_code = status_code
@@ -136,3 +144,40 @@ async def test_proxy_4xx_no_retry(monkeypatch):
         await ai._proxy([{"role": "user", "content": "hi"}])
     assert exc.value.status_code == 502
     assert client.calls == 1
+
+
+async def test_breaker_opens_after_failures_and_fast_fails(monkeypatch):
+    """P1-13：连续失败达到 fail_max 后熔断开启，后续请求不再调用 LLM（快速失败）。"""
+    client = _patch_client(monkeypatch, [httpx.ConnectError("down")] * 10)
+    original_fail_max = ai.ai_breaker.fail_max
+    ai.ai_breaker.fail_max = 2
+    ai.ai_breaker.close()  # 清空历史计数，确保从关闭态开始
+    try:
+        for _ in range(2):
+            with pytest.raises(HTTPException):
+                await ai._proxy([{"role": "user", "content": "hi"}])
+        assert ai.ai_breaker.current_state == "open"
+
+        # 熔断开启：不调用 httpx，直接快速失败（calls 不再增长）
+        calls_before = client.calls
+        with pytest.raises(HTTPException) as exc:
+            await ai._proxy([{"role": "user", "content": "hi"}])
+        assert exc.value.status_code == 502
+        assert client.calls == calls_before
+    finally:
+        ai.ai_breaker.close()
+        ai.ai_breaker.fail_max = original_fail_max
+
+
+async def test_breaker_success_closes(monkeypatch):
+    """P1-13：熔断半开探测成功（或正常调用成功）会关闭熔断并清零失败计数。"""
+    client = _patch_client(monkeypatch, [FakeResponse(200, {"choices": [{"message": {"content": "好茶"}}]})])
+    original_fail_max = ai.ai_breaker.fail_max
+    ai.ai_breaker.fail_max = 2
+    ai.ai_breaker.close()
+    try:
+        assert await ai._proxy([{"role": "user", "content": "hi"}]) == "好茶"
+        assert ai.ai_breaker.current_state == "closed"
+    finally:
+        ai.ai_breaker.close()
+        ai.ai_breaker.fail_max = original_fail_max

@@ -70,3 +70,6 @@ verify_icons_*.png
 
 # 临时工作目录（抖音素材抓取等会话产物，不入库）
 /.tmp/
+
+# PostgreSQL 备份输出（scripts/backup-postgres.sh 运行时产物，含生产数据）
+/backups/
