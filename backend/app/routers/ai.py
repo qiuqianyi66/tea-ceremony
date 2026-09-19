@@ -5,6 +5,7 @@
 - 端点：/api/ai/recommend（荐茶）、/api/ai/note（茶记）、/api/ai/chat（问答）。
 """
 
+import asyncio
 import logging
 from typing import List
 
@@ -12,7 +13,13 @@ import httpx
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from app.config import AI_PROXY_KEY, AI_PROXY_MODEL, AI_PROXY_TIMEOUT, AI_PROXY_URL
+from app.config import (
+    AI_PROXY_KEY,
+    AI_PROXY_MODEL,
+    AI_PROXY_TIMEOUT,
+    AI_PROXY_URL,
+    AI_RETRY_BACKOFF,
+)
 
 logger = logging.getLogger("tea.ai")
 
@@ -44,47 +51,57 @@ class AIResponse(BaseModel):
     content: str
 
 
-def _proxy(messages: list[dict]) -> str:
-    """调用 LLM 并返回回复文本；任何失败抛 502。"""
+async def _proxy(messages: list[dict]) -> str:
+    """调用 LLM 并返回回复文本；任何失败抛 502。
+
+    重试策略（P0-7）：网络错误与 5xx 为瞬时故障，退避 0.5 * 2**n 秒后重试 1 次；
+    4xx 为请求或供应商拒绝，重试无意义，直接 502。
+    """
     headers = {"Content-Type": "application/json"}
     if AI_PROXY_KEY:
         headers["Authorization"] = f"Bearer {AI_PROXY_KEY}"
-    try:
-        with httpx.Client(timeout=AI_PROXY_TIMEOUT) as client:
-            res = client.post(
-                AI_PROXY_URL,
-                headers=headers,
-                json={"model": AI_PROXY_MODEL, "messages": messages},
-            )
-    except httpx.HTTPError as error:
-        logger.warning("调用 LLM 失败: %s", error)
-        raise HTTPException(status_code=502, detail="AI 服务暂不可用，请稍后重试") from error
+    payload = {"model": AI_PROXY_MODEL, "messages": messages}
+    timeout = httpx.Timeout(AI_PROXY_TIMEOUT)
+    async with httpx.AsyncClient(timeout=timeout) as client:
+        for attempt in range(2):  # 首次 + 1 次重试
+            try:
+                res = await client.post(AI_PROXY_URL, headers=headers, json=payload)
+            except httpx.HTTPError as error:
+                logger.warning("调用 LLM 失败(第%d次): %s", attempt + 1, error)
+                if attempt == 0:
+                    await asyncio.sleep(AI_RETRY_BACKOFF * (2**attempt))
+                    continue
+                raise HTTPException(status_code=502, detail="AI 服务暂不可用，请稍后重试") from error
 
-    if res.status_code != 200:
-        logger.warning("LLM 返回非 200: %s", res.status_code)
-        raise HTTPException(status_code=502, detail="AI 服务暂不可用，请稍后重试")
+            if res.status_code == 200:
+                try:
+                    data = res.json()
+                    content = data.get("choices", [{}])[0].get("message", {}).get("content")
+                except (ValueError, IndexError, AttributeError):
+                    logger.warning("LLM 响应解析失败")
+                    content = None
+                if not content:
+                    raise HTTPException(status_code=502, detail="AI 服务返回异常")
+                return content
 
-    try:
-        data = res.json()
-        content = data.get("choices", [{}])[0].get("message", {}).get("content")
-    except (ValueError, IndexError, AttributeError):
-        logger.warning("LLM 响应解析失败")
-        content = None
-    if not content:
-        raise HTTPException(status_code=502, detail="AI 服务返回异常")
+            if res.status_code >= 500 and attempt == 0:
+                logger.warning("LLM 返回 5xx(第%d次): %s", attempt + 1, res.status_code)
+                await asyncio.sleep(AI_RETRY_BACKOFF * (2**attempt))
+                continue
 
-    return content
+            logger.warning("LLM 返回非 200: %s", res.status_code)
+            raise HTTPException(status_code=502, detail="AI 服务暂不可用，请稍后重试")
 
 
 @router.post("/recommend", response_model=AIResponse)
-def ai_recommend(data: RecommendRequest) -> AIResponse:
+async def ai_recommend(data: RecommendRequest) -> AIResponse:
     system = (
         "你是「一盏茶」的茶灵 AI，精通中国茶道的老师傅。根据用户的时间、天气、心情推荐一款茶。"
         "只用中文回答，语言优美雅致，不超过 80 字。"
         "格式：推荐茶品：茶名 / 理由：一句话 / 冲泡建议：水温与浸泡时间。"
     )
     user = f"现在是{data.time}，天气{data.weather}，心情{data.mood}。推荐一款茶。"
-    content = _proxy([
+    content = await _proxy([
         {"role": "system", "content": system},
         {"role": "user", "content": user},
     ])
@@ -92,14 +109,14 @@ def ai_recommend(data: RecommendRequest) -> AIResponse:
 
 
 @router.post("/note", response_model=AIResponse)
-def ai_note(data: NoteRequest) -> AIResponse:
+async def ai_note(data: NoteRequest) -> AIResponse:
     system = (
         "你是「一盏茶」的茶灵 AI，品茶大师。根据品鉴数据生成一段优美的茶记。"
         "只用中文，语言古雅有韵味。格式：一句诗意的开头 + 2-3 句品鉴感受，不超过 60 字。"
         "不要用评价性语言，用描述性语言。"
     )
     user = f"茶品：{data.tea_name}\n综合评分：{data.score}/10\n品鉴数据：{data.dimensions}\n请写一段品茶记。"
-    content = _proxy([
+    content = await _proxy([
         {"role": "system", "content": system},
         {"role": "user", "content": user},
     ])
@@ -107,6 +124,6 @@ def ai_note(data: NoteRequest) -> AIResponse:
 
 
 @router.post("/chat", response_model=AIResponse)
-def ai_chat(data: ChatRequest) -> AIResponse:
-    content = _proxy([message.model_dump() for message in data.messages])
+async def ai_chat(data: ChatRequest) -> AIResponse:
+    content = await _proxy([message.model_dump() for message in data.messages])
     return AIResponse(content=content)

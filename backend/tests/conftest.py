@@ -13,7 +13,7 @@ import os
 os.environ["SENTRY_DSN"] = ""
 
 # 必须在 import app 之前设置，否则 main.py 启动校验会失败。
-os.environ.setdefault("SECRET_KEY", "test-secret-key-for-pytest")
+os.environ.setdefault("SECRET_KEY", "test-secret-key-for-pytest-0123456789abcdef")
 os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///:memory:")
 
 import pytest
@@ -22,6 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.pool import StaticPool
 
 from app.database import Base, get_db
+from app.middleware import reset_rate_store
 import main as app_main
 
 # SQLite 异步内存库：StaticPool 让所有连接共享同一个内存库。
@@ -72,5 +73,6 @@ async def db_session():
 @pytest.fixture()
 def client():
     """FastAPI 测试客户端，绑定 SQLite 异步内存库。"""
+    reset_rate_store()  # 测试间清空限流计数（登录/AI 专项限流阈值低，避免跨测试累积误伤）
     with TestClient(app_main.app) as c:
         yield c

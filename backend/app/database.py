@@ -27,7 +27,18 @@ def _to_async_url(url: str) -> str:
 DATABASE_URL = CONFIG_DATABASE_URL
 ASYNC_DATABASE_URL = _to_async_url(DATABASE_URL)
 
-engine = create_async_engine(ASYNC_DATABASE_URL)
+# 连接池显式配置（P0-2）：默认 pool_recycle=-1，Postgres 空闲断连后拿死连接。
+# pool_size/max_overflow 仅 QueuePool 系方言支持；SQLite（测试用）不传，仅保留 pool_pre_ping。
+if ASYNC_DATABASE_URL.startswith("postgresql"):
+    engine = create_async_engine(
+        ASYNC_DATABASE_URL,
+        pool_size=5,
+        max_overflow=10,
+        pool_recycle=300,
+        pool_pre_ping=True,
+    )
+else:
+    engine = create_async_engine(ASYNC_DATABASE_URL, pool_pre_ping=True)
 SessionLocal = async_sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 

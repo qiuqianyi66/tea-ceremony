@@ -20,7 +20,15 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from redis.exceptions import RedisError
 import redis.asyncio as aioredis
 
-from app.config import RATE_LIMIT_MAX, RATE_LIMIT_WINDOW, REDIS_URL
+from app.config import (
+    RATE_LIMIT_MAX,
+    RATE_LIMIT_WINDOW,
+    RATE_LIMIT_LOGIN_MAX,
+    RATE_LIMIT_LOGIN_WINDOW,
+    RATE_LIMIT_AI_MAX,
+    RATE_LIMIT_AI_WINDOW,
+    REDIS_URL,
+)
 
 access_logger = logging.getLogger("tea.access")
 logger = logging.getLogger("tea.middleware")
@@ -109,38 +117,62 @@ class AccessLogMiddleware(BaseHTTPMiddleware):
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
-    """基于 IP + 路径的滑动窗口限流；/health 不限流。"""
+    """基于 IP 的滑动窗口限流；/health 不限流。
+
+    策略（P0-6）：
+    - /api/auth/* 走登录专项限流（防爆破，OWASP API2），login/register 共享统一 key，避免轮换路径绕限流；
+    - /api/ai/* 走 AI 专项限流（AI 是付费出口，全局 300/60s 太松），统一 key；
+    - 其余按 IP + 路径全局限流。
+    """
 
     def __init__(
         self,
         app,
         max_requests: int = RATE_LIMIT_MAX,
         window: int = RATE_LIMIT_WINDOW,
+        login_max_requests: int = RATE_LIMIT_LOGIN_MAX,
+        login_window: int = RATE_LIMIT_LOGIN_WINDOW,
+        ai_max_requests: int = RATE_LIMIT_AI_MAX,
+        ai_window: int = RATE_LIMIT_AI_WINDOW,
         memory_store: MemoryRateStore | None = None,
     ):
         super().__init__(app)
         self.max_requests = max_requests
         self.window = window
+        self.login_max_requests = login_max_requests
+        self.login_window = login_window
+        self.ai_max_requests = ai_max_requests
+        self.ai_window = ai_window
         self._memory_store = memory_store or _default_memory_store
         self._redis_store = RedisRateStore(REDIS_URL) if REDIS_URL else None
         self._degraded_until = 0.0
+
+    def _policy_for(self, path: str) -> tuple[str, int, int]:
+        """按路径返回 (key 前缀, 窗口内最大请求数, 窗口秒数)。"""
+        if path.startswith("/api/auth/"):
+            return "rate:auth", self.login_max_requests, self.login_window
+        if path.startswith("/api/ai/"):
+            return "rate:ai", self.ai_max_requests, self.ai_window
+        return "rate", self.max_requests, self.window
 
     async def dispatch(self, request: Request, call_next):
         if request.url.path == "/health":
             return await call_next(request)
 
         ip = request.client.host if request.client else "unknown"
-        key = f"rate:{ip}:{request.url.path}"
+        prefix, max_requests, window = self._policy_for(request.url.path)
+        # 专项限流统一 key（不含路径），全局限流保留 IP+路径粒度
+        key = f"{prefix}:{ip}" if prefix != "rate" else f"{prefix}:{ip}:{request.url.path}"
         now = time.time()
 
         if not self._redis_store or now < self._degraded_until:
-            over = await self._memory_store.check_and_record(key, now, self.window, self.max_requests)
+            over = await self._memory_store.check_and_record(key, now, window, max_requests)
         else:
-            result = await self._redis_store.check_and_record(key, now, self.window, self.max_requests)
+            result = await self._redis_store.check_and_record(key, now, window, max_requests)
             if result is None:
                 logger.warning("Redis 限流不可用，降级进程内存限流 %ds: %s", DEGRADE_SECONDS, key)
                 self._degraded_until = now + DEGRADE_SECONDS
-                over = await self._memory_store.check_and_record(key, now, self.window, self.max_requests)
+                over = await self._memory_store.check_and_record(key, now, window, max_requests)
             else:
                 over = result
 

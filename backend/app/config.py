@@ -21,7 +21,17 @@ CORS_ORIGINS = [
 # 限流（滑动窗口；配置 REDIS_URL 时多实例共享计数，未配置则进程内存 + Redis 不可用自动降级）
 RATE_LIMIT_MAX = int(os.environ.get("RATE_LIMIT_MAX", "300"))
 RATE_LIMIT_WINDOW = int(os.environ.get("RATE_LIMIT_WINDOW", "60"))
+# 专项限流：登录/注册防爆破（OWASP API2），AI 是付费出口（全局 300/60s 太松）
+RATE_LIMIT_LOGIN_MAX = int(os.environ.get("RATE_LIMIT_LOGIN_MAX", "10"))
+RATE_LIMIT_LOGIN_WINDOW = int(os.environ.get("RATE_LIMIT_LOGIN_WINDOW", "300"))
+RATE_LIMIT_AI_MAX = int(os.environ.get("RATE_LIMIT_AI_MAX", "10"))
+RATE_LIMIT_AI_WINDOW = int(os.environ.get("RATE_LIMIT_AI_WINDOW", "60"))
 REDIS_URL = os.environ.get("REDIS_URL", "")
+
+# TrustedHost：允许的 Host 头列表（逗号分隔）。默认 "*" 保持现状；生产必须配置实际域名，防止 Host 头投毒
+ALLOWED_HOSTS = [
+    host.strip() for host in os.environ.get("ALLOWED_HOSTS", "*").split(",") if host.strip()
+]
 
 # Sentry 错误追踪（配置 SENTRY_DSN 时启用；请求体不上传，避免登录密码泄漏）
 SENTRY_DSN = os.environ.get("SENTRY_DSN", "")
@@ -35,3 +45,5 @@ AI_PROXY_URL = os.environ.get("AI_PROXY_URL", "https://api.deepseek.com/chat/com
 AI_PROXY_MODEL = os.environ.get("AI_PROXY_MODEL", "deepseek-flash")
 AI_PROXY_KEY = os.environ.get("AI_PROXY_KEY", "")
 AI_PROXY_TIMEOUT = int(os.environ.get("AI_PROXY_TIMEOUT", "30"))
+# 5xx/网络错误重试的指数退避基数（秒）：第 n 次重试前等待 0.5 * 2**n；4xx 不重试
+AI_RETRY_BACKOFF = float(os.environ.get("AI_RETRY_BACKOFF", "0.5"))

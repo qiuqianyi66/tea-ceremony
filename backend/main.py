@@ -8,8 +8,9 @@ import logging
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 
-from app.config import SECRET_KEY, DATABASE_URL, CORS_ORIGINS, DEV_MODE
+from app.config import SECRET_KEY, DATABASE_URL, CORS_ORIGINS, DEV_MODE, ALLOWED_HOSTS
 from app.config import SENTRY_DSN, SENTRY_TRACES_SAMPLE_RATE
 from app.errors import register_error_handlers
 from app.middleware import AccessLogMiddleware, RateLimitMiddleware
@@ -27,6 +28,13 @@ if not SECRET_KEY:
         "SECRET_KEY 环境变量未设置！\n"
         "请复制 .env.example 为 .env 并填入安全的随机字符串。\n"
         "生成方法：python3 -c \"import secrets; print(secrets.token_hex(32))\""
+    )
+
+if len(SECRET_KEY) < 32:
+    raise RuntimeError(
+        f"SECRET_KEY 强度不足（长度 {len(SECRET_KEY)} < 32）！\n"
+        "过短密钥可被爆破伪造 JWT，请生成强随机密钥：\n"
+        "python3 -c \"import secrets; print(secrets.token_hex(32))\""
     )
 
 if not DATABASE_URL:
@@ -71,6 +79,8 @@ app.add_middleware(
 # 请求日志（外层）→ 限流（内层），最后 add 的最先执行
 app.add_middleware(AccessLogMiddleware)
 app.add_middleware(RateLimitMiddleware)
+# TrustedHost 放最外层：Host 头不在 ALLOWED_HOSTS 直接 400，防 Host 头缓存投毒/重置链接投毒
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=ALLOWED_HOSTS)
 
 # 统一错误格式
 register_error_handlers(app)

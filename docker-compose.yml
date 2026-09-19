@@ -41,6 +41,8 @@ services:
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL must be set}
       SECRET_KEY: ${SECRET_KEY:?SECRET_KEY must be set}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      # 允许的 Host 头（逗号分隔）：生产必须配置实际域名/IP，默认放行
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-*}
       SENTRY_DSN: ${SENTRY_DSN:-}
     depends_on:
       db:
