@@ -134,11 +134,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
-      - name: Run migration tests
+      - name: Run migration and pool tests
         working-directory: backend
         env:
           TEST_DATABASE_URL: postgresql://tea_test:tea_test@localhost:5432/tea_test
-        run: python -m pytest tests/test_migrations.py -q
+        run: python -m pytest tests/test_migrations.py tests/test_pool_recycle.py -q
 
   compose:
     name: Validate Docker Compose
