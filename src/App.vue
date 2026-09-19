@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
 import { ToastContainer } from '@/components/ui'
+import PwaUpdateToast from '@/components/PwaUpdateToast.vue'
 </script>
 
 <template>
@@ -11,6 +12,7 @@ import { ToastContainer } from '@/components/ui'
       </Transition>
     </RouterView>
     <ToastContainer />
+    <PwaUpdateToast />
   </div>
 </template>
 

@@ -1,0 +1,9 @@
+# 本地虚拟环境与生成物不进镜像（.venv 约 2GB，是镜像膨胀主因）
+.venv
+__pycache__
+*.pyc
+*.log
+.pytest_cache
+.env
+# 测试代码运行不需要
+tests

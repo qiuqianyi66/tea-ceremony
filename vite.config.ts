@@ -23,7 +23,10 @@ export default defineConfig({
     vue(tresCompilerOptions),
     tailwindcss(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // prompt 模式：新版本就绪后由用户确认才更新，禁止 autoUpdate 强刷丢表单数据（vite-pwa 官方警告）
+      registerType: 'prompt',
+      // 自行注册（PwaUpdateToast）以接收 needRefresh 回调
+      injectRegister: null,
       includeAssets: ['favicon.ico', 'pwa-icon.svg'],
       manifest: {
         name: '一盏茶 — 沉浸式在线茶道体验',
@@ -68,22 +71,6 @@ export default defineConfig({
         globIgnores: ['**/3d/**', '**/*.map'],
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'google-fonts-cache',
-              expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
-            },
-          },
-          {
-            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'google-fonts-webfonts',
-              expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 365 },
-            },
-          },
-          {
             urlPattern: /\.(?:webm|mp3|ogg)$/i,
             handler: 'CacheFirst',
             options: {
@@ -102,8 +89,7 @@ export default defineConfig({
           },
         ],
         cleanupOutdatedCaches: true,
-        skipWaiting: true,
-        clientsClaim: true,
+        // prompt 模式：不自动 skipWaiting/clientsClaim，新 SW 等用户确认后由 updateSW(true) 激活
       },
       devOptions: {
         enabled: true,
