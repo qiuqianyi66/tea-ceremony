@@ -341,11 +341,15 @@ const averageDimensions = computed(() => {
     <TasteStepIndicator :current="(['observe','aroma','taste','result'] as const).indexOf(step)" />
 
     <!-- ======== ① 观色 ======== -->
-    <TasteObserveStep v-if="step === 'observe'"
+    <TasteObserveStep
+      v-if="step === 'observe'"
       :soup-color="soupColor"
-      :soup-min="store.currentTea?.soupColorMin"
-      :soup-max="store.currentTea?.soupColorMax"
-      @next="step = 'aroma'" />
+      v-bind="{
+        ...(store.currentTea?.soupColorMin !== undefined ? { 'soup-min': store.currentTea.soupColorMin } : {}),
+        ...(store.currentTea?.soupColorMax !== undefined ? { 'soup-max': store.currentTea.soupColorMax } : {}),
+      }"
+      @next="step = 'aroma'"
+    />
 
     <!-- ======== ② 闻香 ======== -->
     <div v-if="step === 'aroma'" class="w-full max-w-md">

@@ -27,8 +27,9 @@ function toLocalTea(dto: TeaResponseDto): Tea {
     name: dto.name,
     type,
     origin: dto.origin ?? '未知产地',
-    regionId: dto.region_id ?? undefined,
-    processId: dto.process_id ?? undefined,
+    // exactOptionalPropertyTypes：region_id/process_id 为 null 时不写可选字段，避免显式 undefined
+    ...(dto.region_id != null ? { regionId: dto.region_id } : {}),
+    ...(dto.process_id != null ? { processId: dto.process_id } : {}),
     bestTemp: dto.best_temp ?? 80,
     bestTime: dto.best_time ?? 30,
     infusions: 5,

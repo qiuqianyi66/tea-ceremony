@@ -47,7 +47,10 @@ export const historyStorage = {
 
     try {
       await recordsApi.create(pendingRecord)
-      await db.tastings.put({ ...pendingRecord, syncStatus: 'synced', syncError: undefined })
+      // exactOptionalPropertyTypes：同步成功后清除 syncError 字段（显式 undefined 不合法）
+      const cleared = { ...pendingRecord, syncStatus: 'synced' as const }
+      delete cleared.syncError
+      await db.tastings.put(cleared)
     } catch (error) {
       const syncError = error instanceof Error ? error.message : '同步失败'
       console.warn('[Dexie] 品鉴记录已保存在本地，稍后可重试同步:', syncError)
@@ -71,7 +74,9 @@ export const historyStorage = {
     for (const record of pending) {
       try {
         await recordsApi.create(record)
-        await db.tastings.put({ ...record, syncStatus: 'synced', syncError: undefined })
+        const cleared = { ...record, syncStatus: 'synced' as const }
+        delete cleared.syncError
+        await db.tastings.put(cleared)
         synced += 1
       } catch (error) {
         failed += 1

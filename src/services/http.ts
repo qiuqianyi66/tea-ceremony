@@ -68,7 +68,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     const res = await fetch(`${API_BASE}${path}`, {
       headers: { ...headers, ...(options?.headers as Record<string, string>) },
       ...options,
-      signal: options?.signal ?? controller?.signal,
+      signal: options?.signal ?? controller?.signal ?? null,
     })
 
     if (!res.ok) {

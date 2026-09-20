@@ -6,6 +6,9 @@
     // Extra safety for array and object lookups, but may have false positives.
     "noUncheckedIndexedAccess": true,
 
+    // P2-3：可选属性必须显式赋值 undefined，防运行时意外（@vue/tsconfig 默认注释掉）
+    "exactOptionalPropertyTypes": true,
+
     // Path mapping for cleaner imports.
     "paths": {
       "@/*": ["./src/*"]

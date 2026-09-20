@@ -331,6 +331,18 @@ function endPourGesture(event: PointerEvent) {
   pourGestureProgress.value = 0
 }
 
+// P2-6 无障碍：键盘 / 读屏用户无法拖拽，用回车等价完成一次注水（中等速度）。
+// 不改状态机、不加手动确认按钮，仅把 READY 拖拽的注水动作开放给键盘。
+function onPourKeydown(event: KeyboardEvent) {
+  if (!canGesturePour.value) return
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault()
+    pourSpeed.value = 0.6
+    audio.playPourWater(1.1)
+    startSteeping()
+  }
+}
+
 function stopSteeping() {
   if (steepInterval) {
     clearInterval(steepInterval)
@@ -419,6 +431,28 @@ const phaseDescription = computed(() => {
       return `第${currentInfusion.value}泡（${brewState.steepTime}s）完成`
   }
 })
+
+// P2-6 无障碍：阶段自动流转对读屏用户不可见，用视觉隐藏 live region 播报。
+// 只播阶段切换与醒茶最后 3 秒倒计时，不追 steepTime / 水温高频变化（避免吵）。
+const liveAnnouncement = ref('')
+let lastLivePhase: BrewPhase | null = null
+watch(
+  [() => brewState.phase, rinseCountdown],
+  ([phase, countdown]) => {
+    if (phase === BrewPhase.RINSING) {
+      if (countdown > 0 && countdown <= 3) {
+        liveAnnouncement.value = `醒茶中，还剩 ${countdown} 秒`
+      }
+      return
+    }
+    if (lastLivePhase !== phase) {
+      lastLivePhase = phase
+      liveAnnouncement.value = phaseDescription.value
+    }
+  },
+  // 挂载即播报当前阶段（懒加载路由下阶段可能已推进，初始 HEATING 也不能漏报）
+  { immediate: true },
+)
 </script>
 
 <template>
@@ -456,6 +490,9 @@ const phaseDescription = computed(() => {
       {{ store.currentTea.name }}
     </p>
     <p class="text-sm text-[var(--color-wood-light)] mb-6">{{ phaseDescription }}</p>
+
+    <!-- P2-6 无障碍：视觉隐藏的读屏播报区（阶段流转 / 醒茶倒计时） -->
+    <div class="sr-only" role="status" aria-live="polite">{{ liveAnnouncement }}</div>
 
     <!-- 工夫茶仪式进度 -->
     <CeremonyProgress :steps="ceremonySteps" :current-index="ceremonyStepIndex" />
@@ -530,11 +567,12 @@ const phaseDescription = computed(() => {
           :class="{ 'pouring-kettle-active': isPourGestureActive }"
           role="button"
           tabindex="0"
-          title="向右拖动壶嘴注水"
+          aria-label="向右拖动壶嘴注水，或按回车键注水"
           @pointerdown="beginPourGesture"
           @pointermove="movePourGesture"
           @pointerup="endPourGesture"
           @pointercancel="endPourGesture"
+          @keydown="onPourKeydown"
         >◒</div>
         <div v-if="isPouring || isPourGestureActive" class="water-stream" :style="streamStyle"><span></span><span></span><span></span></div>
         <div v-if="isPouring || isPourGestureActive" class="water-splash"><i></i><i></i><i></i><i></i></div>

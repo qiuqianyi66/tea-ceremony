@@ -57,12 +57,14 @@ services:
       timeout: 5s
       retries: 5
 
-  # Vue 前端（Nginx 静态文件服务）
+  # Vue 前端（Nginx 静态文件服务，P2-10：自定义镜像带 brotli 模块）
   frontend:
-    image: nginx:alpine
+    build: ./nginx
     restart: unless-stopped
     ports:
       - "80:80"
+      # HTTPS 就绪后开放 443（证书挂载见 DEPLOY.md「七、域名和 HTTPS」）
+      # - "443:443"
     volumes:
       - ./dist:/usr/share/nginx/html:ro
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro

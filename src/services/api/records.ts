@@ -28,7 +28,8 @@ interface RecordResponseDto extends RecordCreateDto {
 
 export function toRecordDto(record: Partial<TastingRecord>): RecordCreateDto {
   const dto: RecordCreateDto = {
-    client_id: record.id,
+    // exactOptionalPropertyTypes：id 可能为空（游客本地记录），显式 undefined 不合法，条件展开
+    ...(record.id ? { client_id: record.id } : {}),
     tea_name: record.teaName ?? '未命名茶',
   }
   const teaId = record.teaApiId ?? Number(record.teaId)
@@ -52,7 +53,7 @@ function fromRecordDto(dto: RecordResponseDto): TastingRecord {
   return {
     id: dto.client_id ?? `server-${dto.id}`,
     teaId: dto.tea_id == null ? '' : String(dto.tea_id),
-    teaApiId: dto.tea_id ?? undefined,
+    ...(dto.tea_id != null ? { teaApiId: dto.tea_id } : {}),
     teaName: dto.tea_name,
     date: dto.created_at,
     brewTemp: dto.brew_temp ?? 0,
@@ -70,10 +71,11 @@ function fromRecordDto(dto: RecordResponseDto): TastingRecord {
     },
     overallScore: dto.overall_score ?? 0,
     processFactor: dto.process_factor ?? 0,
-    aromaType: dto.aroma_type,
-    notes: dto.notes,
-    weather: dto.weather,
-    mood: dto.mood,
+    // exactOptionalPropertyTypes：服务端未返回的可选字段不写，避免显式 undefined
+    ...(dto.aroma_type ? { aromaType: dto.aroma_type } : {}),
+    ...(dto.notes ? { notes: dto.notes } : {}),
+    ...(dto.weather ? { weather: dto.weather } : {}),
+    ...(dto.mood ? { mood: dto.mood } : {}),
     syncStatus: 'synced',
   }
 }

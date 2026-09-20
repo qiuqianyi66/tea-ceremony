@@ -64,7 +64,13 @@ defineExpose({ playWater, setWeather, setAudioEnabled })
       :shadows="true"
       :window-size="true"
     >
-      <TeaGardenSceneInner ref="innerRef" :plants="plants" :region-id="regionId" @select-plant="onSelectPlant" @select-pavilion="onSelectPavilion" />
+      <TeaGardenSceneInner
+        ref="innerRef"
+        :plants="plants"
+        v-bind="regionId !== undefined ? { 'region-id': regionId } : {}"
+        @select-plant="onSelectPlant"
+        @select-pavilion="onSelectPavilion"
+      />
     </TresCanvas>
   </div>
 </template>

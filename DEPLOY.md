@@ -195,8 +195,34 @@ AI_PROXY_TIMEOUT=8
 
 ## 七、域名和 HTTPS
 
-建议后续配置：
-1. 购买域名（如 chadao.你的域名.com）
-2. 域名解析到 120.26.49.122
-3. 用 Certbot / Let's Encrypt 配置 HTTPS
-4. nginx 配置强制 HTTPS 跳转
+> P2-10 已就绪：nginx.conf 内置 443 HTTPS server block（HTTP/2 + Strict-Transport-Security），
+> 默认注释，证书就绪前不影响现有 80 服务。前端镜像已切换为带 brotli 模块的自定义镜像（nginx/Dockerfile）。
+
+### 1. brotli 压缩（已生效）
+
+镜像构建时通过 Alpine 官方包 `nginx-mod-http-brotli` 安装模块，nginx.conf 已开启：
+`brotli on`（级别 6，JS/CSS/JSON/HTML）。对前端资源平均比 gzip 再小 15~20%。
+验证：`docker compose exec frontend nginx -T | grep brotli`，或浏览器 DevTools → Network 看响应头 `Content-Encoding: br`。
+
+### 2. 启用 HTTPS（证书就绪后）
+
+1. 购买域名并解析到 `120.26.49.122`
+2. 申请证书（Let's Encrypt / 阿里云免费证书），得到 `fullchain.pem` 与 `privkey.pem`
+3. 证书放到服务器 `C:\tea\certs\`，挂载进容器：
+   ```yaml
+   # docker-compose.yml frontend 服务 volumes 增加一行：
+   - ./certs:/etc/nginx/certs:ro
+   ```
+4. 打开 nginx.conf 末尾注释的 443 server block（含 `listen 443 ssl; http2 on;`）
+5. 解除 443 端口注释（`- "443:443"`），阿里云安全组放行 443
+6. 校验并重启：
+   ```powershell
+   docker compose exec frontend nginx -t
+   docker compose up -d frontend
+   ```
+7. 如需强制跳转（80 → 443），取消 443 block 内 `if ($scheme = http)` 行的注释
+
+### 3. 验证
+
+- HTTP/2：DevTools → Network → Protocol 列显示 `h2`
+- 强制 HTTPS：浏览器访问 `http://120.26.49.122` 应 301 到 `https://`

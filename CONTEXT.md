@@ -60,6 +60,33 @@
 
 ---
 
+## 阶段复盘记录
+
+### 复盘：企业级优化方案五批收官（2026-09-20）
+
+> 依据 AGENTS.md 决策纪律「证据回顾」：对照 `docs/OPTIMIZATION_PLAN.md` 总表验收标准 + git log 逐项核对。
+
+**验收决定：五批全部通过**（commit 0ea842c / ef7cef8 / 37a0e16 / 239412c / f726d79 / 4bc9d8f）
+
+| 批次 | 验收标准核对 | 证据 |
+|---|---|---|
+| 第一批 P0 后端安全（6 项） | ✅ pytest 51 过 3 跳；XFF 限流 key 含真实 IP；重启 PG 不报死连接（ef7cef8 集成测试挂 CI）；11 次登录第 11 个 429；short key 启动报错；evil.com Host 400 | 实测 + 集成测试 |
+| 第二批 前端+部署（3 项） | ✅ SW 更新 prompt 不丢表单；CSP 头补全 0 violation；镜像多阶段 <400MB 非 root | 批内实测 |
+| 第三批 可观测性（6 项） | ✅ X-Request-ID；JSON 日志可 jq；/metrics 文本；pg_dump 14 天可恢复；gunicorn 4 worker；停 DB /ready 503 而 /live 200；熔断 5 次失败后 <100ms | 批内实测 |
+| 第四批 工程质量门（7 项） | ✅ CI 7→11 job 全绿；离线深链不 404；axe 0 critical；web-vitals 落 IndexedDB | CI + e2e |
+| 第五批 P2 按需（4 项实做） | ✅ P2-12 导出 JSON 3 单测；P2-8 KTX2 32.4MB→6.8MB 且截图纹理渲染 ERRORS:[]；P2-11 SECURITY.md；P2-4 体积诊断（P2-2/7 按"有告警时"判定不做，P2-1 按"给朋友试用时"不触发，均有证据） | 单测 + verify-gardens + 截图 |
+
+**达成**：可观测性 / 供应链安全 / 容器安全 / PWA 数据安全 / 前端质量门五维达个人开源项目企业级水位。
+
+**行动项（下一阶段）**：
+1. 用户已确认继续做剩余 P2：P2-3 严格 tsconfig、P2-5 视觉回归、P2-6 焦点管理+ARIA live、P2-9 前端本地错误缓冲、P2-10 brotli/HTTP2/HTTPS（本轮 123 计划）。
+2. P2-1 refresh token 等"给朋友试用"再触发；P2-2/7 等性能告警再触发，不做。
+3. 优化方案后基线：Vitest 142 / pytest 51 过 3 跳 / e2e 34 例 / 四园截图 ERRORS:[]。
+
+
+
+---
+
 ## 目录速查
 
 ```

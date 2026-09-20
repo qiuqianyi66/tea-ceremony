@@ -50,8 +50,10 @@ defineProps<{
         :target-temp="targetTemp"
         :is-pouring-out="isPouringOut"
         :infusion="infusion"
-        :skin="skin"
-        :pour-progress="pourProgress"
+        v-bind="{
+          ...(skin !== undefined ? { skin } : {}),
+          ...(pourProgress !== undefined ? { 'pour-progress': pourProgress } : {}),
+        }"
       />
     </TresCanvas>
   </div>

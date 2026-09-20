@@ -72,7 +72,8 @@ export const useTeaStore = defineStore('tea', () => {
     const record: TastingRecord = {
       id: generateRecordId(),
       teaId: currentTea.value.id,
-      teaApiId: currentTea.value.apiId,
+      // exactOptionalPropertyTypes：本地茶无 apiId 时不写该可选字段
+      ...(currentTea.value.apiId !== undefined ? { teaApiId: currentTea.value.apiId } : {}),
       teaName: currentTea.value.name,
       date: new Date().toISOString(),
       brewTemp: brewStore.state.currentTemp,
@@ -81,10 +82,11 @@ export const useTeaStore = defineStore('tea', () => {
       dimensions: { ...tasteStore.dimensions },
       overallScore: calculateScore(),
       processFactor: processFactor.value,
-      aromaType,
-      notes,
-      weather,
-      mood,
+      // exactOptionalPropertyTypes：未传的可选字段不写，避免显式 undefined
+      ...(aromaType !== undefined ? { aromaType } : {}),
+      ...(notes !== undefined ? { notes } : {}),
+      ...(weather !== undefined ? { weather } : {}),
+      ...(mood !== undefined ? { mood } : {}),
     }
     const allRecords = await historyStorage.add(record)
     recordStore.setAll(allRecords)

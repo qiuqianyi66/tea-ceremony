@@ -3,6 +3,7 @@ import './assets/main.css'
 import { createPinia } from 'pinia'
 import { createApp } from 'vue'
 import { registerIcons } from '@/plugins/icons'
+import { installErrorBuffer } from '@/services/errorBuffer'
 import { historyStorage, initDB } from '@/services/storage'
 import { initWebVitals } from '@/services/vitals'
 import { useAuthStore } from '@/stores/auth'
@@ -12,6 +13,8 @@ import router from './router'
 
 // P1-9：Web Vitals 本地采集（只写 IndexedDB，无外发）；尽早注册以覆盖首屏 LCP
 initWebVitals()
+// P2-9：前端本地错误缓冲（只写 IndexedDB，无外发）；先于页面代码注册以捕获早期错误
+installErrorBuffer()
 
 const app = createApp(App)
 

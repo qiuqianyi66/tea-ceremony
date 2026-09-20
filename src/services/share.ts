@@ -105,7 +105,8 @@ function validateShareData(raw: unknown): TastingCardShareData | null {
   if (r.version !== undefined && r.version !== 1) return null
 
   const result: TastingCardShareData = {
-    version: r.version === undefined ? undefined : 1,
+    // exactOptionalPropertyTypes：旧链接无 version 时不写该可选字段，避免显式 undefined
+    ...(r.version === undefined ? {} : { version: 1 }),
     teaName: r.teaName,
     date: r.date,
     brewTemp: r.brewTemp,

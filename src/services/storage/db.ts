@@ -4,6 +4,7 @@
 
 import Dexie from 'dexie'
 import type { Achievement, TastingRecord } from '@/types/tasting'
+import type { ErrorBufferRecord } from '@/types/errors'
 import type { TrackEvent } from '@/types/tracking'
 import type { WebVitalRecord } from '@/types/vitals'
 
@@ -17,6 +18,7 @@ class TeaCeremonyDB extends Dexie {
   collectedWare!: Dexie.Table<{ id: string; unlockedAt: string }, string>
   trackingEvents!: Dexie.Table<TrackEvent, number>
   webVitals!: Dexie.Table<WebVitalRecord, number>
+  errorBuffer!: Dexie.Table<ErrorBufferRecord, number>
 
   constructor() {
     super('teaCeremonyDB')
@@ -81,6 +83,18 @@ class TeaCeremonyDB extends Dexie {
       collectedWare: '++id, id, unlockedAt',
       trackingEvents: '++id, category, event, ts',
       webVitals: '++id, name, rating, ts',
+    })
+
+    // 版本 7：前端本地错误缓冲（P2-9）——纯本地，无外发（ADR-006）
+    this.version(7).stores({
+      tastings: '++id, teaId, date, overallScore, [teaId+date], brewTemp, steepTime',
+      achievements: '++id, id, unlocked',
+      settings: '++id, key',
+      userXp: '++id, key',
+      collectedWare: '++id, id, unlockedAt',
+      trackingEvents: '++id, category, event, ts',
+      webVitals: '++id, name, rating, ts',
+      errorBuffer: '++id, kind, ts',
     })
   }
 }
