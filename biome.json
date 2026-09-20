@@ -1,0 +1,59 @@
+{
+  "$schema": "https://biomejs.dev/schema/2.5.14/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "includes": [
+      "**",
+      "!**/dist/**",
+      "!**/dev-dist/**",
+      "!**/node_modules/**",
+      "!**/coverage/**",
+      "!public/3d/**",
+      "!src/assets/**",
+      "!**/*.css",
+      "!**/*.log"
+    ]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "linter": {
+    "rules": {
+      "recommended": true,
+      "style": {
+        "noNonNullAssertion": "off"
+      }
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "semicolons": "asNeeded"
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["**/*.vue"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noUnusedVariables": "off",
+            "noUnusedImports": "off",
+            "noUnusedFunctionParameters": "off"
+          },
+          "style": {
+            "useImportType": "off",
+            "useExportType": "off"
+          }
+        }
+      }
+    }
+  ]
+}

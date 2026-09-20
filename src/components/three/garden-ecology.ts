@@ -6,10 +6,10 @@
  * 谷底黄土带（h<4）：杂草地野花 + 溪石 —— "下者生黄土"，不种茶
  */
 import * as THREE from 'three'
-import { getTerrainHeight } from './terrain'
-import { seededRandom } from './tea-plant'
 import type { GardenPreset } from './garden-presets'
-import { GARDEN_PRESETS, DEFAULT_PRESET } from './garden-presets'
+import { DEFAULT_PRESET, GARDEN_PRESETS } from './garden-presets'
+import { seededRandom } from './tea-plant'
+import { getTerrainHeight } from './terrain'
 
 /** 装饰物定位：随机采样地形高度，命中目标土壤带即返回（福鼎海湾内不撒） */
 function getDecorPosition(seedIdx: number, minH: number, maxH: number): [number, number, number] {
@@ -33,7 +33,7 @@ function createRockGeometry(): THREE.DodecahedronGeometry {
       i,
       pos.getX(i) * (1 + n * 0.55),
       pos.getY(i) * (1 + n * 0.4),
-      pos.getZ(i) * (1 + n * 0.55)
+      pos.getZ(i) * (1 + n * 0.55),
     )
   }
   geo.computeVertexNormals()
@@ -65,7 +65,7 @@ export function createDecorations(scene: THREE.Scene, preset?: GardenPreset): vo
     rock.rotation.set(
       seededRandom(i + 17) * Math.PI,
       seededRandom(i + 23) * Math.PI,
-      seededRandom(i + 29) * Math.PI
+      seededRandom(i + 29) * Math.PI,
     )
     decorGroup.add(rock)
   }
@@ -73,7 +73,11 @@ export function createDecorations(scene: THREE.Scene, preset?: GardenPreset): vo
   // --- 草簇（砾壤带茶行间土埂草，古籍"开畲"留土埂） ---
   const grassGeo = new THREE.ConeGeometry(0.06, 0.5, 4)
   grassGeo.translate(0, 0.25, 0)
-  const grassMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, flatShading: true })
+  const grassMat = new THREE.MeshStandardMaterial({
+    color: 0xffffff,
+    roughness: 0.9,
+    flatShading: true,
+  })
   const grass = new THREE.InstancedMesh(grassGeo, grassMat, p.grassCount)
   const dummy = new THREE.Object3D()
   const tmpColor = new THREE.Color()
@@ -85,7 +89,11 @@ export function createDecorations(scene: THREE.Scene, preset?: GardenPreset): vo
     dummy.rotation.set(0, seededRandom(i + 41) * Math.PI, (seededRandom(i + 43) - 0.5) * 0.35)
     dummy.updateMatrix()
     grass.setMatrixAt(i, dummy.matrix)
-    tmpColor.setHSL(0.25 + seededRandom(i * 1.9 + 2) * 0.07, 0.4, 0.3 + seededRandom(i * 3.1 + 4) * 0.2)
+    tmpColor.setHSL(
+      0.25 + seededRandom(i * 1.9 + 2) * 0.07,
+      0.4,
+      0.3 + seededRandom(i * 3.1 + 4) * 0.2,
+    )
     grass.setColorAt(i, tmpColor)
   }
   if (grass.instanceColor) grass.instanceColor.needsUpdate = true
@@ -93,7 +101,11 @@ export function createDecorations(scene: THREE.Scene, preset?: GardenPreset): vo
 
   // --- 野花（谷底黄土带杂草地；不种茶的湿地长野花，古法撂荒地相） ---
   const flowerGeo = new THREE.IcosahedronGeometry(0.1, 0)
-  const flowerMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.65, flatShading: true })
+  const flowerMat = new THREE.MeshStandardMaterial({
+    color: 0xffffff,
+    roughness: 0.65,
+    flatShading: true,
+  })
   const flowers = new THREE.InstancedMesh(flowerGeo, flowerMat, p.flowerCount)
   const flowerPalette = [0xf4e28d, 0xf4b8d0, 0xe8e3f2, 0xf2b88d, 0xd9e8b8]
   for (let i = 0; i < p.flowerCount; i++) {
@@ -104,7 +116,9 @@ export function createDecorations(scene: THREE.Scene, preset?: GardenPreset): vo
     dummy.rotation.set(0, seededRandom(i + 61) * Math.PI, 0)
     dummy.updateMatrix()
     flowers.setMatrixAt(i, dummy.matrix)
-    tmpColor.setHex(flowerPalette[Math.floor(seededRandom(i * 8.1 + 13) * flowerPalette.length)] ?? 0xf4e28d)
+    tmpColor.setHex(
+      flowerPalette[Math.floor(seededRandom(i * 8.1 + 13) * flowerPalette.length)] ?? 0xf4e28d,
+    )
     flowers.setColorAt(i, tmpColor)
   }
   if (flowers.instanceColor) flowers.instanceColor.needsUpdate = true
@@ -114,7 +128,11 @@ export function createDecorations(scene: THREE.Scene, preset?: GardenPreset): vo
   if (p.id === 'wuyishan') {
     // 丹霞崖壁带：主峰（0,-14）腰 9-24m 竖立红岩层露头（赤壁感：大片竖片插坡，稀而大）
     const cliffGeo = new THREE.BoxGeometry(1, 0.5, 1)
-    const cliffMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.92, flatShading: true })
+    const cliffMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 0.92,
+      flatShading: true,
+    })
     const cliffPalette = [0x8a4b3c, 0x7d4536, 0x8f5142]
     const cliffCount = 130
     const cliffs = new THREE.InstancedMesh(cliffGeo, cliffMat, cliffCount)
@@ -129,7 +147,11 @@ export function createDecorations(scene: THREE.Scene, preset?: GardenPreset): vo
       if (wh < 9 || wh > 24) continue
       const s = 2.6 + seededRandom(i * 5.3 + 503) * 2.4
       dummy.position.set(wx, wh - s * 0.3, wz) // 根部埋入坡面
-      dummy.scale.set(s * (0.9 + seededRandom(i * 6.1 + 504) * 0.4), s * (0.8 + seededRandom(i * 6.7 + 509) * 0.8), s * 0.22) // 竖立岩片
+      dummy.scale.set(
+        s * (0.9 + seededRandom(i * 6.1 + 504) * 0.4),
+        s * (0.8 + seededRandom(i * 6.7 + 509) * 0.8),
+        s * 0.22,
+      ) // 竖立岩片
       dummy.rotation.set(
         (seededRandom(i + 505) - 0.5) * 0.3,
         seededRandom(i + 506) * Math.PI,
@@ -137,7 +159,9 @@ export function createDecorations(scene: THREE.Scene, preset?: GardenPreset): vo
       )
       dummy.updateMatrix()
       cliffs.setMatrixAt(placed, dummy.matrix)
-      tmpColor.setHex(cliffPalette[Math.floor(seededRandom(i * 4.7 + 508) * cliffPalette.length)] ?? 0x8a4b3c)
+      tmpColor.setHex(
+        cliffPalette[Math.floor(seededRandom(i * 4.7 + 508) * cliffPalette.length)] ?? 0x8a4b3c,
+      )
       cliffs.setColorAt(placed, tmpColor)
       placed++
     }
@@ -148,7 +172,11 @@ export function createDecorations(scene: THREE.Scene, preset?: GardenPreset): vo
 
     // 苔藓/地衣垫：扁球贴岩面，深绿-灰绿（岩背阴湿处）
     const mossGeo = new THREE.IcosahedronGeometry(0.35, 0)
-    const mossMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, flatShading: true })
+    const mossMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 1,
+      flatShading: true,
+    })
     const mossCount = 240
     const moss = new THREE.InstancedMesh(mossGeo, mossMat, mossCount)
     const mossPalette = [0x4a5d3a, 0x5c6b4f, 0x3f5240, 0x6b7355]
@@ -160,7 +188,9 @@ export function createDecorations(scene: THREE.Scene, preset?: GardenPreset): vo
       dummy.rotation.set(0, seededRandom(i + 31) * Math.PI, (seededRandom(i + 33) - 0.5) * 0.4)
       dummy.updateMatrix()
       moss.setMatrixAt(i, dummy.matrix)
-      tmpColor.setHex(mossPalette[Math.floor(seededRandom(i * 4.1 + 24) * mossPalette.length)] ?? 0x4a5d3a)
+      tmpColor.setHex(
+        mossPalette[Math.floor(seededRandom(i * 4.1 + 24) * mossPalette.length)] ?? 0x4a5d3a,
+      )
       moss.setColorAt(i, tmpColor)
     }
     if (moss.instanceColor) moss.instanceColor.needsUpdate = true
@@ -170,7 +200,11 @@ export function createDecorations(scene: THREE.Scene, preset?: GardenPreset): vo
     // 岩生灌木：石隙小灌丛（比草大、暗绿、贴崖壁）
     const shrubGeo = new THREE.ConeGeometry(0.14, 0.9, 5)
     shrubGeo.translate(0, 0.45, 0)
-    const shrubMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95, flatShading: true })
+    const shrubMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 0.95,
+      flatShading: true,
+    })
     const shrubCount = 70
     const shrubs = new THREE.InstancedMesh(shrubGeo, shrubMat, shrubCount)
     for (let i = 0; i < shrubCount; i++) {
@@ -181,7 +215,11 @@ export function createDecorations(scene: THREE.Scene, preset?: GardenPreset): vo
       dummy.rotation.set(0, seededRandom(i + 44) * Math.PI, (seededRandom(i + 46) - 0.5) * 0.25)
       dummy.updateMatrix()
       shrubs.setMatrixAt(i, dummy.matrix)
-      tmpColor.setHSL(0.22 + seededRandom(i * 5.1 + 47) * 0.05, 0.35, 0.22 + seededRandom(i * 6.3 + 48) * 0.12)
+      tmpColor.setHSL(
+        0.22 + seededRandom(i * 5.1 + 47) * 0.05,
+        0.35,
+        0.22 + seededRandom(i * 6.3 + 48) * 0.12,
+      )
       shrubs.setColorAt(i, tmpColor)
     }
     if (shrubs.instanceColor) shrubs.instanceColor.needsUpdate = true
@@ -194,7 +232,11 @@ export function createDecorations(scene: THREE.Scene, preset?: GardenPreset): vo
     // 蕨类（大叶蕨丛，林下阴湿）
     const fernGeo = new THREE.ConeGeometry(0.5, 1.8, 5)
     fernGeo.translate(0, 0.9, 0)
-    const fernMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, flatShading: true })
+    const fernMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 0.9,
+      flatShading: true,
+    })
     const fernCount = 220
     const ferns = new THREE.InstancedMesh(fernGeo, fernMat, fernCount)
     for (let i = 0; i < fernCount; i++) {
@@ -205,7 +247,11 @@ export function createDecorations(scene: THREE.Scene, preset?: GardenPreset): vo
       dummy.rotation.set(0, seededRandom(i + 602) * Math.PI, (seededRandom(i + 603) - 0.5) * 0.3)
       dummy.updateMatrix()
       ferns.setMatrixAt(i, dummy.matrix)
-      tmpColor.setHSL(0.26 + seededRandom(i * 4.7 + 604) * 0.05, 0.42, 0.2 + seededRandom(i * 5.9 + 605) * 0.12)
+      tmpColor.setHSL(
+        0.26 + seededRandom(i * 4.7 + 604) * 0.05,
+        0.42,
+        0.2 + seededRandom(i * 5.9 + 605) * 0.12,
+      )
       ferns.setColorAt(i, tmpColor)
     }
     if (ferns.instanceColor) ferns.instanceColor.needsUpdate = true
@@ -214,7 +260,11 @@ export function createDecorations(scene: THREE.Scene, preset?: GardenPreset): vo
 
     // 腐殖蘑菇（白伞点缀，林下枯枝落叶层）
     const mushroomGeo = new THREE.SphereGeometry(0.13, 7, 4, 0, Math.PI * 2, 0, Math.PI * 0.5)
-    const mushroomMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85, flatShading: true })
+    const mushroomMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 0.85,
+      flatShading: true,
+    })
     const mushroomCount = 60
     const mushrooms = new THREE.InstancedMesh(mushroomGeo, mushroomMat, mushroomCount)
     for (let i = 0; i < mushroomCount; i++) {
@@ -224,7 +274,11 @@ export function createDecorations(scene: THREE.Scene, preset?: GardenPreset): vo
       dummy.rotation.set(0, seededRandom(i + 702) * Math.PI, 0)
       dummy.updateMatrix()
       mushrooms.setMatrixAt(i, dummy.matrix)
-      tmpColor.setHSL(0.08 + seededRandom(i * 2.3 + 703) * 0.05, 0.3, 0.82 + seededRandom(i * 4.1 + 704) * 0.12)
+      tmpColor.setHSL(
+        0.08 + seededRandom(i * 2.3 + 703) * 0.05,
+        0.3,
+        0.82 + seededRandom(i * 4.1 + 704) * 0.12,
+      )
       mushrooms.setColorAt(i, tmpColor)
     }
     if (mushrooms.instanceColor) mushrooms.instanceColor.needsUpdate = true
@@ -232,7 +286,11 @@ export function createDecorations(scene: THREE.Scene, preset?: GardenPreset): vo
 
     // 林下苔藓（暗绿苔垫，树基/洼地）
     const yunMossGeo = new THREE.IcosahedronGeometry(0.3, 0)
-    const yunMossMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, flatShading: true })
+    const yunMossMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 1,
+      flatShading: true,
+    })
     const yunMossCount = 180
     const yunMoss = new THREE.InstancedMesh(yunMossGeo, yunMossMat, yunMossCount)
     for (let i = 0; i < yunMossCount; i++) {
@@ -243,7 +301,11 @@ export function createDecorations(scene: THREE.Scene, preset?: GardenPreset): vo
       dummy.rotation.set(0, seededRandom(i + 802) * Math.PI, (seededRandom(i + 803) - 0.5) * 0.4)
       dummy.updateMatrix()
       yunMoss.setMatrixAt(i, dummy.matrix)
-      tmpColor.setHSL(0.28 + seededRandom(i * 4.1 + 804) * 0.06, 0.35, 0.18 + seededRandom(i * 5.3 + 805) * 0.1)
+      tmpColor.setHSL(
+        0.28 + seededRandom(i * 4.1 + 804) * 0.06,
+        0.35,
+        0.18 + seededRandom(i * 5.3 + 805) * 0.1,
+      )
       yunMoss.setColorAt(i, tmpColor)
     }
     if (yunMoss.instanceColor) yunMoss.instanceColor.needsUpdate = true
@@ -253,4 +315,3 @@ export function createDecorations(scene: THREE.Scene, preset?: GardenPreset): vo
 
   scene.add(decorGroup)
 }
-

@@ -3,7 +3,7 @@
  * 供「只读分享页」与二维码使用。纯函数、无 DOM 依赖，便于单测。
  */
 
-import type { TastingRecord, TasteDimensions } from '@/types/tasting'
+import type { TasteDimensions, TastingRecord } from '@/types/tasting'
 
 /** 分享用品鉴卡数据快照（不含内部 id / 同步字段，可安全放进 URL） */
 export interface TastingCardShareData {
@@ -23,7 +23,16 @@ export interface TastingCardShareData {
   mood?: string
 }
 
-const DIMENSION_KEYS = ['bitterness', 'sweetness', 'aftertaste', 'body', 'aroma', 'rhyme', 'shape', 'mind'] as const
+const DIMENSION_KEYS = [
+  'bitterness',
+  'sweetness',
+  'aftertaste',
+  'body',
+  'aroma',
+  'rhyme',
+  'shape',
+  'mind',
+] as const
 
 /** 从完整品鉴记录提取分享快照（剔除内部 id / 同步字段）。 */
 export function toShareData(record: TastingRecord): TastingCardShareData {
@@ -173,7 +182,7 @@ function validateTeaShareData(raw: unknown): TeaShareData | null {
   if (typeof r.teaType !== 'string' || !r.teaType) return null
   if (typeof r.origin !== 'string' || !r.origin) return null
   if (typeof r.description !== 'string' || !r.description) return null
-  if (!Array.isArray(r.flavor) || !r.flavor.every(f => typeof f === 'string')) return null
+  if (!Array.isArray(r.flavor) || !r.flavor.every((f) => typeof f === 'string')) return null
   if (r.story !== undefined && typeof r.story !== 'string') return null
   const result: TeaShareData = {
     teaId: r.teaId,

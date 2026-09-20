@@ -9,9 +9,14 @@
  * 计算逻辑在 services/tasteProfile.ts（纯函数，已单测）。
  */
 import { computed } from 'vue'
-import TasteRadarChart from './TasteRadarChart.vue'
-import { buildTypeStats, buildFlavorStats, buildAvgDimensions, buildPersonalTip } from '@/services/tasteProfile'
+import {
+  buildAvgDimensions,
+  buildFlavorStats,
+  buildPersonalTip,
+  buildTypeStats,
+} from '@/services/tasteProfile'
 import type { TastingRecord } from '@/types/tasting'
+import TasteRadarChart from './TasteRadarChart.vue'
 
 const props = defineProps<{
   history: TastingRecord[]

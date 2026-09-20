@@ -3,7 +3,7 @@
  *
  * 用 vi.resetModules + 动态 import 获取全新模块实例，规避模块级 15s 节流等待。
  */
-import { describe, it, expect, vi, afterEach } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { TasteDimensions } from '@/types/tasting'
 
 async function freshTeaAI() {
@@ -12,8 +12,14 @@ async function freshTeaAI() {
 }
 
 const DIMENSIONS: TasteDimensions = {
-  bitterness: 2, sweetness: 4, aftertaste: 5, body: 3,
-  aroma: 5, rhyme: 4, shape: 3, mind: 5,
+  bitterness: 2,
+  sweetness: 4,
+  aftertaste: 5,
+  body: 3,
+  aroma: 5,
+  rhyme: 4,
+  shape: 3,
+  mind: 5,
 }
 
 afterEach(() => {

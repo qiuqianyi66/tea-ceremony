@@ -12,20 +12,20 @@
  */
 
 import { Howl, Howler } from 'howler'
-import { ref, onUnmounted } from 'vue'
+import { onUnmounted, ref } from 'vue'
 
 // ============ 类型定义 ============
 
 type AmbientTrack = 'guqin' | 'xiao' | 'water' | 'night' | 'rain' | 'wind'
 
 type SfxSprite =
-  | 'boil'       // 咕嘟沸腾声
-  | 'teaDrop'    // 投茶沙沙声
-  | 'pour'       // 注水声
-  | 'outflow'    // 出汤声
-  | 'sip'        // 轻啜声
-  | 'success'    // 完成音
-  | 'crackle'    // 火焰噼啪 (短时合成备用)
+  | 'boil' // 咕嘟沸腾声
+  | 'teaDrop' // 投茶沙沙声
+  | 'pour' // 注水声
+  | 'outflow' // 出汤声
+  | 'sip' // 轻啜声
+  | 'success' // 完成音
+  | 'crackle' // 火焰噼啪 (短时合成备用)
 
 interface AudioState {
   ambientPlaying: boolean
@@ -88,10 +88,7 @@ function initHowler() {
 
   // 环境音 Howl - 流式加载，支持循环
   ambientHowl = new Howl({
-    src: [
-      '/audio/ambient/guqin.webm',
-      '/audio/ambient/guqin.mp3',
-    ],
+    src: ['/audio/ambient/guqin.webm', '/audio/ambient/guqin.mp3'],
     loop: true,
     html5: true, // 大文件流式
     volume: state.value.ambientVolume * state.value.masterVolume,
@@ -104,10 +101,7 @@ function initHowler() {
 
   // 交互音效精灵图 Howl
   sfxHowl = new Howl({
-    src: [
-      '/audio/sfx/tea-sprites.webm',
-      '/audio/sfx/tea-sprites.mp3',
-    ],
+    src: ['/audio/sfx/tea-sprites.webm', '/audio/sfx/tea-sprites.mp3'],
     sprite: {
       boil: [0, 3000],
       teaDrop: [3000, 500],
@@ -129,7 +123,10 @@ function initHowler() {
 
 // ============ 环境音控制 ============
 
-const ambientTracks: Record<Exclude<AmbientTrack, 'rain' | 'wind'>, { webm: string; mp3: string; name: string }> = {
+const ambientTracks: Record<
+  Exclude<AmbientTrack, 'rain' | 'wind'>,
+  { webm: string; mp3: string; name: string }
+> = {
   guqin: { webm: '/audio/ambient/guqin.webm', mp3: '/audio/ambient/guqin.mp3', name: '古琴·流泉' },
   xiao: { webm: '/audio/ambient/xiao.webm', mp3: '/audio/ambient/xiao.mp3', name: '洞箫·梅花三弄' },
   water: { webm: '/audio/ambient/water.webm', mp3: '/audio/ambient/water.mp3', name: '山涧流水' },
@@ -222,26 +219,29 @@ function startSynthAmbient(kind: 'rain' | 'wind', paused: boolean) {
     sources.push(rainNoise)
 
     // 鸟鸣：随机短促滑音（山林茶舍的"鸟鸣"）
-    birdTimer = setInterval(() => {
-      if (!synthLayer || Math.random() > 0.75) return
-      const t0 = ctx.currentTime
-      const count = 1 + Math.floor(Math.random() * 2)
-      for (let i = 0; i < count; i++) {
-        const t = t0 + i * (0.09 + Math.random() * 0.06)
-        const freq = 2500 + Math.random() * 1600
-        const osc = ctx.createOscillator()
-        osc.type = 'sine'
-        osc.frequency.setValueAtTime(freq, t)
-        osc.frequency.exponentialRampToValueAtTime(freq * (1.25 + Math.random() * 0.3), t + 0.07)
-        const gain = ctx.createGain()
-        gain.gain.setValueAtTime(0, t)
-        gain.gain.linearRampToValueAtTime(0.05 + Math.random() * 0.05, t + 0.015)
-        gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.1)
-        osc.connect(gain).connect(master)
-        osc.start(t)
-        osc.stop(t + 0.14)
-      }
-    }, 3500 + Math.random() * 4000)
+    birdTimer = setInterval(
+      () => {
+        if (!synthLayer || Math.random() > 0.75) return
+        const t0 = ctx.currentTime
+        const count = 1 + Math.floor(Math.random() * 2)
+        for (let i = 0; i < count; i++) {
+          const t = t0 + i * (0.09 + Math.random() * 0.06)
+          const freq = 2500 + Math.random() * 1600
+          const osc = ctx.createOscillator()
+          osc.type = 'sine'
+          osc.frequency.setValueAtTime(freq, t)
+          osc.frequency.exponentialRampToValueAtTime(freq * (1.25 + Math.random() * 0.3), t + 0.07)
+          const gain = ctx.createGain()
+          gain.gain.setValueAtTime(0, t)
+          gain.gain.linearRampToValueAtTime(0.05 + Math.random() * 0.05, t + 0.015)
+          gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.1)
+          osc.connect(gain).connect(master)
+          osc.start(t)
+          osc.stop(t + 0.14)
+        }
+      },
+      3500 + Math.random() * 4000,
+    )
   }
 
   synthLayer = { kind, ctx, master, sources, birdTimer }
@@ -251,7 +251,11 @@ function stopSynthAmbient() {
   if (!synthLayer) return
   if (synthLayer.birdTimer) clearInterval(synthLayer.birdTimer)
   for (const src of synthLayer.sources) {
-    try { src.stop() } catch { /* 已停止 */ }
+    try {
+      src.stop()
+    } catch {
+      /* 已停止 */
+    }
   }
   synthLayer.ctx.close().catch(() => {})
   synthLayer = null
@@ -276,8 +280,7 @@ function syncSynthAmbientVolume() {
   if (!synthLayer) return
   const t = synthLayer.ctx.currentTime
   synthLayer.master.gain.cancelScheduledValues(t)
-  synthLayer.master.gain.setTargetAtTime(
-    state.value.ambientPlaying ? synthTargetGain() : 0, t, 0.1)
+  synthLayer.master.gain.setTargetAtTime(state.value.ambientPlaying ? synthTargetGain() : 0, t, 0.1)
 }
 
 function stopHowlerAmbient() {
@@ -365,7 +368,10 @@ function stopAmbient() {
 
 // ============ 交互音效 (SFX) ============
 
-function playSfx(sprite: SfxSprite, options?: { volume?: number; rate?: number; pos3d?: [number, number, number] }) {
+function playSfx(
+  sprite: SfxSprite,
+  options?: { volume?: number; rate?: number; pos3d?: [number, number, number] },
+) {
   initHowler()
   if (!sfxHowl) return
 
@@ -402,7 +408,7 @@ function playCrackleSynthesis() {
   const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate)
   const data = buffer.getChannelData(0)
   for (let i = 0; i < bufferSize; i++) {
-    data[i] = (Math.random() * 2 - 1) * Math.exp(-i / bufferSize * 15)
+    data[i] = (Math.random() * 2 - 1) * Math.exp((-i / bufferSize) * 15)
   }
   const src = ctx.createBufferSource()
   src.buffer = buffer
@@ -418,12 +424,15 @@ function playCrackleSynthesis() {
 
 function startCrackleSynthesis() {
   stopCrackleSynthesis()
-  crackleInterval = setInterval(() => {
-    if (Math.random() > 0.4) {
-      playCrackleSynthesis()
-      if (Math.random() > 0.7) setTimeout(playCrackleSynthesis, 30 + Math.random() * 50)
-    }
-  }, 180 + Math.random() * 250)
+  crackleInterval = setInterval(
+    () => {
+      if (Math.random() > 0.4) {
+        playCrackleSynthesis()
+        if (Math.random() > 0.7) setTimeout(playCrackleSynthesis, 30 + Math.random() * 50)
+      }
+    },
+    180 + Math.random() * 250,
+  )
 }
 
 function stopCrackleSynthesis() {
@@ -466,27 +475,37 @@ function startBoilSynth() {
   noise.start()
   boilNoiseSource = noise
   // 随机气泡
-  boilInterval = setInterval(() => {
-    if (Math.random() > 0.35) {
-      const osc = ctx.createOscillator()
-      osc.type = 'sine'
-      osc.frequency.value = 480 + Math.random() * 900
-      const og = ctx.createGain()
-      const t = ctx.currentTime
-      og.gain.setValueAtTime(0, t)
-      og.gain.linearRampToValueAtTime(0.035 + Math.random() * 0.025, t + 0.02)
-      og.gain.exponentialRampToValueAtTime(0.001, t + 0.14 + Math.random() * 0.1)
-      osc.connect(og).connect(ctx.destination)
-      osc.start(t)
-      osc.stop(t + 0.3)
-    }
-  }, 110 + Math.random() * 110)
+  boilInterval = setInterval(
+    () => {
+      if (Math.random() > 0.35) {
+        const osc = ctx.createOscillator()
+        osc.type = 'sine'
+        osc.frequency.value = 480 + Math.random() * 900
+        const og = ctx.createGain()
+        const t = ctx.currentTime
+        og.gain.setValueAtTime(0, t)
+        og.gain.linearRampToValueAtTime(0.035 + Math.random() * 0.025, t + 0.02)
+        og.gain.exponentialRampToValueAtTime(0.001, t + 0.14 + Math.random() * 0.1)
+        osc.connect(og).connect(ctx.destination)
+        osc.start(t)
+        osc.stop(t + 0.3)
+      }
+    },
+    110 + Math.random() * 110,
+  )
 }
 
 function stopBoilSynth() {
-  if (boilInterval) { clearInterval(boilInterval); boilInterval = null }
+  if (boilInterval) {
+    clearInterval(boilInterval)
+    boilInterval = null
+  }
   if (boilNoiseSource) {
-    try { boilNoiseSource.stop() } catch { /* 已停止 */ }
+    try {
+      boilNoiseSource.stop()
+    } catch {
+      /* 已停止 */
+    }
     boilNoiseSource = null
   }
 }
@@ -643,10 +662,10 @@ function toggleMute() {
 
 function getTimeBasedAmbient(): AmbientTrack {
   const hour = new Date().getHours()
-  if (hour >= 5 && hour < 9) return 'guqin'      // 晨
-  if (hour >= 9 && hour < 17) return 'xiao'      // 午
-  if (hour >= 17 && hour < 21) return 'water'    // 暮
-  return 'night'                                  // 夜
+  if (hour >= 5 && hour < 9) return 'guqin' // 晨
+  if (hour >= 9 && hour < 17) return 'xiao' // 午
+  if (hour >= 17 && hour < 21) return 'water' // 暮
+  return 'night' // 夜
 }
 
 function autoSwitchAmbient() {
@@ -681,8 +700,14 @@ export function useAudio() {
   // 兼容旧版 API 的别名
   const startAmbient = toggleAmbient
   const stopAmbientFn = stopAmbient
-  const startBoiling = () => { startBoilSynth(); startCrackleSynthesis() }
-  const stopBoiling = () => { stopBoilSynth(); stopCrackleSynthesis() }
+  const startBoiling = () => {
+    startBoilSynth()
+    startCrackleSynthesis()
+  }
+  const stopBoiling = () => {
+    stopBoilSynth()
+    stopCrackleSynthesis()
+  }
   const startCrackle = startCrackleSynthesis
   const stopCrackle = stopCrackleSynthesis
   const playPourWater = playPour
@@ -732,20 +757,30 @@ export function useAudio() {
     toggleMute,
 
     // 底层实例 (高级用法)
-    get ambientHowl() { return ambientHowl },
-    get sfxHowl() { return sfxHowl },
+    get ambientHowl() {
+      return ambientHowl
+    },
+    get sfxHowl() {
+      return sfxHowl
+    },
   }
 }
 
 // 类型导出
-export type { AmbientTrack, SfxSprite, AudioState }
+export type { AmbientTrack, AudioState, SfxSprite }
 
 // 兼容旧页面的模块级调用；新代码优先使用 useAudio()。
 export const startAmbient = () => toggleAmbient()
 export const playPourWater = (volume = 1) => playPour(volume)
 export const playPourTea = (volume = 1) => playOutflow(volume)
-export const startBoiling = () => { startBoilSynth(); startCrackleSynthesis() }
-export const stopBoiling = () => { stopBoilSynth(); stopCrackleSynthesis() }
+export const startBoiling = () => {
+  startBoilSynth()
+  startCrackleSynthesis()
+}
+export const stopBoiling = () => {
+  stopBoilSynth()
+  stopCrackleSynthesis()
+}
 export const startCrackle = () => startCrackleSynthesis()
 export const stopCrackle = () => stopCrackleSynthesis()
 export const stopAll = () => dispose()

@@ -44,7 +44,7 @@ def _capture_exception(exc: Exception) -> None:
 
         if sentry_sdk.get_client().is_active():
             sentry_sdk.capture_exception(exc)
-    except Exception:
+    except Exception:  # nosec B110 - 错误处理器内必须 no-op：上报失败不能再抛（否则异常处理递归）
         pass
 
 

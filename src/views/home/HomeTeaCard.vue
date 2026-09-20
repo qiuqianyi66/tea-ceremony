@@ -12,12 +12,13 @@ const emit = defineEmits<{
 }>()
 
 const imgFailed = reactive<Record<string, boolean>>({})
-function markImgFailed(id: string) { imgFailed[id] = true }
+function markImgFailed(id: string) {
+  imgFailed[id] = true
+}
 </script>
 
 <template>
-  <div class="tea-card" role="button" tabindex="0"
-    @click="emit('open', tea)" @keydown.enter="emit('open', tea)">
+  <div class="tea-card" @click="emit('open', tea)">
     <img v-if="tea.image && !imgFailed[tea.id]" :src="tea.image" loading="lazy"
       @error="markImgFailed(tea.id)" class="w-full h-28 object-cover rounded-lg mb-2" :alt="tea.name" />
     <div v-else class="w-full h-28 rounded-lg mb-2"
@@ -27,7 +28,8 @@ function markImgFailed(id: string) { imgFailed[id] = true }
       <span class="tea-share" role="button" tabindex="0"
         @click.stop="emit('share', tea)" @keydown.enter.stop="emit('share', tea)">↗ 分享</span>
     </div>
-    <p class="tea-name">{{ tea.name }}</p>
+    <!-- 卡片整体保留鼠标点击打开；键盘主操作落在茶名（避免 role=button 嵌套，axe nested-interactive） -->
+    <p class="tea-name" role="button" tabindex="0" @keydown.enter="emit('open', tea)">{{ tea.name }}</p>
     <p class="tea-desc">{{ tea.description }}</p>
     <div class="tea-flavors">
       <span v-for="f in tea.flavor" :key="f" class="flavor-pill">{{ f }}</span>
@@ -66,7 +68,11 @@ function markImgFailed(id: string) { imgFailed[id] = true }
   cursor: pointer; transition: all 0.25s ease;
 }
 .tea-share:hover { background: rgba(201, 169, 110, 0.25); border-color: rgba(201, 169, 110, 0.8); }
-.tea-name { font-size: 1.1rem; font-weight: 600; margin: 0.1rem 0 0; }
+.tea-name {
+  font-size: 1.1rem; font-weight: 600; margin: 0.1rem 0 0;
+  cursor: pointer; border-radius: 0.25rem;
+}
+.tea-name:focus-visible { outline: 2px solid rgba(201, 169, 110, 0.8); outline-offset: 2px; }
 .tea-desc {
   font-size: 0.76rem; line-height: 1.6;
   color: rgba(245, 241, 230, 0.58); margin: 0;

@@ -3,7 +3,7 @@
  * 封装 setInterval 逻辑，支持暂停/恢复/重置
  */
 
-import { ref, onUnmounted } from 'vue'
+import { onUnmounted, ref } from 'vue'
 
 export function useTimer() {
   const seconds = ref(0)

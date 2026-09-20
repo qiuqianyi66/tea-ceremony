@@ -18,12 +18,12 @@ os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///:memory:")
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
 
+import main as app_main
 from app.database import Base, get_db
 from app.middleware import reset_rate_store
-import main as app_main
 
 # SQLite 异步内存库：StaticPool 让所有连接共享同一个内存库。
 test_engine = create_async_engine(

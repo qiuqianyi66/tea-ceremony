@@ -4,29 +4,21 @@
  * 展示：综合评分趋势、工艺系数趋势、各维度雷达图小图
  */
 
-import { computed } from 'vue'
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Filler,
-  Tooltip,
-  Legend,
-} from 'chart.js'
 import type { ChartOptions, TooltipItem } from 'chart.js'
+import {
+  CategoryScale,
+  Chart as ChartJS,
+  Filler,
+  Legend,
+  LinearScale,
+  LineElement,
+  PointElement,
+  Tooltip,
+} from 'chart.js'
+import { computed } from 'vue'
 import { Line } from 'vue-chartjs'
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Filler,
-  Tooltip,
-  Legend,
-)
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip, Legend)
 
 interface Props {
   /** 历史记录列表 */
@@ -47,23 +39,19 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 // 计算属性：最近 20 条记录
-const recentRecords = computed(() =>
-  [...props.records].reverse().slice(0, 20)
-)
+const recentRecords = computed(() => [...props.records].reverse().slice(0, 20))
 
 const labels = computed(() =>
-  recentRecords.value.map(r => {
+  recentRecords.value.map((r) => {
     const d = new Date(r.date)
     return `${d.getMonth() + 1}/${d.getDate()}`
-  })
+  }),
 )
 
-const scoresData = computed(() =>
-  recentRecords.value.map(r => r.overallScore)
-)
+const scoresData = computed(() => recentRecords.value.map((r) => r.overallScore))
 
-const processData = computed(() =>
-  recentRecords.value.map(r => r.processFactor * 10) // 放大 10 倍便于同轴显示
+const processData = computed(
+  () => recentRecords.value.map((r) => r.processFactor * 10), // 放大 10 倍便于同轴显示
 )
 
 // 配置
@@ -177,7 +165,6 @@ const lineData = computed(() => ({
     },
   ],
 }))
-
 </script>
 
 <template>

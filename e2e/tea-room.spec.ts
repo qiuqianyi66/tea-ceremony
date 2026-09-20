@@ -3,7 +3,7 @@
  * - 茶室页可进入并可切换茶室（宋式/明式/山林茶舍）
  * - 切到山林茶舍后标题更新，页面无运行错误（环境音合成层随主题切换）
  */
-import { test, expect } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 
 test('茶室页：默认明式，可切换到山林茶舍且无页面错误', async ({ page }) => {
   const pageErrors: string[] = []

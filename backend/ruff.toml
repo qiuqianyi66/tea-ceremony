@@ -1,0 +1,25 @@
+# ruff 配置（P1-4 后端质量门）
+# 文档：https://docs.astral.sh/ruff/configuration/
+target-version = "py312"
+# 与既有代码风格对齐（存量最长行约 112，多为数据/路由声明，折行只会增加 diff 噪音）
+line-length = 120
+
+[lint]
+# E/F：pycodestyle + pyflakes 基础规则
+# I：import 排序；UP：语法现代化；B：flake8-bugbear 常见陷阱
+select = ["E", "F", "I", "UP", "B"]
+# 种子脚本/迁移脚本只做语法检查，不强制风格
+exclude = ["seeds", "alembic/versions"]
+
+[lint.flake8-bugbear]
+# B008（函数默认参数中调用）对 FastAPI 依赖注入是官方标准写法（Depends/Query/...），
+# 见 ruff 文档 FastAPI 章节：加入不可变调用白名单而非全局关闭规则。
+extend-immutable-calls = [
+  "fastapi.Depends",
+  "fastapi.Query",
+  "fastapi.Path",
+  "fastapi.Header",
+  "fastapi.Body",
+  "fastapi.Cookie",
+  "fastapi.security.APIKeyHeader",
+]

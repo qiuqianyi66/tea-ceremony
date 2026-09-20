@@ -3,14 +3,14 @@
  * 茶歇分形茶树 Canvas：递归画树 + 呼吸光晕 + 摇曳
  * 纯展示组件，所有状态由父组件传入。
  */
-import { ref, onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 
 const props = defineProps<{
   seed: number
-  progress: number       // 0-1 生长进度
-  sway: number           // 摇曳强度（衰减）
+  progress: number // 0-1 生长进度
+  sway: number // 摇曳强度（衰减）
   soundMode: boolean
-  micLevel: number       // 0-1
+  micLevel: number // 0-1
   breathPhase: 'inhale' | 'exhale'
 }>()
 const emit = defineEmits<{ tap: [] }>()
@@ -21,14 +21,21 @@ let rafId: number | null = null
 /** 伪随机：基于种子的可复现随机 */
 function seededRandom(seed: number) {
   let s = seed
-  return () => { s = (s * 9301 + 49297) % 233280; return s / 233280 }
+  return () => {
+    s = (s * 9301 + 49297) % 233280
+    return s / 233280
+  }
 }
 
 /** 递归画分形茶树 */
 function drawBranch(
   ctx: CanvasRenderingContext2D,
-  x: number, y: number, len: number, angle: number,
-  depth: number, maxDepth: number,
+  x: number,
+  y: number,
+  len: number,
+  angle: number,
+  depth: number,
+  maxDepth: number,
   rand: () => number,
   swayOffset: number,
   leafProgress: number,
@@ -69,15 +76,45 @@ function drawBranch(
 
   const branchAngle = 0.35 + rand() * 0.2
   const lenRatio = 0.72 + rand() * 0.08
-  drawBranch(ctx, x2, y2, len * lenRatio, a - branchAngle, depth - 1, maxDepth, rand, swayOffset, leafProgress, leafColor)
-  drawBranch(ctx, x2, y2, len * lenRatio, a + branchAngle, depth - 1, maxDepth, rand, swayOffset, leafProgress, leafColor)
+  drawBranch(
+    ctx,
+    x2,
+    y2,
+    len * lenRatio,
+    a - branchAngle,
+    depth - 1,
+    maxDepth,
+    rand,
+    swayOffset,
+    leafProgress,
+    leafColor,
+  )
+  drawBranch(
+    ctx,
+    x2,
+    y2,
+    len * lenRatio,
+    a + branchAngle,
+    depth - 1,
+    maxDepth,
+    rand,
+    swayOffset,
+    leafProgress,
+    leafColor,
+  )
 }
 
 function render() {
   const canvas = canvasRef.value
-  if (!canvas) { rafId = requestAnimationFrame(render); return }
+  if (!canvas) {
+    rafId = requestAnimationFrame(render)
+    return
+  }
   const ctx = canvas.getContext('2d')
-  if (!ctx) { rafId = requestAnimationFrame(render); return }
+  if (!ctx) {
+    rafId = requestAnimationFrame(render)
+    return
+  }
 
   const dpr = window.devicePixelRatio || 1
   const w = canvas.clientWidth
@@ -108,7 +145,19 @@ function render() {
   const trunkLen = Math.min(w, h) * 0.22
   const baseX = w / 2
   const baseY = h * 0.88
-  drawBranch(ctx, baseX, baseY, trunkLen, -Math.PI / 2, maxDepth, maxDepth, rand, props.sway, props.progress, leafColor)
+  drawBranch(
+    ctx,
+    baseX,
+    baseY,
+    trunkLen,
+    -Math.PI / 2,
+    maxDepth,
+    maxDepth,
+    rand,
+    props.sway,
+    props.progress,
+    leafColor,
+  )
 
   ctx.beginPath()
   ctx.ellipse(baseX, baseY + 4, w * 0.18, 6, 0, 0, Math.PI * 2)
@@ -118,8 +167,12 @@ function render() {
   rafId = requestAnimationFrame(render)
 }
 
-onMounted(() => { rafId = requestAnimationFrame(render) })
-onUnmounted(() => { if (rafId) cancelAnimationFrame(rafId) })
+onMounted(() => {
+  rafId = requestAnimationFrame(render)
+})
+onUnmounted(() => {
+  if (rafId) cancelAnimationFrame(rafId)
+})
 </script>
 
 <template>

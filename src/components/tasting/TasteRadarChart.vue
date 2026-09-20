@@ -8,18 +8,18 @@
  * 支持对比：当前品鉴 vs 该茶历史均值 vs 标准参考
  */
 
-import { computed } from 'vue'
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  RadialLinearScale,
-  PointElement,
-  LineElement,
-  Filler,
-  Tooltip,
-  Legend,
-} from 'chart.js'
 import type { ChartDataset, ChartOptions, TooltipItem } from 'chart.js'
+import {
+  CategoryScale,
+  Chart as ChartJS,
+  Filler,
+  Legend,
+  LineElement,
+  PointElement,
+  RadialLinearScale,
+  Tooltip,
+} from 'chart.js'
+import { computed } from 'vue'
 import { Radar } from 'vue-chartjs'
 
 // 注册 Chart.js 组件
@@ -65,18 +65,14 @@ const DIMENSIONS = [
 ] as const
 
 // 计算标签和数据
-const labels = computed(() => DIMENSIONS.map(d => d.label))
+const labels = computed(() => DIMENSIONS.map((d) => d.label))
 
-const currentData = computed(() =>
-  DIMENSIONS.map(d => props.currentDimensions[d.key] ?? 0)
-)
+const currentData = computed(() => DIMENSIONS.map((d) => props.currentDimensions[d.key] ?? 0))
 
-const averageData = computed(() =>
-  DIMENSIONS.map(d => props.averageDimensions?.[d.key] ?? 0)
-)
+const averageData = computed(() => DIMENSIONS.map((d) => props.averageDimensions?.[d.key] ?? 0))
 
-const referenceData = computed(() =>
-  DIMENSIONS.map(() => 3) // 标准参考线：中性 3 分
+const referenceData = computed(
+  () => DIMENSIONS.map(() => 3), // 标准参考线：中性 3 分
 )
 
 // Chart.js 配置
@@ -164,7 +160,11 @@ const chartData = computed(() => {
     },
   ]
 
-  if (props.showComparison && props.averageDimensions && Object.keys(props.averageDimensions).length > 0) {
+  if (
+    props.showComparison &&
+    props.averageDimensions &&
+    Object.keys(props.averageDimensions).length > 0
+  ) {
     datasets.push({
       label: '历史均值',
       data: averageData.value,
@@ -196,7 +196,6 @@ const chartData = computed(() => {
     datasets,
   }
 })
-
 </script>
 
 <template>

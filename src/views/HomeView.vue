@@ -3,19 +3,19 @@
  * 首页：编排层（Hero + 内容流 + 抽屉）
  * 视觉层下沉到 views/home/ 子组件，业务逻辑保留在此。
  */
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
-import { useTeaStore } from '@/stores/tea'
-import { useProgressStore } from '@/stores/progress'
 import { getCurrentSolarTerm } from '@/data/solarTerms'
-import { teas } from '@/data/teas'
-import { TEA_POEMS, type TeaPoem } from '@/data/teaPoems'
 import { TEA_MASTERS, type TeaMaster } from '@/data/teaMasters'
+import { TEA_POEMS, type TeaPoem } from '@/data/teaPoems'
+import { teas } from '@/data/teas'
+import { buildTeaShareUrl, encodeTeaShare } from '@/services/share'
+import { useAuthStore } from '@/stores/auth'
+import { useProgressStore } from '@/stores/progress'
+import { useTeaStore } from '@/stores/tea'
 import type { Tea } from '@/types/tea'
-import { encodeTeaShare, buildTeaShareUrl } from '@/services/share'
-import HomeHero from './home/HomeHero.vue'
 import HomeDrawer from './home/HomeDrawer.vue'
+import HomeHero from './home/HomeHero.vue'
 import HomeTeaCard from './home/HomeTeaCard.vue'
 
 const router = useRouter()
@@ -45,10 +45,19 @@ function pickRandom<T>(arr: T[]): T {
 
 const todayPoem = ref<TeaPoem>(pickRandom(TEA_POEMS))
 const todayMaster = ref<TeaMaster>(pickRandom(TEA_MASTERS))
-function nextPoem() { todayPoem.value = pickRandom(TEA_POEMS) }
-function nextMaster() { todayMaster.value = pickRandom(TEA_MASTERS) }
+function nextPoem() {
+  todayPoem.value = pickRandom(TEA_POEMS)
+}
+function nextMaster() {
+  todayMaster.value = pickRandom(TEA_MASTERS)
+}
 
-interface NavItem { icon: string; label: string; desc: string; path: string }
+interface NavItem {
+  icon: string
+  label: string
+  desc: string
+  path: string
+}
 const navItems: NavItem[] = [
   { icon: 'Map', label: '茶产区地图', desc: '遍览 19 省名茶', path: '/map' },
   { icon: 'CupSoda', label: '选茶入席', desc: '挑一款今日之茶', path: '/select' },
@@ -57,13 +66,19 @@ const navItems: NavItem[] = [
   { icon: 'Bot', label: 'AI 茶灵', desc: '问茶解惑', path: '/ai' },
 ]
 
-function go(path: string) { router.push(path) }
+function go(path: string) {
+  router.push(path)
+}
 
 function shareTea(tea: Tea) {
   const data = {
-    teaId: tea.id, teaName: tea.name, teaType: tea.type,
-    origin: tea.origin, flavor: tea.flavor,
-    description: tea.description, story: tea.story,
+    teaId: tea.id,
+    teaName: tea.name,
+    teaType: tea.type,
+    origin: tea.origin,
+    flavor: tea.flavor,
+    description: tea.description,
+    story: tea.story,
   }
   window.open(buildTeaShareUrl(encodeTeaShare(data)), '_blank', 'noopener')
 }
@@ -337,7 +352,8 @@ onUnmounted(() => observer?.disconnect())
   color: #f3efe4; cursor: pointer; transition: all 0.3s;
 }
 .footer-link:hover { background: rgba(201, 169, 110, 0.9); border-color: rgba(201, 169, 110, 0.9); color: #2a2114; }
-.footer-note { font-size: 0.7rem; letter-spacing: 0.2em; color: rgba(245, 241, 230, 0.35); margin: 0; }
+/* 透明度 0.35→0.6：axe color-contrast，小字在深色底上需 4.5:1 */
+.footer-note { font-size: 0.7rem; letter-spacing: 0.2em; color: rgba(245, 241, 230, 0.6); margin: 0; }
 
 @media (max-width: 640px) {
   .topbar { padding: 1.1rem 1.1rem; }

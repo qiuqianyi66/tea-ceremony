@@ -3,9 +3,9 @@
  */
 
 import Dexie from 'dexie'
-import type { TastingRecord } from '@/types/tasting'
-import type { Achievement } from '@/types/tasting'
+import type { Achievement, TastingRecord } from '@/types/tasting'
 import type { TrackEvent } from '@/types/tracking'
+import type { WebVitalRecord } from '@/types/vitals'
 
 // ============ 数据库定义 ============
 
@@ -16,6 +16,7 @@ class TeaCeremonyDB extends Dexie {
   userXp!: Dexie.Table<{ key: string; value: number }, string>
   collectedWare!: Dexie.Table<{ id: string; unlockedAt: string }, string>
   trackingEvents!: Dexie.Table<TrackEvent, number>
+  webVitals!: Dexie.Table<WebVitalRecord, number>
 
   constructor() {
     super('teaCeremonyDB')
@@ -33,19 +34,24 @@ class TeaCeremonyDB extends Dexie {
     })
 
     // 版本 2：添加更多索引优化查询
-    this.version(2).stores({
-      tastings: '++id, teaId, date, overallScore, [teaId+date], brewTemp, steepTime',
-      achievements: '++id, id, unlocked',
-      settings: '++id, key',
-      userXp: '++id, key',
-      collectedWare: '++id, id, unlockedAt',
-    }).upgrade(tx => {
-      // 迁移：为现有记录添加索引字段
-      return tx.table('tastings').toCollection().modify(record => {
-        // 确保 date 字段存在且格式正确
-        if (!record.date) record.date = new Date().toISOString()
+    this.version(2)
+      .stores({
+        tastings: '++id, teaId, date, overallScore, [teaId+date], brewTemp, steepTime',
+        achievements: '++id, id, unlocked',
+        settings: '++id, key',
+        userXp: '++id, key',
+        collectedWare: '++id, id, unlockedAt',
       })
-    })
+      .upgrade((tx) => {
+        // 迁移：为现有记录添加索引字段
+        return tx
+          .table('tastings')
+          .toCollection()
+          .modify((record) => {
+            // 确保 date 字段存在且格式正确
+            if (!record.date) record.date = new Date().toISOString()
+          })
+      })
 
     // 版本 3：以合法复合索引重建（兼容已用 v1/v2 建过库的旧浏览器）
     this.version(3).stores({
@@ -64,6 +70,17 @@ class TeaCeremonyDB extends Dexie {
       userXp: '++id, key',
       collectedWare: '++id, id, unlockedAt',
       trackingEvents: '++id, category, event, ts',
+    })
+
+    // 版本 6：Web Vitals 真实用户指标（P1-9）——纯本地，无外发（ADR-006）
+    this.version(6).stores({
+      tastings: '++id, teaId, date, overallScore, [teaId+date], brewTemp, steepTime',
+      achievements: '++id, id, unlocked',
+      settings: '++id, key',
+      userXp: '++id, key',
+      collectedWare: '++id, id, unlockedAt',
+      trackingEvents: '++id, category, event, ts',
+      webVitals: '++id, name, rating, ts',
     })
   }
 }
@@ -149,7 +166,7 @@ async function migrateFromLocalStorage(): Promise<void> {
     const collectedRaw = localStorage.getItem('tea-collected-ware')
     if (collectedRaw) {
       const wareIds: string[] = JSON.parse(collectedRaw)
-      const wareRecords = wareIds.map(id => ({ id, unlockedAt: new Date().toISOString() }))
+      const wareRecords = wareIds.map((id) => ({ id, unlockedAt: new Date().toISOString() }))
       await db.collectedWare.bulkPut(wareRecords)
       console.log(`[Dexie] 迁移收藏茶器 ${wareRecords.length} 个`)
     }

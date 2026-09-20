@@ -3,14 +3,14 @@
  * 覆盖：saveRecord 写入 IndexedDB、后端同步成功/失败、防重复、XP 与成就联动。
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { useTeaStore } from '@/stores/tea'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { teas } from '@/data/teas'
+import { recordsApi } from '@/services/api'
+import { db, historyStorage, initDB } from '@/services/storage'
 import { useProgressStore } from '@/stores/progress'
 import { useTasteStore } from '@/stores/taste'
-import { historyStorage, initDB, db } from '@/services/storage'
-import { recordsApi } from '@/services/api'
-import { teas } from '@/data/teas'
+import { useTeaStore } from '@/stores/tea'
 
 const longjing = teas[0]!
 
@@ -106,7 +106,7 @@ describe('teaStore.saveRecord 离线保存闭环', () => {
 
     await store.saveRecord()
 
-    const firstBrew = progress.achievements.find(a => a.id === 'first_brew')
+    const firstBrew = progress.achievements.find((a) => a.id === 'first_brew')
     expect(firstBrew?.unlocked).toBe(true)
     expect(progress.newAchievement).toBe('first_brew')
   })

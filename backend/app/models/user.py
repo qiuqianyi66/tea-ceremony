@@ -1,12 +1,14 @@
 """用户域：用户 / 茶人生旅程。"""
 
-from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, DateTime, JSON, ForeignKey
+from datetime import UTC, datetime
+
+from sqlalchemy import JSON, Column, DateTime, ForeignKey, Integer, String
+
 from app.database import Base
 
 
 def _utcnow():
-    return datetime.now(timezone.utc).replace(tzinfo=None)
+    return datetime.now(UTC).replace(tzinfo=None)
 
 
 class UserV2(Base):

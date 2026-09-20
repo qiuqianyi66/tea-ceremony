@@ -8,12 +8,12 @@
  */
 import { computed, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getTeaById } from '@/data/teas'
-import { getSimilarTeas } from '@/services/teaRecommend'
-import { encodeTeaShare, buildTeaShareUrl } from '@/services/share'
 import { gardenRegions } from '@/data/gardenRegions'
 import { getTeaMastersForTea } from '@/data/teaMasters'
 import { getProcessByTeaType, getRecommendedTeaware } from '@/data/teaProcesses'
+import { getTeaById } from '@/data/teas'
+import { buildTeaShareUrl, encodeTeaShare } from '@/services/share'
+import { getSimilarTeas } from '@/services/teaRecommend'
 import type { Tea } from '@/types/tea'
 
 const route = useRoute()
@@ -23,7 +23,7 @@ const tea = computed<Tea | null>(() => getTeaById(String(route.params.id)) ?? nu
 
 /** 产区风土：按 teaIds 反查归属产区（无归属返回 undefined，不渲染板块，不编造风土） */
 const region = computed(() =>
-  tea.value ? gardenRegions.find(r => r.teaIds.includes(tea.value!.id)) : undefined,
+  tea.value ? gardenRegions.find((r) => r.teaIds.includes(tea.value!.id)) : undefined,
 )
 
 const similarTeas = computed(() => (tea.value ? getSimilarTeas(tea.value.id) : []))
@@ -40,7 +40,9 @@ const culturalLinks = computed(() => {
 
 // 茶图加载失败记录：Hero 降级为纯渐变、相似茶卡降级为渐变色块
 const imgFailed = reactive<Record<string, boolean>>({})
-function markImgFailed(id: string) { imgFailed[id] = true }
+function markImgFailed(id: string) {
+  imgFailed[id] = true
+}
 
 /** 冲泡建议文案：根据茶类给"为什么这样泡" */
 function getBrewAdvice(t: Tea): string {

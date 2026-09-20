@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { teas, getAllTypes } from '@/data/teas'
-import { useTeaStore } from '@/stores/tea'
-import { TeaType, type Tea } from '@/types/tea'
-import { getTeaMastersForTea } from '@/data/teaMasters'
-import { teasApi } from '@/services/api'
 import { useToast } from '@/composables/useToast'
+import { getTeaMastersForTea } from '@/data/teaMasters'
+import { getAllTypes, teas } from '@/data/teas'
+import { teasApi } from '@/services/api'
+import { useTeaStore } from '@/stores/tea'
+import { type Tea, TeaType } from '@/types/tea'
 
 const router = useRouter()
 const store = useTeaStore()
@@ -32,30 +32,32 @@ function pickMood(id: string) {
     selectedType.value = null
   } else {
     selectedMood.value = id
-    const mood = moodOptions.find(m => m.id === id)
+    const mood = moodOptions.find((m) => m.id === id)
     if (mood) selectedType.value = mood.types[0]
   }
   selectedTea.value = null
 }
 
 const imgFailed = reactive<Record<string, boolean>>({})
-function markImgFailed(id: string) { imgFailed[id] = true }
+function markImgFailed(id: string) {
+  imgFailed[id] = true
+}
 
-const visibleTeas = computed(() => selectedType.value
-  ? catalog.value.filter(tea => tea.type === selectedType.value)
-  : catalog.value)
+const visibleTeas = computed(() =>
+  selectedType.value
+    ? catalog.value.filter((tea) => tea.type === selectedType.value)
+    : catalog.value,
+)
 
 onMounted(async () => {
   isLoading.value = true
   try {
     const remoteTeas = await teasApi.list()
     if (remoteTeas.length > 0) {
-      const localByName = new Map(teas.map(tea => [tea.name, tea]))
-      catalog.value = remoteTeas.map(remoteTea => {
+      const localByName = new Map(teas.map((tea) => [tea.name, tea]))
+      catalog.value = remoteTeas.map((remoteTea) => {
         const localTea = localByName.get(remoteTea.name)
-        return localTea
-          ? { ...localTea, ...remoteTea, id: localTea.id }
-          : remoteTea
+        return localTea ? { ...localTea, ...remoteTea, id: localTea.id } : remoteTea
       })
     }
   } catch (error) {

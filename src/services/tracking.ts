@@ -5,8 +5,8 @@
  * - 容量上限 MAX_EVENTS，超出裁剪最旧，防本地存储无限膨胀
  * - track() 永不 reject：埋点失败静默消化，不影响主流程
  */
-import { initDB, db } from '@/services/storage'
-import type { TrackCategory, TrackResult, TrackEvent, TrackInput } from '@/types/tracking'
+import { db, initDB } from '@/services/storage'
+import type { TrackCategory, TrackEvent, TrackInput, TrackResult } from '@/types/tracking'
 
 /** 本地事件容量上限 */
 export const MAX_EVENTS = 2000

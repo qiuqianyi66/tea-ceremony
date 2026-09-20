@@ -4,7 +4,7 @@
 """
 
 from app.database import SessionLocal
-from app.models import CultureDocument, Tea, TeaPerson, TeaRegion, TeaPoem
+from app.models import CultureDocument, Tea, TeaPerson, TeaPoem
 
 
 def chunk_teas(db):

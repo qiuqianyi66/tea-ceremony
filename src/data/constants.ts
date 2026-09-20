@@ -14,9 +14,9 @@ export const THEME = {
 
 /** 默认冲泡参数 */
 export const DEFAULT_BREW = {
-  teaWeight: 3,           // 默认投茶量（克）
+  teaWeight: 3, // 默认投茶量（克）
   weightRange: { min: 1, max: 8 },
-  waterVolume: 150,       // 默认水量（毫升）
+  waterVolume: 150, // 默认水量（毫升）
 } as const
 
 /** 天下名水系数 */
@@ -29,12 +29,54 @@ export const WATER_TYPES = [
 /** 茶修等级 — 茶修六境。icon 存 lucide 组件名（禁止 emoji，渲染时 <component :is="`Icon${icon}`">）
  *  essence：意境叙事（原创文化阐述，非史实引用），供六境全景卡片第二行展示 */
 export const TEA_LEVELS = [
-  { id: 'shicha', name: '识茶', minXp: 0, icon: 'Sprout', desc: '认识一片叶子的来处', essence: '一片叶子，也有姓名与故乡' },
-  { id: 'zhiqi', name: '知器', minXp: 150, icon: 'CupSoda', desc: '了解茶器与茶性', essence: '器为茶之父，称手即相配' },
-  { id: 'dongshui', name: '懂水', minXp: 400, icon: 'Droplet', desc: '知水者得茶之真味', essence: '水为茶之母，活水得真味' },
-  { id: 'wuxiang', name: '悟香', minXp: 800, icon: 'Flower', desc: '闻香识茶，心随香静', essence: '心定，才闻得到香的转折' },
-  { id: 'pinjing', name: '品境', minXp: 1500, icon: 'Leaf', desc: '品茶入境，天人合一', essence: '汤入喉，神入境' },
-  { id: 'chaxin', name: '茶心', minXp: 3000, icon: 'Heart', desc: '茶即心，心即茶', essence: '你就是那杯茶' },
+  {
+    id: 'shicha',
+    name: '识茶',
+    minXp: 0,
+    icon: 'Sprout',
+    desc: '认识一片叶子的来处',
+    essence: '一片叶子，也有姓名与故乡',
+  },
+  {
+    id: 'zhiqi',
+    name: '知器',
+    minXp: 150,
+    icon: 'CupSoda',
+    desc: '了解茶器与茶性',
+    essence: '器为茶之父，称手即相配',
+  },
+  {
+    id: 'dongshui',
+    name: '懂水',
+    minXp: 400,
+    icon: 'Droplet',
+    desc: '知水者得茶之真味',
+    essence: '水为茶之母，活水得真味',
+  },
+  {
+    id: 'wuxiang',
+    name: '悟香',
+    minXp: 800,
+    icon: 'Flower',
+    desc: '闻香识茶，心随香静',
+    essence: '心定，才闻得到香的转折',
+  },
+  {
+    id: 'pinjing',
+    name: '品境',
+    minXp: 1500,
+    icon: 'Leaf',
+    desc: '品茶入境，天人合一',
+    essence: '汤入喉，神入境',
+  },
+  {
+    id: 'chaxin',
+    name: '茶心',
+    minXp: 3000,
+    icon: 'Heart',
+    desc: '茶即心，心即茶',
+    essence: '你就是那杯茶',
+  },
 ] as const
 
 export const ACHIEVEMENTS = [

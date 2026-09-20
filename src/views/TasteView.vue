@@ -1,21 +1,21 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { useTeaStore } from '@/stores/tea'
-import { useTasteStore } from '@/stores/taste'
-import { useBrewStore } from '@/stores/brew'
-import { useProgressStore } from '@/stores/progress'
-import { getSoupColor } from '@/data/teas'
-import { getScoreLevel, explainProcessFactor } from '@/services/scoring'
-import { WATER_TYPES } from '@/data/constants'
-import { generateTastingNote } from '@/services/teaAI'
 import TasteRadarChart from '@/components/tasting/TasteRadarChart.vue'
 import TasteTrendChart from '@/components/tasting/TasteTrendChart.vue'
 import TastingCard from '@/components/tasting/TastingCard.vue'
-import TasteStepIndicator from './taste/TasteStepIndicator.vue'
-import TasteObserveStep from './taste/TasteObserveStep.vue'
 import { useToast } from '@/composables/useToast'
-import type { TastingRecord, TasteDimensions } from '@/types/tasting'
+import { WATER_TYPES } from '@/data/constants'
+import { getSoupColor } from '@/data/teas'
+import { explainProcessFactor, getScoreLevel } from '@/services/scoring'
+import { generateTastingNote } from '@/services/teaAI'
+import { useBrewStore } from '@/stores/brew'
+import { useProgressStore } from '@/stores/progress'
+import { useTasteStore } from '@/stores/taste'
+import { useTeaStore } from '@/stores/tea'
+import type { TasteDimensions, TastingRecord } from '@/types/tasting'
+import TasteObserveStep from './taste/TasteObserveStep.vue'
+import TasteStepIndicator from './taste/TasteStepIndicator.vue'
 
 const router = useRouter()
 const store = useTeaStore()
@@ -62,7 +62,7 @@ function toggleAroma(id: string) {
 
 const selectedAromaLabels = computed(() =>
   selectedAromas.value
-    .map(id => aromaTypes.find(a => a.id === id)?.label)
+    .map((id) => aromaTypes.find((a) => a.id === id)?.label)
     .filter((l): l is string => !!l)
     .join('、'),
 )
@@ -72,13 +72,55 @@ const selectedAromaLabels = computed(() =>
 // 新手不直接面对八维：用「第一口表情 + 大白话感受标签」极简快评，自动反推八维；
 // 专业模式才暴露 1-5 滑块。
 const dimensions = [
-  { key: 'bitterness' as const, label: '苦涩度', short: '苦', left: '清淡', right: '浓烈', icon: 'Minus' },
-  { key: 'sweetness' as const, label: '甜度', short: '甜', left: '无甜', right: '甘甜', icon: 'Heart' },
-  { key: 'aftertaste' as const, label: '回甘', short: '回', left: '无回甘', right: '持久', icon: 'Sparkle' },
+  {
+    key: 'bitterness' as const,
+    label: '苦涩度',
+    short: '苦',
+    left: '清淡',
+    right: '浓烈',
+    icon: 'Minus',
+  },
+  {
+    key: 'sweetness' as const,
+    label: '甜度',
+    short: '甜',
+    left: '无甜',
+    right: '甘甜',
+    icon: 'Heart',
+  },
+  {
+    key: 'aftertaste' as const,
+    label: '回甘',
+    short: '回',
+    left: '无回甘',
+    right: '持久',
+    icon: 'Sparkle',
+  },
   { key: 'body' as const, label: '醇厚度', short: '醇', left: '单薄', right: '醇厚', icon: 'Gem' },
-  { key: 'aroma' as const, label: '香气持久度', short: '香', left: '短暂', right: '持久', icon: 'Wind' },
-  { key: 'rhyme' as const, label: '茶韵', short: '韵', left: '浅薄', right: '悠长', icon: 'Activity' },
-  { key: 'shape' as const, label: '叶底', short: '叶', left: '粗散', right: '匀整', icon: 'Target' },
+  {
+    key: 'aroma' as const,
+    label: '香气持久度',
+    short: '香',
+    left: '短暂',
+    right: '持久',
+    icon: 'Wind',
+  },
+  {
+    key: 'rhyme' as const,
+    label: '茶韵',
+    short: '韵',
+    left: '浅薄',
+    right: '悠长',
+    icon: 'Activity',
+  },
+  {
+    key: 'shape' as const,
+    label: '叶底',
+    short: '叶',
+    left: '粗散',
+    right: '匀整',
+    icon: 'Target',
+  },
   { key: 'mind' as const, label: '心境', short: '心', left: '浮躁', right: '禅定', icon: 'Crown' },
 ] as const
 
@@ -130,7 +172,7 @@ const feelTagMap: Record<string, Partial<TasteDimensions>> = {
 const selectedFeelTags = ref<string[]>([])
 
 function toggleFeelTag(id: string) {
-  const tag = feelTags.find(t => t.id === id)
+  const tag = feelTags.find((t) => t.id === id)
   if (!tag) return
   const arr = selectedFeelTags.value
   const idx = arr.indexOf(id)
@@ -140,7 +182,7 @@ function toggleFeelTag(id: string) {
   }
   // 同组互斥：先移除同组其他标签
   for (let i = arr.length - 1; i >= 0; i--) {
-    if (feelTags.find(t => t.id === arr[i])?.group === tag.group) arr.splice(i, 1)
+    if (feelTags.find((t) => t.id === arr[i])?.group === tag.group) arr.splice(i, 1)
   }
   arr.push(id)
 }
@@ -167,10 +209,14 @@ function buildQuickDimensions(): TasteDimensions {
 }
 
 // 新手快评任一选择变化 → 实时写回八维（雷达图/综合分即时反馈）；专业模式不干预
-watch([firstSip, selectedFeelTags], () => {
-  if (isExpertMode.value) return
-  Object.assign(taste.dimensions, buildQuickDimensions())
-}, { deep: true })
+watch(
+  [firstSip, selectedFeelTags],
+  () => {
+    if (isExpertMode.value) return
+    Object.assign(taste.dimensions, buildQuickDimensions())
+  },
+  { deep: true },
+)
 
 // ============ 笔记 ============
 const tastingNotes = ref('')
@@ -183,7 +229,7 @@ const moodOptions = ['愉悦', '安静', '禅定', '沉思', '悠然']
 // ============ 评分结果 ============
 const finalScore = computed(() => store.calculateScore())
 const scoreLevel = computed(() => getScoreLevel(finalScore.value))
-const waterFactor = computed(() => WATER_TYPES.find(w => w.id === store.waterType)?.factor ?? 1.0)
+const waterFactor = computed(() => WATER_TYPES.find((w) => w.id === store.waterType)?.factor ?? 1.0)
 /** 工艺系数分解（"为什么是这个系数"）：温度 / 时间 / 茶器 / 水 */
 const processExplanation = computed(() => {
   const tea = store.currentTea
@@ -228,20 +274,24 @@ async function submit() {
   }
 
   // AI 生成茶记
-  generateTastingNote(
-    store.currentTea?.name || '',
-    taste.dimensions,
-    finalScore.value,
-  ).then(comment => { aiComment.value = comment })
+  generateTastingNote(store.currentTea?.name || '', taste.dimensions, finalScore.value).then(
+    (comment) => {
+      aiComment.value = comment
+    },
+  )
 }
 
 // ============ 步骤标题 ============
 const stepTitle = computed(() => {
   switch (step.value) {
-    case 'observe': return '① 观色'
-    case 'aroma': return '② 闻香'
-    case 'taste': return '③ 品味'
-    case 'result': return '品鉴结果'
+    case 'observe':
+      return '① 观色'
+    case 'aroma':
+      return '② 闻香'
+    case 'taste':
+      return '③ 品味'
+    case 'result':
+      return '品鉴结果'
   }
 })
 
@@ -257,7 +307,7 @@ const currentDimensions = computed(() => {
 // 历史均值（用于对比）
 const averageDimensions = computed(() => {
   if (store.history.length === 0) return {}
-  const teaRecords = store.history.filter(r => r.teaId === store.currentTea?.id)
+  const teaRecords = store.history.filter((r) => r.teaId === store.currentTea?.id)
   if (teaRecords.length === 0) return {}
 
   const sums: Record<string, number> = {}
@@ -266,7 +316,8 @@ const averageDimensions = computed(() => {
   }
   for (const record of teaRecords) {
     for (const d of dimensions) {
-      sums[d.key] = (sums[d.key] ?? 0) + (record.dimensions[d.key as keyof typeof record.dimensions] ?? 0)
+      sums[d.key] =
+        (sums[d.key] ?? 0) + (record.dimensions[d.key as keyof typeof record.dimensions] ?? 0)
     }
   }
   const avgs: Record<string, number> = {}

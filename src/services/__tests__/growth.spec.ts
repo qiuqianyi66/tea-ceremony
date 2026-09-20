@@ -8,16 +8,16 @@
  * - solarTermFootprint：按记录日期映射节气、聚合计数、降序、非法日期跳过
  * - getSolarTermByDate：节气首日 / 跨年（1 月属上一节气年区间）/ 时区无关解析
  */
-import { describe, it, expect } from 'vitest'
-import type { TastingRecord } from '@/types/tasting'
-import { TeaType } from '@/types/tea'
+import { describe, expect, it } from 'vitest'
+import { getSolarTermByDate } from '@/data/solarTerms'
 import {
-  computeGrowthStats,
   averageDimensions,
   categoryDistribution,
+  computeGrowthStats,
   solarTermFootprint,
 } from '@/services/growth'
-import { getSolarTermByDate } from '@/data/solarTerms'
+import type { TastingRecord } from '@/types/tasting'
+import { TeaType } from '@/types/tea'
 
 function makeRecord(overrides: Partial<TastingRecord> = {}): TastingRecord {
   return {
@@ -28,7 +28,16 @@ function makeRecord(overrides: Partial<TastingRecord> = {}): TastingRecord {
     brewTemp: 80,
     brewTime: 45,
     infusions: 1,
-    dimensions: { bitterness: 2, sweetness: 4, aftertaste: 5, body: 3, aroma: 5, rhyme: 4, shape: 3, mind: 5 },
+    dimensions: {
+      bitterness: 2,
+      sweetness: 4,
+      aftertaste: 5,
+      body: 3,
+      aroma: 5,
+      rhyme: 4,
+      shape: 3,
+      mind: 5,
+    },
     overallScore: 8.6,
     processFactor: 0.92,
     ...overrides,
@@ -62,10 +71,10 @@ describe('computeGrowthStats', () => {
   })
 
   it('平均分按 1 位小数四舍五入', () => {
-    expect(computeGrowthStats([
-      makeRecord({ overallScore: 7.0 }),
-      makeRecord({ overallScore: 8.4 }),
-    ]).avgScore).toBe(7.7)
+    expect(
+      computeGrowthStats([makeRecord({ overallScore: 7.0 }), makeRecord({ overallScore: 8.4 })])
+        .avgScore,
+    ).toBe(7.7)
   })
 
   it('最常喝茶平票时保留先出现的茶', () => {
@@ -84,19 +93,53 @@ describe('averageDimensions', () => {
   it('空记录 → 八维全 0', () => {
     const avg = averageDimensions([])
     expect(avg).toEqual({
-      bitterness: 0, sweetness: 0, aftertaste: 0, body: 0,
-      aroma: 0, rhyme: 0, shape: 0, mind: 0,
+      bitterness: 0,
+      sweetness: 0,
+      aftertaste: 0,
+      body: 0,
+      aroma: 0,
+      rhyme: 0,
+      shape: 0,
+      mind: 0,
     })
   })
 
   it('多条记录 → 各维均值（1 位小数）', () => {
     const records = [
-      makeRecord({ dimensions: { bitterness: 2, sweetness: 4, aftertaste: 5, body: 3, aroma: 5, rhyme: 4, shape: 3, mind: 5 } }),
-      makeRecord({ dimensions: { bitterness: 3, sweetness: 2, aftertaste: 3, body: 4, aroma: 2, rhyme: 3, shape: 4, mind: 2 } }),
+      makeRecord({
+        dimensions: {
+          bitterness: 2,
+          sweetness: 4,
+          aftertaste: 5,
+          body: 3,
+          aroma: 5,
+          rhyme: 4,
+          shape: 3,
+          mind: 5,
+        },
+      }),
+      makeRecord({
+        dimensions: {
+          bitterness: 3,
+          sweetness: 2,
+          aftertaste: 3,
+          body: 4,
+          aroma: 2,
+          rhyme: 3,
+          shape: 4,
+          mind: 2,
+        },
+      }),
     ]
     expect(averageDimensions(records)).toEqual({
-      bitterness: 2.5, sweetness: 3, aftertaste: 4, body: 3.5,
-      aroma: 3.5, rhyme: 3.5, shape: 3.5, mind: 3.5,
+      bitterness: 2.5,
+      sweetness: 3,
+      aftertaste: 4,
+      body: 3.5,
+      aroma: 3.5,
+      rhyme: 3.5,
+      shape: 3.5,
+      mind: 3.5,
     })
   })
 })
@@ -117,9 +160,11 @@ describe('categoryDistribution', () => {
     ]
     const dist = categoryDistribution(records, typeById)
     expect(dist).toHaveLength(3)
-    expect(dist.map(d => d.type)).toEqual([TeaType.GREEN, TeaType.WHITE, TeaType.RED])
-    expect(dist.map(d => d.count)).toEqual([1, 1, 1])
-    dist.forEach(d => expect(d.ratio).toBeCloseTo(1 / 3, 5))
+    expect(dist.map((d) => d.type)).toEqual([TeaType.GREEN, TeaType.WHITE, TeaType.RED])
+    expect(dist.map((d) => d.count)).toEqual([1, 1, 1])
+    dist.forEach((d) => {
+      expect(d.ratio).toBeCloseTo(1 / 3, 5)
+    })
   })
 
   it('按计数降序，计数相同时按茶类枚举序', () => {
@@ -129,7 +174,7 @@ describe('categoryDistribution', () => {
       makeRecord({ teaId: 'longjing' }),
     ]
     const dist = categoryDistribution(records, typeById)
-    expect(dist.map(d => d.type)).toEqual([TeaType.RED, TeaType.GREEN])
+    expect(dist.map((d) => d.type)).toEqual([TeaType.RED, TeaType.GREEN])
     expect(dist[0]!.ratio).toBeCloseTo(2 / 3, 5)
   })
 
@@ -180,8 +225,9 @@ describe('getSolarTermByDate', () => {
   })
 
   it('带时间的 ISO 字符串与 Date 对象解析一致（时区无关）', () => {
-    expect(getSolarTermByDate('2026-09-14T10:00:00.000Z').name)
-      .toBe(getSolarTermByDate(new Date(2026, 8, 14)).name)
+    expect(getSolarTermByDate('2026-09-14T10:00:00.000Z').name).toBe(
+      getSolarTermByDate(new Date(2026, 8, 14)).name,
+    )
     expect(getSolarTermByDate('2026-09-14T10:00:00.000Z').name).toBe('白露')
   })
 })

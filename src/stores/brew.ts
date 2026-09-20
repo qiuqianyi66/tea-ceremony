@@ -4,8 +4,8 @@
  */
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { BrewPhase } from '@/types/brewing'
 import type { BrewState } from '@/types/brewing'
+import { BrewPhase } from '@/types/brewing'
 
 export const useBrewStore = defineStore('brew', () => {
   const state = ref<BrewState>({

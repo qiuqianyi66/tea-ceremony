@@ -1,7 +1,7 @@
 """认证域 service：注册 / 登录 / token 签发。"""
 
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from jose import jwt
 from passlib.hash import bcrypt
@@ -20,7 +20,7 @@ ACCESS_TOKEN_EXPIRE_DAYS = 30
 
 
 def create_access_token(user_id: int) -> str:
-    expire = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)
+    expire = datetime.now(UTC).replace(tzinfo=None) + timedelta(days=ACCESS_TOKEN_EXPIRE_DAYS)
     return jwt.encode({"sub": str(user_id), "exp": expire}, SECRET_KEY, algorithm=ALGORITHM)
 
 

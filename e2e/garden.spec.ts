@@ -6,12 +6,12 @@
  * 3D 场景本身由 scripts/verify-gardens.cjs 截图验证。
  */
 
-import { test, expect } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 
 test.beforeEach(async ({ page }) => {
   // 与全流程测试一致：拦截 AI 代理请求，避免依赖后端
-  await page.route('**/api/ai/*', route => route.abort())
-  page.on('pageerror', err => console.log('[PAGEERROR]', err.stack || err.message))
+  await page.route('**/api/ai/*', (route) => route.abort())
+  page.on('pageerror', (err) => console.log('[PAGEERROR]', err.stack || err.message))
 })
 
 test('茶园：地区选择 → 进入 3D 茶园 → 无养成入口 → 天气切换 → 返回', async ({ page }) => {

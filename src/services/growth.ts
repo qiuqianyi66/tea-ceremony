@@ -2,9 +2,10 @@
  * 成长数据看板聚合逻辑（T1.1 成长数据看板）
  * 纯函数：输入品鉴记录列表，输出看板所需的统计 / 分布数据，便于单测与复用。
  */
-import type { TastingRecord, TasteDimensions } from '@/types/tasting'
+
+import { getSolarTermByDate, SOLAR_TERMS } from '@/data/solarTerms'
+import type { TasteDimensions, TastingRecord } from '@/types/tasting'
 import { TeaType } from '@/types/tea'
-import { SOLAR_TERMS, getSolarTermByDate } from '@/data/solarTerms'
 
 /** 看板概要统计 */
 export interface GrowthStats {
@@ -16,7 +17,14 @@ export interface GrowthStats {
 }
 
 const DIMENSION_KEYS: (keyof TasteDimensions)[] = [
-  'bitterness', 'sweetness', 'aftertaste', 'body', 'aroma', 'rhyme', 'shape', 'mind',
+  'bitterness',
+  'sweetness',
+  'aftertaste',
+  'body',
+  'aroma',
+  'rhyme',
+  'shape',
+  'mind',
 ]
 
 /** 概要统计：总数 / 平均分 / 最高分（及其茶名）/ 最常喝的茶 */

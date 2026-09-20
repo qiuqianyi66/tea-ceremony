@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { teas } from '@/data/teas'
-import { getTeaMastersForTea } from '@/data/teaMasters'
-import { TEA_REGIONS } from '@/data/tea-mountain-regions'
-import { getProcessByTeaType, getRecommendedTeaware } from '@/data/teaProcesses'
-import type { Tea } from '@/types/tea'
 import type { TeaRegion } from '@/data/tea-mountain-regions'
+import { TEA_REGIONS } from '@/data/tea-mountain-regions'
+import { getTeaMastersForTea } from '@/data/teaMasters'
+import { getProcessByTeaType, getRecommendedTeaware } from '@/data/teaProcesses'
+import { teas } from '@/data/teas'
+import type { Tea } from '@/types/tea'
 
 const router = useRouter()
 const selectedTea = ref<Tea | null>(null)
@@ -24,33 +24,67 @@ const nodes = computed(() => {
   let i = 0
 
   // 茶类
-  result.push({ id: 'type', label: t.type, type: 'category', x: centerX + radius * Math.cos(angleStep * i), y: centerY + radius * Math.sin(angleStep * i++) })
+  result.push({
+    id: 'type',
+    label: t.type,
+    type: 'category',
+    x: centerX + radius * Math.cos(angleStep * i),
+    y: centerY + radius * Math.sin(angleStep * i++),
+  })
 
   // 产区
   const region = getRegionByTea(t)
-  if (region) result.push({ id: 'region', label: region.name, type: 'region', x: centerX + radius * Math.cos(angleStep * i), y: centerY + radius * Math.sin(angleStep * i++) })
+  if (region)
+    result.push({
+      id: 'region',
+      label: region.name,
+      type: 'region',
+      x: centerX + radius * Math.cos(angleStep * i),
+      y: centerY + radius * Math.sin(angleStep * i++),
+    })
   else i++
 
   // 工艺
   const process = getProcessByTeaType(t.type)
-  if (process) result.push({ id: 'process', label: process.name.replace('制作工艺', ''), type: 'process', x: centerX + radius * Math.cos(angleStep * i), y: centerY + radius * Math.sin(angleStep * i++) })
+  if (process)
+    result.push({
+      id: 'process',
+      label: process.name.replace('制作工艺', ''),
+      type: 'process',
+      x: centerX + radius * Math.cos(angleStep * i),
+      y: centerY + radius * Math.sin(angleStep * i++),
+    })
   else i++
 
   // 茶人
   const masters = getTeaMastersForTea(t.id)
-  if (masters.length > 0) result.push({ id: 'master', label: masters[0]!.name, type: 'person', x: centerX + radius * Math.cos(angleStep * i), y: centerY + radius * Math.sin(angleStep * i++) })
+  if (masters.length > 0)
+    result.push({
+      id: 'master',
+      label: masters[0]!.name,
+      type: 'person',
+      x: centerX + radius * Math.cos(angleStep * i),
+      y: centerY + radius * Math.sin(angleStep * i++),
+    })
   else i++
 
   // 茶器
-  result.push({ id: 'ware', label: getRecommendedTeaware(t.type), type: 'ware', x: centerX + radius * Math.cos(angleStep * i), y: centerY + radius * Math.sin(angleStep * i++) })
+  result.push({
+    id: 'ware',
+    label: getRecommendedTeaware(t.type),
+    type: 'ware',
+    x: centerX + radius * Math.cos(angleStep * i),
+    y: centerY + radius * Math.sin(angleStep * i++),
+  })
 
   return result
 })
 
 const edges = computed(() => {
   if (nodes.value.length < 2) return []
-  return nodes.value.slice(1).map(n => ({
-    source: 'tea', target: n.id,
+  return nodes.value.slice(1).map((n) => ({
+    source: 'tea',
+    target: n.id,
   }))
 })
 

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 import QRCode from 'qrcode'
+import { ref } from 'vue'
+import { buildTeaShareUrl, encodeTeaShare } from '@/services/share'
 import type { Tea } from '@/types/tea'
-import { encodeTeaShare, buildTeaShareUrl } from '@/services/share'
 
 const props = defineProps<{
   tea: Tea
@@ -59,7 +59,9 @@ async function shareTea() {
     props.tea.description,
     props.tea.story ? `“${props.tea.story.slice(0, 40)}…”` : '',
     '来自「一盏茶」茶文化空间',
-  ].filter(Boolean).join('\n')
+  ]
+    .filter(Boolean)
+    .join('\n')
 
   try {
     if (navigator.share) {
@@ -72,7 +74,14 @@ async function shareTea() {
   }
 }
 
-function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) {
+function roundRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
+) {
   ctx.beginPath()
   ctx.moveTo(x + radius, y)
   ctx.arcTo(x + width, y, x + width, y + height, radius)
@@ -118,7 +127,11 @@ async function downloadCard() {
   ctx.fillText(props.tea.name, 78, 190)
   ctx.fillStyle = '#7E6A55'
   ctx.font = '26px sans-serif'
-  ctx.fillText(`${props.tea.type}  ·  ${props.tea.origin}  ·  ${props.tea.altitude ?? '产地海拔'}`, 80, 235)
+  ctx.fillText(
+    `${props.tea.type}  ·  ${props.tea.origin}  ·  ${props.tea.altitude ?? '产地海拔'}`,
+    80,
+    235,
+  )
 
   // 风味标签
   ctx.font = '22px sans-serif'
@@ -162,7 +175,11 @@ async function downloadCard() {
   ctx.stroke()
   ctx.fillStyle = '#7E6A55'
   ctx.font = '24px sans-serif'
-  ctx.fillText(`水温 ${props.tea.bestTemp}°C    首泡 ${props.tea.bestTime}s    可冲 ${props.tea.infusions} 泡`, 78, 745)
+  ctx.fillText(
+    `水温 ${props.tea.bestTemp}°C    首泡 ${props.tea.bestTime}s    可冲 ${props.tea.infusions} 泡`,
+    78,
+    745,
+  )
 
   // 故事首句
   const storyLine = props.tea.story.slice(0, 34)
@@ -182,7 +199,11 @@ async function downloadCard() {
       story: props.tea.story,
     }
     const url = buildTeaShareUrl(encodeTeaShare(data))
-    const dataUrl = await QRCode.toDataURL(url, { width: 200, margin: 0, errorCorrectionLevel: 'M' })
+    const dataUrl = await QRCode.toDataURL(url, {
+      width: 200,
+      margin: 0,
+      errorCorrectionLevel: 'M',
+    })
     const img = new Image()
     img.src = dataUrl
     await img.decode()

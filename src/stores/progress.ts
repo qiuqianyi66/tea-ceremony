@@ -4,11 +4,16 @@
  * 历史记录依赖 recordStore（成就/茶器判定基于品鉴历史）
  */
 import { defineStore } from 'pinia'
-import { ref, computed, toRaw } from 'vue'
-import type { Achievement, TastingRecord } from '@/types/tasting'
-import { achievementStorage, xpStorage, collectedWareStorage, settingsStorage } from '@/services/storage'
+import { computed, ref, toRaw } from 'vue'
 import { ACHIEVEMENTS, TEA_LEVELS } from '@/data/constants'
 import { getTeaById } from '@/data/teas'
+import {
+  achievementStorage,
+  collectedWareStorage,
+  settingsStorage,
+  xpStorage,
+} from '@/services/storage'
+import type { Achievement, TastingRecord } from '@/types/tasting'
 import { TeaType } from '@/types/tea'
 import { useRecordStore } from './record'
 
@@ -19,15 +24,16 @@ export const useProgressStore = defineStore('progress', () => {
   // ============ 茶修等级 ============
   const userXp = ref(0)
   const currentLevel = computed(() => {
-    let level: typeof TEA_LEVELS[number] = TEA_LEVELS[0]
+    let level: (typeof TEA_LEVELS)[number] = TEA_LEVELS[0]
     for (const l of TEA_LEVELS) {
       if (userXp.value >= l.minXp) level = l
     }
     return level
   })
   const nextLevel = computed(() => {
-    const idx = TEA_LEVELS.findIndex(l => l.id === currentLevel.value.id)
-    if (idx < TEA_LEVELS.length - 1) return TEA_LEVELS[idx + 1] as typeof TEA_LEVELS[number] | undefined
+    const idx = TEA_LEVELS.findIndex((l) => l.id === currentLevel.value.id)
+    if (idx < TEA_LEVELS.length - 1)
+      return TEA_LEVELS[idx + 1] as (typeof TEA_LEVELS)[number] | undefined
     return undefined
   })
   const xpForNextLevel = computed(() => nextLevel.value?.minXp ?? userXp.value)
@@ -48,7 +54,7 @@ export const useProgressStore = defineStore('progress', () => {
   async function initAchievements() {
     const saved = await achievementStorage.load()
     if (saved.length === 0) {
-      const initial = ACHIEVEMENTS.map(a => ({
+      const initial = ACHIEVEMENTS.map((a) => ({
         id: a.id,
         name: a.name,
         description: a.description,
@@ -80,10 +86,14 @@ export const useProgressStore = defineStore('progress', () => {
           break
         }
         case 'all_types': {
-          const typesInHistory = new Set(recordStore.history.map(r => {
-            const tea = getTeaById(r.teaId)
-            return tea?.type
-          }).filter((t): t is TeaType => t !== undefined))
+          const typesInHistory = new Set(
+            recordStore.history
+              .map((r) => {
+                const tea = getTeaById(r.teaId)
+                return tea?.type
+              })
+              .filter((t): t is TeaType => t !== undefined),
+          )
           if (typesInHistory.size >= Object.values(TeaType).length) {
             ach.unlocked = true
             ach.unlockedAt = new Date().toISOString()
@@ -95,7 +105,7 @@ export const useProgressStore = defineStore('progress', () => {
         case 'temp_accuracy': {
           if (recordStore.history.length >= 5) {
             const recent5 = recordStore.history.slice(0, 5)
-            const allAccurate = recent5.every(r => {
+            const allAccurate = recent5.every((r) => {
               const tea = getTeaById(r.teaId)
               if (!tea) return false
               return Math.abs(r.brewTemp - tea.bestTemp) < 5
@@ -133,7 +143,7 @@ export const useProgressStore = defineStore('progress', () => {
     if (unlocked) {
       // Vue reactive 数组的元素是 Proxy，Proxy 无法被 IndexedDB 结构化克隆，
       // 写入前必须 toRaw 还原为普通对象，否则品鉴保存会抛 DataCloneError。
-      await achievementStorage.save(all.map(ach => toRaw(ach)))
+      await achievementStorage.save(all.map((ach) => toRaw(ach)))
       achievements.value = all
     }
   }
@@ -151,7 +161,7 @@ export const useProgressStore = defineStore('progress', () => {
 
   async function checkTeaWareUnlock() {
     const historyCount = recordStore.history.length
-    const greenTeaCount = recordStore.history.filter(r => {
+    const greenTeaCount = recordStore.history.filter((r) => {
       const tea = getTeaById(r.teaId)
       return tea?.type === TeaType.GREEN
     }).length

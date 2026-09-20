@@ -63,7 +63,10 @@ function growBranch(
   specScale: number,
 ): void {
   // 枝干圆柱（沿 dir 方向，从中点定位）
-  const mid = dir.clone().multiplyScalar(len / 2).add(new THREE.Vector3(0, y, 0))
+  const mid = dir
+    .clone()
+    .multiplyScalar(len / 2)
+    .add(new THREE.Vector3(0, y, 0))
   branches.push({
     pos: [mid.x, mid.y, mid.z],
     quat: [dir.x, dir.y, dir.z, 1], // 存方向，实例化时转四元数
@@ -134,9 +137,9 @@ function growTree(spec: TreeSpec, branches: BranchInst[], leaves: LeafInst[]): v
     segDir.normalize()
     branches.push({
       pos: [
-        (spec.x + segDir.x * segLen / 2 + dir.x * (seg * segLen * 0.5)),
-        (spec.h + y + segDir.y * segLen / 2),
-        (spec.z + segDir.z * segLen / 2 + dir.z * (seg * segLen * 0.5)),
+        spec.x + (segDir.x * segLen) / 2 + dir.x * (seg * segLen * 0.5),
+        spec.h + y + (segDir.y * segLen) / 2,
+        spec.z + (segDir.z * segLen) / 2 + dir.z * (seg * segLen * 0.5),
       ],
       quat: [segDir.x, segDir.y, segDir.z, 1],
       len: segLen,
@@ -180,7 +183,10 @@ function growTree(spec: TreeSpec, branches: BranchInst[], leaves: LeafInst[]): v
 }
 
 /** 生成整片树林（所有树共 2 个 InstancedMesh） */
-export function createTreeForest(parent: THREE.Object3D, specs: TreeSpec[]): { root: THREE.Group; dispose(): void } {
+export function createTreeForest(
+  parent: THREE.Object3D,
+  specs: TreeSpec[],
+): { root: THREE.Group; dispose(): void } {
   const root = new THREE.Group()
   root.name = 'tree-forest'
   const branches: BranchInst[] = []
@@ -190,7 +196,11 @@ export function createTreeForest(parent: THREE.Object3D, specs: TreeSpec[]): { r
   // 枝干 InstancedMesh（圆柱，末梢略细）
   if (branches.length > 0) {
     const branchGeo = new THREE.CylinderGeometry(1, 1.25, 1, 5)
-    const branchMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95, flatShading: true })
+    const branchMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 0.95,
+      flatShading: true,
+    })
     const branchMesh = new THREE.InstancedMesh(branchGeo, branchMat, branches.length)
     const dummy = new THREE.Object3D()
     const tmpC = new THREE.Color()

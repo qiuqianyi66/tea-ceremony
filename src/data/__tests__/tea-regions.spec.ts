@@ -1,8 +1,8 @@
 /**
  * T4.4 产区→茶映射：名茶按名称精确匹配茶库，未收录的不编造映射
  */
-import { describe, it, expect } from 'vitest'
-import { teaRegions, findTeaByName } from '../tea-regions'
+import { describe, expect, it } from 'vitest'
+import { findTeaByName, teaRegions } from '../tea-regions'
 import { teas } from '../teas'
 
 describe('findTeaByName（T4.4 产区名茶 → 茶详情）', () => {

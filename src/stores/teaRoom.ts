@@ -4,11 +4,11 @@
  */
 
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
-import { useThemeStore } from './theme'
-import { getCurrentSolarTerm } from '@/data/solarTerms'
+import { computed, ref } from 'vue'
 import { switchAmbient } from '@/composables/useAudio'
+import { getCurrentSolarTerm } from '@/data/solarTerms'
 import { getThemeById } from '@/data/themes'
+import { useThemeStore } from './theme'
 
 export interface TeaRoomState {
   roomId: string
@@ -25,8 +25,8 @@ export const useTeaRoomStore = defineStore('teaRoom', () => {
     name: '明式茶室',
     style: 'classic',
   })
-  const mood = ref(5)        // 1-10
-  const step = ref(0)        // 当前茶道步骤
+  const mood = ref(5) // 1-10
+  const step = ref(0) // 当前茶道步骤
   const ambientPlaying = ref(true)
   const currentSeason = computed(() => getCurrentSolarTerm())
 
@@ -48,10 +48,17 @@ export const useTeaRoomStore = defineStore('teaRoom', () => {
     }
   }
 
-  function setStep(s: number) { step.value = s }
+  function setStep(s: number) {
+    step.value = s
+  }
 
   return {
-    currentRoom, mood, step, ambientPlaying, currentSeason,
-    setRoom, setStep,
+    currentRoom,
+    mood,
+    step,
+    ambientPlaying,
+    currentSeason,
+    setRoom,
+    setStep,
   }
 })

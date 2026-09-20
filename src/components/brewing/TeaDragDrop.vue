@@ -8,12 +8,12 @@
  * - 拖拽结束时触发回调，更新 store 茶叶重量
  */
 
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import draggable from 'vuedraggable'
+import { playTeaDrop } from '@/composables/useAudio'
+import { useBrewStore } from '@/stores/brew'
 import type { Tea } from '@/types/tea'
 import type { TeaWare } from '@/types/teaware'
-import { useBrewStore } from '@/stores/brew'
-import { playTeaDrop } from '@/composables/useAudio'
 
 // vuedraggable 无官方事件类型，定义用到的最小结构（AGENTS.md 禁 any）
 type DragEventLike = {
@@ -28,7 +28,7 @@ interface TeaItem {
   name: string
   category: string
   dryTeaColor: string
-  recommendedWeight: number  // 建议投茶量
+  recommendedWeight: number // 建议投茶量
 }
 
 interface DraggedTeaData {
@@ -65,7 +65,7 @@ const isOverVessel = ref(false)
 
 // 计算属性：茶墙数据
 const teaWallItems = computed<TeaItem[]>(() => {
-  return (props.availableTeas ?? []).map(tea => ({
+  return (props.availableTeas ?? []).map((tea) => ({
     id: `tea-${tea.id}`,
     name: tea.name,
     category: tea.type,
@@ -87,10 +87,10 @@ const wareMatchScore = computed(() => {
 const draggableOptions = {
   group: {
     name: 'tea-drag-drop',
-    pull: 'clone',      // 从茶墙复制（克隆）
-    put: true,          // 允许放入茶器区
+    pull: 'clone', // 从茶墙复制（克隆）
+    put: true, // 允许放入茶器区
   },
-  sort: false,          // 茶墙不排序
+  sort: false, // 茶墙不排序
   delay: 100,
   delayOnTouchOnly: true,
   animation: 300,
@@ -98,7 +98,7 @@ const draggableOptions = {
   chosenClass: 'tea-drag-chosen',
   dragClass: 'tea-drag-dragging',
   handle: '.tea-drag-handle',
-  forceFallback: true,  // 移动端兼容
+  forceFallback: true, // 移动端兼容
   fallbackTolerance: 3,
   onStart: (evt: DragEventLike) => {
     const teaData = evt.item.dataset.tea ? JSON.parse(evt.item.dataset.tea) : null
@@ -177,13 +177,16 @@ function handleKeyDown(e: KeyboardEvent) {
 }
 
 // 监听当前茶器变化
-watch(() => props.currentWare, (newWare) => {
-  if (newWare && draggedTea.value) {
-    // 茶器变化时，可根据匹配度调整建议克数
-    const baseWeight = draggedTea.value.recommendedWeight
-    teaAmount.value = wareMatchScore.value === 1 ? baseWeight : Math.round(baseWeight * 0.8)
-  }
-})
+watch(
+  () => props.currentWare,
+  (newWare) => {
+    if (newWare && draggedTea.value) {
+      // 茶器变化时，可根据匹配度调整建议克数
+      const baseWeight = draggedTea.value.recommendedWeight
+      teaAmount.value = wareMatchScore.value === 1 ? baseWeight : Math.round(baseWeight * 0.8)
+    }
+  },
+)
 
 // 清理
 onUnmounted(() => {

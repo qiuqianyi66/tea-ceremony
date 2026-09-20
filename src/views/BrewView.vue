@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { ref, computed, watch, onUnmounted, onMounted } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { useTeaStore } from '@/stores/tea'
-import { useBrewStore } from '@/stores/brew'
-import { getSoupColor } from '@/data/teas'
-import { BrewPhase } from '@/types/brewing'
-import { useParticleSystem } from '@/composables/useParticles'
-import { useAudio } from '@/composables/useAudio'
-import TeaBrewScene3D from '@/components/three/TeaBrewScene3D.vue'
 import { BREW_SKIN_LIST, type BrewSkinId } from '@/components/three/brewSkins'
+import TeaBrewScene3D from '@/components/three/TeaBrewScene3D.vue'
+import { useAudio } from '@/composables/useAudio'
+import { useParticleSystem } from '@/composables/useParticles'
+import { getSoupColor } from '@/data/teas'
+import { useBrewStore } from '@/stores/brew'
+import { useTeaStore } from '@/stores/tea'
+import { BrewPhase } from '@/types/brewing'
 import CeremonyProgress from './brew/CeremonyProgress.vue'
 
 const router = useRouter()
@@ -21,7 +21,9 @@ const audio = useAudio()
 // headless（CI/E2E 无 GPU、SwiftShader 软渲染）下不挂载 3D 场景，回退 CSS 插画，
 // 避免软渲染逐帧阻塞主线程拖垮冲泡状态机；真实浏览器正常显示 3D。
 const isHeadless = computed(
-  () => typeof navigator !== 'undefined' && (navigator.webdriver === true || /HeadlessChrome/i.test(navigator.userAgent)),
+  () =>
+    typeof navigator !== 'undefined' &&
+    (navigator.webdriver === true || /HeadlessChrome/i.test(navigator.userAgent)),
 )
 
 // 环境皮肤：湖畔烟雨为默认（雨雾氛围最出片，也与项目茶山资产最接近）
@@ -75,34 +77,40 @@ function syncParticlesToPhase(phase: BrewPhase) {
   }
 }
 
-watch(() => brewState.phase, (newPhase, oldPhase) => {
-  // 离开 HEATING 时清理加热定时器
-  if (oldPhase === BrewPhase.HEATING && newPhase !== BrewPhase.HEATING) {
-    stopHeating()
-  }
-  // 零点击闭环：水温到 target 自动进 WARMING 后，0.8s 注水动画期间停在 WARMING
-  // （主按钮显示「温杯中…」disabled，防止重复触发），随后自动完成温杯并进入醒茶倒计时。
-  if (newPhase === BrewPhase.WARMING) {
-    audio.playPourWater(1.0) // 注水声效随自动触发点播放，与注水动画同步
-    if (warmTimer) clearTimeout(warmTimer)
-    warmTimer = setTimeout(() => {
-      warmTimer = null
-      brew.completeWarming()
-      startRinsing()
-    }, 800)
-  }
-  syncParticlesToPhase(newPhase)
-})
+watch(
+  () => brewState.phase,
+  (newPhase, oldPhase) => {
+    // 离开 HEATING 时清理加热定时器
+    if (oldPhase === BrewPhase.HEATING && newPhase !== BrewPhase.HEATING) {
+      stopHeating()
+    }
+    // 零点击闭环：水温到 target 自动进 WARMING 后，0.8s 注水动画期间停在 WARMING
+    // （主按钮显示「温杯中…」disabled，防止重复触发），随后自动完成温杯并进入醒茶倒计时。
+    if (newPhase === BrewPhase.WARMING) {
+      audio.playPourWater(1.0) // 注水声效随自动触发点播放，与注水动画同步
+      if (warmTimer) clearTimeout(warmTimer)
+      warmTimer = setTimeout(() => {
+        warmTimer = null
+        brew.completeWarming()
+        startRinsing()
+      }, 800)
+    }
+    syncParticlesToPhase(newPhase)
+  },
+)
 
-watch(() => brewState.currentTemp, (temp) => {
-  const target = brewState.targetTemp
-  const intensity = target > 20 ? Math.min(1, temp / target) : 0
-  particleCanvas.setFlameIntensity(Math.min(1, intensity * 1.5))
-  if (particlesStarted && brewState.phase === BrewPhase.HEATING) {
-    if (temp > 60) particleCanvas.startSteam()
-    else particleCanvas.stopSteam()
-  }
-})
+watch(
+  () => brewState.currentTemp,
+  (temp) => {
+    const target = brewState.targetTemp
+    const intensity = target > 20 ? Math.min(1, temp / target) : 0
+    particleCanvas.setFlameIntensity(Math.min(1, intensity * 1.5))
+    if (particlesStarted && brewState.phase === BrewPhase.HEATING) {
+      if (temp > 60) particleCanvas.startSteam()
+      else particleCanvas.stopSteam()
+    }
+  },
+)
 
 let mountedTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -163,7 +171,8 @@ const showFinale = ref(false)
 let finaleTimer: ReturnType<typeof setTimeout> | null = null
 
 function goTasteAfterFinale() {
-  finaleLine.value = FINALE_LINES[Math.floor(Math.random() * FINALE_LINES.length)] ?? FINALE_LINES[0]!
+  finaleLine.value =
+    FINALE_LINES[Math.floor(Math.random() * FINALE_LINES.length)] ?? FINALE_LINES[0]!
   showFinale.value = true
   finaleTimer = setTimeout(() => {
     showFinale.value = false
@@ -190,7 +199,10 @@ const ceremonySteps = [
 const ceremonyStepIndex = computed(() => {
   const phase = brewState.phase
   if (phase === BrewPhase.READY) return 4
-  return Math.max(0, ceremonySteps.findIndex(step => step.phase === phase))
+  return Math.max(
+    0,
+    ceremonySteps.findIndex((step) => step.phase === phase),
+  )
 })
 
 // ============ 计算属性 ============
@@ -218,7 +230,9 @@ const recommendedSteepTime = computed(() => {
 // 当前阶段是否为 IDLE
 const isIdle = computed(() => brewState.phase === BrewPhase.IDLE)
 const hasTeaWare = computed(() => store.selectedTeaWare !== null)
-const isPouring = computed(() => [BrewPhase.WARMING, BrewPhase.RINSING, BrewPhase.STEEPING].includes(brewState.phase))
+const isPouring = computed(() =>
+  [BrewPhase.WARMING, BrewPhase.RINSING, BrewPhase.STEEPING].includes(brewState.phase),
+)
 
 // 拖拽注水进度同步给 3D：拖拽中实时传 0~1，松手/非拖拽阶段传 -1 交回 phase 自动。
 // 让 3D 真手与茶壶倾斜跟着手指走，而不是按 phase 自动满姿态。
@@ -258,8 +272,8 @@ function backToSetup() {
 
 // ============ 冲泡阶段控制 ============
 function handleWarming() {
-  audio.playPourWater(1.0)  // 先播音效
-  brew.completeWarming()  // 再切换阶段
+  audio.playPourWater(1.0) // 先播音效
+  brew.completeWarming() // 再切换阶段
   if (warmTimer) clearTimeout(warmTimer)
   warmTimer = setTimeout(() => startRinsing(), 800)
 }
@@ -310,7 +324,7 @@ function endPourGesture(event: PointerEvent) {
   ;(event.currentTarget as HTMLElement).releasePointerCapture?.(event.pointerId)
   if (pourGestureProgress.value >= 60) {
     const elapsed = Math.max(performance.now() - pourPointerStartedAt, 120)
-    pourSpeed.value = Math.max(0.1, Math.min(1, pourGestureProgress.value / elapsed * 4))
+    pourSpeed.value = Math.max(0.1, Math.min(1, (pourGestureProgress.value / elapsed) * 4))
     audio.playPourWater(1 + pourGestureProgress.value / 100)
     startSteeping()
   }
@@ -323,11 +337,13 @@ function stopSteeping() {
     steepInterval = null
   }
   if (steepStartedAt !== null) {
-    brew.updateSteepTime(Math.max(brewState.steepTime, Math.floor((performance.now() - steepStartedAt) / 1000)))
+    brew.updateSteepTime(
+      Math.max(brewState.steepTime, Math.floor((performance.now() - steepStartedAt) / 1000)),
+    )
     steepStartedAt = null
   }
   brew.stopSteeping()
-  audio.playPourTea(1.5)  // 出汤声
+  audio.playPourTea(1.5) // 出汤声
   isPouringOut.value = true
   if (outflowTimer) clearTimeout(outflowTimer)
   // 出汤动画 1.8s 后自动推进下一泡或捧杯收尾，不等用户再点「出汤完成」。
@@ -403,8 +419,6 @@ const phaseDescription = computed(() => {
       return `第${currentInfusion.value}泡（${brewState.steepTime}s）完成`
   }
 })
-
-
 </script>
 
 <template>

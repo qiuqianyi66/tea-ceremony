@@ -3,7 +3,7 @@
  * - 有效编码参数 → 只读渲染品鉴卡
  * - 无效 / 缺失参数 → 错误态 + 回首页
  */
-import { test, expect } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 
 /** 用 Node 构造 base64url（与 src/services/share.ts 的编码兼容）。 */
 function encodeShare(record: Record<string, unknown>): string {
@@ -16,7 +16,16 @@ const SAMPLE = {
   brewTemp: 80,
   brewTime: 45,
   infusions: 1,
-  dimensions: { bitterness: 2, sweetness: 4, aftertaste: 5, body: 3, aroma: 5, rhyme: 4, shape: 3, mind: 5 },
+  dimensions: {
+    bitterness: 2,
+    sweetness: 4,
+    aftertaste: 5,
+    body: 3,
+    aroma: 5,
+    rhyme: 4,
+    shape: 3,
+    mind: 5,
+  },
   overallScore: 8.6,
   processFactor: 0.92,
   aromaType: '花香',

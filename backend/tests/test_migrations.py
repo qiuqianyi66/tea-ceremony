@@ -10,9 +10,9 @@ import os
 from pathlib import Path
 
 import pytest
-from sqlalchemy import create_engine, inspect, text
 from alembic import command
 from alembic.config import Config
+from sqlalchemy import create_engine, inspect, text
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 ALEMBIC_INI = BACKEND_DIR / "alembic.ini"

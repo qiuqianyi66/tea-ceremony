@@ -10,7 +10,7 @@ import type { Tea } from '@/types/tea'
  * @param limit 返回数量，默认 3
  */
 export function getSimilarTeas(teaId: string, limit = 3): Tea[] {
-  const current = teas.find(t => t.id === teaId)
+  const current = teas.find((t) => t.id === teaId)
   if (!current) return []
-  return teas.filter(t => t.type === current.type && t.id !== teaId).slice(0, limit)
+  return teas.filter((t) => t.type === current.type && t.id !== teaId).slice(0, limit)
 }

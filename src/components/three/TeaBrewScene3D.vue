@@ -8,9 +8,10 @@
  * 性能自适应：headless 环境（CI/E2E 无 GPU、SwiftShader 软渲染）下用 on-demand
  * 静态渲染模式，避免逐帧动画阻塞主线程拖垮业务流程；真实浏览器保持 always 动画。
  */
-import { computed } from 'vue'
+
 import { TresCanvas } from '@tresjs/core'
-import { BrewPhase } from '@/types/brewing'
+import { computed } from 'vue'
+import type { BrewPhase } from '@/types/brewing'
 import type { BrewSkinId } from './brewSkins'
 import TeaBrewSceneInner from './TeaBrewSceneInner.vue'
 

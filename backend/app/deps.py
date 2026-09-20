@@ -21,8 +21,8 @@ async def get_current_user(
     try:
         payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=["HS256"])
         user_id = int(payload.get("sub", ""))
-    except (JWTError, TypeError, ValueError):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="登录已失效")
+    except (JWTError, TypeError, ValueError) as error:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="登录已失效") from error
 
     from sqlalchemy import select
     result = await db.execute(select(User).filter(User.id == user_id))

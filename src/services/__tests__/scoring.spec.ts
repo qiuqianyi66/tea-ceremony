@@ -5,15 +5,15 @@
 
 import { describe, expect, it } from 'vitest'
 import {
-  calculateProcessFactor,
   calculateOverallScore,
-  getScoreLevel,
-  generateRecordId,
+  calculateProcessFactor,
   explainProcessFactor,
+  generateRecordId,
+  getScoreLevel,
 } from '@/services/scoring'
+import type { TasteDimensions } from '@/types/tasting'
 import type { TeaWare } from '@/types/teaware'
 import { TeaWareType } from '@/types/teaware'
-import type { TasteDimensions } from '@/types/tasting'
 
 function makeWare(bonus?: Partial<TeaWare['bonus']>): TeaWare {
   return {
@@ -33,14 +33,26 @@ function makeWare(bonus?: Partial<TeaWare['bonus']>): TeaWare {
 
 // 理想好茶：不苦涩（反向维度取 1），其余七维满分
 const fullDimensions: TasteDimensions = {
-  bitterness: 1, sweetness: 5, aftertaste: 5, body: 5,
-  aroma: 5, rhyme: 5, shape: 5, mind: 5,
+  bitterness: 1,
+  sweetness: 5,
+  aftertaste: 5,
+  body: 5,
+  aroma: 5,
+  rhyme: 5,
+  shape: 5,
+  mind: 5,
 }
 
 // 最差：苦涩很重（反向维度取 5），其余七维最低
 const lowDimensions: TasteDimensions = {
-  bitterness: 5, sweetness: 1, aftertaste: 1, body: 1,
-  aroma: 1, rhyme: 1, shape: 1, mind: 1,
+  bitterness: 5,
+  sweetness: 1,
+  aftertaste: 1,
+  body: 1,
+  aroma: 1,
+  rhyme: 1,
+  shape: 1,
+  mind: 1,
 }
 
 describe('calculateProcessFactor 工艺系数', () => {
@@ -131,8 +143,14 @@ describe('calculateOverallScore 综合评分', () => {
 
   it('任意输入结果收敛在 1-10 且保留一位小数', () => {
     const edgeDimensions: TasteDimensions = {
-      bitterness: 0, sweetness: 6, aftertaste: -2, body: 3,
-      aroma: 10, rhyme: 1, shape: 4, mind: 2,
+      bitterness: 0,
+      sweetness: 6,
+      aftertaste: -2,
+      body: 3,
+      aroma: 10,
+      rhyme: 1,
+      shape: 4,
+      mind: 2,
     }
     const score = calculateOverallScore(edgeDimensions, 2)
     expect(score).toBeGreaterThanOrEqual(1)

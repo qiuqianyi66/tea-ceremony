@@ -3,11 +3,12 @@
  * TeaGardenScene3D — 3D茶园场景容器（TresCanvas）
  * 真实感3D茶山：HDRI环境 + 程序化梯田地形 + 太阳光阴影 + 雾效 + 程序化茶树
  */
-import { ref } from 'vue'
+
 import { TresCanvas } from '@tresjs/core'
-import TeaGardenSceneInner from './TeaGardenSceneInner.vue'
+import { ref } from 'vue'
 import type { PlantedTea } from '@/types/garden'
 import type { WeatherMode } from './garden-weather'
+import TeaGardenSceneInner from './TeaGardenSceneInner.vue'
 
 defineProps<{
   plants: PlantedTea[]
@@ -22,7 +23,11 @@ const emit = defineEmits<{
 }>()
 
 /** 子场景实例（用于调用浇水粒子动画等视觉反馈） */
-const innerRef = ref<{ playWater?: (id: number) => void; setWeather?: (m: WeatherMode) => void; setAudioEnabled?: (on: boolean) => void }>()
+const innerRef = ref<{
+  playWater?: (id: number) => void
+  setWeather?: (m: WeatherMode) => void
+  setAudioEnabled?: (on: boolean) => void
+}>()
 
 function onSelectPlant(id: number): void {
   emit('select-plant', id)

@@ -1,14 +1,16 @@
 /** diag-glare2.cjs — 环境强度 0 / 换 sky env 对比 */
-const { chromium } = require('playwright');
+const { chromium } = require('playwright')
 
-(async () => {
-  const browser = await chromium.launch({ headless: true, channel: 'chromium' });
-  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-  await page.goto('http://localhost:5173/garden/hangzhou', { waitUntil: 'domcontentloaded' });
-  await page.waitForTimeout(4500);
+;(async () => {
+  const browser = await chromium.launch({ headless: true, channel: 'chromium' })
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
+  await page.goto('http://localhost:5173/garden/hangzhou', { waitUntil: 'domcontentloaded' })
+  await page.waitForTimeout(4500)
 
   // 1. environmentIntensity = 0
-  await page.evaluate(() => { window.__teaGarden.scene().environmentIntensity = 0 })
+  await page.evaluate(() => {
+    window.__teaGarden.scene().environmentIntensity = 0
+  })
   await page.waitForTimeout(500)
   await page.screenshot({ path: 'diag2_0_env0.png' })
 

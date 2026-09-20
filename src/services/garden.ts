@@ -4,15 +4,39 @@
  * 仅保留 3D 茶园场景（TeaGardenSceneInner）引用的生长阶段计算。
  * 若未来 3D 场景移除 plants 渲染，本文件可随之删除。
  */
-import type { PlantedTea, GrowthStage, GrowthStageInfo } from '@/types/garden'
+import type { GrowthStage, GrowthStageInfo, PlantedTea } from '@/types/garden'
 
 // ============ 生长周期配置（14 天） ============
 
 export const GROWTH_STAGES: GrowthStageInfo[] = [
-  { stage: 'sprout', label: '萌芽期', dayRange: [0, 2], description: '茶苗破土，新芽初绽', needsPruning: false },
-  { stage: 'seedling', label: '幼苗期', dayRange: [2, 5], description: '真叶展开，根系生长', needsPruning: true },
-  { stage: 'growing', label: '成长期', dayRange: [5, 10], description: '枝叶茂盛，树冠形成', needsPruning: false },
-  { stage: 'mature', label: '成熟期', dayRange: [10, 14], description: '新芽冒头，可以采摘', needsPruning: false },
+  {
+    stage: 'sprout',
+    label: '萌芽期',
+    dayRange: [0, 2],
+    description: '茶苗破土，新芽初绽',
+    needsPruning: false,
+  },
+  {
+    stage: 'seedling',
+    label: '幼苗期',
+    dayRange: [2, 5],
+    description: '真叶展开，根系生长',
+    needsPruning: true,
+  },
+  {
+    stage: 'growing',
+    label: '成长期',
+    dayRange: [5, 10],
+    description: '枝叶茂盛，树冠形成',
+    needsPruning: false,
+  },
+  {
+    stage: 'mature',
+    label: '成熟期',
+    dayRange: [10, 14],
+    description: '新芽冒头，可以采摘',
+    needsPruning: false,
+  },
 ]
 
 export const RECOVERY_DAYS = 7 // 采后恢复期
@@ -45,9 +69,15 @@ export function getGrowthStage(plant: PlantedTea): GrowthStage {
 export function getGrowthStageInfo(plant: PlantedTea): GrowthStageInfo | null {
   const stage = getGrowthStage(plant)
   if (stage === 'recovery') {
-    return { stage: 'recovery', label: '恢复期', dayRange: [0, RECOVERY_DAYS], description: '休养生息，之后又能采摘', needsPruning: false }
+    return {
+      stage: 'recovery',
+      label: '恢复期',
+      dayRange: [0, RECOVERY_DAYS],
+      description: '休养生息，之后又能采摘',
+      needsPruning: false,
+    }
   }
-  return GROWTH_STAGES.find(s => s.stage === stage) ?? null
+  return GROWTH_STAGES.find((s) => s.stage === stage) ?? null
 }
 
 /** 计算生长进度 0-1（考虑湿度暂停） */

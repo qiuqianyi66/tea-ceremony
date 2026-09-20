@@ -1,9 +1,9 @@
 /** 品鉴历史存储（IndexedDB + 离线同步） */
 
 import type { TastingRecord } from '@/types/tasting'
-import { db, initDB } from './db'
 import { recordsApi } from '../api'
 import { getAuthToken } from '../authStorage'
+import { db, initDB } from './db'
 
 export const historyStorage = {
   /** 加载所有记录（按日期倒序） */
@@ -30,7 +30,7 @@ export const historyStorage = {
     // 检查是否已存在相同茶叶同一天的记录（防重复）
     const recordDay = record.date.split('T')[0]
     const existing = await db.tastings
-      .filter(item => item.teaId === record.teaId && item.date.startsWith(recordDay!))
+      .filter((item) => item.teaId === record.teaId && item.date.startsWith(recordDay!))
       .first()
 
     if (existing) {
@@ -63,7 +63,7 @@ export const historyStorage = {
     // 未登录时无可同步对象（游客阶段不落 pending 上传），直接返回
     if (!getAuthToken()) return { synced: 0, failed: 0 }
     const pending = await db.tastings
-      .filter(record => record.syncStatus === 'pending' || record.syncStatus === 'failed')
+      .filter((record) => record.syncStatus === 'pending' || record.syncStatus === 'failed')
       .toArray()
     let synced = 0
     let failed = 0
@@ -86,7 +86,10 @@ export const historyStorage = {
   /** 根据茶叶 ID 查询记录 */
   async getByTea(teaId: string): Promise<TastingRecord[]> {
     await initDB()
-    return db.tastings.filter(record => record.teaId === teaId).reverse().toArray()
+    return db.tastings
+      .filter((record) => record.teaId === teaId)
+      .reverse()
+      .toArray()
   },
 
   /** 查询高分记录 */

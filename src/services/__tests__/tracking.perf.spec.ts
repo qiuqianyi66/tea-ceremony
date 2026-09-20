@@ -5,8 +5,8 @@
  * 阈值按开发机安全余量设定（CI/本地不应接近上限）；耗时打印供人工复核。
  */
 import { beforeEach, describe, expect, it } from 'vitest'
-import { initDB, db } from '@/services/storage'
-import { track, getTrackingSummary, MAX_EVENTS } from '@/services/tracking'
+import { db, initDB } from '@/services/storage'
+import { getTrackingSummary, MAX_EVENTS, track } from '@/services/tracking'
 
 beforeEach(async () => {
   await initDB()

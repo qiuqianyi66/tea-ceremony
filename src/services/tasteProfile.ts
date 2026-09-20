@@ -8,10 +8,19 @@
  * - personalTip：基于画像的个人茶语推荐
  */
 import { teas } from '@/data/teas'
-import { TeaType } from '@/types/tea'
 import type { TastingRecord } from '@/types/tasting'
+import { TeaType } from '@/types/tea'
 
-export const DIM_KEYS = ['bitterness', 'sweetness', 'aftertaste', 'body', 'aroma', 'rhyme', 'shape', 'mind'] as const
+export const DIM_KEYS = [
+  'bitterness',
+  'sweetness',
+  'aftertaste',
+  'body',
+  'aroma',
+  'rhyme',
+  'shape',
+  'mind',
+] as const
 
 export interface TypeStat {
   type: string
@@ -24,15 +33,15 @@ export interface TypeStat {
 export function buildTypeStats(history: TastingRecord[]): TypeStat[] {
   const stats: Record<string, { count: number; scoreSum: number }> = {}
   for (const r of history) {
-    const t = teas.find(tt => tt.id === r.teaId)
+    const t = teas.find((tt) => tt.id === r.teaId)
     const type = t?.type ?? '未知'
     if (!stats[type]) stats[type] = { count: 0, scoreSum: 0 }
     stats[type].count += 1
     stats[type].scoreSum += r.overallScore
   }
-  const maxCount = Math.max(1, ...Object.values(stats).map(s => s.count))
+  const maxCount = Math.max(1, ...Object.values(stats).map((s) => s.count))
   return (Object.values(TeaType) as string[])
-    .map(type => {
+    .map((type) => {
       const s = stats[type]
       return {
         type,
@@ -48,7 +57,7 @@ export function buildTypeStats(history: TastingRecord[]): TypeStat[] {
 export function buildFlavorStats(history: TastingRecord[], limit = 8): Array<[string, number]> {
   const freq = new Map<string, number>()
   for (const r of history) {
-    const t = teas.find(tt => tt.id === r.teaId)
+    const t = teas.find((tt) => tt.id === r.teaId)
     if (!t) continue
     for (const f of t.flavor) freq.set(f, (freq.get(f) ?? 0) + 1)
   }
@@ -62,15 +71,15 @@ export function buildAvgDimensions(history: TastingRecord[]): Record<string, num
   for (const r of history) {
     for (const k of DIM_KEYS) sums[k] = (sums[k] ?? 0) + r.dimensions[k]
   }
-  return Object.fromEntries(DIM_KEYS.map(k => [k, +((sums[k] ?? 0) / history.length).toFixed(1)]))
+  return Object.fromEntries(DIM_KEYS.map((k) => [k, +((sums[k] ?? 0) / history.length).toFixed(1)]))
 }
 
 /** 个人茶语：推荐最高频茶类中尚未品鉴的一款。 */
 export function buildPersonalTip(history: TastingRecord[]): string {
   if (history.length === 0) return '完成第一次品鉴，解锁你的专属口味画像'
   const fav = buildTypeStats(history)[0]!
-  const sameTypeUntasted = teas.filter(t =>
-    t.type === fav.type && !history.some(r => r.teaId === t.id),
+  const sameTypeUntasted = teas.filter(
+    (t) => t.type === fav.type && !history.some((r) => r.teaId === t.id),
   )
   if (sameTypeUntasted.length > 0) {
     const next = sameTypeUntasted[0]!

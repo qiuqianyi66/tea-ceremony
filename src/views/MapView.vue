@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, shallowRef } from 'vue'
-import * as echarts from 'echarts/core'
+import type { ECharts, EChartsOption } from 'echarts'
 import { MapChart } from 'echarts/charts'
 import { TooltipComponent } from 'echarts/components'
+import * as echarts from 'echarts/core'
 import { CanvasRenderer } from 'echarts/renderers'
-import type { ECharts, EChartsOption } from 'echarts'
-import chinaMapUrl from '@/data/china-map.json?url'
-import { teaRegions, getTeaRegion, findTeaByName, type TeaRegion } from '@/data/tea-regions'
+import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { useRouter } from 'vue-router'
-import { TEA_REGIONS, type TeaRegion as MountainRegion } from '@/data/tea-mountain-regions'
+import chinaMapUrl from '@/data/china-map.json?url'
+import { type TeaRegion as MountainRegion, TEA_REGIONS } from '@/data/tea-mountain-regions'
+import { findTeaByName, getTeaRegion, type TeaRegion, teaRegions } from '@/data/tea-regions'
 
 // ==================== ECharts 地图 ====================
 echarts.use([MapChart, TooltipComponent, CanvasRenderer])
@@ -26,23 +26,48 @@ const chartInstance = shallowRef<ECharts | null>(null)
 
 // 四大茶区配色（夜色暖光风格）
 const zoneColors: Record<string, string> = {
-  '华南茶区': '#c97b4a',
-  '西南茶区': '#8b6b4a',
-  '江南茶区': '#a0826d',
-  '江北茶区': '#6b5d4f',
+  华南茶区: '#c97b4a',
+  西南茶区: '#8b6b4a',
+  江南茶区: '#a0826d',
+  江北茶区: '#6b5d4f',
 }
 
 // 省份简称 → 全称映射（茶山数据用简称，GeoJSON 用全称）
 const provinceFullName: Record<string, string> = {
-  '浙江': '浙江省', '江苏': '江苏省', '安徽': '安徽省', '福建': '福建省',
-  '广东': '广东省', '云南': '云南省', '湖南': '湖南省', '湖北': '湖北省',
-  '四川': '四川省', '贵州': '贵州省', '广西': '广西壮族自治区', '江西': '江西省',
-  '河南': '河南省', '山东': '山东省', '陕西': '陕西省', '海南': '海南省',
-  '台湾': '台湾省', '甘肃': '甘肃省', '西藏': '西藏自治区', '重庆': '重庆市',
-  '上海': '上海市', '北京': '北京市', '天津': '天津市', '辽宁': '辽宁省',
-  '吉林': '吉林省', '黑龙江': '黑龙江省', '河北': '河北省', '山西': '山西省',
-  '内蒙古': '内蒙古自治区', '宁夏': '宁夏回族自治区', '青海': '青海省',
-  '新疆': '新疆维吾尔自治区', '香港': '香港特别行政区', '澳门': '澳门特别行政区',
+  浙江: '浙江省',
+  江苏: '江苏省',
+  安徽: '安徽省',
+  福建: '福建省',
+  广东: '广东省',
+  云南: '云南省',
+  湖南: '湖南省',
+  湖北: '湖北省',
+  四川: '四川省',
+  贵州: '贵州省',
+  广西: '广西壮族自治区',
+  江西: '江西省',
+  河南: '河南省',
+  山东: '山东省',
+  陕西: '陕西省',
+  海南: '海南省',
+  台湾: '台湾省',
+  甘肃: '甘肃省',
+  西藏: '西藏自治区',
+  重庆: '重庆市',
+  上海: '上海市',
+  北京: '北京市',
+  天津: '天津市',
+  辽宁: '辽宁省',
+  吉林: '吉林省',
+  黑龙江: '黑龙江省',
+  河北: '河北省',
+  山西: '山西省',
+  内蒙古: '内蒙古自治区',
+  宁夏: '宁夏回族自治区',
+  青海: '青海省',
+  新疆: '新疆维吾尔自治区',
+  香港: '香港特别行政区',
+  澳门: '澳门特别行政区',
 }
 
 // 选中的省份（全称）
@@ -55,8 +80,9 @@ const selectedRegion = computed<TeaRegion | undefined>(() =>
 const selectedMountains = computed<MountainRegion[]>(() => {
   if (!selectedProvince.value) return []
   // 从全称反查简称
-  const shortName = Object.entries(provinceFullName)
-    .find(([, full]) => full === selectedProvince.value)?.[0]
+  const shortName = Object.entries(provinceFullName).find(
+    ([, full]) => full === selectedProvince.value,
+  )?.[0]
   if (!shortName) return []
   return TEA_REGIONS.filter((r) => r.province === shortName)
 })
@@ -82,77 +108,77 @@ async function initChart(): Promise<void> {
     if (!res.ok) throw new Error(`地图数据加载失败：HTTP ${res.status}`)
     const geo = (await res.json()) as never
     echarts.registerMap('china', geo)
-  const chart = echarts.init(mapContainer.value)
-  chartInstance.value = chart
+    const chart = echarts.init(mapContainer.value)
+    chartInstance.value = chart
 
-  const option: EChartsOption = {
-    backgroundColor: 'transparent',
-    tooltip: {
-      trigger: 'item',
-      backgroundColor: 'rgba(26, 18, 12, 0.92)',
-      borderColor: '#c9a96e',
-      borderWidth: 1,
-      textStyle: { color: '#f5e6c8', fontSize: 13 },
-      formatter: (params: unknown) => {
-        const p = params as { name: string; data?: { value?: number } }
-        const region = getTeaRegion(p.name)
-        if (!region) {
-          return `<div style="font-weight:bold;margin-bottom:4px">${p.name}</div>
+    const option: EChartsOption = {
+      backgroundColor: 'transparent',
+      tooltip: {
+        trigger: 'item',
+        backgroundColor: 'rgba(26, 18, 12, 0.92)',
+        borderColor: '#c9a96e',
+        borderWidth: 1,
+        textStyle: { color: '#f5e6c8', fontSize: 13 },
+        formatter: (params: unknown) => {
+          const p = params as { name: string; data?: { value?: number } }
+          const region = getTeaRegion(p.name)
+          if (!region) {
+            return `<div style="font-weight:bold;margin-bottom:4px">${p.name}</div>
             <div style="opacity:0.7;font-size:12px">非主要产茶区</div>`
-        }
-        const teaNames = region.famousTeas.map((t) => t.name).join('、')
-        return `<div style="font-weight:bold;margin-bottom:4px;color:#e8c87a">${p.name}</div>
+          }
+          const teaNames = region.famousTeas.map((t) => t.name).join('、')
+          return `<div style="font-weight:bold;margin-bottom:4px;color:#e8c87a">${p.name}</div>
           <div style="margin-bottom:4px;color:#c9a96e;font-size:12px">${region.zone}</div>
           <div style="margin-bottom:4px;font-size:12px">代表名茶：${teaNames}</div>
           <div style="opacity:0.7;font-size:11px">${region.climate.slice(0, 30)}…</div>`
+        },
       },
-    },
-    series: [
-      {
-        name: '中国茶产区',
-        type: 'map',
-        map: 'china',
-        roam: true,
-        zoom: 1.2,
-        center: [105, 36],
-        scaleLimit: { min: 0.8, max: 5 },
-        label: {
-          show: false,
-        },
-        emphasis: {
-          label: { show: true, color: '#fff', fontSize: 12 },
-          itemStyle: {
-            areaColor: '#d4a054',
-            shadowBlur: 20,
-            shadowColor: 'rgba(212, 160, 84, 0.5)',
+      series: [
+        {
+          name: '中国茶产区',
+          type: 'map',
+          map: 'china',
+          roam: true,
+          zoom: 1.2,
+          center: [105, 36],
+          scaleLimit: { min: 0.8, max: 5 },
+          label: {
+            show: false,
           },
-        },
-        select: {
-          label: { show: true, color: '#fff' },
-          itemStyle: {
-            areaColor: '#e8b860',
-            borderColor: '#f5d890',
-            borderWidth: 2,
+          emphasis: {
+            label: { show: true, color: '#fff', fontSize: 12 },
+            itemStyle: {
+              areaColor: '#d4a054',
+              shadowBlur: 20,
+              shadowColor: 'rgba(212, 160, 84, 0.5)',
+            },
           },
+          select: {
+            label: { show: true, color: '#fff' },
+            itemStyle: {
+              areaColor: '#e8b860',
+              borderColor: '#f5d890',
+              borderWidth: 2,
+            },
+          },
+          selectedMode: 'single',
+          data: mapData.value,
         },
-        selectedMode: 'single',
-        data: mapData.value,
-      },
-    ],
-  }
-
-  chart.setOption(option)
-
-  // 点击省份选中
-  chart.on('click', (params: unknown) => {
-    const p = params as { name: string }
-    if (getTeaRegion(p.name)) {
-      selectedProvince.value = selectedProvince.value === p.name ? null : p.name
+      ],
     }
-  })
 
-  // 响应式
-  window.addEventListener('resize', handleResize)
+    chart.setOption(option)
+
+    // 点击省份选中
+    chart.on('click', (params: unknown) => {
+      const p = params as { name: string }
+      if (getTeaRegion(p.name)) {
+        selectedProvince.value = selectedProvince.value === p.name ? null : p.name
+      }
+    })
+
+    // 响应式
+    window.addEventListener('resize', handleResize)
   } catch (err) {
     mapLoadFailed.value = true
     console.error('[MapView] 地图数据加载失败', err)
@@ -175,13 +201,13 @@ onUnmounted(() => {
 
 // 茶类配色
 const categoryColors: Record<string, string> = {
-  '绿茶': '#7ba05b',
-  '白茶': '#d4c5a0',
-  '黄茶': '#c9a96e',
-  '乌龙茶': '#b87333',
-  '红茶': '#8b3a3a',
-  '黑茶': '#3d2b1f',
-  '再加工茶': '#6b8e9e',
+  绿茶: '#7ba05b',
+  白茶: '#d4c5a0',
+  黄茶: '#c9a96e',
+  乌龙茶: '#b87333',
+  红茶: '#8b3a3a',
+  黑茶: '#3d2b1f',
+  再加工茶: '#6b8e9e',
 }
 </script>
 

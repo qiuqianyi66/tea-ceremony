@@ -3,8 +3,8 @@
  * 覆盖：写入/汇总、容量上限裁剪、非法输入白名单、无网络外发（隐私安全）、track 永不 reject。
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { initDB, db } from '@/services/storage'
-import { track, getTrackingSummary, clearTracking, MAX_EVENTS } from '@/services/tracking'
+import { db, initDB } from '@/services/storage'
+import { clearTracking, getTrackingSummary, MAX_EVENTS, track } from '@/services/tracking'
 
 beforeEach(async () => {
   await initDB()

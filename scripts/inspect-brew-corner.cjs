@@ -5,7 +5,8 @@ const fs = require('fs')
   const browser = await chromium.launch({ headless: true, channel: 'chromium' })
   const ctx = await browser.newContext({
     viewport: { width: 1440, height: 900 },
-    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+    userAgent:
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
   })
   await ctx.addInitScript(() => {
     Object.defineProperty(navigator, 'webdriver', { get: () => undefined })
@@ -19,7 +20,10 @@ const fs = require('fs')
   await page.waitForURL('**/tools')
   await page.waitForTimeout(800)
   await page.getByRole('button', { name: /白瓷盖碗/ }).click()
-  await page.getByRole('button', { name: /山泉|泉水|纯净|山涧|雨水|井水/ }).first().click()
+  await page
+    .getByRole('button', { name: /山泉|泉水|纯净|山涧|雨水|井水/ })
+    .first()
+    .click()
   await page.getByRole('button', { name: '开始冲泡 →' }).click()
   await page.waitForURL('**/brew')
   await page.waitForTimeout(6000)
@@ -39,4 +43,7 @@ const fs = require('fs')
   console.log('BOTTOM-LEFT ELEMENT:', JSON.stringify(info, null, 2))
   await page.screenshot({ path: '.tmp/brew_shots/inspect_bottomleft.png' })
   await browser.close()
-})().catch(e => { console.error('FAIL', e); process.exit(1) })
+})().catch((e) => {
+  console.error('FAIL', e)
+  process.exit(1)
+})

@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.schemas import RegionResponse, PersonResponse, PoemResponse
+from app.schemas import PersonResponse, PoemResponse, RegionResponse
 from app.services import culture_service as svc
 
 router = APIRouter()

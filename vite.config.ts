@@ -6,9 +6,11 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import tresCompilerOptions from '@tresjs/core/template-compiler-options'
 
+// GitHub Pages 使用项目子路径，本地和 Docker 部署保持根路径。
+const base = process.env.GITHUB_ACTIONS === 'true' ? '/tea-ceremony/' : '/'
+
 export default defineConfig({
-  // GitHub Pages 使用项目子路径，本地和 Docker 部署保持根路径。
-  base: process.env.GITHUB_ACTIONS === 'true' ? '/tea-ceremony/' : '/',
+  base,
   build: {
     // Three.js/TresJS 库 chunk 约 0.8MB，单一依赖不可再拆且已路由懒加载，提高阈值消除误报。
     // 业务 chunk（MapView 等）已通过地图数据外置 + echarts 按需控制在 500kB 内。
@@ -89,6 +91,10 @@ export default defineConfig({
           },
         ],
         cleanupOutdatedCaches: true,
+        // P1-8：SPA 离线深链回退——离线后从 /share/<token>、/brew 等深链进入不白屏 404，
+        // 由 index.html 承接导航请求后交给前端路由。API/探针请求不回退（离线应直接失败走降级）。
+        navigateFallback: `${base}index.html`,
+        navigateFallbackDenylist: [/^\/api/, /^\/live/, /^\/ready/, /^\/metrics/, /^\/health/],
         // prompt 模式：不自动 skipWaiting/clientsClaim，新 SW 等用户确认后由 updateSW(true) 激活
       },
       devOptions: {

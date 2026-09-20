@@ -77,7 +77,8 @@ async def test_no_pre_ping_fails_after_terminated_connection():
         async with engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
         await _kill_test_connections()
-        with pytest.raises(Exception):
+        # 对照组只验证"连接失效后复用必报错"；具体异常类型随驱动/时序变化，刻意宽断言（B017 不适用）。
+        with pytest.raises(Exception):  # noqa: B017
             async with engine.connect() as conn:
                 await conn.execute(text("SELECT 1"))
     finally:

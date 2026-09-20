@@ -21,15 +21,23 @@ export const useUiStore = defineStore('ui', () => {
     const id = ++toastId
     toasts.value.push({ id, message, type })
     setTimeout(() => {
-      toasts.value = toasts.value.filter(t => t.id !== id)
+      toasts.value = toasts.value.filter((t) => t.id !== id)
     }, duration)
   }
 
-  function setLoading(v: boolean) { globalLoading.value = v }
-  function setDrawerOpen(v: boolean) { drawerOpen.value = v }
+  function setLoading(v: boolean) {
+    globalLoading.value = v
+  }
+  function setDrawerOpen(v: boolean) {
+    drawerOpen.value = v
+  }
 
   return {
-    toasts, globalLoading, drawerOpen,
-    showToast, setLoading, setDrawerOpen,
+    toasts,
+    globalLoading,
+    drawerOpen,
+    showToast,
+    setLoading,
+    setDrawerOpen,
   }
 })

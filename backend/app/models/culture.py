@@ -1,6 +1,7 @@
 """茶文化域：茶人 / 茶诗 / 茶礼 / 知识图谱关系。"""
 
-from sqlalchemy import Column, Integer, String, Text, JSON, ForeignKey
+from sqlalchemy import JSON, Column, ForeignKey, Integer, String, Text
+
 from app.database import Base
 
 

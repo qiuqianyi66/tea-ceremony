@@ -28,17 +28,20 @@ const { PNG } = require('pngjs')
     const camera = g.activeCamera()
     const cam = camera.value || camera
     let hitbox = null
-    scene.traverse((o) => { if (!hitbox && o.isMesh && o.userData && typeof o.userData.plantId === 'number') hitbox = o })
+    scene.traverse((o) => {
+      if (!hitbox && o.isMesh && o.userData && typeof o.userData.plantId === 'number') hitbox = o
+    })
     if (!hitbox) return null
     const rc = new g.THREE.Raycaster()
     const v = new g.THREE.Vector2()
     const hits = []
-    for (let sy = 0; sy < 900; sy += 6) for (let sx = 0; sx < 1440; sx += 6) {
-      v.x = (sx / 1440) * 2 - 1
-      v.y = -(sy / 900) * 2 + 1
-      rc.setFromCamera(v, cam)
-      if (rc.intersectObject(hitbox, true).length > 0) hits.push([sx, sy])
-    }
+    for (let sy = 0; sy < 900; sy += 6)
+      for (let sx = 0; sx < 1440; sx += 6) {
+        v.x = (sx / 1440) * 2 - 1
+        v.y = -(sy / 900) * 2 + 1
+        rc.setFromCamera(v, cam)
+        if (rc.intersectObject(hitbox, true).length > 0) hits.push([sx, sy])
+      }
     if (!hits.length) return null
     return {
       x: Math.round(hits.reduce((a, p) => a + p[0], 0) / hits.length),
@@ -70,4 +73,7 @@ const { PNG } = require('pngjs')
     console.log(`[3] 茶树裁切已保存 (${cx},${cy})`)
   }
   await browser.close()
-})().catch((e) => { console.error('脚本失败:', e.message); process.exit(1) })
+})().catch((e) => {
+  console.error('脚本失败:', e.message)
+  process.exit(1)
+})

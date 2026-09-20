@@ -4,8 +4,8 @@
  */
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { TastingRecord } from '@/types/tasting'
 import { historyStorage } from '@/services/storage'
+import type { TastingRecord } from '@/types/tasting'
 
 export const useRecordStore = defineStore('record', () => {
   const history = ref<TastingRecord[]>([])
@@ -25,7 +25,7 @@ export const useRecordStore = defineStore('record', () => {
   }
 
   function remove(id: string) {
-    history.value = history.value.filter(r => r.id !== id)
+    history.value = history.value.filter((r) => r.id !== id)
   }
 
   /** 重试离线同步队列，成功后刷新本地列表 */

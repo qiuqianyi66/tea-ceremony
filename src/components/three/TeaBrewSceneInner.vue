@@ -6,15 +6,16 @@
  * 注意（TresJS 5 坑）：Tres 元素的 rotation 是只读属性，直接传 Vector3 实例会触发
  * "Cannot assign to read only property 'rotation'" 海量报错 → 必须传 [x,y,z] 数组字面量。
  */
-import { computed, onMounted, onUnmounted, ref, shallowRef, toRef, watch } from 'vue'
+
 import { useLoop, useTresContext } from '@tresjs/core'
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
-import { BrewPhase } from '@/types/brewing'
-import { useBrewAnimation, smoothstep } from '@/composables/useBrewAnimation'
-import { BREW_SKINS, type BrewSkin, type BrewSkinId } from './brewSkins'
-import zishaUrl from '@/assets/zisha-albedo.jpg'
+import { computed, onMounted, onUnmounted, ref, shallowRef, toRef, watch } from 'vue'
 import porcelainUrl from '@/assets/blue-white-porcelain.jpg'
+import zishaUrl from '@/assets/zisha-albedo.jpg'
+import { smoothstep, useBrewAnimation } from '@/composables/useBrewAnimation'
+import { BrewPhase } from '@/types/brewing'
+import { BREW_SKINS, type BrewSkin, type BrewSkinId } from './brewSkins'
 
 // 场景背景由皮肤系统 applySkin 管理（程序化天幕渐变）。
 // 注意：直接在 setup 赋值 scene.background 不生效，需在 onRender 每帧强制设置（TresJS 渲染循环持有 scene）。
@@ -71,7 +72,9 @@ watch([zishaTex, porcelainTex], () => {
   scene.traverse((obj: THREE.Object3D) => {
     const mesh = obj as THREE.Mesh
     if (!mesh.isMesh || !mesh.material) return
-    const mats = Array.isArray(mesh.material) ? (mesh.material as THREE.MeshStandardMaterial[]) : [mesh.material as THREE.MeshStandardMaterial]
+    const mats = Array.isArray(mesh.material)
+      ? (mesh.material as THREE.MeshStandardMaterial[])
+      : [mesh.material as THREE.MeshStandardMaterial]
     for (const m of mats) {
       if (!m.color) continue
       const hex = m.color.getHexString()
@@ -87,17 +90,20 @@ watch([zishaTex, porcelainTex], () => {
   })
 })
 
-const props = withDefaults(defineProps<{
-  phase: BrewPhase
-  soupColor: string
-  currentTemp: number
-  targetTemp: number
-  isPouringOut: boolean
-  infusion: number
-  skin?: BrewSkinId
-  /** 用户拖拽注水进度 0~1；<0 表示不接管（按 phase 自动）。READY 阶段拖壶嘴时传实时进度 */
-  pourProgress?: number
-}>(), { skin: 'lake-rain', pourProgress: -1 })
+const props = withDefaults(
+  defineProps<{
+    phase: BrewPhase
+    soupColor: string
+    currentTemp: number
+    targetTemp: number
+    isPouringOut: boolean
+    infusion: number
+    skin?: BrewSkinId
+    /** 用户拖拽注水进度 0~1；<0 表示不接管（按 phase 自动）。READY 阶段拖壶嘴时传实时进度 */
+    pourProgress?: number
+  }>(),
+  { skin: 'lake-rain', pourProgress: -1 },
+)
 
 // 泡茶动画状态机（入水/放茶/闷泡/倒茶/喝茶）
 // 第三个参数：拖拽进度接管注水（READY 阶段一次拖动完成注水）
@@ -131,7 +137,7 @@ function syncViewportAspect() {
 const camFov = computed(() => {
   const aspect = viewportAspect.value
   if (aspect >= 1) return 43
-  return Math.min(72, Math.round(43 * Math.pow(1.6 / aspect, 0.35)))
+  return Math.min(72, Math.round(43 * (1.6 / aspect) ** 0.35))
 })
 const keyLightPos = new THREE.Vector3(3.2, 5.5, 4)
 const rimLightPos = new THREE.Vector3(-3, 2, -2)
@@ -149,8 +155,8 @@ const gaiwanScale = new THREE.Vector3(0.24, 0.24, 0.24)
 const liquidPos = new THREE.Vector3(0, 0.68, 0)
 // 盖碗盖子位置（闷泡时下移盖上碗口）。开盖只微抬、合盖盖沿与碗口齐平，
 // 避免旧值 0.98→0.68 的大行程让盖子悬空/合盖时像一颗大白球。
-const lidPosition = computed(() =>
-  new THREE.Vector3(0, 0.92 - 0.18 * smoothstep(anim.steep.value), 0),
+const lidPosition = computed(
+  () => new THREE.Vector3(0, 0.92 - 0.18 * smoothstep(anim.steep.value), 0),
 )
 
 // ==================== 公道杯（茶海，玻璃材质，出汤→分茶用） ====================
@@ -212,12 +218,9 @@ const teacupLiquidScale = computed(() => {
 })
 const teacupLiquidOpacity = computed(() => Math.min(1, anim.fairnessPour.value * 2))
 // 品茗杯喝茶时的位移偏移（向上+向相机方向）
-const teacupDrinkOffset = computed(() =>
-  new THREE.Vector3(
-    0,
-    0.25 * smoothstep(anim.drink.value),
-    -0.15 * smoothstep(anim.drink.value),
-  ),
+const teacupDrinkOffset = computed(
+  () =>
+    new THREE.Vector3(0, 0.25 * smoothstep(anim.drink.value), -0.15 * smoothstep(anim.drink.value)),
 )
 // 品茗杯喝茶时的旋转（向后倾斜模拟端起）
 const teacupDrinkRotation = computed<[number, number, number]>(() => [
@@ -251,17 +254,13 @@ const stoveGlowScale = new THREE.Vector3(1.1, 1.1, 1)
 const streamPos = new THREE.Vector3(0.1, 1.0, 0)
 // 注水流位置：壶嘴到盖碗中心的中点（入水动画用）
 const waterStreamPos = computed(() => {
-  const spoutWorld = new THREE.Vector3(
-    kettlePos.x + 0.5,
-    kettlePos.y + 0.3,
-    kettlePos.z,
-  )
+  const spoutWorld = new THREE.Vector3(kettlePos.x + 0.5, kettlePos.y + 0.3, kettlePos.z)
   const gaiwanCenter = new THREE.Vector3(gaiwanPos.x, gaiwanPos.y + 0.3, gaiwanPos.z)
   return spoutWorld.clone().add(gaiwanCenter).multiplyScalar(0.5)
 })
 // 盖碗液面 scale（入水时液面上升）
-const liquidScale = computed(() =>
-  new THREE.Vector3(1, 0.3 + smoothstep(anim.pourWater.value) * 0.5, 1),
+const liquidScale = computed(
+  () => new THREE.Vector3(1, 0.3 + smoothstep(anim.pourWater.value) * 0.5, 1),
 )
 // 茶则位置（从旁侧移入盖碗上方，放茶动画）
 const teaScoopPos = computed(() => {
@@ -411,7 +410,11 @@ rainLines.visible = false
 // ==================== 程序化真手（零外部模型：手掌盒体 + 胶囊手指 + 袖套） ====================
 // 只露手不露脸，从画面下方伸入；按动画信号换姿态，不绑骨骼、低多边形。
 const handGroup = new THREE.Group()
-const handSkinMat = new THREE.MeshStandardMaterial({ color: '#c89070', roughness: 0.75, envMapIntensity: 0.4 })
+const handSkinMat = new THREE.MeshStandardMaterial({
+  color: '#c89070',
+  roughness: 0.75,
+  envMapIntensity: 0.4,
+})
 const handSleeveMat = new THREE.MeshStandardMaterial({ color: '#2a3540', roughness: 0.9 })
 {
   const palm = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.17, 0.045), handSkinMat)
@@ -496,27 +499,44 @@ const scrollPos = new THREE.Vector3(2.4, 2.6, -2.35)
 const glowPos = new THREE.Vector3(-1.25, 1.192, SET_Z)
 
 // 火焰片布局（位置 + 绕 Z 旋转；rotation 用数组字面量；innerPos 为内层焰心位置）
-const flameSlots: { pos: THREE.Vector3; innerPos: THREE.Vector3; rot: [number, number, number] }[] = [
-  { pos: new THREE.Vector3(-0.32, 0.3, 0.05), innerPos: new THREE.Vector3(-0.32, 0.32, 0.05), rot: [0, 0, -0.12] },
-  { pos: new THREE.Vector3(-0.16, 0.3, -0.05), innerPos: new THREE.Vector3(-0.16, 0.32, -0.05), rot: [0, 0, 0.06] },
-  { pos: new THREE.Vector3(0, 0.3, 0), innerPos: new THREE.Vector3(0, 0.32, 0), rot: [0, 0, 0] },
-  { pos: new THREE.Vector3(0.16, 0.3, -0.05), innerPos: new THREE.Vector3(0.16, 0.32, -0.05), rot: [0, 0, -0.06] },
-  { pos: new THREE.Vector3(0.32, 0.3, 0.05), innerPos: new THREE.Vector3(0.32, 0.32, 0.05), rot: [0, 0, 0.12] },
-]
+const flameSlots: { pos: THREE.Vector3; innerPos: THREE.Vector3; rot: [number, number, number] }[] =
+  [
+    {
+      pos: new THREE.Vector3(-0.32, 0.3, 0.05),
+      innerPos: new THREE.Vector3(-0.32, 0.32, 0.05),
+      rot: [0, 0, -0.12],
+    },
+    {
+      pos: new THREE.Vector3(-0.16, 0.3, -0.05),
+      innerPos: new THREE.Vector3(-0.16, 0.32, -0.05),
+      rot: [0, 0, 0.06],
+    },
+    { pos: new THREE.Vector3(0, 0.3, 0), innerPos: new THREE.Vector3(0, 0.32, 0), rot: [0, 0, 0] },
+    {
+      pos: new THREE.Vector3(0.16, 0.3, -0.05),
+      innerPos: new THREE.Vector3(0.16, 0.32, -0.05),
+      rot: [0, 0, -0.06],
+    },
+    {
+      pos: new THREE.Vector3(0.32, 0.3, 0.05),
+      innerPos: new THREE.Vector3(0.32, 0.32, 0.05),
+      rot: [0, 0, 0.12],
+    },
+  ]
 const flameSeed: number[] = flameSlots.map(() => Math.random() * Math.PI * 2)
 
 // ==================== Three 对象引用（模板绑定） ====================
-const kettleGroup = ref<THREE.Group | null>(null)   // 茶壶组（出汤倾斜）
+const kettleGroup = ref<THREE.Group | null>(null) // 茶壶组（出汤倾斜）
 const keyLight = ref<THREE.DirectionalLight | null>(null) // 主方向光（投影）
 const ambientLight = ref<THREE.AmbientLight | null>(null) // 环境光（皮肤切色温）
 const rimLight = ref<THREE.DirectionalLight | null>(null) // 轮廓光（皮肤切色温）
 const flameLight = ref<THREE.PointLight | null>(null) // 炉火光源
-const flameMeshes = ref<THREE.Mesh[]>([])           // 外焰片数组（v-for）
-const innerFlameMeshes = ref<THREE.Mesh[]>([])      // 内层焰心数组（v-for）
-const stoveGlow = ref<THREE.Sprite | null>(null)    // 炉火辉光精灵
+const flameMeshes = ref<THREE.Mesh[]>([]) // 外焰片数组（v-for）
+const innerFlameMeshes = ref<THREE.Mesh[]>([]) // 内层焰心数组（v-for）
+const stoveGlow = ref<THREE.Sprite | null>(null) // 炉火辉光精灵
 const teaLiquidMat = ref<THREE.MeshStandardMaterial | null>(null) // 碗内茶汤材质
-const pourStreamMat = ref<THREE.MeshBasicMaterial | null>(null)   // 水流细柱材质
-const pourStream = ref<THREE.Mesh | null>(null)      // 水流细柱
+const pourStreamMat = ref<THREE.MeshBasicMaterial | null>(null) // 水流细柱材质
+const pourStream = ref<THREE.Mesh | null>(null) // 水流细柱
 const steamMat = ref<THREE.PointsMaterial | null>(null) // 蒸汽材质
 
 // 视觉平滑目标值（动画循环中 lerp）
@@ -596,7 +616,12 @@ function makeFabricBumpTexture(): THREE.CanvasTexture {
     const x2 = x + (Math.random() - 0.5) * len
     const y2 = y + (Math.random() - 0.5) * len * 0.4
     ctx.moveTo(x, y)
-    ctx.quadraticCurveTo(x + (Math.random() - 0.5) * len, y + (Math.random() - 0.5) * len * 0.4, x2, y2)
+    ctx.quadraticCurveTo(
+      x + (Math.random() - 0.5) * len,
+      y + (Math.random() - 0.5) * len * 0.4,
+      x2,
+      y2,
+    )
     ctx.stroke()
   }
   const tex = new THREE.CanvasTexture(canvas)
@@ -764,8 +789,12 @@ watch(
   (v) => {
     setSteamTarget(v, props.currentTemp)
     const heating = v === BrewPhase.HEATING
-    flameMeshes.value.forEach(m => (m.visible = heating))
-    innerFlameMeshes.value.forEach(m => (m.visible = heating))
+    flameMeshes.value.forEach((m) => {
+      m.visible = heating
+    })
+    innerFlameMeshes.value.forEach((m) => {
+      m.visible = heating
+    })
     if (stoveGlow.value) stoveGlow.value.visible = heating
   },
   { immediate: true },
@@ -817,8 +846,10 @@ onRender(({ delta, elapsed }) => {
       const vel = steamVel[i] ?? 0.4
       const top = steamTop[i] ?? 4.0
       let y = (steamPositions[i * 3 + 1] ?? 2.4) + vel * delta
-      steamPositions[i * 3] = (steamPositions[i * 3] ?? 0) + Math.sin(elapsed * 0.8 + i) * delta * 0.08
-      steamPositions[i * 3 + 2] = (steamPositions[i * 3 + 2] ?? 0) + Math.cos(elapsed * 0.6 + i) * delta * 0.08
+      steamPositions[i * 3] =
+        (steamPositions[i * 3] ?? 0) + Math.sin(elapsed * 0.8 + i) * delta * 0.08
+      steamPositions[i * 3 + 2] =
+        (steamPositions[i * 3 + 2] ?? 0) + Math.cos(elapsed * 0.6 + i) * delta * 0.08
       if (y > top) {
         y = 2.4
         steamPositions[i * 3] = 0.25 + (Math.random() - 0.5) * 0.7

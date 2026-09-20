@@ -14,8 +14,14 @@ const highScoreRecord = {
   brewTime: 30,
   infusions: 3,
   dimensions: {
-    bitterness: 2, sweetness: 5, aftertaste: 5, body: 4,
-    aroma: 5, rhyme: 4, shape: 4, mind: 5,
+    bitterness: 2,
+    sweetness: 5,
+    aftertaste: 5,
+    body: 4,
+    aroma: 5,
+    rhyme: 4,
+    shape: 4,
+    mind: 5,
   },
   overallScore: 8.6,
   processFactor: 0.86,
@@ -32,7 +38,7 @@ const r = Buffer.from(JSON.stringify(highScoreRecord)).toString('base64url')
     viewport: { width: 1280, height: 800 },
     deviceScaleFactor: 1,
   })
-  await page.route('**/api/ai/*', route => route.abort())
+  await page.route('**/api/ai/*', (route) => route.abort())
   const base = 'http://localhost:4173'
 
   // 首页：固定等待仪式感动画完成（黑屏 2.5s + 淡出 1s + 余量）。
@@ -48,8 +54,7 @@ const r = Buffer.from(JSON.stringify(highScoreRecord)).toString('base64url')
 
   await browser.close()
   console.log('home + share screenshots done')
-})().catch(error => {
+})().catch((error) => {
   console.error('SCREENSHOT_ERROR', error)
   process.exit(1)
 })
-

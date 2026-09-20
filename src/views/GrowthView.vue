@@ -6,18 +6,18 @@
  */
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useRecordStore } from '@/stores/record'
-import { teas } from '@/data/teas'
-import type { TeaType } from '@/types/tea'
-import { EmptyState } from '@/components/ui'
-import TasteTrendChart from '@/components/tasting/TasteTrendChart.vue'
 import TasteRadarChart from '@/components/tasting/TasteRadarChart.vue'
+import TasteTrendChart from '@/components/tasting/TasteTrendChart.vue'
+import { EmptyState } from '@/components/ui'
+import { teas } from '@/data/teas'
 import {
-  computeGrowthStats,
   averageDimensions,
   categoryDistribution,
+  computeGrowthStats,
   solarTermFootprint,
 } from '@/services/growth'
+import { useRecordStore } from '@/stores/record'
+import type { TeaType } from '@/types/tea'
 
 const router = useRouter()
 const recordStore = useRecordStore()

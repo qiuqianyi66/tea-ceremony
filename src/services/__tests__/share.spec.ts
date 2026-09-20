@@ -7,20 +7,20 @@
  * - 非法 / 恶意输入返回 null（防御性）
  * - 分享 URL 构建（含 BASE_URL 前缀）
  */
-import { describe, it, expect } from 'vitest'
-import type { TastingRecord } from '@/types/tasting'
+import { describe, expect, it } from 'vitest'
 import {
-  toShareData,
-  encodeShareData,
-  decodeShareData,
   buildShareUrl,
-  parseShareQuery,
-  encodeTeaShare,
-  decodeTeaShare,
   buildTeaShareUrl,
+  decodeShareData,
+  decodeTeaShare,
+  encodeShareData,
+  encodeTeaShare,
+  parseShareQuery,
   parseTeaShareQuery,
   type TastingCardShareData,
+  toShareData,
 } from '@/services/share'
+import type { TastingRecord } from '@/types/tasting'
 
 function makeRecord(overrides: Partial<TastingRecord> = {}): TastingRecord {
   return {
@@ -31,7 +31,16 @@ function makeRecord(overrides: Partial<TastingRecord> = {}): TastingRecord {
     brewTemp: 80,
     brewTime: 45,
     infusions: 1,
-    dimensions: { bitterness: 2, sweetness: 4, aftertaste: 5, body: 3, aroma: 5, rhyme: 4, shape: 3, mind: 5 },
+    dimensions: {
+      bitterness: 2,
+      sweetness: 4,
+      aftertaste: 5,
+      body: 3,
+      aroma: 5,
+      rhyme: 4,
+      shape: 3,
+      mind: 5,
+    },
     overallScore: 8.6,
     processFactor: 0.92,
     syncStatus: 'synced',
@@ -53,12 +62,14 @@ describe('toShareData', () => {
   })
 
   it('保留可选字段（香气 / 笔记 / 天气 / 心情）', () => {
-    const share = toShareData(makeRecord({
-      aromaType: '花香',
-      notes: '豆香清雅，回甘悠长。',
-      weather: '晴',
-      mood: '安静',
-    }))
+    const share = toShareData(
+      makeRecord({
+        aromaType: '花香',
+        notes: '豆香清雅，回甘悠长。',
+        weather: '晴',
+        mood: '安静',
+      }),
+    )
     expect(share.aromaType).toBe('花香')
     expect(share.notes).toBe('豆香清雅，回甘悠长。')
     expect(share.weather).toBe('晴')
@@ -72,12 +83,14 @@ describe('toShareData', () => {
 
 describe('encodeShareData / decodeShareData 往返', () => {
   it('完整字段往返一致（含中文与可选字段）', () => {
-    const share: TastingCardShareData = toShareData(makeRecord({
-      aromaType: '兰香',
-      notes: '入口清冽，喉韵绵长。',
-      weather: '多云',
-      mood: '专注',
-    }))
+    const share: TastingCardShareData = toShareData(
+      makeRecord({
+        aromaType: '兰香',
+        notes: '入口清冽，喉韵绵长。',
+        weather: '多云',
+        mood: '专注',
+      }),
+    )
     const encoded = encodeShareData(share)
     const decoded = decodeShareData(encoded)
     expect(decoded).toEqual(share)
@@ -96,14 +109,25 @@ describe('encodeShareData / decodeShareData 往返', () => {
   })
 
   it('纯数字 / 边界维度值往返不失真', () => {
-    const share: TastingCardShareData = toShareData(makeRecord({
-      overallScore: 10,
-      processFactor: 1,
-      brewTemp: 100,
-      brewTime: 0,
-      infusions: 3,
-      dimensions: { bitterness: 1, sweetness: 1, aftertaste: 1, body: 1, aroma: 1, rhyme: 1, shape: 1, mind: 1 },
-    }))
+    const share: TastingCardShareData = toShareData(
+      makeRecord({
+        overallScore: 10,
+        processFactor: 1,
+        brewTemp: 100,
+        brewTime: 0,
+        infusions: 3,
+        dimensions: {
+          bitterness: 1,
+          sweetness: 1,
+          aftertaste: 1,
+          body: 1,
+          aroma: 1,
+          rhyme: 1,
+          shape: 1,
+          mind: 1,
+        },
+      }),
+    )
     expect(decodeShareData(encodeShareData(share))).toEqual(share)
   })
 })
@@ -116,7 +140,10 @@ describe('decodeShareData 防御非法输入', () => {
   it('合法 base64 但非 JSON 返回 null', () => {
     const bogus = encodeShareData({ teaName: 'x' } as unknown as TastingCardShareData)
     // 构造一段"合法 base64 但不是 JSON"：base64url 编码纯文本
-    const textB64 = btoa('plain text not json').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+    const textB64 = btoa('plain text not json')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '')
     expect(decodeShareData(textB64)).toBeNull()
     void bogus
   })
@@ -131,16 +158,30 @@ describe('decodeShareData 防御非法输入', () => {
   })
 
   it('字段类型错误返回 null', () => {
-    const wrongType = btoa(JSON.stringify({
-      teaName: 123,
-      date: '2026-01-01',
-      brewTemp: 80,
-      brewTime: 45,
-      infusions: 1,
-      dimensions: { bitterness: 2, sweetness: 4, aftertaste: 5, body: 3, aroma: 5, rhyme: 4, shape: 3, mind: 5 },
-      overallScore: 8.6,
-      processFactor: 0.9,
-    })).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+    const wrongType = btoa(
+      JSON.stringify({
+        teaName: 123,
+        date: '2026-01-01',
+        brewTemp: 80,
+        brewTime: 45,
+        infusions: 1,
+        dimensions: {
+          bitterness: 2,
+          sweetness: 4,
+          aftertaste: 5,
+          body: 3,
+          aroma: 5,
+          rhyme: 4,
+          shape: 3,
+          mind: 5,
+        },
+        overallScore: 8.6,
+        processFactor: 0.9,
+      }),
+    )
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '')
     expect(decodeShareData(wrongType)).toBeNull()
   })
 

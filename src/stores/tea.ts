@@ -4,17 +4,17 @@
  * 本 store 只保留：选茶/茶器、工艺系数、评分与记录编排；冲泡/品鉴/成长状态直连各域 store。
  */
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
+import { WATER_TYPES } from '@/data/constants'
+import { calculateOverallScore, calculateProcessFactor, generateRecordId } from '@/services/scoring'
+import { historyStorage } from '@/services/storage'
+import type { TasteDimensions, TastingRecord } from '@/types/tasting'
 import type { Tea } from '@/types/tea'
 import type { TeaWare } from '@/types/teaware'
-import type { TasteDimensions, TastingRecord } from '@/types/tasting'
-import { calculateProcessFactor, calculateOverallScore, generateRecordId } from '@/services/scoring'
-import { historyStorage } from '@/services/storage'
-import { WATER_TYPES } from '@/data/constants'
 import { useBrewStore } from './brew'
-import { useTasteStore } from './taste'
-import { useRecordStore } from './record'
 import { useProgressStore } from './progress'
+import { useRecordStore } from './record'
+import { useTasteStore } from './taste'
 
 export const useTeaStore = defineStore('tea', () => {
   const brewStore = useBrewStore()
@@ -39,7 +39,7 @@ export const useTeaStore = defineStore('tea', () => {
       brewStore.state.steepTime,
       currentTea.value.bestTime,
       selectedTeaWare.value,
-      WATER_TYPES.find(w => w.id === waterType.value)?.factor ?? 1.0,
+      WATER_TYPES.find((w) => w.id === waterType.value)?.factor ?? 1.0,
     )
   })
 
@@ -59,7 +59,12 @@ export const useTeaStore = defineStore('tea', () => {
     return calculateOverallScore(tasteStore.dimensions, processFactor.value)
   }
 
-  async function saveRecord(aromaType?: string, notes?: string, weather?: string, mood?: string): Promise<TastingRecord> {
+  async function saveRecord(
+    aromaType?: string,
+    notes?: string,
+    weather?: string,
+    mood?: string,
+  ): Promise<TastingRecord> {
     if (!currentTea.value) {
       console.error('[saveRecord] currentTea is null, cannot save record')
       throw new Error('未选择茶叶，无法保存品鉴记录')

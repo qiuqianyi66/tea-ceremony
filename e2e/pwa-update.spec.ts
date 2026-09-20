@@ -1,6 +1,6 @@
-import { test, expect } from '@playwright/test'
 import fs from 'node:fs'
 import { fileURLToPath } from 'node:url'
+import { expect, test } from '@playwright/test'
 
 /**
  * P0-3 PWA prompt 更新模式 e2e
@@ -56,7 +56,8 @@ test.describe('PWA 更新（prompt 模式）', () => {
       })
       await expect(page.getByText('新版本已就绪')).toBeVisible({ timeout: 10000 })
       await page.waitForFunction(
-        async () => (await navigator.serviceWorker.getRegistration())?.waiting?.state === 'installed',
+        async () =>
+          (await navigator.serviceWorker.getRegistration())?.waiting?.state === 'installed',
       )
 
       // 点击「稍后」：toast 消失、页面无额外 reload

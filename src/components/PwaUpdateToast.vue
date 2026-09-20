@@ -5,8 +5,9 @@
  * 由用户点「立即更新」才发 SKIP_WAITING 让新 SW 激活（下次导航/刷新生效，页面不强制刷新）；
  * 「稍后」可延后，下次会话再提示。
  */
-import { ref } from 'vue'
+
 import { registerSW } from 'virtual:pwa-register'
+import { ref } from 'vue'
 
 const needRefresh = ref(false)
 

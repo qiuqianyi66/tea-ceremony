@@ -3,7 +3,7 @@
  * - 无品鉴记录时展示空态与引导（数据全来自本地 IndexedDB，不依赖后端）
  * - 从品鉴历史页可进入成长看板
  */
-import { test, expect } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 
 test('成长看板：无记录时展示空态与引导', async ({ page }) => {
   await page.goto('growth')

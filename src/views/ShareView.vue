@@ -3,8 +3,8 @@ import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import TastingCard from '@/components/tasting/TastingCard.vue'
 import TeaKnowledgeCard from '@/components/tasting/TeaKnowledgeCard.vue'
-import { parseShareQuery, parseTeaShareQuery } from '@/services/share'
 import { getTeaById } from '@/data/teas'
+import { parseShareQuery, parseTeaShareQuery } from '@/services/share'
 import type { TastingRecord } from '@/types/tasting'
 
 const route = useRoute()

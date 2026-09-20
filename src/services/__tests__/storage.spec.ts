@@ -10,9 +10,9 @@
  *
  * mock 边界：recordsApi 是跨进程 HTTP 边界（行为测试三规则允许 mock 外部边界）。
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { historyStorage, db } from '@/services/storage'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { recordsApi } from '@/services/api'
+import { db, historyStorage } from '@/services/storage'
 import type { TastingRecord } from '@/types/tasting'
 
 vi.mock('@/services/api', () => ({
@@ -32,7 +32,16 @@ function makeRecord(overrides: Partial<TastingRecord> = {}): TastingRecord {
     brewTemp: 80,
     brewTime: 45,
     infusions: 1,
-    dimensions: { bitterness: 2, sweetness: 4, aftertaste: 5, body: 3, aroma: 5, rhyme: 4, shape: 3, mind: 5 },
+    dimensions: {
+      bitterness: 2,
+      sweetness: 4,
+      aftertaste: 5,
+      body: 3,
+      aroma: 5,
+      rhyme: 4,
+      shape: 3,
+      mind: 5,
+    },
     overallScore: 8.6,
     processFactor: 0.92,
     ...overrides,
@@ -120,7 +129,7 @@ describe('syncPending：离线记录重试', () => {
     expect(result).toEqual({ synced: 1, failed: 1 })
 
     const saved = await db.tastings.toArray()
-    const byId = Object.fromEntries(saved.map(r => [r.id, r]))
+    const byId = Object.fromEntries(saved.map((r) => [r.id, r]))
     expect(byId.a!.syncStatus).toBe('synced')
     expect(byId.b!.syncStatus).toBe('failed')
   })
@@ -134,7 +143,7 @@ describe('syncPending：离线记录重试', () => {
     expect(result).toEqual({ synced: 0, failed: 2 })
 
     const saved = await db.tastings.toArray()
-    expect(saved.every(r => r.syncStatus === 'failed')).toBe(true)
+    expect(saved.every((r) => r.syncStatus === 'failed')).toBe(true)
   })
 
   it('未登录：syncPending 不调用 create，直接返回 0/0', async () => {

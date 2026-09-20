@@ -16,7 +16,9 @@ export default defineConfig({
   reporter: [['list']],
   use: {
     baseURL: `http://127.0.0.1:${port}${basePath}`,
-    trace: 'retain-on-failure',
+    // P1-6：仅首次重试时录制 trace（含时间线/DOM 快照/网络/控制台），
+    // CI 失败可下载 test-results 下的 trace.zip 拖入 trace.playwright.dev 回放；平时不录保持 CI 快。
+    trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     launchOptions: {
       // headless 下静音，避免音频设备相关告警

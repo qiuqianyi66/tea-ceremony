@@ -10,10 +10,10 @@
  * 行距 1.5m、丛距 1.2m（株距 0.6m/丛 2-3 株）。全部 InstancedMesh 单 draw call。
  */
 import * as THREE from 'three'
-import { getTerrainHeight, SOIL_LOESS, SOIL_GRAVEL, isDrainGroove } from './terrain'
 import type { GardenPreset } from './garden-presets'
-import { GARDEN_PRESETS, DEFAULT_PRESET } from './garden-presets'
+import { DEFAULT_PRESET, GARDEN_PRESETS } from './garden-presets'
 import { createTreeForest, type TreeSpec, type TreeSpecies } from './tea-tree'
+import { getTerrainHeight, isDrainGroove, SOIL_GRAVEL, SOIL_LOESS } from './terrain'
 
 function seededRandom(seed: number): number {
   const s = Math.sin(seed * 127.1 + 311.7) * 43758.5453
@@ -151,7 +151,11 @@ export function createTeaField(scene: THREE.Scene, preset?: GardenPreset): TeaFi
     const bushCount = bushPos.length / 3
     if (bushCount > 0) {
       const bushGeo = new THREE.SphereGeometry(0.5, 10, 7)
-      const bushMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.88, flatShading: true })
+      const bushMat = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        roughness: 0.88,
+        flatShading: true,
+      })
       const bushMesh = new THREE.InstancedMesh(bushGeo, bushMat, bushCount)
       const dummy = new THREE.Object3D()
       const col = new THREE.Color()
@@ -175,7 +179,11 @@ export function createTeaField(scene: THREE.Scene, preset?: GardenPreset): TeaFi
     const trunkN = trunkList.length / 3
     if (trunkN > 0) {
       const tGeo = new THREE.CylinderGeometry(0.14, 0.22, 1.6, 7)
-      const tMat = new THREE.MeshStandardMaterial({ color: 0x6b5a48, roughness: 0.95, flatShading: true })
+      const tMat = new THREE.MeshStandardMaterial({
+        color: 0x6b5a48,
+        roughness: 0.95,
+        flatShading: true,
+      })
       const tMesh = new THREE.InstancedMesh(tGeo, tMat, trunkN)
       const tDummy = new THREE.Object3D()
       const tCol = new THREE.Color()
@@ -213,7 +221,14 @@ export function createTeaField(scene: THREE.Scene, preset?: GardenPreset): TeaFi
         const th = getTerrainHeight(tx, tz)
         if (th < 3.2 || th > 14) continue
         const s = (1.1 + seededRandom(i * 3.3 + c * 5.1 + 303) * 0.7) * p.shadeScale
-        treeSpecs.push({ x: tx, h: th, z: tz, scale: s, seed: c * 91.3 + i * 17.7 + 501, species: 'jungle' })
+        treeSpecs.push({
+          x: tx,
+          h: th,
+          z: tz,
+          scale: s,
+          seed: c * 91.3 + i * 17.7 + 501,
+          species: 'jungle',
+        })
         bigTreePos.push([tx, th, tz, s])
       }
     }
@@ -306,17 +321,15 @@ export function createTeaField(scene: THREE.Scene, preset?: GardenPreset): TeaFi
     const col = new THREE.Color()
     for (let i = 0; i < bushCount; i++) {
       dummy.position.set(bushPos[i * 3]!, bushPos[i * 3 + 1]!, bushPos[i * 3 + 2]!)
-      dummy.scale.setScalar(p.bushScaleMin + seededRandom(i * 1.3 + 77) * (p.bushScaleMax - p.bushScaleMin))
+      dummy.scale.setScalar(
+        p.bushScaleMin + seededRandom(i * 1.3 + 77) * (p.bushScaleMax - p.bushScaleMin),
+      )
       dummy.updateMatrix()
       bushMesh.setMatrixAt(i, dummy.matrix)
       // 茶蓬绿：按预设 base（岩茶深/白茶亮/古树大叶深），按 tone 明暗
       const tone = bushColors[i] ?? 0.95
       const dt = (tone - 0.95) * 0.4
-      col.setRGB(
-        p.bushBase[0] * (1 + dt),
-        p.bushBase[1] * (1 + dt),
-        p.bushBase[2] * (1 + dt),
-      )
+      col.setRGB(p.bushBase[0] * (1 + dt), p.bushBase[1] * (1 + dt), p.bushBase[2] * (1 + dt))
       bushMesh.setColorAt(i, col)
     }
     bushMesh.castShadow = true
@@ -378,4 +391,3 @@ export function createTeaField(scene: THREE.Scene, preset?: GardenPreset): TeaFi
     },
   }
 }
-

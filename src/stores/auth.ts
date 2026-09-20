@@ -3,10 +3,10 @@
  */
 
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 import { authApi } from '@/services/api'
+import { clearAuth, loadAuth, saveAuth } from '@/services/authStorage'
 import { historyStorage } from '@/services/storage'
-import { loadAuth, saveAuth, clearAuth } from '@/services/authStorage'
 
 export interface UserInfo {
   id: number
@@ -34,7 +34,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function login(username: string, password: string): Promise<boolean> {
-    const result = await authApi.login(username, password) as Record<string, unknown> | null
+    const result = (await authApi.login(username, password)) as Record<string, unknown> | null
     if (result && typeof result === 'object' && 'access_token' in result) {
       token.value = result.access_token as string
       user.value = result.user as UserInfo
@@ -49,8 +49,15 @@ export const useAuthStore = defineStore('auth', () => {
     return true
   }
 
-  async function register(username: string, password: string, displayName?: string): Promise<boolean> {
-    const result = await authApi.register(username, password, displayName) as Record<string, unknown> | null
+  async function register(
+    username: string,
+    password: string,
+    displayName?: string,
+  ): Promise<boolean> {
+    const result = (await authApi.register(username, password, displayName)) as Record<
+      string,
+      unknown
+    > | null
     if (result && typeof result === 'object' && 'access_token' in result) {
       token.value = result.access_token as string
       user.value = result.user as UserInfo

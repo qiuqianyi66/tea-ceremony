@@ -5,22 +5,26 @@ import { computed } from 'vue'
  * 基础按钮 — 木色主按钮 / 茶汤金次按钮 / 幽灵按钮
  * 五态齐全：default / hover / active / disabled / loading
  */
-const props = withDefaults(defineProps<{
-  variant?: 'primary' | 'secondary' | 'ghost'
-  size?: 'sm' | 'md' | 'lg'
-  loading?: boolean
-  disabled?: boolean
-  type?: 'button' | 'submit' | 'reset'
-}>(), {
-  variant: 'primary',
-  size: 'md',
-  loading: false,
-  disabled: false,
-  type: 'button',
-})
+const props = withDefaults(
+  defineProps<{
+    variant?: 'primary' | 'secondary' | 'ghost'
+    size?: 'sm' | 'md' | 'lg'
+    loading?: boolean
+    disabled?: boolean
+    type?: 'button' | 'submit' | 'reset'
+  }>(),
+  {
+    variant: 'primary',
+    size: 'md',
+    loading: false,
+    disabled: false,
+    type: 'button',
+  },
+)
 
 const classes = computed(() => {
-  const base = 'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-tea-gold)] disabled:cursor-not-allowed disabled:opacity-50'
+  const base =
+    'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-tea-gold)] disabled:cursor-not-allowed disabled:opacity-50'
 
   const variantMap = {
     primary: 'bg-[var(--color-wood)] text-[var(--color-cream)] hover:bg-[var(--color-wood-light)]',

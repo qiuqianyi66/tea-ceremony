@@ -13,7 +13,7 @@ async def _make_tea(db_session, **kw) -> Tea:
 
 
 async def test_tea_detail_returns_related_people(db_session, client):
-    tea = await _make_tea(db_session, id=1)
+    await _make_tea(db_session, id=1)  # 前置茶数据（外键依赖），返回值不用
     lu = TeaPerson(id=1, name="陆羽", dynasty="唐", related_tea_ids=["1"])
     zhao = TeaPerson(id=2, name="赵州", dynasty="唐", related_tea_ids=["2"])
     db_session.add_all([lu, zhao])

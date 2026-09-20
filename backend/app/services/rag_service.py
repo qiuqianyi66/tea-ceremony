@@ -4,7 +4,7 @@ RAG 知识检索服务
 """
 
 from app.database import SessionLocal
-from app.models import Tea, TeaRegion, TeaPerson, TeaPoem, CultureDocument
+from app.models import CultureDocument, Tea, TeaPerson, TeaPoem, TeaRegion
 
 
 def search_tea_knowledge(query: str, limit: int = 5) -> list[dict]:

@@ -28,7 +28,8 @@ onMounted(async () => {
     }
   } catch {
     state.value = 'error'
-    errorHint.value = '后端服务不可达。静态 Demo（GitHub Pages）不包含后端，属预期；完整功能需运行 Docker Compose。'
+    errorHint.value =
+      '后端服务不可达。静态 Demo（GitHub Pages）不包含后端，属预期；完整功能需运行 Docker Compose。'
   }
 })
 </script>

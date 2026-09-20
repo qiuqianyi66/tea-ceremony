@@ -5,9 +5,9 @@
  * 1. 每个节气推荐的茶类词必须 ∈ TeaType 枚举值（六大茶类，禁止自造分类词）
  * 2. 每个推荐的茶类在 teas 库中至少有一款真实茶（防止"词对但无茶"的断链）
  */
-import { describe, it, expect } from 'vitest'
-import { SOLAR_TERMS } from '../solarTerms'
+import { describe, expect, it } from 'vitest'
 import { TeaType } from '@/types/tea'
+import { SOLAR_TERMS } from '../solarTerms'
 import { teas } from '../teas'
 
 const VALID_TYPES = new Set(Object.values(TeaType))

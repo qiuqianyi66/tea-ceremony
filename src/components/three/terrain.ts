@@ -10,7 +10,7 @@
  * 结构：东西走向山脊骨架（z 方向低频）→ 南坡（-z 侧）宽缓为茶园、北坡（+z 侧）陡峭为阴林
  */
 import * as THREE from 'three'
-import { GARDEN_PRESETS, DEFAULT_PRESET, type GardenPreset } from './garden-presets'
+import { DEFAULT_PRESET, GARDEN_PRESETS, type GardenPreset } from './garden-presets'
 
 export const TERRAIN_SIZE = 200
 export const TERRAIN_SEGMENTS = 200
@@ -36,17 +36,24 @@ function hash(x: number, y: number): number {
 }
 
 export function smoothNoise(x: number, y: number): number {
-  const ix = Math.floor(x), iy = Math.floor(y)
-  const fx = x - ix, fy = y - iy
+  const ix = Math.floor(x),
+    iy = Math.floor(y)
+  const fx = x - ix,
+    fy = y - iy
   const ux = fx * fx * (3 - 2 * fx)
   const uy = fy * fy * (3 - 2 * fy)
-  const a = hash(ix, iy), b = hash(ix + 1, iy)
-  const c = hash(ix, iy + 1), d = hash(ix + 1, iy + 1)
+  const a = hash(ix, iy),
+    b = hash(ix + 1, iy)
+  const c = hash(ix, iy + 1),
+    d = hash(ix + 1, iy + 1)
   return a + (b - a) * ux + (c - a) * uy + (a - b - c + d) * ux * uy
 }
 
 export function fbm(x: number, y: number, octaves = 5): number {
-  let value = 0, amplitude = 1, frequency = 1, max = 0
+  let value = 0,
+    amplitude = 1,
+    frequency = 1,
+    max = 0
   for (let i = 0; i < octaves; i++) {
     value += smoothNoise(x * frequency, y * frequency) * amplitude
     max += amplitude
@@ -110,7 +117,8 @@ function wuyiTerrainHeight(x: number, z: number): number {
   const r = Math.sqrt(x * x + z * z)
   if (!fudingSeaBay(x, z)) h += farMountainRing(x, z, r)
   // 边缘渐消
-  if (r > activePreset.edgeFadeAt) h = Math.max(0.6, h - (r - activePreset.edgeFadeAt) * activePreset.edgeFadeRate)
+  if (r > activePreset.edgeFadeAt)
+    h = Math.max(0.6, h - (r - activePreset.edgeFadeAt) * activePreset.edgeFadeRate)
   return h
 }
 
@@ -122,7 +130,15 @@ function wuyiTerrainHeight(x: number, z: number): number {
  */
 export function getTerrainHeight(x: number, z: number): number {
   if (activePreset.id === 'wuyishan') return wuyiTerrainHeight(x, z)
-  const { ridgeHeight, sigmaSouth, sigmaNorth, centralRadius, centralBump, edgeFadeAt, edgeFadeRate } = activePreset
+  const {
+    ridgeHeight,
+    sigmaSouth,
+    sigmaNorth,
+    centralRadius,
+    centralBump,
+    edgeFadeAt,
+    edgeFadeRate,
+  } = activePreset
   // ---- 山脊-沟谷骨架 ----
   const ridgeZ = ridgeZAt(x)
   const dz = z - ridgeZ
@@ -181,14 +197,21 @@ export function isDrainGroove(x: number, z: number): boolean {
 
 /** 土壤带 → 顶点色 tint（×贴图）：按茶园预设（龙井红壤 / 武夷丹霞 / 勐海黑土 / 福鼎黄棕） */
 function soilTint(band: SoilBand): [number, number, number] {
-  return band === 'loess' ? activePreset.tintLoess
-    : band === 'gravel' ? activePreset.tintGravel
-    : activePreset.tintRock
+  return band === 'loess'
+    ? activePreset.tintLoess
+    : band === 'gravel'
+      ? activePreset.tintGravel
+      : activePreset.tintRock
 }
 
 /** 生成带明暗 + 土壤色带的地形几何 */
 export function createTerrainGeometry(): THREE.PlaneGeometry {
-  const geo = new THREE.PlaneGeometry(TERRAIN_SIZE, TERRAIN_SIZE, TERRAIN_SEGMENTS, TERRAIN_SEGMENTS)
+  const geo = new THREE.PlaneGeometry(
+    TERRAIN_SIZE,
+    TERRAIN_SIZE,
+    TERRAIN_SEGMENTS,
+    TERRAIN_SEGMENTS,
+  )
   geo.rotateX(-Math.PI / 2)
   const pos = geo.attributes.position!
   const colors = new Float32Array(pos.count * 3)
@@ -221,5 +244,3 @@ export function createTerrainGeometry(): THREE.PlaneGeometry {
   geo.computeVertexNormals()
   return geo
 }
-
-

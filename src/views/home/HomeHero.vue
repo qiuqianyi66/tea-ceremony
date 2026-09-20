@@ -2,10 +2,10 @@
 /**
  * 首页 Hero 区：固定背景（视频/图/雾/光晕/暗角/颗粒）+ 节气标题 + CTA
  */
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { getCurrentSolarTerm, getSeasonName } from '@/data/solarTerms'
 import heroImg from '@/assets/tea-mountain-hero.jpg'
+import { getCurrentSolarTerm, getSeasonName } from '@/data/solarTerms'
 
 const heroVideoUrl = 'https://videos.pexels.com/video-files/38238683/16236719_1280_720_60fps.mp4'
 const prefersReducedMotion = ref(false)
@@ -50,7 +50,11 @@ function enter() {
 }
 
 onMounted(() => {
-  requestAnimationFrame(() => requestAnimationFrame(() => { entered.value = true }))
+  requestAnimationFrame(() =>
+    requestAnimationFrame(() => {
+      entered.value = true
+    }),
+  )
   prefersReducedMotion.value = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   window.addEventListener('pointermove', onPointerMove, { passive: true })
 })

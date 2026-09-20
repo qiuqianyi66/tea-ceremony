@@ -48,6 +48,49 @@ jobs:
       - name: Run unit tests
         run: npm run test
 
+  frontend-lint:
+    name: Frontend lint (Biome)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Biome check
+        run: npm run lint
+
+  dependency-audit:
+    name: Dependency security audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: npm audit (high/critical)
+        run: npm audit --audit-level=high --registry=https://registry.npmjs.org
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pip-audit
+        run: pip install pip-audit==2.10.1
+      # 已知残留（warn 不阻断）：pyasn1<0.5 受 python-jose 约束、ecdsa 无修复版本；
+      # 根治需迁移 PyJWT（已记录，未立项）。新出现的高危仍应在日志中可见。
+      - name: pip-audit (advisory, non-blocking)
+        continue-on-error: true
+        run: pip-audit -r backend/requirements.txt
+
   e2e:
     name: E2E full journey (Playwright)
     runs-on: ubuntu-latest
@@ -64,12 +107,37 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
       - name: Run E2E tests
-        run: npm run test:e2e
+        run: npm run test:e2e -- --grep-invert "axe 扫描"
       - name: Upload Playwright report on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
+          path: test-results/
+          retention-days: 7
+
+  e2e-a11y:
+    name: E2E accessibility (axe-core)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run axe scans (0 critical/serious gate)
+        run: npx playwright test --grep "axe 扫描"
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-a11y-report
           path: test-results/
           retention-days: 7
 
@@ -104,6 +172,28 @@ jobs:
       - name: Run API tests
         working-directory: backend
         run: python -m pytest tests -q
+
+  backend-lint:
+    name: Backend lint and security scan (ruff + bandit)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+      - name: ruff check
+        working-directory: backend
+        run: ruff check app main.py tests
+      - name: bandit security scan
+        working-directory: backend
+        run: bandit -r app main.py
 
   migration-test:
     name: Database migration tests (Postgres)

@@ -11,7 +11,8 @@ export function useToast() {
   const ui = useUiStore()
   return {
     toasts: ui.toasts,
-    toast: (message: string, type: ToastType = 'info', duration = 2600) => ui.showToast(message, type, duration),
+    toast: (message: string, type: ToastType = 'info', duration = 2600) =>
+      ui.showToast(message, type, duration),
     success: (m: string, d?: number) => ui.showToast(m, 'success', d),
     error: (m: string, d?: number) => ui.showToast(m, 'error', d),
     info: (m: string, d?: number) => ui.showToast(m, 'info', d),

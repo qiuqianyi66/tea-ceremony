@@ -156,7 +156,14 @@ export function createAmbient(scene: THREE.Scene, camera: THREE.Camera): GardenA
     }
     mesh.position.set(pos.x, pos.y, pos.z)
     root.add(mesh)
-    clouds.push({ mesh, speed: 0.15 + seededRandom(i * 6.1 + 38) * 0.1, baseX: pos.x, baseY: pos.y, baseZ: pos.z, radius })
+    clouds.push({
+      mesh,
+      speed: 0.15 + seededRandom(i * 6.1 + 38) * 0.1,
+      baseX: pos.x,
+      baseY: pos.y,
+      baseZ: pos.z,
+      radius,
+    })
   }
 
   // ---- 晨雾：3 层低处雾带（横置平面，左右流动 + 上下微浮；Standard+emissive 自发光白雾） ----
@@ -179,7 +186,11 @@ export function createAmbient(scene: THREE.Scene, camera: THREE.Camera): GardenA
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(70, 16), mat)
     mesh.rotation.x = -Math.PI / 2
     // 收敛到远处山谷（近处大雾带会盖住茶丛与动物）
-    mesh.position.set(seededRandom(i * 4.3 + 52) * 30 - 20, fogYs[i] ?? 1.7, seededRandom(i * 6.1 + 53) * 24 - 32)
+    mesh.position.set(
+      seededRandom(i * 4.3 + 52) * 30 - 20,
+      fogYs[i] ?? 1.7,
+      seededRandom(i * 6.1 + 53) * 24 - 32,
+    )
     mesh.renderOrder = 2
     // 默认隐藏：晨雾为雨天专属（晴天蓝天下会成"白色地块"，用户多次反馈）
     mesh.visible = false
@@ -203,7 +214,11 @@ export function createAmbient(scene: THREE.Scene, camera: THREE.Camera): GardenA
       for (const c of clouds) {
         const t = Math.sin(elapsed * c.speed) * 0.45
         const angle = Math.atan2(c.baseZ, c.baseX) + t
-        c.mesh.position.set(Math.cos(angle) * c.radius, c.baseY + Math.sin(elapsed * 0.22 + c.baseX) * 0.8, Math.sin(angle) * c.radius)
+        c.mesh.position.set(
+          Math.cos(angle) * c.radius,
+          c.baseY + Math.sin(elapsed * 0.22 + c.baseX) * 0.8,
+          Math.sin(angle) * c.radius,
+        )
       }
       // 晨雾：左右流动 + 上下微浮
       for (const f of fogBands) {
@@ -221,7 +236,10 @@ export function createAmbient(scene: THREE.Scene, camera: THREE.Camera): GardenA
         const mesh = o as THREE.Mesh
         if (mesh.geometry) mesh.geometry.dispose()
         const m = mesh.material as THREE.Material | THREE.Material[] | undefined
-        if (Array.isArray(m)) m.forEach((mm) => mm.dispose())
+        if (Array.isArray(m))
+          m.forEach((mm) => {
+            mm.dispose()
+          })
         else m?.dispose()
       })
       cloudTex.dispose()

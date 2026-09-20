@@ -1,7 +1,8 @@
 """品鉴记录 schema。"""
 
 from datetime import datetime
-from pydantic import BaseModel, Field, ConfigDict
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class RecordCreate(BaseModel):

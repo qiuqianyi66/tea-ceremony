@@ -1,9 +1,12 @@
-import { nextTick } from 'vue'
-import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { nextTick } from 'vue'
 
 const { registrations } = vi.hoisted(() => ({
-  registrations: [] as Array<{ opts: { onNeedRefresh: () => void }; updateSW: ReturnType<typeof vi.fn> }>,
+  registrations: [] as Array<{
+    opts: { onNeedRefresh: () => void }
+    updateSW: ReturnType<typeof vi.fn>
+  }>,
 }))
 
 vi.mock('virtual:pwa-register', () => ({

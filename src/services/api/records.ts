@@ -48,7 +48,7 @@ export function toRecordDto(record: Partial<TastingRecord>): RecordCreateDto {
 
 /** 将服务端 snake_case 记录还原为前端离线业务模型。 */
 function fromRecordDto(dto: RecordResponseDto): TastingRecord {
-  const dimensions = dto.dimensions ?? {} as TasteDimensions
+  const dimensions = dto.dimensions ?? ({} as TasteDimensions)
   return {
     id: dto.client_id ?? `server-${dto.id}`,
     teaId: dto.tea_id == null ? '' : String(dto.tea_id),

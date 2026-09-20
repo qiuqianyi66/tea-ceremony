@@ -24,7 +24,14 @@ function createWingTexture(hue: number): THREE.CanvasTexture {
   if (!ctx) throw new Error('canvas 2d 不可用')
   ctx.clearRect(0, 0, size, size)
   // 翅膀主体（椭圆渐变）
-  const g = ctx.createRadialGradient(size * 0.45, size * 0.5, 4, size * 0.45, size * 0.5, size * 0.48)
+  const g = ctx.createRadialGradient(
+    size * 0.45,
+    size * 0.5,
+    4,
+    size * 0.45,
+    size * 0.5,
+    size * 0.48,
+  )
   g.addColorStop(0, `hsla(${hue}, 85%, 88%, 0.95)`)
   g.addColorStop(0.65, `hsla(${hue}, 75%, 72%, 0.85)`)
   g.addColorStop(1, `hsla(${hue}, 70%, 55%, 0.35)`)
@@ -254,7 +261,10 @@ export function createAnimals(scene: THREE.Scene): GardenAnimals {
         const mesh = o as THREE.Mesh
         if (mesh.geometry) mesh.geometry.dispose()
         const m = mesh.material as THREE.Material | THREE.Material[] | undefined
-        if (Array.isArray(m)) m.forEach((mm) => mm.dispose())
+        if (Array.isArray(m))
+          m.forEach((mm) => {
+            mm.dispose()
+          })
         else m?.dispose()
       })
       root.removeFromParent()

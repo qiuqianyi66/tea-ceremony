@@ -31,7 +31,11 @@ export function saveAuth(payload: AuthPayload): void {
 }
 
 export function clearAuth(): void {
-  try { localStorage.removeItem(KEY) } catch { /* ignore */ }
+  try {
+    localStorage.removeItem(KEY)
+  } catch {
+    /* ignore */
+  }
 }
 
 /** 读 token（http.ts 注入 Authorization 头用） */

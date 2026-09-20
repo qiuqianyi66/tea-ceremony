@@ -13,10 +13,18 @@ from pythonjsonlogger.json import JsonFormatter
 from sqlalchemy import text
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
-from app.config import SECRET_KEY, DATABASE_URL, CORS_ORIGINS, DEV_MODE, ALLOWED_HOSTS
-from app.config import SENTRY_DSN, SENTRY_TRACES_SAMPLE_RATE
+from app.config import (
+    ALLOWED_HOSTS,
+    CORS_ORIGINS,
+    DATABASE_URL,
+    DEV_MODE,
+    SECRET_KEY,
+    SENTRY_DSN,
+    SENTRY_TRACES_SAMPLE_RATE,
+)
 from app.errors import register_error_handlers
 from app.middleware import AccessLogMiddleware, RateLimitMiddleware
+
 
 # ============ 日志（P1-1：JSON 结构化 + request_id 贯穿链路） ============
 class RequestIdJsonFormatter(JsonFormatter):
@@ -60,9 +68,9 @@ if len(SECRET_KEY) < 32:
 if not DATABASE_URL:
     raise RuntimeError("DATABASE_URL 环境变量未设置！请在 .env 中配置 PostgreSQL 连接串。")
 
-# 配置校验通过后再创建数据库引擎和加载路由。
-from app.database import engine
-from app.routers import teas, teawares, records, auth, culture, ai
+# 配置校验通过后再创建数据库引擎和加载路由（刻意延迟导入，E402 不适用）。
+from app.database import engine  # noqa: E402
+from app.routers import ai, auth, culture, records, teas, teawares  # noqa: E402
 
 # ============ Sentry 错误追踪 ============
 # 配置 SENTRY_DSN 后启用：未捕获异常自动上报（聚合/上下文/告警）。

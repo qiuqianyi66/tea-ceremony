@@ -76,7 +76,8 @@ async function submit() {
 
       <p class="text-sm text-[var(--color-wood-light)] text-center mt-6">
         {{ isLogin ? '还没有账号？' : '已有账号？' }}
-        <button @click="isLogin = !isLogin" class="text-[var(--color-tea-gold)] hover:underline">
+        <button @click="isLogin = !isLogin"
+          class="text-[var(--color-wood)] font-medium hover:underline focus:outline-none focus:underline">
           {{ isLogin ? '注册' : '登录' }}
         </button>
       </p>

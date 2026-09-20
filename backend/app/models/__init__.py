@@ -4,18 +4,18 @@
 对外保持 `from app.models import Tea, User, ...` 不变，router/alembic/seeds 无需改动。
 """
 
-from app.models.tea import Tea, TeaRegion, TeaProcess
 from app.models.culture import (
-    TeaPerson,
-    TeaPoem,
     TeaEtiquette,
-    TeaRelation,
+    TeaPerson,
     TeaPersonRelation,
+    TeaPoem,
+    TeaRelation,
 )
-from app.models.ware import TeaWareV2
-from app.models.user import UserV2, TeaJourney
-from app.models.record import TastingRecordV2
 from app.models.knowledge import CultureDocument
+from app.models.record import TastingRecordV2
+from app.models.tea import Tea, TeaProcess, TeaRegion
+from app.models.user import TeaJourney, UserV2
+from app.models.ware import TeaWareV2
 
 # 向后兼容别名（老代码用 User/TastingRecord/TeaWare，新代码优先用 V2 真名）
 User = UserV2

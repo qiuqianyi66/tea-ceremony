@@ -8,7 +8,7 @@
  */
 import * as THREE from 'three'
 import type { GardenPreset } from './garden-presets'
-import { GARDEN_PRESETS, DEFAULT_PRESET } from './garden-presets'
+import { DEFAULT_PRESET, GARDEN_PRESETS } from './garden-presets'
 
 /** 固定种子随机 */
 function seededRandom(seed: number): number {
@@ -38,8 +38,24 @@ interface WeatherParams {
 
 function paramsFor(preset: GardenPreset): Record<WeatherMode, WeatherParams> {
   return {
-    sunny: { sunI: preset.sunIntensity, sunColor: preset.sunColor, ambI: 0.2, fogD: preset.fogDensity, fogColor: preset.fogColor, exposure: 1.12, wet: 0 },
-    rain: { sunI: 0.6, sunColor: '#a9bccf', ambI: 0.4, fogD: 0.02, fogColor: preset.rainFogColor, exposure: 0.92, wet: 1 },
+    sunny: {
+      sunI: preset.sunIntensity,
+      sunColor: preset.sunColor,
+      ambI: 0.2,
+      fogD: preset.fogDensity,
+      fogColor: preset.fogColor,
+      exposure: 1.12,
+      wet: 0,
+    },
+    rain: {
+      sunI: 0.6,
+      sunColor: '#a9bccf',
+      ambI: 0.4,
+      fogD: 0.02,
+      fogColor: preset.rainFogColor,
+      exposure: 0.92,
+      wet: 1,
+    },
   }
 }
 
@@ -99,7 +115,7 @@ function createRain(rainColor: string): THREE.InstancedMesh {
         uniform float uTime;
         uniform float uWindX;
         attribute float aSeed;
-        varying float vAlpha;`
+        varying float vAlpha;`,
       )
       .replace(
         '#include <begin_vertex>',
@@ -108,18 +124,18 @@ function createRain(rainColor: string): THREE.InstancedMesh {
         float fall = mod(uTime * spd + aSeed * 40.0, ${RAIN_HEIGHT.toFixed(1)}) - ${(RAIN_TOP - RAIN_HEIGHT).toFixed(1)};
         transformed.y += fall;
         transformed.x += uWindX * fall * 0.18;
-        vAlpha = 0.3 + aSeed * 0.35;`
+        vAlpha = 0.3 + aSeed * 0.35;`,
       )
     shader.fragmentShader = shader.fragmentShader
       .replace(
         '#include <common>',
         `#include <common>
-        varying float vAlpha;`
+        varying float vAlpha;`,
       )
       .replace(
         '#include <opaque_fragment>',
         `#include <opaque_fragment>
-        gl_FragColor.a *= vAlpha;`
+        gl_FragColor.a *= vAlpha;`,
       )
   }
   // 自定义缓存键，避免多实例共用编译缓存
@@ -189,7 +205,11 @@ export function createWeather(targets: WeatherTargets, preset?: GardenPreset): G
       if (mode === 'rain') {
         const time = ((rain.userData.time as number | undefined) ?? 0) + delta
         rain.userData.time = time
-        const uniforms = (rain.material as THREE.Material & { userData: { rainUniforms?: Record<string, { value: number }> } }).userData.rainUniforms
+        const uniforms = (
+          rain.material as THREE.Material & {
+            userData: { rainUniforms?: Record<string, { value: number }> }
+          }
+        ).userData.rainUniforms
         if (uniforms) {
           if (uniforms.uTime) uniforms.uTime.value = time
           if (uniforms.uWindX) uniforms.uWindX.value = 1.6
@@ -220,5 +240,3 @@ export function createWeather(targets: WeatherTargets, preset?: GardenPreset): G
     },
   }
 }
-
-

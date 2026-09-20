@@ -13,20 +13,19 @@ import uuid
 from collections import defaultdict, deque
 from typing import Protocol
 
+import redis.asyncio as aioredis
 from fastapi import Request
 from fastapi.responses import JSONResponse
+from redis.exceptions import RedisError
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from redis.exceptions import RedisError
-import redis.asyncio as aioredis
-
 from app.config import (
-    RATE_LIMIT_MAX,
-    RATE_LIMIT_WINDOW,
-    RATE_LIMIT_LOGIN_MAX,
-    RATE_LIMIT_LOGIN_WINDOW,
     RATE_LIMIT_AI_MAX,
     RATE_LIMIT_AI_WINDOW,
+    RATE_LIMIT_LOGIN_MAX,
+    RATE_LIMIT_LOGIN_WINDOW,
+    RATE_LIMIT_MAX,
+    RATE_LIMIT_WINDOW,
     REDIS_URL,
 )
 

@@ -24,7 +24,9 @@ const path = require('path')
   })
   const page = await context.newPage()
   const errors = []
-  page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()) })
+  page.on('console', (m) => {
+    if (m.type() === 'error') errors.push(m.text())
+  })
   page.on('pageerror', (e) => errors.push('PAGEERROR: ' + e.message))
 
   await page.goto('http://localhost:5173/', { waitUntil: 'domcontentloaded' })
@@ -35,7 +37,10 @@ const path = require('path')
   await page.waitForURL('**/tools')
   await page.waitForTimeout(800)
   await page.getByRole('button', { name: /白瓷盖碗/ }).click()
-  await page.getByRole('button', { name: /山泉|泉水|纯净|山涧|雨水|井水/ }).first().click()
+  await page
+    .getByRole('button', { name: /山泉|泉水|纯净|山涧|雨水|井水/ })
+    .first()
+    .click()
   await page.getByRole('button', { name: '开始冲泡 →' }).click()
   await page.waitForURL('**/brew')
 
@@ -56,7 +61,8 @@ const path = require('path')
     const text = (await btn.innerText()) || ''
     if (!focusNames.test(text)) continue
     const box = await btn.boundingBox()
-    if (box) sizes.push({ name: text.slice(0, 16), w: Math.round(box.width), h: Math.round(box.height) })
+    if (box)
+      sizes.push({ name: text.slice(0, 16), w: Math.round(box.width), h: Math.round(box.height) })
   }
   console.log('TOUCH_SIZES', JSON.stringify(sizes))
   for (const s of sizes) {
@@ -88,4 +94,7 @@ const path = require('path')
 
   console.log('ERRORS:', JSON.stringify(errors))
   await browser.close()
-})().catch((e) => { console.error('FAIL', e); process.exit(1) })
+})().catch((e) => {
+  console.error('FAIL', e)
+  process.exit(1)
+})

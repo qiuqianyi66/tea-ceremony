@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, nextTick, onMounted } from 'vue'
+import { nextTick, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { askTeaMaster } from '@/services/teaAI'
 import { track } from '@/services/tracking'
@@ -11,7 +11,10 @@ onMounted(() => {
   void track({ category: 'ai', event: 'ai_page_open', label: 'page_open' })
 })
 
-interface ChatMsg { role: 'user' | 'ai'; content: string }
+interface ChatMsg {
+  role: 'user' | 'ai'
+  content: string
+}
 const messages = ref<ChatMsg[]>([])
 const input = ref('')
 const loading = ref(false)
@@ -39,8 +42,8 @@ async function sendMessage(text?: string) {
   loading.value = true
   await scrollToBottom()
 
-  const history = messages.value.slice(-6).map(m => ({
-    role: m.role === 'user' ? 'user' as const : 'assistant' as const,
+  const history = messages.value.slice(-6).map((m) => ({
+    role: m.role === 'user' ? ('user' as const) : ('assistant' as const),
     content: m.content,
   }))
 

@@ -4,7 +4,7 @@
  * 对外保持 `from '@/services/api'` 不变。
  */
 
-export { authApi } from './auth'
-export { recordsApi, toRecordDto, type RecordCreateDto } from './records'
-export { teasApi } from './teas'
 export { ApiError } from '../http'
+export { authApi } from './auth'
+export { type RecordCreateDto, recordsApi, toRecordDto } from './records'
+export { teasApi } from './teas'

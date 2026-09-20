@@ -16,7 +16,7 @@
 #   docker compose exec -T db psql -U tea_user -d postgres -c "CREATE DATABASE tea_restore_test"
 #   gunzip -c backups/tea_YYYYMMDD_HHMMSS.sql.gz \
 #     | docker compose exec -T db psql -U tea_user -d tea_restore_test
-#   docker compose exec -T db psql -U tea_user -d tea_restore_test -c "SELECT count(*) FROM records;"
+#   docker compose exec -T db psql -U tea_user -d tea_restore_test -c "SELECT count(*) FROM tasting_records_v2;"
 #   docker compose exec -T db psql -U tea_user -d postgres -c "DROP DATABASE tea_restore_test"
 # =============================================================================
 set -euo pipefail

@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 /**
  * TeaGardenSceneInner — 3D茶园场景内容（TresCanvas 内部）
  * 一期：HDRI环境 + 太阳光 + 雾 + 程序化梯田地形 + OrbitControls
@@ -7,46 +7,54 @@
  *
  * TresJS 5 坑：rotation 必须传 [x,y,z] 数组，不能传 Vector3。
  */
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import { useLoop, useTresContext } from '@tresjs/core'
-import { createAmbient } from './garden-ambient'
-import { createAnimals } from './garden-animals'
-import { createScenery } from './garden-scenery'
-import { createWeather, type WeatherMode } from './garden-weather'
-import { createAmbientAudio, type AmbientAudio } from './ambient-audio'
-import { createTeaField } from './tea-field'
-import { createTerrainGeometry, getTerrainHeight, fbm, smoothNoise, setTerrainPreset } from './terrain'
-import { getGardenPreset } from './garden-presets'
-import {
-  seededRandom,
-  STAGE_VISUALS,
-  type StageVisual,
-  type LeafBlade,
-  type PlantVisual,
-  getPlantPosition,
-  getLeafBlades,
-  createLeafBladeTexture,
-  createBarkTexture,
-  buildLeafClusters,
-} from './tea-plant'
-import { createDecorations } from './garden-ecology'
-import { OrbitControls } from '@tresjs/cientos'
+
 import type { PointerEvent as TresPointerEvent } from '@pmndrs/pointer-events'
+// 运行时值导入：<OrbitControls> 模板标签由 TresJS 在 THREE 命名空间查构造器，
+// 转 type-only 会报 OrbitControls is not defined / target is not a constructor（已实测）
+import { OrbitControls } from '@tresjs/cientos'
+import { useLoop, useTresContext } from '@tresjs/core'
 import * as THREE from 'three'
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js'
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
 import { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js'
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { getGrowthStage } from '@/services/garden'
 import type { PlantedTea } from '@/types/garden'
+import { type AmbientAudio, createAmbientAudio } from './ambient-audio'
+import { createAmbient } from './garden-ambient'
+import { createAnimals } from './garden-animals'
+import { createDecorations } from './garden-ecology'
+import { getGardenPreset } from './garden-presets'
+import { createScenery } from './garden-scenery'
+import { createWeather, type WeatherMode } from './garden-weather'
+import { createTeaField } from './tea-field'
+import {
+  buildLeafClusters,
+  createBarkTexture,
+  createLeafBladeTexture,
+  getLeafBlades,
+  getPlantPosition,
+  type LeafBlade,
+  type PlantVisual,
+  STAGE_VISUALS,
+  type StageVisual,
+  seededRandom,
+} from './tea-plant'
+import {
+  createTerrainGeometry,
+  fbm,
+  getTerrainHeight,
+  setTerrainPreset,
+  smoothNoise,
+} from './terrain'
 
 const props = defineProps<{
   plants: PlantedTea[]
   /** 茶园地区 id（四茶园差异化场景；缺省 = 杭州龙井） */
   regionId?: string
-
 }>()
 
 /** 当前茶园预设（四茶园差异化：地形/土壤/雾/天空/茶行/装饰） */
@@ -57,7 +65,6 @@ const emit = defineEmits<{
   /** 点击茶亭叙事锚点（父组件展示该园古籍引文） */
   'select-pavilion': []
 }>()
-
 
 const sceneCtx = useTresContext()
 /** 六期：OrbitControls 实例引用（DEV 调试钩子暴露，供自动化特写/验证） */
@@ -94,7 +101,9 @@ onBeforeRender(({ delta, elapsed }) => {
 
 // ============ 程序化噪声（Simplex-like，无需外部库） ============
 /** 程序化"万里晴空"背景：Equirect 球面渐变（天顶蔚蓝 → 地平线浅蓝白） */
-function createSkyTexture(sky: [string, string, string, string, string] = gardenPreset.sky): THREE.CanvasTexture {
+function createSkyTexture(
+  sky: [string, string, string, string, string] = gardenPreset.sky,
+): THREE.CanvasTexture {
   const w = 64
   const h = 256
   const canvas = document.createElement('canvas')
@@ -135,22 +144,29 @@ const barkTexture = createBarkTexture()
 // ============ 茶树渲染（二期，实现见 tea-plant.ts） ============
 
 const plantVisuals = computed<PlantVisual[]>(() => {
-  return props.plants.map(plant => {
+  return props.plants.map((plant) => {
     const stage = plant.status === 'dead' ? 'dead' : getGrowthStage(plant)
     const config: StageVisual = STAGE_VISUALS[stage] ?? STAGE_VISUALS.growing!
-    const seed = (plant.id ?? 0) * 1000 + plant.teaId.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
+    const seed =
+      (plant.id ?? 0) * 1000 + plant.teaId.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
     const position = getPlantPosition(seed)
     const crownY = config.trunkHeight * config.scale
-    const blades = getLeafBlades(seed, config.leafCount, config.crownRadius, crownY, config.leafColor)
+    const blades = getLeafBlades(
+      seed,
+      config.leafCount,
+      config.crownRadius,
+      crownY,
+      config.leafColor,
+    )
     const rotationY = seededRandom(seed + 99) * Math.PI * 2
     const plantId = plant.id ?? 0
     return {
       id: plantId,
       position,
       rotation: [0, rotationY, 0] as [number, number, number],
-      trunkPos: [0, config.trunkHeight * config.scale / 2, 0] as [number, number, number],
+      trunkPos: [0, (config.trunkHeight * config.scale) / 2, 0] as [number, number, number],
       glowPos: config.hasGlow
-        ? [0, config.trunkHeight * config.scale + 0.45, 0] as [number, number, number]
+        ? ([0, config.trunkHeight * config.scale + 0.45, 0] as [number, number, number])
         : null,
       hitPos: [0, config.trunkHeight * config.scale * 0.6, 0] as [number, number, number],
       hitRadius: Math.max(1.1, config.crownRadius * config.scale * 1.6),
@@ -224,7 +240,6 @@ function updateGardenCursor(): void {
   if (canvas) canvas.style.cursor = pavilionHovered ? 'pointer' : ''
 }
 
-
 // ============ 六期写实化：地形 PBR 材质（三贴图按高度混合） ============
 
 /**
@@ -234,8 +249,13 @@ function updateGardenCursor(): void {
  */
 function applyTerrainTextures(
   material: THREE.MeshStandardMaterial,
-  textures: { grass: THREE.Texture; mud: THREE.Texture; rock: THREE.Texture; grassNormal: THREE.Texture },
-  wetness: { value: number }
+  textures: {
+    grass: THREE.Texture
+    mud: THREE.Texture
+    rock: THREE.Texture
+    grassNormal: THREE.Texture
+  },
+  wetness: { value: number },
 ): void {
   // 平铺采样：三张贴图必须 RepeatWrapping，否则 UV×N 超出 1 的部分被边缘像素 clamp 平铺
   for (const t of [textures.grass, textures.mud, textures.rock, textures.grassNormal]) {
@@ -254,12 +274,12 @@ function applyTerrainTextures(
       .replace(
         '#include <common>',
         `#include <common>
-        varying vec3 vWorldPos;`
+        varying vec3 vWorldPos;`,
       )
       .replace(
         '#include <worldpos_vertex>',
         `#include <worldpos_vertex>
-        vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;`
+        vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;`,
       )
     shader.fragmentShader = shader.fragmentShader
       .replace(
@@ -269,7 +289,7 @@ function applyTerrainTextures(
         uniform sampler2D uTexMud;
         uniform sampler2D uTexRock;
         uniform float uWetness;
-        varying vec3 vWorldPos;`
+        varying vec3 vWorldPos;`,
       )
       .replace(
         '#include <map_fragment>',
@@ -286,7 +306,7 @@ function applyTerrainTextures(
           sampledDiffuseColor.rgb *= vColor.rgb; // 顶点色明暗系数（r185: vColor 为 vec4）
         #endif
         sampledDiffuseColor.rgb *= (1.0 - uWetness * 0.3); // 雨天地面湿润变暗
-        diffuseColor *= sampledDiffuseColor;`
+        diffuseColor *= sampledDiffuseColor;`,
       )
     shader.uniforms.uWetness = wetness // 共享对象引用，运行时 wetness.value 变化实时生效
   }
@@ -303,7 +323,9 @@ function rebuildLeafClusters(scene: THREE.Scene): void {
   const oldRoot = leafClusterRoot.value
   if (oldRoot) {
     oldRoot.removeFromParent()
-    oldRoot.traverse(o => { if ((o as THREE.InstancedMesh).isInstancedMesh) (o as THREE.InstancedMesh).dispose() })
+    oldRoot.traverse((o) => {
+      if ((o as THREE.InstancedMesh).isInstancedMesh) (o as THREE.InstancedMesh).dispose()
+    })
   }
   leafClusterByPlant.clear()
   const layer = buildLeafClusters(scene, plantVisuals.value, leafBladeTexture)
@@ -313,7 +335,7 @@ function rebuildLeafClusters(scene: THREE.Scene): void {
 
 /** 悬停/选中时对应叶簇同步放大（与模板 Group scale 一致） */
 function syncLeafClusterScale(): void {
-  const s = (id: number) => hoveredPlantId.value === id || selectedPlantId.value === id ? 1.15 : 1
+  const s = (id: number) => (hoveredPlantId.value === id || selectedPlantId.value === id ? 1.15 : 1)
   for (const [id, g] of leafClusterByPlant) g.scale.setScalar(s(id))
 }
 
@@ -328,7 +350,7 @@ function setupPostProcessing(
   renderer: THREE.WebGLRenderer,
   scene: THREE.Scene,
   camera: THREE.PerspectiveCamera,
-  sizes: { width: () => number; height: () => number }
+  sizes: { width: () => number; height: () => number },
 ): { composer: EffectComposer; dispose: () => void } {
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
   const composer = new EffectComposer(renderer)
@@ -346,7 +368,12 @@ function setupPostProcessing(
 
   // Bloom：阈值 1.3（HDR 亮度），只让成熟新芽（emissive 2.5）等强发光点辉光，
   // 普通叶子与环境反光不发光（避免场景整体泛光发晕）
-  const bloom = new UnrealBloomPass(new THREE.Vector2(sizes.width(), sizes.height()), 0.35, 0.6, 1.3)
+  const bloom = new UnrealBloomPass(
+    new THREE.Vector2(sizes.width(), sizes.height()),
+    0.35,
+    0.6,
+    1.3,
+  )
   composer.addPass(bloom)
   composer.addPass(new OutputPass())
 
@@ -379,7 +406,10 @@ const waterState = ref<WaterState | null>(null)
 /** 创建水滴粒子系统（Points，蓝色半透明，一次性池化复用） */
 function createWaterPoints(): THREE.Points {
   const geo = new THREE.BufferGeometry()
-  geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(WATER_PARTICLE_COUNT * 3), 3))
+  geo.setAttribute(
+    'position',
+    new THREE.BufferAttribute(new Float32Array(WATER_PARTICLE_COUNT * 3), 3),
+  )
   // 注意：transparent:true 在本渲染管线不渲染，用不透明圆点 + 整体淡出
   const mat = new THREE.PointsMaterial({
     color: 0x9fdcff,
@@ -396,7 +426,7 @@ function createWaterPoints(): THREE.Points {
 function playWater(plantId: number): void {
   const points = waterPoints.value
   if (!points || waterState.value) return
-  const pv = plantVisuals.value.find(p => p.id === plantId)
+  const pv = plantVisuals.value.find((p) => p.id === plantId)
   if (!pv) return
   const pos = points.geometry.attributes.position as THREE.BufferAttribute
   const velocities = new Float32Array(WATER_PARTICLE_COUNT * 3)
@@ -408,7 +438,7 @@ function playWater(plantId: number): void {
       i,
       px + Math.cos(angle) * r * 0.5,
       py + 1.6 + seededRandom(i * 7.1 + 3) * 0.9,
-      pz + Math.sin(angle) * r * 0.5
+      pz + Math.sin(angle) * r * 0.5,
     )
     velocities[i * 3] = (seededRandom(i * 11.3 + 4) - 0.5) * 1.4
     velocities[i * 3 + 1] = 0
@@ -439,7 +469,7 @@ function updateWater(delta: number): void {
       i,
       pos.getX(i) + (vel[idx] ?? 0) * delta,
       pos.getY(i) + (vel[idx + 1] ?? 0) * delta,
-      pos.getZ(i) + (vel[idx + 2] ?? 0) * delta
+      pos.getZ(i) + (vel[idx + 2] ?? 0) * delta,
     )
   }
   pos.needsUpdate = true
@@ -502,7 +532,11 @@ onMounted(() => {
       grassNormal.colorSpace = THREE.NoColorSpace
       const terrain = terrainMeshRef.value
       if (terrain) {
-        applyTerrainTextures(terrain.material as THREE.MeshStandardMaterial, { grass, mud, rock, grassNormal }, wetnessUniform)
+        applyTerrainTextures(
+          terrain.material as THREE.MeshStandardMaterial,
+          { grass, mud, rock, grassNormal },
+          wetnessUniform,
+        )
       }
     })
     .catch((error: unknown) => {
@@ -514,7 +548,9 @@ onMounted(() => {
 
   // 六期：真实叶片叶簇层（初始挂载 + 后续 plants 变化时重建）
   rebuildLeafClusters(scene)
-  watch(plantVisuals, () => { rebuildLeafClusters(scene) })
+  watch(plantVisuals, () => {
+    rebuildLeafClusters(scene)
+  })
 
   // 五期：浇水水滴粒子系统挂到场景
   const wp = createWaterPoints()
@@ -523,7 +559,8 @@ onMounted(() => {
 
   // 活茶园：环境氛围层（云朵/晨雾） + 小动物（蝴蝶/蜜蜂/飞鸟）
   const activeCam2 = sceneCtx.camera.activeCamera as unknown
-  const camRef2 = ((activeCam2 as { value?: THREE.PerspectiveCamera }).value ?? activeCam2) as THREE.PerspectiveCamera
+  const camRef2 = ((activeCam2 as { value?: THREE.PerspectiveCamera }).value ??
+    activeCam2) as THREE.PerspectiveCamera
   ambientLayer = createAmbient(scene, camRef2)
   animalsLayer = createAnimals(scene)
   sceneryLayer = createScenery(scene, gardenPreset.id)
@@ -533,25 +570,31 @@ onMounted(() => {
   const sun = sunLightRef.value
   const amb = ambientLightRef.value
   if (sun && amb) {
-    weatherLayer = createWeather({
-      sunLight: sun,
-      ambientLight: amb,
-      fog: (scene.fog as THREE.FogExp2 | null) ?? null,
-      renderer,
-      wetnessUniform,
-    }, gardenPreset)
+    weatherLayer = createWeather(
+      {
+        sunLight: sun,
+        ambientLight: amb,
+        fog: (scene.fog as THREE.FogExp2 | null) ?? null,
+        renderer,
+        wetnessUniform,
+      },
+      gardenPreset,
+    )
   }
   // 环境音效（WebAudio 合成，默认静音，需用户手势后开启）
   audioLayer = createAmbientAudio()
 
   // 四期：后处理管线（SSAO + Bloom），用 useLoop().render 接管渲染循环
   const activeCam = sceneCtx.camera.activeCamera as unknown
-  const cam = ((activeCam as { value?: THREE.PerspectiveCamera }).value ?? activeCam) as THREE.PerspectiveCamera
+  const cam = ((activeCam as { value?: THREE.PerspectiveCamera }).value ??
+    activeCam) as THREE.PerspectiveCamera
   const { composer, dispose } = setupPostProcessing(renderer, scene, cam, {
     width: () => sceneCtx.sizes.width.value,
     height: () => sceneCtx.sizes.height.value,
   })
-  replaceRender(() => { composer.render() })
+  replaceRender(() => {
+    composer.render()
+  })
   onUnmounted(() => {
     dispose()
     ambientLayer?.dispose()
@@ -578,7 +621,7 @@ onMounted(() => {
     () => {
       console.warn('[TeaGarden] HDRI 加载失败，使用纯色背景兜底')
       scene.background = createSkyTexture()
-    }
+    },
   )
 })
 </script>

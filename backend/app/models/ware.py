@@ -1,6 +1,7 @@
 """茶器域。"""
 
-from sqlalchemy import Column, Integer, String, Text, JSON
+from sqlalchemy import JSON, Column, Integer, String, Text
+
 from app.database import Base
 
 

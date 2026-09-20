@@ -7,11 +7,12 @@
  * - 煮水环境音（Web Audio 合成）
  * - 结束：茶树长成 + 茶诗 + 已静心时长 + confetti 撒花
  */
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
+
 import confetti from 'canvas-confetti'
-import { TEA_POEMS } from '@/data/teaPoems'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { startBoiling, stopBoiling } from '@/composables/useAudio'
+import { TEA_POEMS } from '@/data/teaPoems'
 import TeaTreeCanvas from './break/TeaTreeCanvas.vue'
 
 const router = useRouter()
@@ -43,7 +44,9 @@ const timeText = computed(() => {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 })
 
-const elapsedMinutes = computed(() => Math.max(1, Math.round((TOTAL_SECONDS - remaining.value) / 60)))
+const elapsedMinutes = computed(() =>
+  Math.max(1, Math.round((TOTAL_SECONDS - remaining.value) / 60)),
+)
 
 const endingPoem = computed(() => {
   const idx = Math.floor(Math.random() * TEA_POEMS.length)
@@ -52,9 +55,7 @@ const endingPoem = computed(() => {
 
 /** 当前生长进度（传给 Canvas） */
 const treeProgress = computed(() => {
-  const elapsed = isPaused.value
-    ? pausedElapsed
-    : (Date.now() - startTime) / 1000 + pausedElapsed
+  const elapsed = isPaused.value ? pausedElapsed : (Date.now() - startTime) / 1000 + pausedElapsed
   let progress = Math.min(1, elapsed / (TOTAL_SECONDS * 0.85)) + growthBoost.value * 0.3
   if (soundMode.value) {
     progress += (1 - micLevel.value) * 0.15 - micLevel.value * 0.1
@@ -71,7 +72,10 @@ function startTimers() {
   timer = setInterval(tick, 1000)
 }
 function stopTimers() {
-  if (timer) { clearInterval(timer); timer = null }
+  if (timer) {
+    clearInterval(timer)
+    timer = null
+  }
 }
 
 /** 呼吸相位由 rAF 驱动（10s 周期） */
@@ -110,12 +114,27 @@ function finish() {
   isFinished.value = true
   growthBoost.value = 0.5
   confetti({
-    particleCount: 90, spread: 75, origin: { y: 0.6 },
-    colors: ['#C9A96E', '#9E8050', '#E8D9B8', '#6B8E23', '#5D4E37'], scalar: 1.1,
+    particleCount: 90,
+    spread: 75,
+    origin: { y: 0.6 },
+    colors: ['#C9A96E', '#9E8050', '#E8D9B8', '#6B8E23', '#5D4E37'],
+    scalar: 1.1,
   })
   setTimeout(() => {
-    confetti({ particleCount: 50, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#C9A96E', '#9E8050', '#E8D9B8'] })
-    confetti({ particleCount: 50, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#C9A96E', '#9E8050', '#E8D9B8'] })
+    confetti({
+      particleCount: 50,
+      angle: 60,
+      spread: 55,
+      origin: { x: 0 },
+      colors: ['#C9A96E', '#9E8050', '#E8D9B8'],
+    })
+    confetti({
+      particleCount: 50,
+      angle: 120,
+      spread: 55,
+      origin: { x: 1 },
+      colors: ['#C9A96E', '#9E8050', '#E8D9B8'],
+    })
   }, 250)
 }
 
@@ -126,7 +145,11 @@ function toggleSound() {
 }
 
 async function toggleSoundMode() {
-  if (soundMode.value) { stopMic(); soundMode.value = false; return }
+  if (soundMode.value) {
+    stopMic()
+    soundMode.value = false
+    return
+  }
   try {
     mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true })
     audioCtx = new AudioContext()
@@ -154,13 +177,23 @@ function micLoop() {
 function stopMic() {
   if (micRafId) cancelAnimationFrame(micRafId)
   micRafId = null
-  if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null }
-  if (audioCtx) { audioCtx.close().catch(() => {}); audioCtx = null }
+  if (mediaStream) {
+    mediaStream.getTracks().forEach((t) => {
+      t.stop()
+    })
+    mediaStream = null
+  }
+  if (audioCtx) {
+    audioCtx.close().catch(() => {})
+    audioCtx = null
+  }
   analyser = null
   micLevel.value = 0
 }
 
-function goHome() { router.push('/') }
+function goHome() {
+  router.push('/')
+}
 
 onMounted(() => {
   startTime = Date.now()

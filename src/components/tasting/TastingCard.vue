@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue'
 import QRCode from 'qrcode'
-import type { TastingRecord } from '@/types/tasting'
+import { ref } from 'vue'
 import { getScoreLevel } from '@/services/scoring'
-import { toShareData, encodeShareData, buildShareUrl } from '@/services/share'
+import { buildShareUrl, encodeShareData, toShareData } from '@/services/share'
+import type { TastingRecord } from '@/types/tasting'
 
 const props = defineProps<{
   record: TastingRecord
@@ -15,8 +15,14 @@ const emit = defineEmits<{ shared: [] }>()
 const scoreLevel = getScoreLevel(props.record.overallScore)
 
 const dimensions = [
-  ['苦', 'bitterness'], ['甜', 'sweetness'], ['甘', 'aftertaste'], ['醇', 'body'],
-  ['香', 'aroma'], ['韵', 'rhyme'], ['形', 'shape'], ['心', 'mind'],
+  ['苦', 'bitterness'],
+  ['甜', 'sweetness'],
+  ['甘', 'aftertaste'],
+  ['醇', 'body'],
+  ['香', 'aroma'],
+  ['韵', 'rhyme'],
+  ['形', 'shape'],
+  ['心', 'mind'],
 ] as const
 
 // ---------- 分享链接与二维码 ----------
@@ -72,7 +78,14 @@ async function shareCard() {
   }
 }
 
-function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) {
+function roundRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
+) {
   ctx.beginPath()
   ctx.moveTo(x + radius, y)
   ctx.arcTo(x + width, y, x + width, y + height, radius)
@@ -111,7 +124,11 @@ async function downloadCard() {
   ctx.fillText(props.record.teaName, 78, 180)
   ctx.fillStyle = '#7E6A55'
   ctx.font = '24px sans-serif'
-  ctx.fillText(`${new Date(props.record.date).toLocaleDateString()}  ·  第 ${props.record.infusions} 泡`, 80, 225)
+  ctx.fillText(
+    `${new Date(props.record.date).toLocaleDateString()}  ·  第 ${props.record.infusions} 泡`,
+    80,
+    225,
+  )
 
   ctx.fillStyle = scoreLevel.color
   ctx.font = 'bold 100px sans-serif'
@@ -140,7 +157,9 @@ async function downloadCard() {
   ctx.font = '24px sans-serif'
   ctx.fillText(`水温 ${props.record.brewTemp}°C    浸泡 ${props.record.brewTime}s`, 78, 680)
   if (props.record.weather || props.record.mood) {
-    const meta = [props.record.weather, props.record.mood && `心情 ${props.record.mood}`].filter(Boolean).join('   ')
+    const meta = [props.record.weather, props.record.mood && `心情 ${props.record.mood}`]
+      .filter(Boolean)
+      .join('   ')
     ctx.fillText(meta, 78, 725)
   }
   if (props.record.notes) {
@@ -157,7 +176,11 @@ async function downloadCard() {
   // 右下角绘制分享二维码（失败不影响主卡片下载）
   try {
     const url = buildShareUrl(encodeShareData(toShareData(props.record)))
-    const dataUrl = await QRCode.toDataURL(url, { width: 200, margin: 0, errorCorrectionLevel: 'M' })
+    const dataUrl = await QRCode.toDataURL(url, {
+      width: 200,
+      margin: 0,
+      errorCorrectionLevel: 'M',
+    })
     const img = new Image()
     img.src = dataUrl
     await img.decode()

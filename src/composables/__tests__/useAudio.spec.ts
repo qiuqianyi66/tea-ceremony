@@ -4,7 +4,7 @@
  * 覆盖：rain/wind 合成层切换、播放/暂停、停止、Howler 音轨回切、音量/静音同步。
  * 测试环境无 AudioContext，合成层走 ensureSynthCtx 静默降级，仅断言状态机。
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('howler', () => ({
   Howl: class {

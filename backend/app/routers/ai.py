@@ -9,12 +9,11 @@
 
 import asyncio
 import logging
-from typing import List
 
 import httpx
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
 from pybreaker import CircuitBreaker
+from pydantic import BaseModel, Field
 
 from app.config import (
     AI_PROXY_KEY,
@@ -44,7 +43,7 @@ class ChatMessage(BaseModel):
 
 
 class ChatRequest(BaseModel):
-    messages: List[ChatMessage] = Field(min_length=1, max_length=20)
+    messages: list[ChatMessage] = Field(min_length=1, max_length=20)
 
 
 class RecommendRequest(BaseModel):

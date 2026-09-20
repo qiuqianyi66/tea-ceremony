@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models import Tea, TeaRegion, TeaPerson, TeaPoem, TeaProcess
+from app.models import Tea, TeaPerson, TeaPoem, TeaProcess, TeaRegion
 
 
 async def list_regions(db: AsyncSession, province: str | None = None) -> list[TeaRegion]:

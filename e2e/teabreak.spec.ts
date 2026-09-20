@@ -5,7 +5,7 @@
  * - 结束茶歇 → 结束态（种树 + 诗句）→ 回到首页
  * 注意：5 分钟真实计时不等待，用暂停/继续验证计时状态机。
  */
-import { test, expect } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 
 test('茶歇：进入即开始计时并显示呼吸引导', async ({ page }) => {
   await page.goto('break')
@@ -21,10 +21,14 @@ test('茶歇：暂停停表，计时文字保持不变', async ({ page }) => {
   await page.goto('break')
 
   // 先等计时走起来（05:00 → 04:5x）
-  await page.waitForFunction(() => {
-    const el = document.querySelector('.break-timer')
-    return el?.textContent !== '05:00'
-  }, null, { timeout: 5_000 })
+  await page.waitForFunction(
+    () => {
+      const el = document.querySelector('.break-timer')
+      return el?.textContent !== '05:00'
+    },
+    null,
+    { timeout: 5_000 },
+  )
 
   await page.getByRole('button', { name: '暂停' }).click()
   await expect(page.getByRole('button', { name: '继续' })).toBeVisible()
@@ -37,19 +41,27 @@ test('茶歇：暂停停表，计时文字保持不变', async ({ page }) => {
 test('茶歇：继续后计时继续走', async ({ page }) => {
   await page.goto('break')
 
-  await page.waitForFunction(() => {
-    const el = document.querySelector('.break-timer')
-    return el?.textContent !== '05:00'
-  }, null, { timeout: 5_000 })
+  await page.waitForFunction(
+    () => {
+      const el = document.querySelector('.break-timer')
+      return el?.textContent !== '05:00'
+    },
+    null,
+    { timeout: 5_000 },
+  )
 
   await page.getByRole('button', { name: '暂停' }).click()
   const pausedAt = await page.locator('.break-timer').textContent()
   await page.getByRole('button', { name: '继续' }).click()
 
-  await page.waitForFunction((frozen) => {
-    const el = document.querySelector('.break-timer')
-    return el?.textContent !== frozen
-  }, pausedAt, { timeout: 5_000 })
+  await page.waitForFunction(
+    (frozen) => {
+      const el = document.querySelector('.break-timer')
+      return el?.textContent !== frozen
+    },
+    pausedAt,
+    { timeout: 5_000 },
+  )
 })
 
 test('茶歇：结束茶歇进入结束态并可回首页', async ({ page }) => {

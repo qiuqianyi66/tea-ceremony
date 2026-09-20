@@ -17,8 +17,12 @@ export function usePagination<T>(items: () => T[], pageSize = 20) {
   function goTo(p: number) {
     page.value = Math.min(Math.max(1, p), totalPages.value)
   }
-  function next() { goTo(page.value + 1) }
-  function prev() { goTo(page.value - 1) }
+  function next() {
+    goTo(page.value + 1)
+  }
+  function prev() {
+    goTo(page.value - 1)
+  }
 
   return { page, pageItems, total, totalPages, goTo, next, prev }
 }

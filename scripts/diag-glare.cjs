@@ -1,19 +1,24 @@
 /** diag-glare.cjs — 定位右侧刺眼白光：逐项隐藏对象截图对比 */
-const { chromium } = require('playwright');
+const { chromium } = require('playwright')
 
-(async () => {
-  const browser = await chromium.launch({ headless: true, channel: 'chromium' });
-  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-  await page.goto('http://localhost:5173/garden/hangzhou', { waitUntil: 'domcontentloaded' });
-  await page.waitForTimeout(4500);
+;(async () => {
+  const browser = await chromium.launch({ headless: true, channel: 'chromium' })
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
+  await page.goto('http://localhost:5173/garden/hangzhou', { waitUntil: 'domcontentloaded' })
+  await page.waitForTimeout(4500)
 
-  const shot = async (name) => { await page.screenshot({ path: name }) }
+  const shot = async (name) => {
+    await page.screenshot({ path: name })
+  }
 
   // 1. baseline
   await shot('diag_0_baseline.png')
 
   // 2. 关 environment
-  await page.evaluate(() => { const g = window.__teaGarden; g.scene().environment = null })
+  await page.evaluate(() => {
+    const g = window.__teaGarden
+    g.scene().environment = null
+  })
   await page.waitForTimeout(500)
   await shot('diag_1_noenv.png')
 
@@ -31,7 +36,9 @@ const { chromium } = require('playwright');
   await page.evaluate(() => {
     const g = window.__teaGarden
     const s = g.scene()
-    s.traverse((o) => { if (o.name === 'garden-scenery') o.visible = false })
+    s.traverse((o) => {
+      if (o.name === 'garden-scenery') o.visible = false
+    })
   })
   await page.waitForTimeout(500)
   await shot('diag_3_noscenery.png')
@@ -39,7 +46,9 @@ const { chromium } = require('playwright');
   // 5. 隐藏动物
   await page.evaluate(() => {
     const g = window.__teaGarden
-    g.scene().traverse((o) => { if (o.name === 'garden-animals') o.visible = false })
+    g.scene().traverse((o) => {
+      if (o.name === 'garden-animals') o.visible = false
+    })
   })
   await page.waitForTimeout(500)
   await shot('diag_4_noanimals.png')
@@ -50,14 +59,22 @@ const { chromium } = require('playwright');
     const amb = g.scene().getObjectByName('ambient')
     if (amb) amb.visible = true
     const s = g.scene()
-    s.traverse((o) => { if (o.name === 'garden-scenery') o.visible = true })
-    s.traverse((o) => { if (o.name === 'garden-animals') o.visible = true })
+    s.traverse((o) => {
+      if (o.name === 'garden-scenery') o.visible = true
+    })
+    s.traverse((o) => {
+      if (o.name === 'garden-animals') o.visible = true
+    })
     g.scene().environment = null
     // 隐藏 cloud 相关 mesh（材质 userData.cloud）
     const clouds = []
-    amb.traverse((o) => { if (o.isMesh && o.material && o.material.emissive && o.material.emissiveMap) clouds.push(o) })
+    amb.traverse((o) => {
+      if (o.isMesh && o.material && o.material.emissive && o.material.emissiveMap) clouds.push(o)
+    })
     // 前 5 个是云（按创建顺序）
-    clouds.forEach((m, i) => { if (i < 5) m.visible = false })
+    clouds.forEach((m, i) => {
+      if (i < 5) m.visible = false
+    })
   })
   await page.waitForTimeout(500)
   await shot('diag_5_noclouds.png')

@@ -171,7 +171,10 @@ async def test_breaker_opens_after_failures_and_fast_fails(monkeypatch):
 
 async def test_breaker_success_closes(monkeypatch):
     """P1-13：熔断半开探测成功（或正常调用成功）会关闭熔断并清零失败计数。"""
-    client = _patch_client(monkeypatch, [FakeResponse(200, {"choices": [{"message": {"content": "好茶"}}]})])
+    _patch_client(
+        monkeypatch,
+        [FakeResponse(200, {"choices": [{"message": {"content": "好茶"}}]})],
+    )
     original_fail_max = ai.ai_breaker.fail_max
     ai.ai_breaker.fail_max = 2
     ai.ai_breaker.close()

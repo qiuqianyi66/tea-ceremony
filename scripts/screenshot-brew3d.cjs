@@ -26,9 +26,9 @@ const { chromium } = require('@playwright/test')
     Object.defineProperty(navigator, 'webdriver', { get: () => false })
   })
   const page = await context.newPage()
-  page.on('console', m => console.log(`[console.${m.type()}]`, m.text().slice(0, 250)))
-  page.on('pageerror', e => console.log('[pageerror]', e.message.slice(0, 250)))
-  await page.route('**/api/ai/*', route => route.abort())
+  page.on('console', (m) => console.log(`[console.${m.type()}]`, m.text().slice(0, 250)))
+  page.on('pageerror', (e) => console.log('[pageerror]', e.message.slice(0, 250)))
+  await page.route('**/api/ai/*', (route) => route.abort())
   const base = 'http://localhost:5173'
 
   // 首页：固定等待仪式感动画完成（#11 首页重做后「入席」直达 /select，不再经过 /tearoom）
@@ -44,7 +44,10 @@ const { chromium } = require('@playwright/test')
 
   // 选器：白瓷盖碗 + 山泉水（确认备器即开始煮水，进入 /brew 已是 HEATING）
   await page.getByRole('button', { name: /白瓷盖碗/ }).click()
-  await page.getByRole('button', { name: /山泉|泉水|纯净|山涧|雨水|井水/ }).first().click()
+  await page
+    .getByRole('button', { name: /山泉|泉水|纯净|山涧|雨水|井水/ })
+    .first()
+    .click()
   await page.waitForTimeout(300)
   await page.screenshot({ path: 'docs/screenshots/brew-setup.png' })
   await page.getByRole('button', { name: '开始冲泡 →' }).click()
@@ -69,7 +72,7 @@ const { chromium } = require('@playwright/test')
 
   await browser.close()
   console.log('brew 3d screenshots done')
-})().catch(error => {
+})().catch((error) => {
   console.error('SCREENSHOT_ERROR', error)
   process.exit(1)
 })

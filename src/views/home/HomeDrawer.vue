@@ -2,7 +2,7 @@
 /**
  * 首页侧边导航抽屉
  */
-import { watch, onUnmounted } from 'vue'
+import { onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
@@ -35,11 +35,14 @@ function onKeydown(event: KeyboardEvent) {
   if (event.key === 'Escape') close()
 }
 
-watch(() => props.open, (open) => {
-  document.body.style.overflow = open ? 'hidden' : ''
-  if (open) window.addEventListener('keydown', onKeydown)
-  else window.removeEventListener('keydown', onKeydown)
-})
+watch(
+  () => props.open,
+  (open) => {
+    document.body.style.overflow = open ? 'hidden' : ''
+    if (open) window.addEventListener('keydown', onKeydown)
+    else window.removeEventListener('keydown', onKeydown)
+  },
+)
 
 onUnmounted(() => {
   document.body.style.overflow = ''

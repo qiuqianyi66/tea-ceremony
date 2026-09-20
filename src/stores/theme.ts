@@ -8,7 +8,11 @@ import { getThemeById, type TeaRoomTheme } from '@/data/themes'
 
 export const useThemeStore = defineStore('theme', () => {
   function loadSavedTheme(): string {
-    try { return localStorage.getItem('tea-theme') || 'ming' } catch { return 'ming' }
+    try {
+      return localStorage.getItem('tea-theme') || 'ming'
+    } catch {
+      return 'ming'
+    }
   }
   const currentThemeId = ref<string>(loadSavedTheme())
   const currentTheme = ref<TeaRoomTheme>(getThemeById(currentThemeId.value))
@@ -16,7 +20,9 @@ export const useThemeStore = defineStore('theme', () => {
   function setTheme(id: string) {
     currentThemeId.value = id
     currentTheme.value = getThemeById(id)
-    try { localStorage.setItem('tea-theme', id) } catch {}
+    try {
+      localStorage.setItem('tea-theme', id)
+    } catch {}
     applyTheme(currentTheme.value)
   }
 

@@ -6,14 +6,14 @@ export const collectedWareStorage = {
   async load(): Promise<Set<string>> {
     await initDB()
     const records = await db.collectedWare.toArray()
-    return new Set(records.map(r => r.id))
+    return new Set(records.map((r) => r.id))
   },
 
   async save(wareIds: Set<string>): Promise<void> {
     await initDB()
     await db.transaction('rw', db.collectedWare, async () => {
       await db.collectedWare.clear()
-      const records = Array.from(wareIds).map(id => ({
+      const records = Array.from(wareIds).map((id) => ({
         id,
         unlockedAt: new Date().toISOString(),
       }))

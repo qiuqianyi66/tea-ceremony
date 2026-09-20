@@ -1,6 +1,6 @@
 /** 茶叶 API */
 
-import { TeaType, type Tea } from '@/types/tea'
+import { type Tea, TeaType } from '@/types/tea'
 import { requestOrMock } from '../http'
 
 interface TeaResponseDto {
@@ -19,7 +19,7 @@ interface TeaResponseDto {
 
 function toLocalTea(dto: TeaResponseDto): Tea {
   const type = Object.values(TeaType).includes(dto.category as TeaType)
-    ? dto.category as TeaType
+    ? (dto.category as TeaType)
     : TeaType.GREEN
   return {
     id: `server-${dto.id}`,

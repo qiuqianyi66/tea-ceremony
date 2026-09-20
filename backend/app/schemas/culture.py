@@ -1,6 +1,6 @@
 """文化域：茶人 / 茶诗 schema。"""
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class PersonBase(BaseModel):

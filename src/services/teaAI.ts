@@ -3,12 +3,12 @@
  * LLM 优先（经后端 /api/ai 代理转发），规则引擎降级
  */
 
-import type { Tea } from '@/types/tea'
-import type { TasteDimensions, TastingRecord } from '@/types/tasting'
+import { getCurrentSolarTerm } from '@/data/solarTerms'
 import { teas } from '@/data/teas'
 import { teawares } from '@/data/teawares'
-import { getCurrentSolarTerm } from '@/data/solarTerms'
 import { track } from '@/services/tracking'
+import type { TasteDimensions, TastingRecord } from '@/types/tasting'
+import type { Tea } from '@/types/tea'
 
 // ============ LLM 调用 ============
 
@@ -100,11 +100,14 @@ function ruleBasedRecommend(input: RecommendInput): { tea: Tea; reason: string }
   for (const type of MOOD_RULES[input.mood] || []) scores[type] = (scores[type] || 0) + 2
 
   const bestType = Object.entries(scores).sort((a, b) => b[1] - a[1])[0]![0]
-  const candidates = teas.filter(t => t.type === bestType)
+  const candidates = teas.filter((t) => t.type === bestType)
   const tea = candidates[Math.floor(Math.random() * candidates.length)]!
 
   const timeDesc: Record<string, string> = {
-    morning: '清晨', afternoon: '午后', evening: '黄昏', night: '静夜',
+    morning: '清晨',
+    afternoon: '午后',
+    evening: '黄昏',
+    night: '静夜',
   }
   const reason = `${timeDesc[input.time] || ''}${input.weather === 'rainy' ? '微雨' : input.weather === 'sunny' ? '晴好' : '宜人'}，推荐一壶${tea.name}。${tea.description.slice(0, 15)}`
 
@@ -119,7 +122,7 @@ export async function recommendTea(input: RecommendInput): Promise<{ tea: Tea; r
     const match = llmResult.match(/推荐茶品[：:]\s*(.+)/)
     if (match) {
       const teaName = match[1]!.trim()
-      const found = teas.find(t => teaName.includes(t.name) || t.name.includes(teaName))
+      const found = teas.find((t) => teaName.includes(t.name) || t.name.includes(teaName))
       if (found) {
         void track({ category: 'ai', event: 'ai_recommend', label: 'recommend', result: 'success' })
         return { tea: found, reason: llmResult.replace(/推荐茶品[：:].+?\n/, '').trim() }
@@ -144,7 +147,7 @@ export function recommendTeaEnhanced(
   let totalScore = 0
 
   for (const r of history) {
-    const t = teas.find(tt => tt.id === r.teaId)
+    const t = teas.find((tt) => tt.id === r.teaId)
     if (t) {
       typeCounts[t.type] = (typeCounts[t.type] || 0) + 1
       totalScore += r.overallScore
@@ -159,7 +162,7 @@ export function recommendTeaEnhanced(
   const favAroma = Object.entries(aromaCounts).sort((a, b) => b[1] - a[1])[0]?.[0]
 
   // 综合评分
-  const scored = teas.map(tea => {
+  const scored = teas.map((tea) => {
     let score = 0
 
     // 1. 季节匹配（权重20%）
@@ -173,7 +176,7 @@ export function recommendTeaEnhanced(
     // 5. 用户偏好（权重25%）
     if (favType && tea.type === favType) score += avgScore >= 7 ? 25 : 15
     // 6. 未品鉴优先（权重10%）
-    if (!history.some(r => r.teaId === tea.id)) score += 10
+    if (!history.some((r) => r.teaId === tea.id)) score += 10
 
     return { tea, score }
   })
@@ -216,10 +219,20 @@ export async function generateTastingNote(
 请写一段品茶记。`
   const llmResult = await callLLM(TASTING_SYSTEM_PROMPT, userPrompt)
   if (llmResult) {
-    void track({ category: 'ai', event: 'ai_tasting_note', label: 'tasting_note', result: 'success' })
+    void track({
+      category: 'ai',
+      event: 'ai_tasting_note',
+      label: 'tasting_note',
+      result: 'success',
+    })
     return llmResult
   }
-  void track({ category: 'ai', event: 'ai_tasting_note', label: 'tasting_note', result: 'degraded' })
+  void track({
+    category: 'ai',
+    event: 'ai_tasting_note',
+    label: 'tasting_note',
+    result: 'degraded',
+  })
   return ruleBasedNote(teaName, dimensions, score)
 }
 
@@ -266,7 +279,7 @@ const FALLBACK_REPLIES = [
  */
 function ruleBasedReply(question: string): string {
   // 1. 茶名匹配（teas.ts 数据，返回该茶冲泡参数）
-  const tea = teas.find(t => question.includes(t.name))
+  const tea = teas.find((t) => question.includes(t.name))
   if (tea) {
     return `${tea.name}：${tea.type}，宜 ${tea.bestTemp}℃ 水温，首泡约 ${tea.bestTime} 秒，可冲泡 ${tea.infusions} 泡。${tea.description.slice(0, 18)}`
   }
@@ -284,12 +297,16 @@ function ruleBasedReply(question: string): string {
   }
   // 3. 茶器匹配（teawares.ts 数据，含常用别名）
   const wareAlias: Record<string, string> = {
-    盖碗: '白瓷盖碗', 紫砂: '紫砂壶', 玻璃杯: '玻璃杯',
-    青瓷: '青瓷盖碗', 石瓢: '段泥石瓢壶', 建盏: '建盏天目杯',
+    盖碗: '白瓷盖碗',
+    紫砂: '紫砂壶',
+    玻璃杯: '玻璃杯',
+    青瓷: '青瓷盖碗',
+    石瓢: '段泥石瓢壶',
+    建盏: '建盏天目杯',
   }
   for (const [alias, fullName] of Object.entries(wareAlias)) {
     if (question.includes(alias)) {
-      const ware = teawares.find(w => w.name === fullName)
+      const ware = teawares.find((w) => w.name === fullName)
       if (ware) return `${ware.name}：${ware.description.slice(0, 40)}`
     }
   }
@@ -316,19 +333,27 @@ async function fetchRAGContext(question: string): Promise<string> {
 
     if (data.teas?.length) {
       parts.push('\n相关茶叶：')
-      data.teas.forEach(t => parts.push(`- ${t.name}`))
+      data.teas.forEach((t) => {
+        parts.push(`- ${t.name}`)
+      })
     }
     if (data.people?.length) {
       parts.push('\n相关茶人：')
-      data.people.forEach(p => parts.push(`- ${p.name}（${p.dynasty ?? ''}）`))
+      data.people.forEach((p) => {
+        parts.push(`- ${p.name}（${p.dynasty ?? ''}）`)
+      })
     }
     if (data.regions?.length) {
       parts.push('\n相关产区：')
-      data.regions.forEach(r => parts.push(`- ${r.name}（${r.province ?? ''}）`))
+      data.regions.forEach((r) => {
+        parts.push(`- ${r.name}（${r.province ?? ''}）`)
+      })
     }
     if (data.poems?.length) {
       parts.push('\n相关茶诗：')
-      data.poems.forEach(p => parts.push(`- 《${p.title}》${p.author ?? ''}`))
+      data.poems.forEach((p) => {
+        parts.push(`- 《${p.title}》${p.author ?? ''}`)
+      })
     }
 
     return parts.join('\n')

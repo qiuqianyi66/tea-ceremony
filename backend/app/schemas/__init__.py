@@ -4,10 +4,10 @@
 对外保持 `from app.schemas import UserCreate, ...` 不变。
 """
 
-from app.schemas.tea import TeaBase, TeaResponse, RegionBase, RegionResponse
 from app.schemas.culture import PersonBase, PersonResponse, PoemBase, PoemResponse
 from app.schemas.record import RecordCreate, RecordResponse
-from app.schemas.user import UserCreate, UserLogin, UserResponse, TokenResponse
+from app.schemas.tea import RegionBase, RegionResponse, TeaBase, TeaResponse
+from app.schemas.user import TokenResponse, UserCreate, UserLogin, UserResponse
 from app.schemas.ware import TeaWareResponse
 
 __all__ = [

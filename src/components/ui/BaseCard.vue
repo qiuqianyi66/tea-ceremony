@@ -3,13 +3,16 @@
  * 基础卡片 — 纸色底 + 茶汤金微边 + 柔圆角
  * 用于承载品鉴卡、列表项、设置块等
  */
-withDefaults(defineProps<{
-  padding?: 'none' | 'sm' | 'md' | 'lg'
-  tone?: 'paper' | 'glass'
-}>(), {
-  padding: 'md',
-  tone: 'paper',
-})
+withDefaults(
+  defineProps<{
+    padding?: 'none' | 'sm' | 'md' | 'lg'
+    tone?: 'paper' | 'glass'
+  }>(),
+  {
+    padding: 'md',
+    tone: 'paper',
+  },
+)
 </script>
 
 <template>

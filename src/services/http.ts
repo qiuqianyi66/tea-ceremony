@@ -1,9 +1,10 @@
 /**
  * HTTP 基础层：统一请求/超时/错误/认证 token 注入
  */
-import { getAuthToken, clearAuth } from './authStorage'
-import { useUiStore } from '@/stores/ui'
+
 import router from '@/router'
+import { useUiStore } from '@/stores/ui'
+import { clearAuth, getAuthToken } from './authStorage'
 
 // 生产环境通过 Nginx 代理到 /api；开发环境可通过 VITE_API_URL 指向后端。
 // 统一补齐 /api，避免把 http://localhost:8000 配置成不带前缀的错误地址。
@@ -65,7 +66,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 
   try {
     const res = await fetch(`${API_BASE}${path}`, {
-      headers: { ...headers, ...options?.headers as Record<string, string> },
+      headers: { ...headers, ...(options?.headers as Record<string, string>) },
       ...options,
       signal: options?.signal ?? controller?.signal,
     })

@@ -4,9 +4,16 @@
  */
 import { describe, expect, it } from 'vitest'
 import {
-  getPlantDays, getGrowthStage, getGrowthStageInfo,
-  getGrowthProgress, getCurrentWaterLevel, isPlantDead, isGrowthPaused,
-  GROWTH_STAGES, DEAD_WATER, DEAD_DAYS,
+  DEAD_DAYS,
+  DEAD_WATER,
+  GROWTH_STAGES,
+  getCurrentWaterLevel,
+  getGrowthProgress,
+  getGrowthStage,
+  getGrowthStageInfo,
+  getPlantDays,
+  isGrowthPaused,
+  isPlantDead,
 } from '@/services/garden'
 import type { PlantedTea } from '@/types/garden'
 
@@ -73,7 +80,9 @@ describe('garden 生长计算（纯函数）', () => {
   it('isPlantDead / isGrowthPaused：低湿度 + 持续天数判定', () => {
     expect(isPlantDead(makePlant())).toBe(false)
     // 湿度低于 DEAD_WATER 且超过 DEAD_DAYS 未浇水 → 枯萎
-    expect(isPlantDead(makePlant({ lastWateredAt: daysAgo(DEAD_DAYS + 1), waterLevel: DEAD_WATER - 1 }))).toBe(true)
+    expect(
+      isPlantDead(makePlant({ lastWateredAt: daysAgo(DEAD_DAYS + 1), waterLevel: DEAD_WATER - 1 })),
+    ).toBe(true)
     // 生长暂停阈值高于枯萎阈值：仅湿度低未够天数不算枯萎，但算暂停
     expect(isGrowthPaused(makePlant({ lastWateredAt: daysAgo(5), waterLevel: 100 }))).toBe(true)
   })

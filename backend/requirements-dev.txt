@@ -3,3 +3,7 @@ pytest==8.4.2
 pytest-asyncio==1.4.0
 aiosqlite==0.22.1
 httpx==0.28.1
+# ============ 第四批（工程质量门 P1-4） ============
+ruff==0.16.8
+bandit==1.9.4
+pip-audit==2.10.1

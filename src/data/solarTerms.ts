@@ -7,20 +7,21 @@
 export interface SolarTerm {
   id: string
   name: string
-  month: number      // 公历月份（1-12）
-  day: number        // 公历日期（约）
+  month: number // 公历月份（1-12）
+  day: number // 公历日期（约）
   season: 'spring' | 'summer' | 'autumn' | 'winter'
   teaTypes: string[] // 推荐茶类
   description: string
-  poem: string       // 相关诗词
-  poet: string       // 诗人
+  poem: string // 相关诗词
+  poet: string // 诗人
 }
 
 export const SOLAR_TERMS: SolarTerm[] = [
   {
     id: 'lichun',
     name: '立春',
-    month: 2, day: 4,
+    month: 2,
+    day: 4,
     season: 'spring',
     teaTypes: ['白茶'],
     description: '立春为二十四节气之首，万物复苏。此时宜饮白茶，白牡丹清雅甘润，最合春日意境。',
@@ -30,7 +31,8 @@ export const SOLAR_TERMS: SolarTerm[] = [
   {
     id: 'yushui',
     name: '雨水',
-    month: 2, day: 19,
+    month: 2,
+    day: 19,
     season: 'spring',
     teaTypes: ['绿茶', '白茶'],
     description: '雨水润物细无声。此时春茶尚未采摘，宜饮去岁的绿茶或陈年白茶，感受时光沉淀的滋味。',
@@ -40,7 +42,8 @@ export const SOLAR_TERMS: SolarTerm[] = [
   {
     id: 'jingzhe',
     name: '惊蛰',
-    month: 3, day: 6,
+    month: 3,
+    day: 6,
     season: 'spring',
     teaTypes: ['绿茶'],
     description: '惊蛰春雷动，万物长。此时江南茶区开始采摘首批春茶，明前龙井的鲜爽最为珍贵。',
@@ -50,7 +53,8 @@ export const SOLAR_TERMS: SolarTerm[] = [
   {
     id: 'chunfen',
     name: '春分',
-    month: 3, day: 21,
+    month: 3,
+    day: 21,
     season: 'spring',
     teaTypes: ['绿茶', '白茶'],
     description: '春分昼夜均，春茶正当时。明前茶采摘进入高峰，碧螺春、龙井皆为此季上品。',
@@ -60,7 +64,8 @@ export const SOLAR_TERMS: SolarTerm[] = [
   {
     id: 'qingming',
     name: '清明',
-    month: 4, day: 5,
+    month: 4,
+    day: 5,
     season: 'spring',
     teaTypes: ['绿茶'],
     description: '清明时节雨纷纷。此时"明前茶"为一年中品质最高的绿茶，芽叶细嫩、香气清雅。',
@@ -70,7 +75,8 @@ export const SOLAR_TERMS: SolarTerm[] = [
   {
     id: 'guyu',
     name: '谷雨',
-    month: 4, day: 20,
+    month: 4,
+    day: 20,
     season: 'spring',
     teaTypes: ['绿茶'],
     description: '谷雨断霜，百谷生。此时雨前茶正值采制，芽叶肥硕、滋味鲜浓，是春茶的收官之作。',
@@ -80,7 +86,8 @@ export const SOLAR_TERMS: SolarTerm[] = [
   {
     id: 'liuxia',
     name: '立夏',
-    month: 5, day: 6,
+    month: 5,
+    day: 6,
     season: 'summer',
     teaTypes: ['绿茶', '白茶'],
     description: '立夏入夏，暑气初生。宜饮清新鲜爽的绿茶或白茶，以清凉解热。',
@@ -90,7 +97,8 @@ export const SOLAR_TERMS: SolarTerm[] = [
   {
     id: 'xiaoman',
     name: '小满',
-    month: 5, day: 21,
+    month: 5,
+    day: 21,
     season: 'summer',
     teaTypes: ['绿茶', '白茶'],
     description: '物致于此小得盈满。春夏之交，宜饮当年春茶，清鲜解乏。',
@@ -100,7 +108,8 @@ export const SOLAR_TERMS: SolarTerm[] = [
   {
     id: 'mangzhong',
     name: '芒种',
-    month: 6, day: 6,
+    month: 6,
+    day: 6,
     season: 'summer',
     teaTypes: ['绿茶', '青茶'],
     description: '芒种梅雨时节，空气潮湿。宜饮半发酵的乌龙茶，既能解暑又不过分寒凉。',
@@ -110,7 +119,8 @@ export const SOLAR_TERMS: SolarTerm[] = [
   {
     id: 'xiazhi',
     name: '夏至',
-    month: 6, day: 21,
+    month: 6,
+    day: 21,
     season: 'summer',
     teaTypes: ['绿茶', '白茶'],
     description: '夏至日最长，暑气最盛。白茶性凉，清甜解暑；绿茶鲜爽生津，宜饮清心。',
@@ -120,7 +130,8 @@ export const SOLAR_TERMS: SolarTerm[] = [
   {
     id: 'xiaoshu',
     name: '小暑',
-    month: 7, day: 7,
+    month: 7,
+    day: 7,
     season: 'summer',
     teaTypes: ['绿茶', '白茶'],
     description: '小暑大暑，上蒸下煮。酷暑将至，一杯绿茶清心，白毫银针最是清凉。',
@@ -130,7 +141,8 @@ export const SOLAR_TERMS: SolarTerm[] = [
   {
     id: 'dashu',
     name: '大暑',
-    month: 7, day: 23,
+    month: 7,
+    day: 23,
     season: 'summer',
     teaTypes: ['绿茶', '白茶'],
     description: '大暑一年中最热之时。白茶清雅、绿茶鲜爽，皆可消暑。老白茶更可煮饮，祛湿解暑。',
@@ -140,17 +152,20 @@ export const SOLAR_TERMS: SolarTerm[] = [
   {
     id: 'liqiu',
     name: '立秋',
-    month: 8, day: 7,
+    month: 8,
+    day: 7,
     season: 'autumn',
     teaTypes: ['青茶', '红茶'],
-    description: '立秋暑去凉来。乌龙茶性平味甘，最宜秋日品饮。铁观音的兰花香、大红袍的岩韵，皆为秋日上选。',
+    description:
+      '立秋暑去凉来。乌龙茶性平味甘，最宜秋日品饮。铁观音的兰花香、大红袍的岩韵，皆为秋日上选。',
     poem: '自古逢秋悲寂寥，我言秋日胜春朝。',
     poet: '刘禹锡',
   },
   {
     id: 'chushu',
     name: '处暑',
-    month: 8, day: 23,
+    month: 8,
+    day: 23,
     season: 'autumn',
     teaTypes: ['青茶', '白茶'],
     description: '处暑无三日，新凉直万金。暑气渐收，宜饮青茶润秋燥，白牡丹温润平和。',
@@ -160,17 +175,20 @@ export const SOLAR_TERMS: SolarTerm[] = [
   {
     id: 'bailu',
     name: '白露',
-    month: 9, day: 8,
+    month: 9,
+    day: 8,
     season: 'autumn',
     teaTypes: ['青茶', '红茶'],
-    description: '白露秋意渐浓。"春茶苦，夏茶涩，要好喝，秋白露"——此时采制的秋乌龙茶香气高锐，尤为珍贵。',
+    description:
+      '白露秋意渐浓。"春茶苦，夏茶涩，要好喝，秋白露"——此时采制的秋乌龙茶香气高锐，尤为珍贵。',
     poem: '露从今夜白，月是故乡明。',
     poet: '杜甫',
   },
   {
     id: 'qiufen',
     name: '秋分',
-    month: 9, day: 23,
+    month: 9,
+    day: 23,
     season: 'autumn',
     teaTypes: ['青茶', '红茶'],
     description: '秋分昼夜平分，天高气爽。一壶武夷岩茶，三四好友，品茶论道，最是人间清欢。',
@@ -180,7 +198,8 @@ export const SOLAR_TERMS: SolarTerm[] = [
   {
     id: 'hanlu',
     name: '寒露',
-    month: 10, day: 8,
+    month: 10,
+    day: 8,
     season: 'autumn',
     teaTypes: ['红茶', '黑茶'],
     description: '寒露气温骤降。红茶性温，金骏眉蜜香甘甜；熟普洱醇厚暖胃，皆为御寒上品。',
@@ -190,7 +209,8 @@ export const SOLAR_TERMS: SolarTerm[] = [
   {
     id: 'shuangjiang',
     name: '霜降',
-    month: 10, day: 23,
+    month: 10,
+    day: 23,
     season: 'autumn',
     teaTypes: ['红茶', '黑茶'],
     description: '霜降天寒露重。宜饮全发酵的红茶或陈年黑茶，暖身驱寒，尤为适宜。',
@@ -200,7 +220,8 @@ export const SOLAR_TERMS: SolarTerm[] = [
   {
     id: 'lidong',
     name: '立冬',
-    month: 11, day: 7,
+    month: 11,
+    day: 7,
     season: 'winter',
     teaTypes: ['黑茶', '红茶'],
     description: '立冬水始冰，地始冻。普洱熟茶醇厚暖胃，陈年六堡茶祛湿养气，为冬日必备。',
@@ -210,7 +231,8 @@ export const SOLAR_TERMS: SolarTerm[] = [
   {
     id: 'xiaoxue',
     name: '小雪',
-    month: 11, day: 22,
+    month: 11,
+    day: 22,
     season: 'winter',
     teaTypes: ['黑茶', '红茶'],
     description: '小雪初雪未盛。围炉煮茶，陈年普洱在壶中翻滚，枣香药香弥漫，冬日之乐莫过于此。',
@@ -220,7 +242,8 @@ export const SOLAR_TERMS: SolarTerm[] = [
   {
     id: 'daxue',
     name: '大雪',
-    month: 12, day: 7,
+    month: 12,
+    day: 7,
     season: 'winter',
     teaTypes: ['黑茶', '红茶'],
     description: '大雪至此雪盛。窗外飞雪，室内煮茶，一壶老茶头或陈年茯砖，暖身更暖心。',
@@ -230,7 +253,8 @@ export const SOLAR_TERMS: SolarTerm[] = [
   {
     id: 'dongzhi',
     name: '冬至',
-    month: 12, day: 22,
+    month: 12,
+    day: 22,
     season: 'winter',
     teaTypes: ['黑茶', '红茶'],
     description: '冬至一阳生。此时最宜一壶陈年普洱，围炉夜话，静待春归。',
@@ -240,7 +264,8 @@ export const SOLAR_TERMS: SolarTerm[] = [
   {
     id: 'xiaohan',
     name: '小寒',
-    month: 1, day: 6,
+    month: 1,
+    day: 6,
     season: 'winter',
     teaTypes: ['红茶', '黑茶'],
     description: '小寒二阳至，最是严寒时。红茶暖胃、熟普驱寒，一杯热茶在手，足以抵御严冬。',
@@ -250,10 +275,12 @@ export const SOLAR_TERMS: SolarTerm[] = [
   {
     id: 'dahan',
     name: '大寒',
-    month: 1, day: 20,
+    month: 1,
+    day: 20,
     season: 'winter',
     teaTypes: ['红茶', '黑茶'],
-    description: '大寒二十四节气之终。熬过最冷的时节，便是立春。一壶陈年红茶或安化黑茶，温暖收尾，静待新春。',
+    description:
+      '大寒二十四节气之终。熬过最冷的时节，便是立春。一壶陈年红茶或安化黑茶，温暖收尾，静待新春。',
     poem: '造物无言却有情，每于寒尽觉春生。',
     poet: '张维屏',
   },
@@ -307,7 +334,10 @@ export function getCurrentSolarTerm(): SolarTerm {
 /** 获取季节名称 */
 export function getSeasonName(season: string): string {
   const names: Record<string, string> = {
-    spring: '春', summer: '夏', autumn: '秋', winter: '冬',
+    spring: '春',
+    summer: '夏',
+    autumn: '秋',
+    winter: '冬',
   }
   return names[season] || ''
 }

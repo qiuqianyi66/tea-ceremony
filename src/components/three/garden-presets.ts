@@ -244,10 +244,3 @@ export const GARDEN_PRESETS: Record<string, GardenPreset> = {
 export function getGardenPreset(id?: string): GardenPreset {
   return (id ? GARDEN_PRESETS[id] : undefined) ?? DEFAULT_PRESET
 }
-
-
-
-
-
-
-

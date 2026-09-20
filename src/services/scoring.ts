@@ -34,7 +34,7 @@ function computeProcessParts(
 
   // 时间偏差系数：允许±50%的偏差
   const timeDiff = Math.abs(actualTime - bestTime)
-  const maxTimeDev = Math.max(bestTime * 0.5, 1)  // 防止除零
+  const maxTimeDev = Math.max(bestTime * 0.5, 1) // 防止除零
   const timeFactor = Math.max(0, 1 - timeDiff / maxTimeDev)
 
   // 基础工艺系数 = 温度 + 时间 取平均
@@ -51,7 +51,18 @@ function computeProcessParts(
   }
 
   const factor = Math.min(1, (baseFactor + compensation) * waterFactor)
-  return { tempDiff, tempFactor, timeDiff, timeFactor, baseFactor, wareName, wareBonus, compensation, waterFactor, factor }
+  return {
+    tempDiff,
+    tempFactor,
+    timeDiff,
+    timeFactor,
+    baseFactor,
+    wareName,
+    wareBonus,
+    compensation,
+    waterFactor,
+    factor,
+  }
 }
 
 /** 计算工艺系数 */
@@ -63,7 +74,8 @@ export function calculateProcessFactor(
   teaWare?: TeaWare | null,
   waterFactor: number = 1.0,
 ): number {
-  return computeProcessParts(actualTemp, bestTemp, actualTime, bestTime, teaWare, waterFactor).factor
+  return computeProcessParts(actualTemp, bestTemp, actualTime, bestTime, teaWare, waterFactor)
+    .factor
 }
 
 /** 工艺系数分解（供 UI 展示"为什么是这个系数"）。 */
@@ -79,10 +91,7 @@ export function explainProcessFactor(
 }
 
 /** 计算综合评分（1-10分） */
-export function calculateOverallScore(
-  dimensions: TasteDimensions,
-  processFactor: number,
-): number {
+export function calculateOverallScore(dimensions: TasteDimensions, processFactor: number): number {
   const { bitterness, sweetness, aftertaste, body, aroma, rhyme, shape, mind } = dimensions
 
   // 苦涩度是反向维度：对绝大多数茶而言越不苦涩越好，用 (6 - bitterness) 转成"适口度"
@@ -90,7 +99,8 @@ export function calculateOverallScore(
   const palatability = 6 - bitterness
 
   // 八维平均分（1-5）
-  const baseScore = (palatability + sweetness + aftertaste + body + aroma + rhyme + shape + mind) / 8
+  const baseScore =
+    (palatability + sweetness + aftertaste + body + aroma + rhyme + shape + mind) / 8
 
   // 归一化到 1-10 分
   const normalizedScore = baseScore * 2

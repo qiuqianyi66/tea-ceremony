@@ -26,12 +26,60 @@ export interface StageVisual {
 
 export const STAGE_VISUALS: Record<string, StageVisual> = {
   // 绝对尺寸（1 单位 ≈ 1 米）：低矮茶丛灌木，成熟约 1.6m 高
-  sprout:   { scale: 1, leafCount: 12, leafColor: '#aed581', trunkHeight: 0.35, trunkRadius: 0.08, crownRadius: 0.3,  hasGlow: false },
-  seedling: { scale: 1, leafCount: 24, leafColor: '#9ccc65', trunkHeight: 0.55, trunkRadius: 0.08, crownRadius: 0.45, hasGlow: false },
-  growing:  { scale: 1, leafCount: 48, leafColor: '#8bc34a', trunkHeight: 0.8,  trunkRadius: 0.08, crownRadius: 0.6,  hasGlow: false },
-  mature:   { scale: 1, leafCount: 80, leafColor: '#7cb342', trunkHeight: 1.05, trunkRadius: 0.08, crownRadius: 0.75, hasGlow: true },
-  recovery: { scale: 1, leafCount: 36, leafColor: '#9ccc65', trunkHeight: 0.9,  trunkRadius: 0.08, crownRadius: 0.65, hasGlow: false },
-  dead:     { scale: 1, leafCount: 16, leafColor: '#6d4c41', trunkHeight: 0.85, trunkRadius: 0.08, crownRadius: 0.5,  hasGlow: false },
+  sprout: {
+    scale: 1,
+    leafCount: 12,
+    leafColor: '#aed581',
+    trunkHeight: 0.35,
+    trunkRadius: 0.08,
+    crownRadius: 0.3,
+    hasGlow: false,
+  },
+  seedling: {
+    scale: 1,
+    leafCount: 24,
+    leafColor: '#9ccc65',
+    trunkHeight: 0.55,
+    trunkRadius: 0.08,
+    crownRadius: 0.45,
+    hasGlow: false,
+  },
+  growing: {
+    scale: 1,
+    leafCount: 48,
+    leafColor: '#8bc34a',
+    trunkHeight: 0.8,
+    trunkRadius: 0.08,
+    crownRadius: 0.6,
+    hasGlow: false,
+  },
+  mature: {
+    scale: 1,
+    leafCount: 80,
+    leafColor: '#7cb342',
+    trunkHeight: 1.05,
+    trunkRadius: 0.08,
+    crownRadius: 0.75,
+    hasGlow: true,
+  },
+  recovery: {
+    scale: 1,
+    leafCount: 36,
+    leafColor: '#9ccc65',
+    trunkHeight: 0.9,
+    trunkRadius: 0.08,
+    crownRadius: 0.65,
+    hasGlow: false,
+  },
+  dead: {
+    scale: 1,
+    leafCount: 16,
+    leafColor: '#6d4c41',
+    trunkHeight: 0.85,
+    trunkRadius: 0.08,
+    crownRadius: 0.5,
+    hasGlow: false,
+  },
 }
 
 /** 单叶片卡片：位置 + 朝向（四元数）+ 缩放 + 颜色 */
@@ -108,7 +156,13 @@ export function getPlantPosition(seed: number): [number, number, number] {
  * 生成叶片卡片分布：围绕枝干冠部分布，每片叶子朝向冠心外侧（真实叶簇感），
  * 顶部叶片上翘（新芽区），颜色基于 seed 微调明暗。
  */
-export function getLeafBlades(seed: number, count: number, crownRadius: number, crownY: number, baseColor: string): LeafBlade[] {
+export function getLeafBlades(
+  seed: number,
+  count: number,
+  crownRadius: number,
+  crownY: number,
+  baseColor: string,
+): LeafBlade[] {
   const base = new THREE.Color(baseColor)
   const blades: LeafBlade[] = []
   const crownCenter = new THREE.Vector3(0, crownY, 0)
@@ -129,19 +183,26 @@ export function getLeafBlades(seed: number, count: number, crownRadius: number, 
       q.setFromUnitVectors(zAxis, new THREE.Vector3().subVectors(crownCenter, pos).normalize())
     }
     // 随机绕自身中轴旋转 + 轻微俯仰（自然朝向，避免整齐划一）
-    q.multiply(new THREE.Quaternion().setFromAxisAngle(zAxis, seededRandom(seed + i * 21.1) * Math.PI * 2))
-    q.multiply(new THREE.Quaternion().setFromAxisAngle(
-      new THREE.Vector3(1, 0, 0),
-      (seededRandom(seed + i * 23.7) - 0.5) * 0.7
-    ))
+    q.multiply(
+      new THREE.Quaternion().setFromAxisAngle(zAxis, seededRandom(seed + i * 21.1) * Math.PI * 2),
+    )
+    q.multiply(
+      new THREE.Quaternion().setFromAxisAngle(
+        new THREE.Vector3(1, 0, 0),
+        (seededRandom(seed + i * 23.7) - 0.5) * 0.7,
+      ),
+    )
 
     // 双层冠：内层小叶（深色、填密度），外层大叶（受光、饱满）
     const isInner = distNorm < 0.62
-    const s = (isInner ? 0.5 + seededRandom(seed + i * 17.3) * 0.3 : 0.8 + seededRandom(seed + i * 17.3) * 0.55)
+    const s = isInner
+      ? 0.5 + seededRandom(seed + i * 17.3) * 0.3
+      : 0.8 + seededRandom(seed + i * 17.3) * 0.55
     // 顶部新芽叶更浅更亮；内层叶偏深
-    const lightness = (seededRandom(seed + i * 19.7) - 0.5) * 0.14
-      + (y > crownY + crownRadius * 0.35 ? 0.12 : 0)
-      + (isInner ? -0.07 : 0)
+    const lightness =
+      (seededRandom(seed + i * 19.7) - 0.5) * 0.14 +
+      (y > crownY + crownRadius * 0.35 ? 0.12 : 0) +
+      (isInner ? -0.07 : 0)
     const c = base.clone().offsetHSL(0, 0, lightness)
     blades.push({
       position: [pos.x, pos.y, pos.z],
@@ -163,7 +224,9 @@ export function createLeafBladeTexture(): THREE.CanvasTexture {
   const rnd = (n: number) => Math.random() * n
 
   // 叶片轮廓：披针形（左叶尖 → 上缘弧 → 右叶尖 → 下缘弧回）
-  const lx = 16, rx = 112, midY = 64
+  const lx = 16,
+    rx = 112,
+    midY = 64
   ctx.beginPath()
   ctx.moveTo(lx, midY)
   ctx.bezierCurveTo(lx + 26, midY - 30, rx - 26, midY - 24, rx, midY)
@@ -256,7 +319,14 @@ export function createBarkTexture(): THREE.CanvasTexture {
     ctx.lineWidth = 0.8 + Math.random() * 1.6
     ctx.beginPath()
     ctx.moveTo(x, 0)
-    ctx.bezierCurveTo(x + Math.random() * 6 - 3, h * 0.3, x + Math.random() * 8 - 4, h * 0.7, x + Math.random() * 4 - 2, h)
+    ctx.bezierCurveTo(
+      x + Math.random() * 6 - 3,
+      h * 0.3,
+      x + Math.random() * 8 - 4,
+      h * 0.7,
+      x + Math.random() * 4 - 2,
+      h,
+    )
     ctx.stroke()
   }
   // 高光脊线（裂脊受光）
@@ -266,7 +336,14 @@ export function createBarkTexture(): THREE.CanvasTexture {
     ctx.lineWidth = 1 + Math.random() * 1.4
     ctx.beginPath()
     ctx.moveTo(x, 0)
-    ctx.bezierCurveTo(x + Math.random() * 5 - 2.5, h * 0.4, x + Math.random() * 6 - 3, h * 0.6, x + Math.random() * 4 - 2, h)
+    ctx.bezierCurveTo(
+      x + Math.random() * 5 - 2.5,
+      h * 0.4,
+      x + Math.random() * 6 - 3,
+      h * 0.6,
+      x + Math.random() * 4 - 2,
+      h,
+    )
     ctx.stroke()
   }
   // 结疤
@@ -292,7 +369,11 @@ export interface LeafClusterLayer {
 }
 
 /** 重建全部叶簇（plants 增删/阶段变化时调用；共享几何与材质，只重建实例矩阵） */
-export function buildLeafClusters(scene: THREE.Scene, visuals: PlantVisual[], leafBladeTexture: THREE.CanvasTexture): LeafClusterLayer {
+export function buildLeafClusters(
+  scene: THREE.Scene,
+  visuals: PlantVisual[],
+  leafBladeTexture: THREE.CanvasTexture,
+): LeafClusterLayer {
   const root = new THREE.Group()
   root.name = 'leafClusters'
   const byPlant = new Map<number, THREE.Group>()

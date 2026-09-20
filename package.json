@@ -14,6 +14,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "lint": "biome check src e2e scripts",
+    "lint:fix": "biome check --write src e2e scripts",
     "verify": "npm run verify:static",
     "verify:static": "node scripts/scan-emoji.cjs",
     "verify:ui": "node scripts/verify-gardens.cjs && node scripts/verify-pavilion.cjs && node scripts/verify-icons.cjs"
@@ -39,9 +41,12 @@
     "vue": "^3.5.40",
     "vue-chartjs": "^5.3.4",
     "vue-router": "^5.2.0",
-    "vuedraggable": "^4.1.0"
+    "vuedraggable": "^4.1.0",
+    "web-vitals": "^6.2.2"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@biomejs/biome": "^2.5.14",
     "@playwright/test": "^1.62.1",
     "@tailwindcss/vite": "^4.3.3",
     "@tsconfig/node24": "^24.0.4",

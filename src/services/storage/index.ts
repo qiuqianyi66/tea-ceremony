@@ -4,10 +4,10 @@
  * 对外保持 `from '@/services/storage'` 不变。
  */
 
-export { db, initDB } from './db'
-export type { TeaCeremonyDB } from './db'
-export { historyStorage } from './history'
 export { achievementStorage } from './achievement'
-export { xpStorage } from './xp'
 export { collectedWareStorage } from './collectedWare'
+export type { TeaCeremonyDB } from './db'
+export { db, initDB } from './db'
+export { historyStorage } from './history'
 export { settingsStorage } from './settings'
+export { xpStorage } from './xp'

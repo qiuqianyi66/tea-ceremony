@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { playQing, startAmbient, stopAll, switchAmbient } from '@/composables/useAudio'
+import { getCurrentSolarTerm, getSeasonName } from '@/data/solarTerms'
+import { getThemeById, TEA_ROOM_THEMES } from '@/data/themes'
+import { useAuthStore } from '@/stores/auth'
 import { useTeaRoomStore } from '@/stores/teaRoom'
 import { useThemeStore } from '@/stores/theme'
-import { useAuthStore } from '@/stores/auth'
-import { startAmbient, switchAmbient, stopAll, playQing } from '@/composables/useAudio'
-import { getCurrentSolarTerm, getSeasonName } from '@/data/solarTerms'
-import { TEA_ROOM_THEMES, getThemeById } from '@/data/themes'
 
 const router = useRouter()
 const room = useTeaRoomStore()
@@ -25,7 +25,8 @@ function iconOf(name: string): string {
 // 入席引导语
 function generateGreeting() {
   const hour = new Date().getHours()
-  const timeStr = hour < 11 ? '清晨' : hour < 14 ? '午间' : hour < 18 ? '午后' : hour < 21 ? '黄昏' : '静夜'
+  const timeStr =
+    hour < 11 ? '清晨' : hour < 14 ? '午间' : hour < 18 ? '午后' : hour < 21 ? '黄昏' : '静夜'
   const season = currentTerm.name
   const roomName = room.currentRoom.name
 
@@ -36,7 +37,9 @@ function generateGreeting() {
   ]
   greeting.value = greetings[Math.floor(Math.random() * greetings.length)]!
   showGreeting.value = true
-  setTimeout(() => { showGreeting.value = false }, 5000)
+  setTimeout(() => {
+    showGreeting.value = false
+  }, 5000)
 }
 
 // 入席：关闭迎宾引导；明式茶室敲一声磬（T3.2）

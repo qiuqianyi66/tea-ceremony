@@ -69,5 +69,5 @@ export const TEA_ROOM_THEMES: TeaRoomTheme[] = [
 ]
 
 export function getThemeById(id: string): TeaRoomTheme {
-  return TEA_ROOM_THEMES.find(t => t.id === id) ?? TEA_ROOM_THEMES[1]!
+  return TEA_ROOM_THEMES.find((t) => t.id === id) ?? TEA_ROOM_THEMES[1]!
 }

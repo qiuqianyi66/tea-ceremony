@@ -1,12 +1,14 @@
 """AI 知识库：文化文档切片。"""
 
-from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, Text, DateTime, JSON
+from datetime import UTC, datetime
+
+from sqlalchemy import JSON, Column, DateTime, Integer, String, Text
+
 from app.database import Base
 
 
 def _utcnow():
-    return datetime.now(timezone.utc).replace(tzinfo=None)
+    return datetime.now(UTC).replace(tzinfo=None)
 
 
 class CultureDocument(Base):

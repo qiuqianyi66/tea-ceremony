@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useTeaStore } from '@/stores/tea'
-import { useRecordStore } from '@/stores/record'
-import { useProgressStore } from '@/stores/progress'
-import { getScoreLevel } from '@/services/scoring'
 import { EmptyState } from '@/components/ui'
+import { getScoreLevel } from '@/services/scoring'
+import { useProgressStore } from '@/stores/progress'
+import { useRecordStore } from '@/stores/record'
+import { useTeaStore } from '@/stores/tea'
 
 const router = useRouter()
 const store = useTeaStore()
@@ -15,9 +15,16 @@ const isSyncing = ref(false)
 const syncMessage = ref('')
 
 const aromaLabels: Record<string, string> = {
-  floral: '花香', fruity: '果香', honey: '蜜香',
-  caramel: '焦糖', woody: '木质', herbal: '草药',
-  creamy: '奶香', aged: '陈香', roasted: '焙火', fresh: '鲜爽',
+  floral: '花香',
+  fruity: '果香',
+  honey: '蜜香',
+  caramel: '焦糖',
+  woody: '木质',
+  herbal: '草药',
+  creamy: '奶香',
+  aged: '陈香',
+  roasted: '焙火',
+  fresh: '鲜爽',
 }
 
 onMounted(() => {
@@ -30,9 +37,12 @@ async function retrySync() {
   syncMessage.value = ''
   try {
     const result = await recordStore.syncPending()
-    syncMessage.value = result.failed > 0
-      ? `已同步 ${result.synced} 条，仍有 ${result.failed} 条待重试`
-      : result.synced > 0 ? `已同步 ${result.synced} 条记录` : '暂无需要同步的记录'
+    syncMessage.value =
+      result.failed > 0
+        ? `已同步 ${result.synced} 条，仍有 ${result.failed} 条待重试`
+        : result.synced > 0
+          ? `已同步 ${result.synced} 条记录`
+          : '暂无需要同步的记录'
   } catch (error) {
     syncMessage.value = error instanceof Error ? error.message : '同步服务暂时不可用'
   } finally {

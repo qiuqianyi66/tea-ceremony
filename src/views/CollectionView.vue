@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { useTeaStore } from '@/stores/tea'
-import { useProgressStore } from '@/stores/progress'
-import { teas, getTeaById } from '@/data/teas'
-import { teawares } from '@/data/teawares'
 import { SOLAR_TERMS } from '@/data/solarTerms'
-import { TeaType } from '@/types/tea'
+import { getTeaById, teas } from '@/data/teas'
+import { teawares } from '@/data/teawares'
+import { buildTeaShareUrl, encodeTeaShare } from '@/services/share'
+import { useProgressStore } from '@/stores/progress'
+import { useTeaStore } from '@/stores/tea'
 import type { Tea } from '@/types/tea'
-import { encodeTeaShare, buildTeaShareUrl } from '@/services/share'
+import { TeaType } from '@/types/tea'
 
 const router = useRouter()
 const store = useTeaStore()
@@ -21,17 +21,17 @@ onMounted(() => {
 
 // ============ 茶图鉴：全部茶叶 + 解锁状态 ============
 const teaJournal = computed(() => {
-  const tastedIds = new Set(store.history.map(r => r.teaId))
-  return teas.map(t => ({
+  const tastedIds = new Set(store.history.map((r) => r.teaId))
+  return teas.map((t) => ({
     tea: t,
     tasted: tastedIds.has(t.id),
-    count: store.history.filter(r => r.teaId === t.id).length,
+    count: store.history.filter((r) => r.teaId === t.id).length,
   }))
 })
 
 // ============ 节气打卡进度 ============
-const solarCheckedCount = computed(() =>
-  SOLAR_TERMS.filter(t => progress.solarCheckins[t.id]).length,
+const solarCheckedCount = computed(
+  () => SOLAR_TERMS.filter((t) => progress.solarCheckins[t.id]).length,
 )
 
 // ============ 分享名茶知识卡 ============
@@ -51,8 +51,8 @@ function shareTea(tea: Tea) {
 
 // ============ 已品鉴的茶叶 ============
 const tastedTeas = computed(() => {
-  const tastedIds = new Set(store.history.map(r => r.teaId))
-  return teas.filter(t => tastedIds.has(t.id))
+  const tastedIds = new Set(store.history.map((r) => r.teaId))
+  return teas.filter((t) => tastedIds.has(t.id))
 })
 
 const tastedCount = computed(() => tastedTeas.value.length)
@@ -62,8 +62,8 @@ const totalTeas = computed(() => teas.length)
 const typeStats = computed(() => {
   const stats: Record<string, { tasted: number; total: number }> = {}
   for (const type of Object.values(TeaType)) {
-    const total = teas.filter(t => t.type === type).length
-    const tasted = tastedTeas.value.filter(t => t.type === type).length
+    const total = teas.filter((t) => t.type === type).length
+    const tasted = tastedTeas.value.filter((t) => t.type === type).length
     stats[type] = { tasted, total }
   }
   return stats
@@ -78,19 +78,21 @@ const avgScore = computed(() => {
 
 const bestScore = computed(() => {
   if (store.history.length === 0) return '—'
-  return Math.max(...store.history.map(r => r.overallScore))
+  return Math.max(...store.history.map((r) => r.overallScore))
 })
 
 // ============ 已解锁茶器 ============
-const unlockedWares = computed(() =>
-  teawares.filter(w => progress.isTeaWareUnlocked(w.id)),
-)
+const unlockedWares = computed(() => teawares.filter((w) => progress.isTeaWareUnlocked(w.id)))
 
 // 茶图加载失败记录：茶图鉴降级为渐变色块；茶器图降级为 lucide 图标（key 用 ware.id）
 const imgFailed = reactive<Record<string, boolean>>({})
 const wareImgFailed = reactive<Record<string, boolean>>({})
-function markImgFailed(id: string) { imgFailed[id] = true }
-function markWareImgFailed(id: string) { wareImgFailed[id] = true }
+function markImgFailed(id: string) {
+  imgFailed[id] = true
+}
+function markWareImgFailed(id: string) {
+  wareImgFailed[id] = true
+}
 </script>
 
 <template>

@@ -11,7 +11,10 @@ const { chromium } = require('@playwright/test')
   const browser = await chromium.launch({ channel: 'chromium', args: ['--mute-audio'] })
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
   const errors = []
-  page.on('pageerror', (e) => { errors.push(e.message); console.log('[pageerror]', e.message) })
+  page.on('pageerror', (e) => {
+    errors.push(e.message)
+    console.log('[pageerror]', e.message)
+  })
 
   await page.goto('http://localhost:5173/garden/hangzhou', { waitUntil: 'domcontentloaded' })
   await page.waitForTimeout(5000)
@@ -26,7 +29,10 @@ const { chromium } = require('@playwright/test')
     await page.locator('.dialog-btn.confirm').click()
     await page.waitForTimeout(6000)
   }
-  const cardCount = await page.locator('.plant-card').count().catch(() => 0)
+  const cardCount = await page
+    .locator('.plant-card')
+    .count()
+    .catch(() => 0)
   console.log(`[1] 已种茶，底部卡片数: ${cardCount}`)
 
   // 2. 全屏 raycast 扫描 hitbox（步长 8px，找到屏幕投影区域）
@@ -63,7 +69,8 @@ const { chromium } = require('@playwright/test')
   }
 
   // 3. 在投影区域内点击
-  const [minX, minY] = scan.min, [maxX, maxY] = scan.max
+  const [minX, minY] = scan.min,
+    [maxX, maxY] = scan.max
   let hit = false
   for (let y = minY; y <= maxY && !hit; y += 12) {
     for (let x = minX; x <= maxX && !hit; x += 12) {
@@ -73,7 +80,12 @@ const { chromium } = require('@playwright/test')
       await page.waitForTimeout(60)
       await page.mouse.up()
       await page.waitForTimeout(250)
-      if (await page.locator('.plant-detail').isVisible().catch(() => false)) {
+      if (
+        await page
+          .locator('.plant-detail')
+          .isVisible()
+          .catch(() => false)
+      ) {
         console.log(`[3] ✓ 点击 (${x},${y}) 弹出详情面板`)
         hit = true
         break
@@ -87,9 +99,15 @@ const { chromium } = require('@playwright/test')
   }
 
   // 4. 校验详情内容
-  const text = await page.locator('.plant-detail').innerText().catch(() => '')
+  const text = await page
+    .locator('.plant-detail')
+    .innerText()
+    .catch(() => '')
   const hasKeyInfo = /西湖龙井/.test(text) && /萌芽期/.test(text)
-  console.log(`[4] 详情内容校验: ${hasKeyInfo ? '通过' : '失败'} ->`, text.replace(/\n/g, ' | ').slice(0, 140))
+  console.log(
+    `[4] 详情内容校验: ${hasKeyInfo ? '通过' : '失败'} ->`,
+    text.replace(/\n/g, ' | ').slice(0, 140),
+  )
   await page.screenshot({ path: 'verify_3d_click.png' })
   console.log(`[5] 页面错误: ${errors.length ? errors.join(' | ') : '无'}`)
 
@@ -97,4 +115,7 @@ const { chromium } = require('@playwright/test')
   console.log(pass ? '\n=== ✅ 3D 点击交互验证通过 ===' : '\n=== ❌ 验证未通过 ===')
   await browser.close()
   process.exit(pass ? 0 : 1)
-})().catch((e) => { console.error('脚本失败:', e.message); process.exit(1) })
+})().catch((e) => {
+  console.error('脚本失败:', e.message)
+  process.exit(1)
+})

@@ -7,12 +7,12 @@ export interface TeaRegion {
   id: string
   name: string
   province: string
-  area: string            // 具体区域
-  altitude: string        // 海拔范围
-  climate: string         // 气候
-  soil: string            // 土壤
+  area: string // 具体区域
+  altitude: string // 海拔范围
+  climate: string // 气候
+  soil: string // 土壤
   description: string
-  famousFor: string[]     // 代表茶
+  famousFor: string[] // 代表茶
 }
 
 export const TEA_REGIONS: TeaRegion[] = [
@@ -25,7 +25,8 @@ export const TEA_REGIONS: TeaRegion[] = [
     altitude: '50-400米',
     climate: '湿润亚热带，年均温16°C',
     soil: '酸性红壤，有机质丰富',
-    description: '西湖茶区是中国最负盛名的绿茶产区，以"狮、龙、云、虎、梅"五大核心产区最为著名。清明前后采制的明前龙井为一年中品质最佳。',
+    description:
+      '西湖茶区是中国最负盛名的绿茶产区，以"狮、龙、云、虎、梅"五大核心产区最为著名。清明前后采制的明前龙井为一年中品质最佳。',
     famousFor: ['西湖龙井'],
   },
   {
@@ -36,7 +37,8 @@ export const TEA_REGIONS: TeaRegion[] = [
     altitude: '100-300米',
     climate: '温和湿润，太湖小气候',
     soil: '微酸性黄棕壤',
-    description: '太湖洞庭山气候温润，茶树与枇杷、杨梅等果树交错间作，茶叶天然吸附花果之香，形成了碧螺春独一无二的"花果香"。',
+    description:
+      '太湖洞庭山气候温润，茶树与枇杷、杨梅等果树交错间作，茶叶天然吸附花果之香，形成了碧螺春独一无二的"花果香"。',
     famousFor: ['碧螺春'],
   },
   {
@@ -47,7 +49,8 @@ export const TEA_REGIONS: TeaRegion[] = [
     altitude: '400-1200米',
     climate: '高山云雾，年均温15°C',
     soil: '黄棕壤，有机质高',
-    description: '黄山自古以奇松怪石云海闻名，茶园多分布在海拔600米以上的山地，"晴时早晚遍地雾，阴雨成天满山云"的气候孕育了黄山毛峰的独特品质。',
+    description:
+      '黄山自古以奇松怪石云海闻名，茶园多分布在海拔600米以上的山地，"晴时早晚遍地雾，阴雨成天满山云"的气候孕育了黄山毛峰的独特品质。',
     famousFor: ['黄山毛峰', '太平猴魁'],
   },
   {
@@ -58,7 +61,8 @@ export const TEA_REGIONS: TeaRegion[] = [
     altitude: '400-800米',
     climate: '温和湿润，多云雾',
     soil: '山地黄壤',
-    description: '太平猴魁的核心产区，三面环山一面水，独特的地理环境使茶树叶片长达5-7厘米，为中国绿茶中叶片最大者。',
+    description:
+      '太平猴魁的核心产区，三面环山一面水，独特的地理环境使茶树叶片长达5-7厘米，为中国绿茶中叶片最大者。',
     famousFor: ['太平猴魁'],
   },
   {
@@ -69,7 +73,8 @@ export const TEA_REGIONS: TeaRegion[] = [
     altitude: '300-800米',
     climate: '南北气候过渡带',
     soil: '黄棕壤，微酸性',
-    description: '信阳地处中国南北气候分界线上，是中国十大名茶中唯一的北方茶产区。苏东坡曾赞"淮南茶，信阳第一"。',
+    description:
+      '信阳地处中国南北气候分界线上，是中国十大名茶中唯一的北方茶产区。苏东坡曾赞"淮南茶，信阳第一"。',
     famousFor: ['信阳毛尖'],
   },
   {
@@ -80,7 +85,8 @@ export const TEA_REGIONS: TeaRegion[] = [
     altitude: '500-1000米',
     climate: '竹乡气候，温润多雾',
     soil: '黄壤，富含有机质',
-    description: '安吉是中国著名竹乡，竹林与茶林共生。安吉白茶是一种珍稀的白化茶树品种，氨基酸含量极高。',
+    description:
+      '安吉是中国著名竹乡，竹林与茶林共生。安吉白茶是一种珍稀的白化茶树品种，氨基酸含量极高。',
     famousFor: ['安吉白茶'],
   },
 
@@ -93,7 +99,8 @@ export const TEA_REGIONS: TeaRegion[] = [
     altitude: '300-1200米',
     climate: '中亚热带，多云雾',
     soil: '火山岩风化土壤，富含矿物质',
-    description: '武夷山是世界自然与文化双遗产地，也是中国岩茶唯一的产区。茶树生长在丹霞地貌的岩缝之中，根系深入岩石，吸收丰富的矿物质，形成了独特的"岩韵"。',
+    description:
+      '武夷山是世界自然与文化双遗产地，也是中国岩茶唯一的产区。茶树生长在丹霞地貌的岩缝之中，根系深入岩石，吸收丰富的矿物质，形成了独特的"岩韵"。',
     famousFor: ['大红袍', '武夷水仙', '武夷肉桂', '铁罗汉', '白鸡冠', '半天妖', '奇兰'],
   },
   {
@@ -104,7 +111,8 @@ export const TEA_REGIONS: TeaRegion[] = [
     altitude: '300-1000米',
     climate: '亚热带季风气候',
     soil: '红壤、黄壤',
-    description: '安溪是中国乌龙茶之乡，铁观音的原产地。安溪境内群山环抱，云雾缭绕，被誉为"中国茶都"。',
+    description:
+      '安溪是中国乌龙茶之乡，铁观音的原产地。安溪境内群山环抱，云雾缭绕，被誉为"中国茶都"。',
     famousFor: ['铁观音'],
   },
   {
@@ -115,7 +123,8 @@ export const TEA_REGIONS: TeaRegion[] = [
     altitude: '400-1000米',
     climate: '沿海湿润气候',
     soil: '红黄壤，有机质丰富',
-    description: '福鼎是中国白茶的原产地和主产区，太姥山是白茶文化的发祥地。福鼎白茶以其"一年茶、三年药、七年宝"的特性闻名。',
+    description:
+      '福鼎是中国白茶的原产地和主产区，太姥山是白茶文化的发祥地。福鼎白茶以其"一年茶、三年药、七年宝"的特性闻名。',
     famousFor: ['白毫银针', '白牡丹'],
   },
   {
@@ -126,7 +135,8 @@ export const TEA_REGIONS: TeaRegion[] = [
     altitude: '600-1200米',
     climate: '高海拔，多云雾',
     soil: '火山岩风化黄壤',
-    description: '政和是白茶的重要产区，以政和大白茶品种闻名。政和白茶茶味醇厚，与福鼎白茶的清雅形成鲜明对比。',
+    description:
+      '政和是白茶的重要产区，以政和大白茶品种闻名。政和白茶茶味醇厚，与福鼎白茶的清雅形成鲜明对比。',
     famousFor: ['白毫银针', '白牡丹'],
   },
   {
@@ -137,7 +147,8 @@ export const TEA_REGIONS: TeaRegion[] = [
     altitude: '800-1500米',
     climate: '高海拔，冬暖夏凉',
     soil: '黄壤、火山岩土',
-    description: '桐木关是世界红茶正山小种的原产地和核心产区。这里也是金骏眉的发源地，海拔高、气温低，茶树生长缓慢，茶叶品质优异。',
+    description:
+      '桐木关是世界红茶正山小种的原产地和核心产区。这里也是金骏眉的发源地，海拔高、气温低，茶树生长缓慢，茶叶品质优异。',
     famousFor: ['正山小种', '金骏眉'],
   },
 
@@ -150,7 +161,8 @@ export const TEA_REGIONS: TeaRegion[] = [
     altitude: '600-1400米',
     climate: '亚热带山地气候',
     soil: '黄壤、红壤',
-    description: '凤凰山是凤凰单丛的原产地，因"单株采制"得名。茶区海拔高，终年云雾缭绕，茶树多为数十年至上百年树龄的老丛。',
+    description:
+      '凤凰山是凤凰单丛的原产地，因"单株采制"得名。茶区海拔高，终年云雾缭绕，茶树多为数十年至上百年树龄的老丛。',
     famousFor: ['凤凰单丛'],
   },
 
@@ -163,7 +175,8 @@ export const TEA_REGIONS: TeaRegion[] = [
     altitude: '1000-1800米',
     climate: '热带雨林气候',
     soil: '砖红壤，有机质丰富',
-    description: '勐海是普洱茶最核心的产区之一，老班章、布朗山等名山均在勐海境内。这里拥有大量数百年的古茶树，茶叶茶气刚烈，是普洱茶中的"王者"之区。',
+    description:
+      '勐海是普洱茶最核心的产区之一，老班章、布朗山等名山均在勐海境内。这里拥有大量数百年的古茶树，茶叶茶气刚烈，是普洱茶中的"王者"之区。',
     famousFor: ['老班章普洱'],
   },
   {
@@ -174,7 +187,8 @@ export const TEA_REGIONS: TeaRegion[] = [
     altitude: '800-1600米',
     climate: '热带雨林气候',
     soil: '红壤，有机质丰富',
-    description: '易武是古六大茶山之一，以"易武为后"的美誉闻名。易武普洱茶以香扬水柔、甘甜醇厚著称，与班章的刚烈形成对比。',
+    description:
+      '易武是古六大茶山之一，以"易武为后"的美誉闻名。易武普洱茶以香扬水柔、甘甜醇厚著称，与班章的刚烈形成对比。',
     famousFor: ['易武普洱'],
   },
   {
@@ -185,7 +199,8 @@ export const TEA_REGIONS: TeaRegion[] = [
     altitude: '1000-1800米',
     climate: '低纬高原气候',
     soil: '红壤，有机质丰富',
-    description: '凤庆是滇红的诞生地，1939年冯绍裘在凤庆试制滇红成功。凤庆拥有世界上最古老的茶树王——树龄3200年的"锦绣茶祖"。',
+    description:
+      '凤庆是滇红的诞生地，1939年冯绍裘在凤庆试制滇红成功。凤庆拥有世界上最古老的茶树王——树龄3200年的"锦绣茶祖"。',
     famousFor: ['滇红'],
   },
 
@@ -198,7 +213,8 @@ export const TEA_REGIONS: TeaRegion[] = [
     altitude: '300-800米',
     climate: '亚热带湿润气候',
     soil: '红黄壤，微酸性',
-    description: '祁门是世界三大高香红茶之一祁门红茶的原产地。独特的"祁门香"——似花似蜜似果的复合香气，被誉为"王子之香"。',
+    description:
+      '祁门是世界三大高香红茶之一祁门红茶的原产地。独特的"祁门香"——似花似蜜似果的复合香气，被誉为"王子之香"。',
     famousFor: ['祁门红茶'],
   },
   {
@@ -222,7 +238,8 @@ export const TEA_REGIONS: TeaRegion[] = [
     altitude: '50-200米',
     climate: '湖岛湿润气候',
     soil: '湖积土，肥沃',
-    description: '君山岛位于洞庭湖中，四面环水，气候独特。君山银针为中国黄茶最著名的代表，冲泡时出现"三起三落"的奇特景象。',
+    description:
+      '君山岛位于洞庭湖中，四面环水，气候独特。君山银针为中国黄茶最著名的代表，冲泡时出现"三起三落"的奇特景象。',
     famousFor: ['君山银针'],
   },
   {
@@ -233,7 +250,8 @@ export const TEA_REGIONS: TeaRegion[] = [
     altitude: '300-800米',
     climate: '亚热带湿润气候',
     soil: '红黄壤',
-    description: '安化是中国黑茶之乡，千两茶制作技艺被列为国家级非物质文化遗产。安化黑茶历史上是"茶马古道"的重要商品。',
+    description:
+      '安化是中国黑茶之乡，千两茶制作技艺被列为国家级非物质文化遗产。安化黑茶历史上是"茶马古道"的重要商品。',
     famousFor: ['安化黑茶', '千两茶'],
   },
 
@@ -246,7 +264,8 @@ export const TEA_REGIONS: TeaRegion[] = [
     altitude: '500-1000米',
     climate: '温带山地气候，多云雾',
     soil: '黄壤，微酸性',
-    description: '冻顶山是台湾冻顶乌龙茶的发源地。清道光年间，林凤池从福建武夷山带回茶苗种植于此，开启了台湾乌龙茶的传奇。',
+    description:
+      '冻顶山是台湾冻顶乌龙茶的发源地。清道光年间，林凤池从福建武夷山带回茶苗种植于此，开启了台湾乌龙茶的传奇。',
     famousFor: ['冻顶乌龙'],
   },
   {
@@ -257,7 +276,8 @@ export const TEA_REGIONS: TeaRegion[] = [
     altitude: '1000-1600米',
     climate: '高山气候，昼夜温差大',
     soil: '高山黄壤',
-    description: '阿里山是全球海拔最高的茶区之一，高山气候使茶叶生长缓慢、叶质柔软，茶汤清亮、香气清幽，具有独特的"高山韵"。',
+    description:
+      '阿里山是全球海拔最高的茶区之一，高山气候使茶叶生长缓慢、叶质柔软，茶汤清亮、香气清幽，具有独特的"高山韵"。',
     famousFor: ['阿里山乌龙'],
   },
 
@@ -270,7 +290,8 @@ export const TEA_REGIONS: TeaRegion[] = [
     altitude: '200-600米',
     climate: '亚热带湿润气候',
     soil: '红黄壤',
-    description: '六堡镇是六堡茶的原产地，清代以来六堡茶远销东南亚，是著名的"侨销茶"。六堡茶独特的槟榔香是自然陈化形成的。',
+    description:
+      '六堡镇是六堡茶的原产地，清代以来六堡茶远销东南亚，是著名的"侨销茶"。六堡茶独特的槟榔香是自然陈化形成的。',
     famousFor: ['六堡茶'],
   },
 
@@ -283,7 +304,8 @@ export const TEA_REGIONS: TeaRegion[] = [
     altitude: '500-1000米',
     climate: '温带半干旱气候',
     soil: '黄土',
-    description: '泾阳是茯砖茶的原产地，历史上是"茶马古道"的重要枢纽。泾阳茯砖茶以其独特的"金花"（冠突散囊菌）闻名于世。',
+    description:
+      '泾阳是茯砖茶的原产地，历史上是"茶马古道"的重要枢纽。泾阳茯砖茶以其独特的"金花"（冠突散囊菌）闻名于世。',
     famousFor: ['茯砖茶'],
   },
 
@@ -296,7 +318,8 @@ export const TEA_REGIONS: TeaRegion[] = [
     altitude: '800-1400米',
     climate: '亚热带湿润气候',
     soil: '黄壤',
-    description: '蒙顶山是中国茶文化的发源地之一，公元前53年吴理真在蒙顶山种植茶树，开创了人工种茶的先河，被尊为"茶祖"。',
+    description:
+      '蒙顶山是中国茶文化的发源地之一，公元前53年吴理真在蒙顶山种植茶树，开创了人工种茶的先河，被尊为"茶祖"。',
     famousFor: ['蒙顶甘露', '蒙顶黄芽'],
   },
 
@@ -309,7 +332,8 @@ export const TEA_REGIONS: TeaRegion[] = [
     altitude: '300-1000米',
     climate: '亚热带湿润气候',
     soil: '红黄壤',
-    description: '婺源是中国绿茶的重要产区，也是中国最美的乡村之一。婺源绿茶以"叶绿、汤清、香高、味醇"四绝著称。',
+    description:
+      '婺源是中国绿茶的重要产区，也是中国最美的乡村之一。婺源绿茶以"叶绿、汤清、香高、味醇"四绝著称。',
     famousFor: ['婺源绿茶'],
   },
   {
@@ -333,7 +357,8 @@ export const TEA_REGIONS: TeaRegion[] = [
     altitude: '500-1200米',
     climate: '亚热带山地气候',
     soil: '富硒黄壤',
-    description: '恩施是中国最大的天然富硒茶产区，恩施玉露是中国保留下来的唯一一种蒸青绿茶工艺，源自唐代。',
+    description:
+      '恩施是中国最大的天然富硒茶产区，恩施玉露是中国保留下来的唯一一种蒸青绿茶工艺，源自唐代。',
     famousFor: ['恩施玉露'],
   },
 
@@ -403,7 +428,8 @@ export const TEA_REGIONS: TeaRegion[] = [
     altitude: '800-2000米',
     climate: '热带雨林气候',
     soil: '砖红壤',
-    description: '西双版纳是普洱茶的核心产区，拥有大量数百年的古茶树群落。六大古茶山中的五座位于版纳境内。',
+    description:
+      '西双版纳是普洱茶的核心产区，拥有大量数百年的古茶树群落。六大古茶山中的五座位于版纳境内。',
     famousFor: ['版纳普洱', '易武正山'],
   },
   {
@@ -425,7 +451,8 @@ export const TEA_REGIONS: TeaRegion[] = [
     altitude: '1000-2000米',
     climate: '亚热带高原气候',
     soil: '红壤、赤红壤',
-    description: '普洱市因普洱茶得名，是普洱茶最核心的集散地和原产地之一。景迈山千年万亩古茶林为世界文化遗产。',
+    description:
+      '普洱市因普洱茶得名，是普洱茶最核心的集散地和原产地之一。景迈山千年万亩古茶林为世界文化遗产。',
     famousFor: ['景迈山普洱', '邦崴古树'],
   },
   {
@@ -436,7 +463,8 @@ export const TEA_REGIONS: TeaRegion[] = [
     altitude: '1500-2500米',
     climate: '高原季风气候',
     soil: '棕壤、黄棕壤',
-    description: '大理是中国海拔最高的茶区之一，下关沱茶历史悠久。苍山洱海间的独特气候赋予茶叶特殊的品质。',
+    description:
+      '大理是中国海拔最高的茶区之一，下关沱茶历史悠久。苍山洱海间的独特气候赋予茶叶特殊的品质。',
     famousFor: ['下关沱茶', '大理感通茶'],
   },
   {
@@ -513,7 +541,8 @@ export const TEA_REGIONS: TeaRegion[] = [
     altitude: '200-600米',
     climate: '亚热带湿润气候',
     soil: '红黄壤',
-    description: '梧州是六堡茶的原产地和集散地，曾经是"茶船古道"的起点，六堡茶沿西江运往广州出口南洋。',
+    description:
+      '梧州是六堡茶的原产地和集散地，曾经是"茶船古道"的起点，六堡茶沿西江运往广州出口南洋。',
     famousFor: ['六堡茶'],
   },
   {
@@ -557,7 +586,8 @@ export const TEA_REGIONS: TeaRegion[] = [
     altitude: '50-300米',
     climate: '沿海温带季风气候',
     soil: '棕壤',
-    description: '日照是中国纬度最高的茶叶产区，纬度高、生长周期长，茶叶内含物丰富，被誉为"北方绿茶之乡"。',
+    description:
+      '日照是中国纬度最高的茶叶产区，纬度高、生长周期长，茶叶内含物丰富，被誉为"北方绿茶之乡"。',
     famousFor: ['日照绿茶'],
   },
   {
@@ -619,10 +649,10 @@ export const TEA_REGIONS: TeaRegion[] = [
 
 /** 根据 ID 查找产区 */
 export function getRegionById(id: string): TeaRegion | undefined {
-  return TEA_REGIONS.find(r => r.id === id)
+  return TEA_REGIONS.find((r) => r.id === id)
 }
 
 /** 根据省份筛选 */
 export function getRegionsByProvince(province: string): TeaRegion[] {
-  return TEA_REGIONS.filter(r => r.province === province)
+  return TEA_REGIONS.filter((r) => r.province === province)
 }

@@ -5,7 +5,7 @@
  * - 汤色粒子从底部升起，每个音符触发时粒子律动扩散
  * - 30 秒视听体验，结束后显示"这就是XX的味道"
  */
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getTeaById } from '@/data/teas'
 import type { Tea } from '@/types/tea'
@@ -28,7 +28,16 @@ let noteTimer: ReturnType<typeof setTimeout> | null = null
 let startTime = 0
 
 // 粒子
-interface Particle { x: number; y: number; vx: number; vy: number; size: number; alpha: number; color: string; pulse: number }
+interface Particle {
+  x: number
+  y: number
+  vx: number
+  vy: number
+  size: number
+  alpha: number
+  color: string
+  pulse: number
+}
 let particles: Particle[] = []
 let lastNoteTime = 0
 
@@ -39,13 +48,32 @@ const BASE_FREQ = 261.63 // C4
 /** 茶类→音高八度 + 音符间隔 + 波形 */
 function getTeaAudioProfile(type: string) {
   switch (type) {
-    case '绿茶': return { octave: 1, minGap: 1100, maxGap: 1800, wave: 'sine' as OscillatorType, drift: 0.6 }
-    case '白茶': return { octave: 0.5, minGap: 1300, maxGap: 2000, wave: 'triangle' as OscillatorType, drift: 0.4 }
-    case '黄茶': return { octave: 0.3, minGap: 1200, maxGap: 1900, wave: 'triangle' as OscillatorType, drift: 0.5 }
-    case '青茶': return { octave: 0, minGap: 900, maxGap: 1500, wave: 'sine' as OscillatorType, drift: 0.8 }
-    case '红茶': return { octave: -0.5, minGap: 800, maxGap: 1400, wave: 'sine' as OscillatorType, drift: 1.0 }
-    case '黑茶': return { octave: -1, minGap: 700, maxGap: 1300, wave: 'sine' as OscillatorType, drift: 1.2 }
-    default: return { octave: 0, minGap: 1000, maxGap: 1600, wave: 'sine' as OscillatorType, drift: 0.7 }
+    case '绿茶':
+      return { octave: 1, minGap: 1100, maxGap: 1800, wave: 'sine' as OscillatorType, drift: 0.6 }
+    case '白茶':
+      return {
+        octave: 0.5,
+        minGap: 1300,
+        maxGap: 2000,
+        wave: 'triangle' as OscillatorType,
+        drift: 0.4,
+      }
+    case '黄茶':
+      return {
+        octave: 0.3,
+        minGap: 1200,
+        maxGap: 1900,
+        wave: 'triangle' as OscillatorType,
+        drift: 0.5,
+      }
+    case '青茶':
+      return { octave: 0, minGap: 900, maxGap: 1500, wave: 'sine' as OscillatorType, drift: 0.8 }
+    case '红茶':
+      return { octave: -0.5, minGap: 800, maxGap: 1400, wave: 'sine' as OscillatorType, drift: 1.0 }
+    case '黑茶':
+      return { octave: -1, minGap: 700, maxGap: 1300, wave: 'sine' as OscillatorType, drift: 1.2 }
+    default:
+      return { octave: 0, minGap: 1000, maxGap: 1600, wave: 'sine' as OscillatorType, drift: 0.7 }
   }
 }
 
@@ -82,7 +110,7 @@ function playNote() {
   if (!audioCtx || !masterGain || !tea.value || isFinished.value) return
   const profile = getTeaAudioProfile(tea.value.type)
   const scaleIdx = Math.floor(Math.random() * PENTATONIC.length)
-  const freq = BASE_FREQ * Math.pow(2, profile.octave) * (PENTATONIC[scaleIdx] ?? 1)
+  const freq = BASE_FREQ * 2 ** profile.octave * (PENTATONIC[scaleIdx] ?? 1)
 
   const osc = audioCtx.createOscillator()
   const gain = audioCtx.createGain()
@@ -114,7 +142,10 @@ function playNote() {
 
   lastNoteTime = Date.now()
   // 粒子律动
-  particles.forEach(p => { p.pulse = 1; p.vy -= 0.3 })
+  particles.forEach((p) => {
+    p.pulse = 1
+    p.vy -= 0.3
+  })
 
   // 下一个音符
   const gap = profile.minGap + Math.random() * (profile.maxGap - profile.minGap)
@@ -123,9 +154,15 @@ function playNote() {
 
 function render() {
   const canvas = canvasRef.value
-  if (!canvas) { rafId = requestAnimationFrame(render); return }
+  if (!canvas) {
+    rafId = requestAnimationFrame(render)
+    return
+  }
   const ctx = canvas.getContext('2d')
-  if (!ctx) { rafId = requestAnimationFrame(render); return }
+  if (!ctx) {
+    rafId = requestAnimationFrame(render)
+    return
+  }
 
   const dpr = window.devicePixelRatio || 1
   const w = canvas.clientWidth
@@ -154,11 +191,14 @@ function render() {
   }
 
   // 粒子
-  particles.forEach(p => {
+  particles.forEach((p) => {
     p.pulse *= 0.94
     p.x += p.vx + Math.sin(Date.now() / 1000 + p.y) * 0.15
     p.y += p.vy
-    if (p.y < -20) { p.y = h + 10; p.x = Math.random() * w }
+    if (p.y < -20) {
+      p.y = h + 10
+      p.x = Math.random() * w
+    }
     if (p.x < -20) p.x = w + 20
     if (p.x > w + 20) p.x = -20
     const size = p.size * (1 + p.pulse * 0.8)

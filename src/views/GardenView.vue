@@ -4,12 +4,12 @@
  * T4.1 养成降级为纯观赏后：/garden 地区选择，/garden/:regionId 3D 茶园景观
  * 保留：3D 场景 / 天气切换 / 环境音 / 茶亭叙事；删除：种茶/浇水/修剪/采摘等养成链路。
  */
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getRegionById } from '@/data/gardenRegions'
-import type { GardenRegion } from '@/types/garden'
 import type { WeatherMode } from '@/components/three/garden-weather'
 import TeaGardenScene3D from '@/components/three/TeaGardenScene3D.vue'
+import { getRegionById } from '@/data/gardenRegions'
+import type { GardenRegion } from '@/types/garden'
 import GardenRegionPicker from './garden/GardenRegionPicker.vue'
 
 const route = useRoute()
@@ -17,10 +17,13 @@ const router = useRouter()
 
 const regionId = computed(() => route.params.regionId as string | undefined)
 const currentRegion = computed<GardenRegion | undefined>(() =>
-  regionId.value ? getRegionById(regionId.value) : undefined
+  regionId.value ? getRegionById(regionId.value) : undefined,
 )
 
-const scene3dRef = ref<{ setWeather?: (m: WeatherMode) => void; setAudioEnabled?: (on: boolean) => void }>()
+const scene3dRef = ref<{
+  setWeather?: (m: WeatherMode) => void
+  setAudioEnabled?: (on: boolean) => void
+}>()
 const weatherMode = ref<'sunny' | 'rain'>('sunny')
 const audioOn = ref(false)
 
@@ -42,7 +45,9 @@ const PAVILION_QUOTES: Record<string, { text: string; source: string }> = {
 }
 const showPavilion = ref(false)
 const pavilionQuote = computed(() => (regionId.value ? PAVILION_QUOTES[regionId.value] : undefined))
-function togglePavilion() { showPavilion.value = !showPavilion.value }
+function togglePavilion() {
+  showPavilion.value = !showPavilion.value
+}
 </script>
 
 <template>

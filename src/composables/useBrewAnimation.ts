@@ -1,4 +1,4 @@
-import { ref, type Ref } from 'vue'
+import { type Ref, ref } from 'vue'
 import { BrewPhase } from '@/types/brewing'
 
 /**
@@ -76,11 +76,7 @@ export function useBrewAnimation(
   function updateTargets(): void {
     const p = phase.value
     // 入水：温杯/醒茶/浸泡阶段有水（READY 待命不自动注水，等用户拖拽）
-    targets.pourWater = [
-      BrewPhase.WARMING,
-      BrewPhase.RINSING,
-      BrewPhase.STEEPING,
-    ].includes(p)
+    targets.pourWater = [BrewPhase.WARMING, BrewPhase.RINSING, BrewPhase.STEEPING].includes(p)
       ? 1
       : 0
     // 用户拖拽进度接管（READY 阶段向右拖壶嘴注水）：取拖拽与 phase 自动值的较大者
@@ -111,8 +107,7 @@ export function useBrewAnimation(
     pourOut.value = damp(pourOut.value, targets.pourOut, 4, dt)
     fairnessPour.value = damp(fairnessPour.value, targets.fairnessPour, 2.5, dt)
     // 喝茶：分茶完成 70% 后才触发，确保先分茶再喝茶
-    const drinkTarget =
-      targets.fairnessPour === 1 && fairnessPour.value > 0.7 ? 1 : 0
+    const drinkTarget = targets.fairnessPour === 1 && fairnessPour.value > 0.7 ? 1 : 0
     drink.value = damp(drink.value, drinkTarget, 1, dt)
   }
 

@@ -2,13 +2,16 @@
 /**
  * 基础加载指示器 — 茶汤金旋转环
  */
-withDefaults(defineProps<{
-  size?: 'sm' | 'md' | 'lg'
-  label?: string
-}>(), {
-  size: 'md',
-  label: '加载中',
-})
+withDefaults(
+  defineProps<{
+    size?: 'sm' | 'md' | 'lg'
+    label?: string
+  }>(),
+  {
+    size: 'md',
+    label: '加载中',
+  },
+)
 </script>
 
 <template>

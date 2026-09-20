@@ -1,12 +1,14 @@
 """品鉴记录域。"""
 
-from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, Float, DateTime, JSON, Text, ForeignKey
+from datetime import UTC, datetime
+
+from sqlalchemy import JSON, Column, DateTime, Float, ForeignKey, Integer, String, Text
+
 from app.database import Base
 
 
 def _utcnow():
-    return datetime.now(timezone.utc).replace(tzinfo=None)
+    return datetime.now(UTC).replace(tzinfo=None)
 
 
 class TastingRecordV2(Base):

@@ -1,14 +1,17 @@
 import './assets/main.css'
 
-import { createApp } from 'vue'
 import { createPinia } from 'pinia'
-import { historyStorage, initDB } from '@/services/storage'
+import { createApp } from 'vue'
 import { registerIcons } from '@/plugins/icons'
-
+import { historyStorage, initDB } from '@/services/storage'
+import { initWebVitals } from '@/services/vitals'
+import { useAuthStore } from '@/stores/auth'
+import { useTeaStore } from '@/stores/tea'
 import App from './App.vue'
 import router from './router'
-import { useTeaStore } from '@/stores/tea'
-import { useAuthStore } from '@/stores/auth'
+
+// P1-9：Web Vitals 本地采集（只写 IndexedDB，无外发）；尽早注册以覆盖首屏 LCP
+initWebVitals()
 
 const app = createApp(App)
 

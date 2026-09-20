@@ -8,13 +8,13 @@
 export interface TeaMaster {
   id: string
   name: string
-  dynasty: string        // 朝代
-  title: string          // 称号
-  avatar: string         // lucide 图标名（禁止 emoji，渲染时 <component :is="`Icon${avatar}`">）
-  description: string    // 简介
-  contribution: string   // 主要贡献
-  quote: string          // 名言/诗句
-  relatedTeas: string[]  // 相关的茶叶 ID
+  dynasty: string // 朝代
+  title: string // 称号
+  avatar: string // lucide 图标名（禁止 emoji，渲染时 <component :is="`Icon${avatar}`">）
+  description: string // 简介
+  contribution: string // 主要贡献
+  quote: string // 名言/诗句
+  relatedTeas: string[] // 相关的茶叶 ID
 }
 
 export const TEA_MASTERS: TeaMaster[] = [
@@ -24,8 +24,10 @@ export const TEA_MASTERS: TeaMaster[] = [
     dynasty: '唐',
     title: '茶圣',
     avatar: 'ScrollText',
-    description: '陆羽（733-804），字鸿渐，唐代复州竟陵人。著有世界上第一部茶叶专著《茶经》，开中国茶道之先河，被后世尊为"茶圣"。',
-    contribution: '撰《茶经》三卷十篇，系统论述茶的起源、品种、采制、烹煮、器具、水质、饮用等，奠定了中国茶文化的理论基础。',
+    description:
+      '陆羽（733-804），字鸿渐，唐代复州竟陵人。著有世界上第一部茶叶专著《茶经》，开中国茶道之先河，被后世尊为"茶圣"。',
+    contribution:
+      '撰《茶经》三卷十篇，系统论述茶的起源、品种、采制、烹煮、器具、水质、饮用等，奠定了中国茶文化的理论基础。',
     quote: '茶者，南方之嘉木也。其树如瓜芦，叶如栀子，花如白蔷薇，实如栟榈，蒂如丁香，根如胡桃。',
     relatedTeas: ['longjing', 'biluochun'],
   },
@@ -35,7 +37,8 @@ export const TEA_MASTERS: TeaMaster[] = [
     dynasty: '宋',
     title: '茶中诗仙',
     avatar: 'Leaf',
-    description: '苏轼（1037-1101），号东坡居士，北宋文豪。一生爱茶，写下近百首茶诗，其"且将新火试新茶"传诵千古。',
+    description:
+      '苏轼（1037-1101），号东坡居士，北宋文豪。一生爱茶，写下近百首茶诗，其"且将新火试新茶"传诵千古。',
     contribution: '以诗文传茶道，提出"活水还须活火烹"的烹茶理念，对宋代点茶文化有深远影响。',
     quote: '且将新火试新茶，诗酒趁年华。',
     relatedTeas: ['longjing', 'tieguanyin'],
@@ -46,8 +49,10 @@ export const TEA_MASTERS: TeaMaster[] = [
     dynasty: '宋',
     title: '皇帝茶人',
     avatar: 'Crown',
-    description: '宋徽宗赵佶（1082-1135），北宋第八位皇帝。亲撰《大观茶论》，是中国历史上唯一一位为茶著书立说的帝王。',
-    contribution: '著《大观茶论》二十篇，详述宋代点茶技艺，提出"清、和、淡、洁"的品茶精神，将茶道提升至哲学高度。',
+    description:
+      '宋徽宗赵佶（1082-1135），北宋第八位皇帝。亲撰《大观茶论》，是中国历史上唯一一位为茶著书立说的帝王。',
+    contribution:
+      '著《大观茶论》二十篇，详述宋代点茶技艺，提出"清、和、淡、洁"的品茶精神，将茶道提升至哲学高度。',
     quote: '至若茶之为物，擅瓯闽之秀气，钟山川之灵禀，祛襟涤滞，致清导和。',
     relatedTeas: ['baihaoyinzhen', 'baimudan'],
   },
@@ -57,8 +62,10 @@ export const TEA_MASTERS: TeaMaster[] = [
     dynasty: '清',
     title: '六下江南品茶帝',
     avatar: 'Landmark',
-    description: '爱新觉罗·弘历（1711-1799），清乾隆帝。六下江南、四次驾临龙井茶区，亲封狮峰十八棵茶树为"御茶"；一生御制茶诗数百首，嗜茶成癖。',
-    contribution: '推动龙井茶名扬天下，题诗《观采茶作歌》；御制茶诗数百首，对茶文化的传播做出不可磨灭的贡献。',
+    description:
+      '爱新觉罗·弘历（1711-1799），清乾隆帝。六下江南、四次驾临龙井茶区，亲封狮峰十八棵茶树为"御茶"；一生御制茶诗数百首，嗜茶成癖。',
+    contribution:
+      '推动龙井茶名扬天下，题诗《观采茶作歌》；御制茶诗数百首，对茶文化的传播做出不可磨灭的贡献。',
     quote: '火前嫩，火后老，惟有骑火品最好。',
     relatedTeas: ['longjing', 'biluochun'],
   },
@@ -68,8 +75,10 @@ export const TEA_MASTERS: TeaMaster[] = [
     dynasty: '清',
     title: '随园茶客',
     avatar: 'PenLine',
-    description: '袁枚（1716-1797），清代诗人、美食家。著《随园食单》，其中"茶酒单"一章记录了清代品茶之风的精髓。',
-    contribution: '《随园食单》中详细记载了武夷岩茶、龙井、六安等茶的品饮心得，提出"始觉其清，再酌其香，终品其韵"的品茶三境界。',
+    description:
+      '袁枚（1716-1797），清代诗人、美食家。著《随园食单》，其中"茶酒单"一章记录了清代品茶之风的精髓。',
+    contribution:
+      '《随园食单》中详细记载了武夷岩茶、龙井、六安等茶的品饮心得，提出"始觉其清，再酌其香，终品其韵"的品茶三境界。',
     quote: '余向不喜武夷茶，嫌其浓苦如药。然丙午秋，始觉其清，再酌其香，终品其韵。',
     relatedTeas: ['dahongpao', 'shuixian', 'rougui'],
   },
@@ -79,7 +88,8 @@ export const TEA_MASTERS: TeaMaster[] = [
     dynasty: '宋',
     title: '茶诗第一',
     avatar: 'FileText',
-    description: '陆游（1125-1210），南宋诗人。一生创作三百余首茶诗，是中国历史上写茶诗最多的诗人。',
+    description:
+      '陆游（1125-1210），南宋诗人。一生创作三百余首茶诗，是中国历史上写茶诗最多的诗人。',
     contribution: '以三百余首茶诗记录了南宋时期的茶事活动，为后世研究宋代茶文化提供了珍贵史料。',
     quote: '建溪官茶天下绝，香味欲全须小雪。',
     relatedTeas: ['shuixian', 'dahongpao', 'tieluohan'],
@@ -90,8 +100,10 @@ export const TEA_MASTERS: TeaMaster[] = [
     dynasty: '唐',
     title: '茶中隐士',
     avatar: 'Sunrise',
-    description: '白居易（772-846），唐代诗人。晚年号香山居士，嗜茶如命，在《琵琶行》等名篇中多次提及茶事。',
-    contribution: '以诗记茶，在《琵琶行》中"商人重利轻别离，前月浮梁买茶去"记录了唐代茶叶贸易的繁荣景象。',
+    description:
+      '白居易（772-846），唐代诗人。晚年号香山居士，嗜茶如命，在《琵琶行》等名篇中多次提及茶事。',
+    contribution:
+      '以诗记茶，在《琵琶行》中"商人重利轻别离，前月浮梁买茶去"记录了唐代茶叶贸易的繁荣景象。',
     quote: '坐酌泠泠水，看煎瑟瑟尘。无由持一碗，寄与爱茶人。',
     relatedTeas: ['qimenhong', 'lapsangsouchong'],
   },
@@ -101,8 +113,10 @@ export const TEA_MASTERS: TeaMaster[] = [
     dynasty: '唐',
     title: '煎茶水记',
     avatar: 'Droplet',
-    description: '张又新，唐代学者。著《煎茶水记》，是中国最早系统评水的专著，对后世茶道中的"水为茶之母"理念影响深远。',
-    contribution: '撰《煎茶水记》，将天下水分为七等：镇江中泠泉第一、无锡惠山泉第二、虎跑泉第三……为品水论泉之祖。',
+    description:
+      '张又新，唐代学者。著《煎茶水记》，是中国最早系统评水的专著，对后世茶道中的"水为茶之母"理念影响深远。',
+    contribution:
+      '撰《煎茶水记》，将天下水分为七等：镇江中泠泉第一、无锡惠山泉第二、虎跑泉第三……为品水论泉之祖。',
     quote: '夫茶烹于所产处，无不佳也，盖水土之宜。离其处，水功其半，然善烹洁器，全其功也。',
     relatedTeas: ['longjing', 'biluochun'],
   },
@@ -112,7 +126,8 @@ export const TEA_MASTERS: TeaMaster[] = [
     dynasty: '明',
     title: '茶道创新者',
     avatar: 'BookOpen',
-    description: '朱权（1378-1448），明太祖朱元璋第十七子，宁献王。著《茶谱》，开明代瀹茶（散茶冲泡）之先河。',
+    description:
+      '朱权（1378-1448），明太祖朱元璋第十七子，宁献王。著《茶谱》，开明代瀹茶（散茶冲泡）之先河。',
     contribution: '撰《茶谱》，提出"瀹饮法"——改宋代点茶为散茶直接冲泡，奠定了现代泡茶方式的基础。',
     quote: '茶之为物，可以助诗兴而云山顿色，可以伏睡魔而天地忘形。',
     relatedTeas: ['longjing', 'biluochun'],
@@ -124,7 +139,8 @@ export const TEA_MASTERS: TeaMaster[] = [
     title: '茶疏作者',
     avatar: 'ScrollText',
     description: '许次纾（1549-1604），明代茶学家。著《茶疏》，是明代最杰出的茶学著作之一。',
-    contribution: '撰《茶疏》，提出"产茶、采茶、制茶、藏茶、烹茶、品茶"的系统理论，对明代茶文化贡献卓越。',
+    contribution:
+      '撰《茶疏》，提出"产茶、采茶、制茶、藏茶、烹茶、品茶"的系统理论，对明代茶文化贡献卓越。',
     quote: '茶滋于水，水藉乎器，汤成于火。四者相须，缺一则废。',
     relatedTeas: ['longjing', 'tieguanyin'],
   },
@@ -134,9 +150,12 @@ export const TEA_MASTERS: TeaMaster[] = [
     dynasty: '明',
     title: '长物志作者',
     avatar: 'TreePine',
-    description: '文震亨（1585-1645），明代文人、造园家。著《长物志》，其中"茶寮"一卷详述明代文人茶空间布置。',
-    contribution: '在《长物志》中提出"茶寮"概念——专设一间茶室用于品茶，对后世日本茶道"茶室"产生了深远影响。',
-    quote: '构一斗室，相傍山斋，内设茶具，教一童专主茶役，以供长日清谈，寒宵兀坐。幽人首务，不可少废者。',
+    description:
+      '文震亨（1585-1645），明代文人、造园家。著《长物志》，其中"茶寮"一卷详述明代文人茶空间布置。',
+    contribution:
+      '在《长物志》中提出"茶寮"概念——专设一间茶室用于品茶，对后世日本茶道"茶室"产生了深远影响。',
+    quote:
+      '构一斗室，相傍山斋，内设茶具，教一童专主茶役，以供长日清谈，寒宵兀坐。幽人首务，不可少废者。',
     relatedTeas: ['shuixian', 'dahongpao'],
   },
   {
@@ -146,7 +165,8 @@ export const TEA_MASTERS: TeaMaster[] = [
     title: '当代茶圣',
     avatar: 'Landmark',
     description: '吴觉农（1897-1988），中国现代茶学奠基人，被誉为"当代茶圣"。',
-    contribution: '创建中国第一个茶叶研究所、第一所茶叶学校，主编《茶经述评》，为中国茶产业现代化做出卓越贡献。',
+    contribution:
+      '创建中国第一个茶叶研究所、第一所茶叶学校，主编《茶经述评》，为中国茶产业现代化做出卓越贡献。',
     quote: '中国茶业如睡狮一般，一朝醒来，决不会长落人后，愿大家努力罢！',
     relatedTeas: ['longjing', 'qimenhong'],
   },
@@ -253,10 +273,10 @@ export const TEA_MASTERS: TeaMaster[] = [
 
 /** 根据 ID 查找茶人 */
 export function getTeaMasterById(id: string): TeaMaster | undefined {
-  return TEA_MASTERS.find(m => m.id === id)
+  return TEA_MASTERS.find((m) => m.id === id)
 }
 
 /** 根据茶 ID 查找相关茶人 */
 export function getTeaMastersForTea(teaId: string): TeaMaster[] {
-  return TEA_MASTERS.filter(m => m.relatedTeas.includes(teaId))
+  return TEA_MASTERS.filter((m) => m.relatedTeas.includes(teaId))
 }

@@ -4,14 +4,14 @@
  * 冲泡为真实计时（不伪造时钟），完整流程约 40~60 秒。
  */
 
-import { test, expect, type Page } from '@playwright/test'
+import { expect, type Page, test } from '@playwright/test'
 
 test.beforeEach(async ({ page }) => {
   // 拦截后端 AI 代理请求（同源 /api/ai），让茶记/茶灵快速走本地规则降级，
   // 保证测试稳定且不依赖后端服务。
-  await page.route('**/api/ai/*', route => route.abort())
+  await page.route('**/api/ai/*', (route) => route.abort())
   // 渲染崩溃时打印错误栈，便于 CI 排障
-  page.on('pageerror', err => console.log('[PAGEERROR]', err.stack || err.message))
+  page.on('pageerror', (err) => console.log('[PAGEERROR]', err.stack || err.message))
 })
 
 /** 走完冲泡流程（西湖龙井 3 泡），自动停 2 秒浮文案后进 /taste。 */
@@ -52,7 +52,10 @@ test('完整品鉴流程：首页→入席→选茶→选器→冲泡→品鉴�
   // ============ 3. 选茶器 ============
   await expect(page.getByRole('heading', { name: '备器 · 择水' })).toBeVisible()
   await page.getByRole('button', { name: /白瓷盖碗/ }).click()
-  await page.getByRole('button', { name: /山泉|泉水|纯净|山涧|雨水|井水/ }).first().click()
+  await page
+    .getByRole('button', { name: /山泉|泉水|纯净|山涧|雨水|井水/ })
+    .first()
+    .click()
   await page.getByRole('button', { name: '开始冲泡 →' }).click()
   await page.waitForURL('**/brew')
 

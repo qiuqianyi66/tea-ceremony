@@ -27,10 +27,26 @@ export function createScenery(scene: THREE.Scene, presetId = 'hangzhou'): Garden
   scene.add(root)
 
   const woodMat = new THREE.MeshStandardMaterial({ color: 0x8a6a4e, roughness: 0.85, metalness: 0 })
-  const darkWoodMat = new THREE.MeshStandardMaterial({ color: 0x6b4f38, roughness: 0.9, metalness: 0 })
-  const bambooMat = new THREE.MeshStandardMaterial({ color: 0x9a945a, roughness: 0.8, metalness: 0 })
-  const stoneMat = new THREE.MeshStandardMaterial({ color: presetId === 'hangzhou' ? 0xa0714f : 0x9aa0a8, roughness: 0.95, metalness: 0 })
-  const stoneDarkMat = new THREE.MeshStandardMaterial({ color: presetId === 'hangzhou' ? 0x8a5f3e : 0x7c828a, roughness: 0.95, metalness: 0 })
+  const darkWoodMat = new THREE.MeshStandardMaterial({
+    color: 0x6b4f38,
+    roughness: 0.9,
+    metalness: 0,
+  })
+  const bambooMat = new THREE.MeshStandardMaterial({
+    color: 0x9a945a,
+    roughness: 0.8,
+    metalness: 0,
+  })
+  const stoneMat = new THREE.MeshStandardMaterial({
+    color: presetId === 'hangzhou' ? 0xa0714f : 0x9aa0a8,
+    roughness: 0.95,
+    metalness: 0,
+  })
+  const stoneDarkMat = new THREE.MeshStandardMaterial({
+    color: presetId === 'hangzhou' ? 0x8a5f3e : 0x7c828a,
+    roughness: 0.95,
+    metalness: 0,
+  })
 
   // ---- 福鼎海面：远景东南向大海（茶园→海滩→海），深蓝不透明 + 白浪条 ----
   if (presetId === 'fuding') {
@@ -124,7 +140,15 @@ export function createScenery(scene: THREE.Scene, presetId = 'hangzhou'): Garden
     const t = i / 4 // 0→1 从近到远
     const x = 6 + (pathEndX - 6) * t
     const z = -4 + (pathEndZ - -4) * t
-    const stone = new THREE.Mesh(new THREE.CylinderGeometry(0.55 + seededRandom(i * 2.1 + 131) * 0.4, 0.62 + seededRandom(i * 3.3 + 132) * 0.42, 0.16 + seededRandom(i * 4.7 + 133) * 0.08, 7), i % 3 === 0 ? stoneDarkMat : stoneMat)
+    const stone = new THREE.Mesh(
+      new THREE.CylinderGeometry(
+        0.55 + seededRandom(i * 2.1 + 131) * 0.4,
+        0.62 + seededRandom(i * 3.3 + 132) * 0.42,
+        0.16 + seededRandom(i * 4.7 + 133) * 0.08,
+        7,
+      ),
+      i % 3 === 0 ? stoneDarkMat : stoneMat,
+    )
     const sx = x + (seededRandom(i * 6.1 + 134) - 0.5) * 0.9
     const sz = z + (seededRandom(i * 8.3 + 135) - 0.5) * 0.9
     stone.position.set(sx, getTerrainHeight(sx, sz) + 0.08, sz)
@@ -141,7 +165,10 @@ export function createScenery(scene: THREE.Scene, presetId = 'hangzhou'): Garden
         const mesh = o as THREE.Mesh
         if (mesh.geometry) mesh.geometry.dispose()
         const m = mesh.material as THREE.Material | THREE.Material[] | undefined
-        if (Array.isArray(m)) m.forEach((mm) => mm.dispose())
+        if (Array.isArray(m))
+          m.forEach((mm) => {
+            mm.dispose()
+          })
         else m?.dispose()
       })
       root.removeFromParent()

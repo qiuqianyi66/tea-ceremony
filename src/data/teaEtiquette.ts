@@ -17,7 +17,8 @@ export const TEA_ETIQUETTES: TeaEtiquette[] = [
     id: 'kelaijingcha',
     name: '客来敬茶',
     occasion: '日常待客',
-    description: '"客来敬茶"是中国最基本的茶礼，也是中华民族的传统美德。无论贫富，客至必奉茶，表达了主人对客人的尊重与欢迎。',
+    description:
+      '"客来敬茶"是中国最基本的茶礼，也是中华民族的传统美德。无论贫富，客至必奉茶，表达了主人对客人的尊重与欢迎。',
     steps: [
       '净手洁器：泡茶前洗净双手，温烫茶具',
       '投茶入壶：取适量茶叶放入茶壶或盖碗',
@@ -53,7 +54,8 @@ export const TEA_ETIQUETTES: TeaEtiquette[] = [
     id: 'songdai_diancha',
     name: '宋代点茶礼',
     occasion: '点茶雅集',
-    description: '宋代是中国茶文化的巅峰时期，点茶法是宋人饮茶的主要方式。宋徽宗《大观茶论》将点茶技艺推向极致。',
+    description:
+      '宋代是中国茶文化的巅峰时期，点茶法是宋人饮茶的主要方式。宋徽宗《大观茶论》将点茶技艺推向极致。',
     steps: [
       '炙茶：用微火炙烤茶饼，激发香气',
       '碾茶：将茶饼碾碎成细末',
@@ -90,7 +92,8 @@ export const TEA_ETIQUETTES: TeaEtiquette[] = [
     id: 'hunli_cha',
     name: '婚礼茶礼',
     occasion: '婚嫁礼仪',
-    description: '茶在中国传统婚礼中具有特殊意义。"茶不移本，植必生子"——古人以茶象征忠贞不渝的爱情和多子多福。',
+    description:
+      '茶在中国传统婚礼中具有特殊意义。"茶不移本，植必生子"——古人以茶象征忠贞不渝的爱情和多子多福。',
     steps: [
       '备茶：准备上等茶叶，寓意美满',
       '敬茶：新郎新娘双手捧茶，敬奉父母',
@@ -103,7 +106,8 @@ export const TEA_ETIQUETTES: TeaEtiquette[] = [
     id: 'chancha_ywei',
     name: '禅茶一味',
     occasion: '寺院茶礼',
-    description: '"茶禅一味"是中国茶文化的至高境界。僧人以茶修行，通过泡茶、品茶的过程体悟禅理。"吃茶去"是唐代赵州禅师的著名公案。',
+    description:
+      '"茶禅一味"是中国茶文化的至高境界。僧人以茶修行，通过泡茶、品茶的过程体悟禅理。"吃茶去"是唐代赵州禅师的著名公案。',
     steps: [
       '净手：洗净双手，身心清净',
       '入席：盘腿端坐，收摄心神',
@@ -120,7 +124,8 @@ export const TEA_ETIQUETTES: TeaEtiquette[] = [
     id: 'gongcha_jinxian',
     name: '贡茶进献礼',
     occasion: '宫廷贡茶',
-    description: '贡茶制度始于唐代，盛于宋、明、清。每年春季，茶区精选最好的茶叶进贡皇室，形成了一套严格的礼仪。',
+    description:
+      '贡茶制度始于唐代，盛于宋、明、清。每年春季，茶区精选最好的茶叶进贡皇室，形成了一套严格的礼仪。',
     steps: [
       '选茶：茶区官员精选上等茶叶，一芽一叶为标准',
       '包装：用锡罐或瓷罐密封包装，防潮防变',
@@ -203,7 +208,8 @@ export const TEA_ETIQUETTES: TeaEtiquette[] = [
     id: 'xinchun_baicha',
     name: '新春拜年茶',
     occasion: '春节礼仪',
-    description: '春节期间以茶待客是中国人的传统习俗，"茶"寓意清吉平安，"拜年茶"承载着对新年的美好祝愿。',
+    description:
+      '春节期间以茶待客是中国人的传统习俗，"茶"寓意清吉平安，"拜年茶"承载着对新年的美好祝愿。',
     steps: [
       '备年茶：准备上好茶叶和茶点',
       '迎客：开门迎客，互道新年祝福',

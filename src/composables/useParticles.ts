@@ -9,11 +9,11 @@
  * - 按需引入，仅 ~35kB gzipped
  */
 
-import { ref, onUnmounted, type Ref } from 'vue'
-import { loadSlim } from '@tsparticles/slim'
-import { loadFirePreset } from '@tsparticles/preset-fire'
+import { type Container, type Engine, type ISourceOptions, tsParticles } from '@tsparticles/engine'
 import { loadBubblesPreset } from '@tsparticles/preset-bubbles'
-import { tsParticles, type Engine, type Container, type ISourceOptions } from '@tsparticles/engine'
+import { loadFirePreset } from '@tsparticles/preset-fire'
+import { loadSlim } from '@tsparticles/slim'
+import { onUnmounted, type Ref, ref } from 'vue'
 
 // ============ 类型定义 ============
 
@@ -22,8 +22,8 @@ type ParticleMode = 'fire' | 'steam' | 'ripple' | 'idle'
 interface ParticleSystemState {
   mode: ParticleMode
   isRunning: boolean
-  flameIntensity: number  // 0-1
-  steamIntensity: number  // 0-1
+  flameIntensity: number // 0-1
+  steamIntensity: number // 0-1
 }
 
 // ============ 配置工厂 ============
@@ -42,8 +42,14 @@ function createFireOptions(width: number, height: number, intensity = 1): Record
       number: { value: Math.round(60 * intensity), density: { enable: true, area: 800 } },
       color: { value: ['#FF6B00', '#FF8C00', '#FFD700', '#FFA500', '#FF4500'] },
       shape: { type: ['circle', 'triangle'] },
-      opacity: { value: { min: 0.1, max: 0.8 }, animation: { enable: true, speed: 2, sync: false } },
-      size: { value: { min: 2, max: 12 }, animation: { enable: true, speed: 10, sync: false, minimumValue: 0.5 } },
+      opacity: {
+        value: { min: 0.1, max: 0.8 },
+        animation: { enable: true, speed: 2, sync: false },
+      },
+      size: {
+        value: { min: 2, max: 12 },
+        animation: { enable: true, speed: 10, sync: false, minimumValue: 0.5 },
+      },
       move: {
         direction: 'top',
         speed: { min: 0.5, max: 2 },
@@ -78,8 +84,14 @@ function createSteamOptions(width: number, height: number, intensity = 1): Recor
       number: { value: Math.round(15 * intensity), density: { enable: true, area: 1000 } },
       color: { value: COLOR_STEAM },
       shape: { type: 'circle' },
-      opacity: { value: { min: 0.05, max: 0.35 }, animation: { enable: true, speed: 0.5, sync: false } },
-      size: { value: { min: 8, max: 25 }, animation: { enable: true, speed: 3, sync: false, minimumValue: 0.1 } },
+      opacity: {
+        value: { min: 0.05, max: 0.35 },
+        animation: { enable: true, speed: 0.5, sync: false },
+      },
+      size: {
+        value: { min: 8, max: 25 },
+        animation: { enable: true, speed: 3, sync: false, minimumValue: 0.1 },
+      },
       move: {
         direction: 'top',
         speed: { min: 0.15, max: 0.4 },
@@ -185,11 +197,12 @@ export function useParticleSystem(
         return
     }
 
-    container = (await engine.load({
-      id: `tea-particles-${mode}`,
-      element: containerRef.value,
-      options: options as ISourceOptions,
-    })) ?? null
+    container =
+      (await engine.load({
+        id: `tea-particles-${mode}`,
+        element: containerRef.value,
+        options: options as ISourceOptions,
+      })) ?? null
 
     state.value.mode = mode
     state.value.isRunning = true
@@ -279,7 +292,7 @@ export function useParticleSystem(
     state,
 
     // 容器引用 (模板绑定)
-      containerRef,
+    containerRef,
 
     // 控制方法
     startFire,
@@ -293,7 +306,9 @@ export function useParticleSystem(
     destroy,
 
     // 获取当前 container 实例 (高级用法)
-    get currentContainer() { return container },
+    get currentContainer() {
+      return container
+    },
   }
 }
 

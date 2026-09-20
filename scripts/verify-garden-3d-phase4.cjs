@@ -5,8 +5,16 @@ const { chromium } = require('@playwright/test')
   const browser = await chromium.launch({ channel: 'chromium', args: ['--mute-audio'] })
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
   const errors = []
-  page.on('pageerror', (e) => { errors.push(e.message); console.log('[pageerror]', e.message) })
-  page.on('console', (m) => { if (m.type() === 'error') { errors.push('[console] ' + m.text().slice(0, 150)); console.log('[console.error]', m.text().slice(0, 150)) } })
+  page.on('pageerror', (e) => {
+    errors.push(e.message)
+    console.log('[pageerror]', e.message)
+  })
+  page.on('console', (m) => {
+    if (m.type() === 'error') {
+      errors.push('[console] ' + m.text().slice(0, 150))
+      console.log('[console.error]', m.text().slice(0, 150))
+    }
+  })
 
   await page.goto('http://localhost:5173/garden/hangzhou', { waitUntil: 'domcontentloaded' })
   await page.waitForTimeout(7000)
@@ -33,17 +41,20 @@ const { chromium } = require('@playwright/test')
     const camera = g.activeCamera()
     const cam = camera.value || camera
     let hitbox = null
-    scene.traverse((o) => { if (!hitbox && o.isMesh && o.userData && typeof o.userData.plantId === 'number') hitbox = o })
+    scene.traverse((o) => {
+      if (!hitbox && o.isMesh && o.userData && typeof o.userData.plantId === 'number') hitbox = o
+    })
     if (!hitbox) return { n: 0 }
     const rc = new g.THREE.Raycaster()
     const v = new g.THREE.Vector2()
     const hits = []
-    for (let sy = 0; sy < 900; sy += 8) for (let sx = 0; sx < 1440; sx += 8) {
-      v.x = (sx / 1440) * 2 - 1
-      v.y = -(sy / 900) * 2 + 1
-      rc.setFromCamera(v, cam)
-      if (rc.intersectObject(hitbox, true).length > 0) hits.push([sx, sy])
-    }
+    for (let sy = 0; sy < 900; sy += 8)
+      for (let sx = 0; sx < 1440; sx += 8) {
+        v.x = (sx / 1440) * 2 - 1
+        v.y = -(sy / 900) * 2 + 1
+        rc.setFromCamera(v, cam)
+        if (rc.intersectObject(hitbox, true).length > 0) hits.push([sx, sy])
+      }
     if (!hits.length) return { n: 0 }
     return {
       n: hits.length,
@@ -56,7 +67,8 @@ const { chromium } = require('@playwright/test')
   // 区域内点击
   let hit = false
   if (scan.n) {
-    const [minX, minY] = scan.min, [maxX, maxY] = scan.max
+    const [minX, minY] = scan.min,
+      [maxX, maxY] = scan.max
     for (let y = minY; y <= maxY && !hit; y += 12) {
       for (let x = minX; x <= maxX && !hit; x += 12) {
         await page.mouse.move(x, y)
@@ -65,7 +77,12 @@ const { chromium } = require('@playwright/test')
         await page.waitForTimeout(60)
         await page.mouse.up()
         await page.waitForTimeout(250)
-        if (await page.locator('.plant-detail').isVisible().catch(() => false)) {
+        if (
+          await page
+            .locator('.plant-detail')
+            .isVisible()
+            .catch(() => false)
+        ) {
           console.log(`[3] ✓ 点击 (${x},${y}) 弹出详情`)
           hit = true
           break
@@ -81,4 +98,7 @@ const { chromium } = require('@playwright/test')
   console.log(pass ? '\n=== ✅ 四期验证通过 ===' : '\n=== ❌ 验证未通过 ===')
   await browser.close()
   process.exit(pass ? 0 : 1)
-})().catch((e) => { console.error('脚本失败:', e.message); process.exit(1) })
+})().catch((e) => {
+  console.error('脚本失败:', e.message)
+  process.exit(1)
+})

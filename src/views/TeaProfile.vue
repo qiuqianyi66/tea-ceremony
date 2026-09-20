@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useTeaStore } from '@/stores/tea'
-import { useProgressStore } from '@/stores/progress'
+import TasteProfileSection from '@/components/tasting/TasteProfileSection.vue'
 import { TEA_LEVELS } from '@/data/constants'
 import { teas } from '@/data/teas'
 import { teawares } from '@/data/teawares'
-import TasteProfileSection from '@/components/tasting/TasteProfileSection.vue'
+import { useProgressStore } from '@/stores/progress'
+import { useTeaStore } from '@/stores/tea'
 
 const router = useRouter()
 const store = useTeaStore()
@@ -16,12 +16,21 @@ onMounted(() => {
   store.loadHistory()
 })
 
-const tastedTypes = computed(() => new Set(store.history.map(r => {
-  const t = teas.find(tt => tt.id === r.teaId)
-  return t?.type
-}).filter(Boolean)))
+const tastedTypes = computed(
+  () =>
+    new Set(
+      store.history
+        .map((r) => {
+          const t = teas.find((tt) => tt.id === r.teaId)
+          return t?.type
+        })
+        .filter(Boolean),
+    ),
+)
 const totalTastings = computed(() => store.history.length)
-const unlockedWareCount = computed(() => teawares.filter(w => progress.isTeaWareUnlocked(w.id)).length)
+const unlockedWareCount = computed(
+  () => teawares.filter((w) => progress.isTeaWareUnlocked(w.id)).length,
+)
 const typeCoverage = computed(() => Math.round((tastedTypes.value.size / 6) * 100))
 </script>
 
