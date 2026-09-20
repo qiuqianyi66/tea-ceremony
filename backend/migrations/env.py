@@ -22,7 +22,7 @@ config.set_main_option("sqlalchemy.url", database_url.replace("%", "%%"))
 from app.database import Base
 from app.models import (
     Tea, TeaRegion, TeaProcess, TeaPerson, TeaPoem,
-    TeaWareV2, TeaEtiquette, TeaRelation, WaterSource,
+    TeaWareV2, TeaEtiquette, TeaRelation,
     TeaJourney, TeaPersonRelation, UserV2, TastingRecordV2,
 )
 
