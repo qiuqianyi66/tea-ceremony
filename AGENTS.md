@@ -212,6 +212,18 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q   # 后端全量
 
 * **讲架构用 show-me**：解释调用链、文件布局、状态流转、diff 影响面时，调 `.agents/skills/show-me/SKILL.md` 里的视图模板（调用树 / 文件树 / diff / Mermaid），不要只贴整段代码。
 
+### 决策与复盘纪律（BMad Method 对照补入）
+
+* **多角色质询（四维甄别的升级）**：新功能立项 / 关键决策在四维甄别（见 12 节）基础上，再轮流用 5 个角色各提一个反对意见——PM（值不值得做）/ 架构师（撑不撑得住）/ UX（人愿不愿意用）/ 开发者（好不好实现）/ 分析师（市场与竞品怎么说）；小决策至少换 2 个角色。
+
+* **深度批判四法**：关键方案评审时从 Socratic（追问前提）/ first principles（拆到第一性原理）/ pre-mortem（假设已失败倒推死因，默认首选）/ red team（专挑毛病）中选一种执行，禁止自夸式确认。
+
+* **变更影响评估（correct-course）**：需求或架构中途变更时，动手前先过影响面清单：V3_ROADMAP、CONTEXT.md ADR、UX/设计文档、测试、数据库迁移；改动已记录的决策先补 ADR 再动代码。
+
+* **证据回顾（retrospective）**：阶段收尾（如视觉升级阶段、V3 每章落地后）对照 V3_ROADMAP 验收标准 + git log 做一次回顾，产出「验收决定 + 行动项」后再开下一阶段；结论记入 CONTEXT.md。
+
+* **PRFAQ 逆向工作法（大功能立项）**：V3 后续大功能立项时，先写"产品发布新闻稿 + 客户与干系人问答"，再反向推需求；与四维甄别互补，小功能跳过。
+
 ### Git
 
 
@@ -534,4 +546,8 @@ docker compose down
 
 * 2026-09-15 git commit 教训：PowerShell 双引号包 commit message 时，message 内含中文单引号（如「'普洱茶'」）会被 shell 截断成 pathspec 报错，feat commit 静默失败、已 staged 文件并入下一个 commit——commit message 一律避免引号，或用单引号 here-string @'...'@ 传参。
 
+* 2026-09-19 对照 bmad-code-org/BMAD-METHOD 仓库 30 个 skills 做差距对照后，新增「决策与复盘纪律」小节（多角色质询 = 四维甄别升级 / 深度批判四法 / 变更影响评估 / 证据回顾 / PRFAQ 逆向工作法）。
+
 *本文件是活文档，项目架构或流程变更时同步更新。*
+* 2026-09-20 P2-8 KTX2 工具链正确路线：basis_universal 官方 release 无预编译二进制（assets 全空）、npm 包 basisu 依赖 node-gyp 原生编译在 Windows 装不上、pyktx wheel 运行时还要系统装 KTX-Software——唯一省事路径是装 Khronos KTX-Software 官方 Windows-x64.exe（静默 /S）取 toktx.exe 转码；three 自带 basis transcoder（node_modules/three/examples/jsm/libs/basis/）需复制进 public/ 供 KTX2Loader.setTranscoderPath 运行时加载；workbox runtimeCaching 的 /3d/ urlPattern 必须补 ktx2|wasm|js 否则离线缓存失效；ETC1S q160 + genmipmap 对 2k 地面贴图 32MB→~0.9MB/张，diff 贴图 assign_oetf srgb、nor_gl 用 linear。
+* 2026-09-20 biome --write 的 organizeImports 会把 TresJS 模板组件（OrbitControls 等）导入转 type-only 导致运行时炸（is not defined / target is not a constructor）；biome.json 的 **/*.vue override 已关 useImportType/useExportType，且 biome.json 是严格 JSON 禁注释（写注释整体回退）。
