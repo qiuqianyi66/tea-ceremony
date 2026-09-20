@@ -40,7 +40,7 @@
 | -- | ----------------------------------------------------------------------------- | -------------------- |
 | 前端 | Vue 3 + TS + Pinia + Vue Router + Tailwind 4 + Vite + Dexie + Three.js/TresJS | `src/main.ts`        |
 | 后端 | FastAPI + SQLAlchemy 2.0 + Alembic + PostgreSQL + Pydantic v2                 | `backend/main.py`    |
-| 部署 | Docker Compose + Nginx + PWA + GitHub Pages Demo                              | `docker-compose.yml` |
+| 部署 | Windows Server 原生（NSSM+uvicorn + nginx for Windows + 本地 PG）+ PWA + GitHub Pages Demo；旧 Docker 方案已弃用保留参考 | `DEPLOY.md` / `nginx-windows.conf` |
 | 测试 | Vitest + fake-indexeddb + Playwright + pytest + Alembic 迁移测试                  | 见「验证」                |
 | CI | GitHub Actions（7 job 合并门禁）                                                    | `.github/workflows/` |
 
@@ -470,19 +470,17 @@ alembic upgrade head
 python -m seeds.run
 ```
 
-### Docker
+### 生产部署（Windows Server 原生；旧 Docker 已弃用）
 
-
+全流程见 `DEPLOY.md`。脚本：
 
 ```
-docker compose up -d --build
-
-docker compose logs -f backend
-
-docker compose exec backend python -m seeds.run
-
-docker compose down
+scripts/install-windows-service.ps1   # NSSM 注册 tea-backend 服务（uvicorn 单进程）
+scripts/backup-postgres.ps1           # pg_dump + gzip + 保留14天（任务计划调用）
+# nginx 生产配置：nginx-windows.conf（root C:/tea/dist，反代 127.0.0.1:8000）
 ```
+
+旧 `docker-compose.yml` / `backend/Dockerfile` / `nginx.conf` 保留作历史参考，不再用于部署。
 
 ## 12. 项目学习记录
 

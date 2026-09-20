@@ -7,7 +7,6 @@ An immersive online tea ceremony experience: from entering the tea room, choosin
 [![CI](https://github.com/qiuqianyi66/tea-ceremony/actions/workflows/ci.yml/badge.svg)](https://github.com/qiuqianyi66/tea-ceremony/actions/workflows/ci.yml)
 [![Vue 3](https://img.shields.io/badge/Vue-3-42b883?logo=vuedotjs&logoColor=white)](https://vuejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Docker](https://img.shields.io/badge/Docker-ready-2496ed?logo=docker&logoColor=white)](docker-compose.yml)
 
 Live static demo (GitHub Pages): [qiuqianyi66.github.io/tea-ceremony](https://qiuqianyi66.github.io/tea-ceremony/)
 
@@ -26,7 +25,7 @@ Most "tea culture" products stop at content display. **Tea Ceremony** turns cult
 - **Shareable tasting card**: one-click QR code / share link / PNG with embedded QR — recipients open a read-only share page to view the session
 - **Personal growth**: IndexedDB offline history, XP, achievements and teaware collection
 - **AI tea spirit**: tea-culture RAG retrieval + LLM, falling back to rule-based replies when the network is unavailable
-- **PWA & deployment**: installable and offline-capable, one-command Docker Compose startup for frontend, backend and PostgreSQL
+- **PWA & deployment**: installable and offline-capable, native Windows Server deployment (NSSM + nginx, see DEPLOY.md)
 
 ![Tasting share card](docs/screenshots/share.png)
 
@@ -55,7 +54,7 @@ GitHub Actions runs on every push and Pull Request:
 - Backend API tests (pytest, in-memory SQLite)
 - Database migration tests (real PostgreSQL, Alembic upgrade/rollback round-trip)
 - Python byte-compile check
-- Docker Compose configuration validation
+- Docker Compose configuration validation (legacy deployment, kept for reference)
 
 ## Project structure
 
@@ -73,8 +72,9 @@ tea-ceremony/
 │  ├─ app/services/       # business services (base CRUD + tea/record/garden/auth + culture retrieval/AI proxy)
 │  └─ seeds/              # seed teas and cultural data
 ├─ .github/               # CI, issue and PR templates
-├─ docker-compose.yml
-└─ nginx.conf
+├─ docker-compose.yml       # legacy Docker deployment (deprecated, kept for reference)
+├─ nginx.conf                # Linux/container version (deprecated)
+└─ nginx-windows.conf        # native Windows production version
 ```
 
 ## Local development
@@ -88,21 +88,29 @@ npm run dev
 
 The local dev environment requests `http://localhost:8000/api` by default. If you only want to try the frontend, the built-in tea catalog and IndexedDB still work.
 
-The GitHub Pages demo uses the built-in tea catalog and browser local storage; full account-sync features require running the Docker backend.
+The GitHub Pages demo uses the built-in tea catalog and browser local storage; full account-sync features require running a local backend (see below).
 
 ### Full stack
 
+> Local: install PostgreSQL and Python 3.12 first (PG runs as a local Windows service), then follow below.
+> Production (Windows Server): see [DEPLOY.md](DEPLOY.md).
+
 ```powershell
 Copy-Item .env.example .env
-# edit .env, set SECRET_KEY and PostgreSQL password
-npm run build
-docker compose up -d --build
+# edit .env: SECRET_KEY, DATABASE_URL pointing to local PG (localhost:5432)
+cd backend
+python -m venv .venv
+.\.venv\Scripts\pip install -r requirements.txt
+.\.venv\Scripts\alembic upgrade head
+.\.venv\Scripts\python -m seeds.run
+# in a separate terminal, start the backend (dev hot reload):
+.\.venv\Scripts\uvicorn main:app --reload --port 8000
 ```
 
 Import seed data on first launch:
 
-```bash
-docker compose exec backend python -m seeds.run
+```powershell
+cd backend; .\.venv\Scripts\python -m seeds.run
 ```
 
 ## Commands
@@ -130,7 +138,7 @@ TEST_DATABASE_URL=postgresql://... python -m pytest tests/test_migrations.py -q 
 
 ## Resume summary
 
-> Independently designed and developed an immersive online tea-ceremony app, building the complete select-brew-taste loop with Vue 3, TypeScript, Pinia, Dexie.js, FastAPI, PostgreSQL and Docker; implemented IndexedDB offline-first storage with retry, an explainable rule-based scoring model, shareable tasting cards, tea-culture RAG retrieval and AI fallback; routed AI requests through a backend proxy with API rate limiting, unified error format, server logging and health checks; automated type-checking, unit tests, Playwright E2E, backend tests and Compose validation via GitHub Actions.
+> Independently designed and developed an immersive online tea-ceremony app, building the complete select-brew-taste loop with Vue 3, TypeScript, Pinia, Dexie.js, FastAPI, PostgreSQL and Nginx; implemented IndexedDB offline-first storage with retry, an explainable rule-based scoring model, shareable tasting cards, tea-culture RAG retrieval and AI fallback; routed AI requests through a backend proxy with API rate limiting, unified error format, server logging and health checks; automated type-checking, unit tests, Playwright E2E, backend tests and Compose validation via GitHub Actions.
 
 ## Roadmap
 

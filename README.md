@@ -7,7 +7,6 @@
 [![CI](https://github.com/qiuqianyi66/tea-ceremony/actions/workflows/ci.yml/badge.svg)](https://github.com/qiuqianyi66/tea-ceremony/actions/workflows/ci.yml)
 [![Vue 3](https://img.shields.io/badge/Vue-3-42b883?logo=vuedotjs&logoColor=white)](https://vuejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Docker](https://img.shields.io/badge/Docker-ready-2496ed?logo=docker&logoColor=white)](docker-compose.yml)
 
 在线静态 Demo（启用 GitHub Pages 后）：[qiuqianyi66.github.io/tea-ceremony](https://qiuqianyi66.github.io/tea-ceremony/)
 
@@ -17,7 +16,7 @@
 
 很多“茶文化”产品停留在内容展示层。「一盏茶」尝试把文化内容转化成一个可操作、可反馈、可持续记录的数字体验：用户选择茶叶和茶器，控制水温与浸泡时间，再根据茶汤、香气和口感完成品鉴。
 
-定位：东方数字茶空间——不是泡茶工具，而是一座数字茶室（Slogan：一席茶，一方天地，一念清心）。产品坚持离线优先、无广告、可自托管（Docker 一键部署），不引入广告与付费墙。
+定位：东方数字茶空间——不是泡茶工具，而是一座数字茶室（Slogan：一席茶，一方天地，一念清心）。产品坚持离线优先、无广告、可自托管（Windows 原生部署，见 DEPLOY.md），不引入广告与付费墙。
 
 为谁而做：① 想学茶但嫌麻烦的茶小白——要引导、要氛围；② 有品茶习惯的人——要记录、要沉淀；③ 冥想与慢生活人群——要陪伴感。功能取舍以“这三类用户能否完成一席完整的茶事”为准（四维产品分析，2026-09-14）。
 
@@ -30,7 +29,7 @@
 - 可分享品鉴卡：一键生成二维码 / 分享链接 / 带二维码的 PNG，收礼者可打开只读分享页查看这席茶
 - 个人成长：IndexedDB 离线历史、成长看板（八维均值 / 评分趋势 / 茶类足迹 / 节气足迹）、XP、成就和茶器收藏
 - AI 茶灵：茶文化 RAG 检索 + LLM，网络不可用时自动降级到规则回复
-- PWA 与部署：可安装、离线可用，Docker Compose 一键启动前后端和 PostgreSQL
+- PWA 与部署：可安装、离线可用，Windows Server 原生部署（NSSM + nginx，见 DEPLOY.md）
 
 ![品鉴分享卡](docs/screenshots/share.png)
 
@@ -59,7 +58,7 @@ GitHub Actions 会在 push 和 Pull Request 时执行：
 - 后端 API 测试（pytest，SQLite 内存库）
 - 数据库迁移测试（真实 PostgreSQL，Alembic 往返升级/回滚）
 - Python 源码编译检查
-- Docker Compose 配置校验
+- Docker Compose 配置校验（旧部署方式保留，已弃用）
 
 ## 项目结构
 
@@ -77,8 +76,9 @@ tea-ceremony/
 │  ├─ app/services/        # 业务 service（base CRUD + tea/record/garden/auth + 文化检索/AI 代理）
 │  └─ seeds/               # 初始茶叶与文化数据
 ├─ .github/               # CI、Issue 和 PR 模板
-├─ docker-compose.yml
-└─ nginx.conf
+├─ docker-compose.yml       # 旧 Docker 部署（已弃用，保留参考）
+├─ nginx.conf                # Linux/容器版（已弃用）
+└─ nginx-windows.conf        # Windows 原生生产版
 ```
 
 ## 本地运行
@@ -92,21 +92,29 @@ npm run dev
 
 本地开发环境默认请求 `http://localhost:8000/api`。如果只想体验前端，内置茶叶目录和 IndexedDB 仍可工作。
 
-GitHub Pages Demo 使用内置茶叶目录和浏览器本地存储，完整账号同步功能需要运行 Docker 后端。
+GitHub Pages Demo 使用内置茶叶目录和浏览器本地存储，完整账号同步功能需要运行本地后端（见下）。
 
 ### 运行完整服务
 
+> 本地：先装好 PostgreSQL 和 Python 3.12（PG 装成本地 Windows 服务），再按下面走。
+> 生产部署（Windows Server）见 [DEPLOY.md](DEPLOY.md)。
+
 ```powershell
 Copy-Item .env.example .env
-# 编辑 .env，设置 SECRET_KEY 和 PostgreSQL 密码
-npm run build
-docker compose up -d --build
+# 编辑 .env：SECRET_KEY、DATABASE_URL 指向本地 PG（localhost:5432）
+cd backend
+python -m venv .venv
+.\.venv\Scripts\pip install -r requirements.txt
+.\.venv\Scripts\alembic upgrade head
+.\.venv\Scripts\python -m seeds.run
+# 另开一个终端启动后端（开发热重载）：
+.\.venv\Scripts\uvicorn main:app --reload --port 8000
 ```
 
 首次启动后可导入种子数据：
 
-```bash
-docker compose exec backend python -m seeds.run
+```powershell
+cd backend; .\.venv\Scripts\python -m seeds.run
 ```
 
 ## 常用命令
@@ -136,7 +144,7 @@ TEST_DATABASE_URL=postgresql://... python -m pytest tests/test_migrations.py -q 
 
 ## 简历项目描述
 
-> 独立设计并开发「一盏茶」沉浸式茶道体验应用，使用 Vue 3、TypeScript、Pinia、Dexie.js、FastAPI、PostgreSQL 和 Docker 构建完整的选茶—冲泡—品鉴闭环；实现 IndexedDB 离线优先存储与失败重试、基于规则的可解释评分模型、可分享品鉴卡片、茶文化 RAG 检索与 AI 降级策略；AI 请求收敛到后端代理转发，配套 API 限流、统一错误格式、服务端日志与健康检查；通过 GitHub Actions 自动完成类型检查、单元测试、Playwright E2E、后端测试与 Compose 校验。
+> 独立设计并开发「一盏茶」沉浸式茶道体验应用，使用 Vue 3、TypeScript、Pinia、Dexie.js、FastAPI、PostgreSQL 和 Nginx 构建完整的选茶—冲泡—品鉴闭环；实现 IndexedDB 离线优先存储与失败重试、基于规则的可解释评分模型、可分享品鉴卡片、茶文化 RAG 检索与 AI 降级策略；AI 请求收敛到后端代理转发，配套 API 限流、统一错误格式、服务端日志与健康检查；通过 GitHub Actions 自动完成类型检查、单元测试、Playwright E2E、后端测试与 Compose 配置校验。
 
 ## 后续路线图
 

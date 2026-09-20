@@ -229,16 +229,3 @@ jobs:
         env:
           TEST_DATABASE_URL: postgresql://tea_test:tea_test@localhost:5432/tea_test
         run: python -m pytest tests/test_migrations.py tests/test_pool_recycle.py -q
-
-  compose:
-    name: Validate Docker Compose
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Validate compose file
-        env:
-          SECRET_KEY: ci-validation-secret
-          POSTGRES_PASSWORD: ci-validation-password
-          DATABASE_URL: postgresql://tea_user:ci-validation-password@db:5432/tea_ceremony
-        run: docker compose config --quiet

@@ -128,8 +128,8 @@ backend/
 | 后端开发 | `cd backend && uvicorn main:app --reload --port 8000` |
 | 生成迁移 | `cd backend && alembic revision --autogenerate -m "msg"` |
 | 执行迁移 | `cd backend && alembic upgrade head` |
-| 导入种子 | `docker compose exec backend python -m seeds.run` |
-| 启动全部 | `docker compose up -d --build` |
+| 导入种子 | `cd backend && .\.venv\Scripts\python -m seeds.run` |
+| 生产部署 | 见 DEPLOY.md（Windows 原生 NSSM+nginx，旧 Docker 已弃用） |
 
 ---
 
@@ -163,5 +163,5 @@ backend/
 - [x] 冲泡页已升级为 TresJS 3D 茶席 + 实景夜色暖光背景（`3D_SPEC.md`）
 - [ ] 第六阶段「简历与面试材料」未做（路线图最后一项）
 - [ ] 演示短视频未做（用户暂缓）
-- [ ] 迁移测试本地跑需 Docker 引擎就绪（CI 已用 Postgres service 强制跑）
+- [x] 迁移测试本地跑：`TEST_DATABASE_URL` 指向本地 PG 服务即可（不再依赖 Docker），CI 用 Postgres service
 - [ ] 生产规模扩展（Redis 分布式限流、Sentry 异常追踪）非必需，可按需推进
