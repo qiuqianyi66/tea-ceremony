@@ -3,6 +3,7 @@ import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
+import { visualizer } from 'rollup-plugin-visualizer'
 import { VitePWA } from 'vite-plugin-pwa'
 import tresCompilerOptions from '@tresjs/core/template-compiler-options'
 
@@ -24,6 +25,10 @@ export default defineConfig({
   plugins: [
     vue(tresCompilerOptions),
     tailwindcss(),
+    // P2-4：包体积诊断，仅 VISUALIZE=1 时生成 stats.html（不常驻构建/CI）
+    ...(process.env.VISUALIZE === '1'
+      ? [visualizer({ filename: 'stats.html', gzipSize: true, brotliSize: true })]
+      : []),
     VitePWA({
       // prompt 模式：新版本就绪后由用户确认才更新，禁止 autoUpdate 强刷丢表单数据（vite-pwa 官方警告）
       registerType: 'prompt',
@@ -81,8 +86,9 @@ export default defineConfig({
             },
           },
           {
-            // 3D 纹理大图（单张 2-6MB）不走预缓存，首次加载后 CacheFirst
-            urlPattern: /\/3d\/.*\.(?:jpg|png)$/i,
+            // 3D 纹理大图（jpg 单张 2-6MB；P2-8 起优先 KTX2 ~0.9MB/张）不走预缓存，
+            // 首次加载后 CacheFirst；basis transcoder（wasm/js）同目录一并缓存
+            urlPattern: /\/3d\/.*\.(?:jpg|png|ktx2|wasm|js)$/i,
             handler: 'CacheFirst',
             options: {
               cacheName: '3d-textures',

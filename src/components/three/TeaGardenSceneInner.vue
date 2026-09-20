@@ -14,6 +14,7 @@ import type { PointerEvent as TresPointerEvent } from '@pmndrs/pointer-events'
 import { OrbitControls } from '@tresjs/cientos'
 import { useLoop, useTresContext } from '@tresjs/core'
 import * as THREE from 'three'
+import { KTX2Loader } from 'three/addons/loaders/KTX2Loader.js'
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js'
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
@@ -518,12 +519,19 @@ onMounted(() => {
   renderer.shadowMap.type = THREE.PCFShadowMap
 
   // 六期：加载 Poly Haven 真实地形贴图（CC0）并应用到地形材质
+  // P2-8：KTX2 压缩优先（32MB→~7MB，ETC1S），解码失败/缺失时回退原 JPEG（expand-contract，新旧并存；不动状态机）
   const texLoader = new THREE.TextureLoader()
+  const ktx2Loader = new KTX2Loader().setTranscoderPath('/3d/basis/')
+  ktx2Loader.detectSupport(renderer)
+  const loadTerrain = (name: string) =>
+    ktx2Loader
+      .loadAsync(`/3d/textures/terrain/${name}.ktx2`)
+      .catch(() => texLoader.loadAsync(`/3d/textures/terrain/${name}.jpg`))
   Promise.all([
-    texLoader.loadAsync('/3d/textures/terrain/aerial_grass_rock_diff_2k.jpg'),
-    texLoader.loadAsync('/3d/textures/terrain/brown_mud_dry_diff_2k.jpg'),
-    texLoader.loadAsync('/3d/textures/terrain/rock_ground_02_diff_2k.jpg'),
-    texLoader.loadAsync('/3d/textures/terrain/aerial_grass_rock_nor_gl_2k.jpg'),
+    loadTerrain('aerial_grass_rock_diff_2k'),
+    loadTerrain('brown_mud_dry_diff_2k'),
+    loadTerrain('rock_ground_02_diff_2k'),
+    loadTerrain('aerial_grass_rock_nor_gl_2k'),
   ])
     .then(([grass, mud, rock, grassNormal]) => {
       grass.colorSpace = THREE.SRGBColorSpace

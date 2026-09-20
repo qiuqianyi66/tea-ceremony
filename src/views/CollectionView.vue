@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useToast } from '@/composables/useToast'
 import { SOLAR_TERMS } from '@/data/solarTerms'
 import { getTeaById, teas } from '@/data/teas'
 import { teawares } from '@/data/teawares'
 import { buildTeaShareUrl, encodeTeaShare } from '@/services/share'
+import { buildExportPayload, downloadExport } from '@/services/storage'
 import { useProgressStore } from '@/stores/progress'
 import { useTeaStore } from '@/stores/tea'
 import type { Tea } from '@/types/tea'
@@ -13,6 +15,25 @@ import { TeaType } from '@/types/tea'
 const router = useRouter()
 const store = useTeaStore()
 const progress = useProgressStore()
+const toast = useToast()
+
+// P2-12：一键导出品鉴记录为 .json（数据自主权）
+const exporting = ref(false)
+async function exportRecords() {
+  if (exporting.value) return
+  exporting.value = true
+  try {
+    const payload = await buildExportPayload()
+    if (!payload) {
+      toast.error('导出失败：本地数据库暂不可用')
+      return
+    }
+    downloadExport(payload)
+    toast.success(`已导出 ${payload.recordCount} 条品鉴记录`)
+  } finally {
+    exporting.value = false
+  }
+}
 
 onMounted(() => {
   store.loadHistory()
@@ -99,7 +120,14 @@ function markWareImgFailed(id: string) {
   <div class="min-h-[100dvh] p-4 sm:p-8">
     <div class="flex items-center justify-between mb-8">
       <h2 class="text-3xl font-bold text-[var(--color-wood)]">我的茶柜</h2>
-      <button @click="router.push('/')" class="text-[var(--color-wood-light)] hover:text-[var(--color-wood)]">返回</button>
+      <div class="flex items-center gap-2">
+        <button @click="exportRecords" :disabled="exporting"
+          class="rounded-full border border-[var(--color-tea-gold)]/50 px-4 py-2 text-sm text-[var(--color-wood)] transition-colors hover:bg-[var(--color-tea-gold)]/10 disabled:opacity-50"
+          title="导出全部品鉴记录为 JSON 文件">
+          <IconDownload class="inline-block -mt-0.5 w-4 h-4" /> {{ exporting ? '导出中…' : '导出记录' }}
+        </button>
+        <button @click="router.push('/')" class="text-[var(--color-wood-light)] hover:text-[var(--color-wood)]">返回</button>
+      </div>
     </div>
 
     <!-- 统计卡片 -->
