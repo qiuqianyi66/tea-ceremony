@@ -18,7 +18,7 @@ sentry-sdk==2.69.1
 asgi-correlation-id==5.0.1
 python-json-logger==4.2.0
 # starlette 显式锁定：fastapi 0.115 约束 <0.39，但避免依赖解析时被意外升到不兼容版本
-starlette==0.38.6
+starlette==1.6.0
 # P1-2 Prometheus /metrics（SRE 四信号）
 prometheus-fastapi-instrumentator==7.1.0
 # P1-11 生产多 worker（FastAPI 官方推荐 gunicorn + UvicornWorker）
