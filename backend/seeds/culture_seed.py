@@ -4,16 +4,16 @@
 """
 
 SEED_REGIONS = [
-    {"name": "西湖茶区", "province": "浙江", "altitude": 200, "climate": "亚热带湿润", "history": "龙井茶原产地，乾隆四次驾临。"},
-    {"name": "武夷山茶区", "province": "福建", "altitude": 600, "climate": "亚热带湿润", "history": "世界双遗产地，岩茶唯一产区。"},
-    {"name": "安溪茶区", "province": "福建", "altitude": 500, "climate": "亚热带季风", "history": "铁观音原产地，中国茶都。"},
-    {"name": "福鼎茶区", "province": "福建", "altitude": 600, "climate": "沿海湿润", "history": "白茶原产地，太姥山茶文化发祥地。"},
-    {"name": "黄山茶区", "province": "安徽", "altitude": 800, "climate": "高山云雾", "history": "黄山毛峰、太平猴魁原产地。"},
-    {"name": "勐海茶区", "province": "云南", "altitude": 1500, "climate": "热带雨林", "history": "普洱茶核心产区，布朗山古树茶闻名。"},
-    {"name": "洞庭东山", "province": "江苏", "altitude": 200, "climate": "温和湿润", "history": "碧螺春原产地，太湖小气候。"},
-    {"name": "祁门茶区", "province": "安徽", "altitude": 500, "climate": "亚热带湿润", "history": "祁门红茶原产地，世界三大高香红茶。"},
-    {"name": "凤凰山茶区", "province": "广东", "altitude": 1000, "climate": "山地气候", "history": "凤凰单丛原产地，茶中香水。"},
-    {"name": "洞庭湖君山", "province": "湖南", "altitude": 100, "climate": "湖岛气候", "history": "君山银针原产地，三起三落奇观。"},
+    {"name": "西湖茶区", "province": "浙江", "altitude": "200米", "climate": "亚热带湿润", "history": "龙井茶原产地，乾隆四次驾临。"},
+    {"name": "武夷山茶区", "province": "福建", "altitude": "600米", "climate": "亚热带湿润", "history": "世界双遗产地，岩茶唯一产区。"},
+    {"name": "安溪茶区", "province": "福建", "altitude": "500米", "climate": "亚热带季风", "history": "铁观音原产地，中国茶都。"},
+    {"name": "福鼎茶区", "province": "福建", "altitude": "600米", "climate": "沿海湿润", "history": "白茶原产地，太姥山茶文化发祥地。"},
+    {"name": "黄山茶区", "province": "安徽", "altitude": "800米", "climate": "高山云雾", "history": "黄山毛峰、太平猴魁原产地。"},
+    {"name": "勐海茶区", "province": "云南", "altitude": "1500米", "climate": "热带雨林", "history": "普洱茶核心产区，布朗山古树茶闻名。"},
+    {"name": "洞庭东山", "province": "江苏", "altitude": "200米", "climate": "温和湿润", "history": "碧螺春原产地，太湖小气候。"},
+    {"name": "祁门茶区", "province": "安徽", "altitude": "500米", "climate": "亚热带湿润", "history": "祁门红茶原产地，世界三大高香红茶。"},
+    {"name": "凤凰山茶区", "province": "广东", "altitude": "1000米", "climate": "山地气候", "history": "凤凰单丛原产地，茶中香水。"},
+    {"name": "洞庭湖君山", "province": "湖南", "altitude": "100米", "climate": "湖岛气候", "history": "君山银针原产地，三起三落奇观。"},
 ]
 
 SEED_PEOPLE = [
