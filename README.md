@@ -1,159 +1,109 @@
 # 一盏茶 · Tea Ceremony
 
-沉浸式在线茶道体验应用：从入席、选茶、备器、煮水、冲泡，到品鉴记录，完整模拟一场东方茶席。
+> 一席茶，一方天地，一念清心。
+
+沉浸式在线茶道：入席、选茶、煮水、冲泡、品鉴——在浏览器里走完一场完整的工夫茶。
+不是百科，不是计时器，是一座可以走进去的数字茶室。
 
 **中文** | [English](README.en.md)
 
 [![CI](https://github.com/qiuqianyi66/tea-ceremony/actions/workflows/ci.yml/badge.svg)](https://github.com/qiuqianyi66/tea-ceremony/actions/workflows/ci.yml)
 [![Vue 3](https://img.shields.io/badge/Vue-3-42b883?logo=vuedotjs&logoColor=white)](https://vuejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![PWA](https://img.shields.io/badge/PWA-offline-orange?logo=pwa)](https://web.dev/learn/pwa/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-在线静态 Demo（启用 GitHub Pages 后）：[qiuqianyi66.github.io/tea-ceremony](https://qiuqianyi66.github.io/tea-ceremony/)
+## 立即体验
 
-![首页](docs/screenshots/home.png)
+👉 **在线 Demo（无需注册，离线可用）**：[qiuqianyi66.github.io/tea-ceremony](https://qiuqianyi66.github.io/tea-ceremony/)
 
-## 为什么做这个项目
+![一盏茶 · 社交封面](docs/screenshots/og-cover.png)
 
-很多“茶文化”产品停留在内容展示层。「一盏茶」尝试把文化内容转化成一个可操作、可反馈、可持续记录的数字体验：用户选择茶叶和茶器，控制水温与浸泡时间，再根据茶汤、香气和口感完成品鉴。
+## 它是什么
 
-定位：东方数字茶空间——不是泡茶工具，而是一座数字茶室（Slogan：一席茶，一方天地，一念清心）。产品坚持离线优先、无广告、可自托管（Windows 原生部署，见 DEPLOY.md），不引入广告与付费墙。
+大多数"茶文化"产品停在图文介绍。「一盏茶」把文化变成可操作、可反馈、可记录的一次茶事：
 
-为谁而做：① 想学茶但嫌麻烦的茶小白——要引导、要氛围；② 有品茶习惯的人——要记录、要沉淀；③ 冥想与慢生活人群——要陪伴感。功能取舍以“这三类用户能否完成一席完整的茶事”为准（四维产品分析，2026-09-14）。
+- **3D 茶席**：TresJS / Three.js 渲染的木桌茶器，注水有蒸汽，出汤看汤色，时间、节气、主题茶室影响氛围
+- **完整流程闭环**：备器 → 煮水 → 温杯 → 醒茶 → 冲泡 → 观色 → 闻香 → 品味，八维口感评分 × 冲泡工艺系数
+- **离线优先**：Dexie.js + IndexedDB，品鉴记录先落本地，断网也能泡，联网后自动同步
+- **可分享**：一键生成带二维码的品鉴卡 PNG / 只读分享链接，把这席茶送给朋友
+- **AI 茶灵**：茶文化 RAG 检索 + LLM，网络不可用时自动降级到规则回复
 
-## 核心体验
+## 核心界面
 
-- 茶席入场：时间、节气、主题茶室和环境音构成沉浸式首页
-- 选茶与备器：六大茶类、茶器解锁、水源选择和茶文化资料
-- 真实交互冲泡：投茶量调节、温度控制、煮水/蒸汽/茶汤/出汤反馈、连续冲泡
-- 结构化品鉴：观色、闻香、品味三步流程，八维评分与工艺系数
-- 可分享品鉴卡：一键生成二维码 / 分享链接 / 带二维码的 PNG，收礼者可打开只读分享页查看这席茶
-- 个人成长：IndexedDB 离线历史、成长看板（八维均值 / 评分趋势 / 茶类足迹 / 节气足迹）、XP、成就和茶器收藏
-- AI 茶灵：茶文化 RAG 检索 + LLM，网络不可用时自动降级到规则回复
-- PWA 与部署：可安装、离线可用，Windows Server 原生部署（NSSM + nginx，见 DEPLOY.md）
+| 沉浸式首页 | 3D 冲泡 | 品鉴分享卡 |
+| --- | --- | --- |
+| ![首页](docs/screenshots/home.jpg) | ![冲泡](docs/screenshots/brew-3d-steeping.png) | ![品鉴卡](docs/screenshots/share.png) |
 
-![品鉴分享卡](docs/screenshots/share.png)
+![选茶](docs/screenshots/select.png)
+![3D 出汤](docs/screenshots/brew-3d-done.png)
+![个人成长](docs/screenshots/growth-desktop.png)
 
-## 技术亮点
+## 为什么做
 
-### 离线优先的数据层
+为三种人做的：
 
-前端使用 Dexie.js 封装 IndexedDB，品鉴记录先本地落盘，再尝试同步服务端；网络恢复后自动重试失败记录。用户完成品茶不依赖网络，数据也不会因为一次请求失败而丢失。
+1. **想学茶但嫌麻烦的人**——要引导、要氛围，不想一上来就背六大茶类
+2. **有品茶习惯的人**——要记录、要沉淀，喝完一杯有迹可循
+3. **慢生活人群**——要陪伴感，五分钟不被打扰的茶歇
 
-### 可解释的评分模型
+坚持：无广告、无付费墙、可自托管、离线可用。
 
-品鉴结果由八维口感评分和冲泡工艺系数共同计算。水温、浸泡时间、茶器和水源都会影响结果，便于继续扩展为更完整的茶道体验模型。
+## 技术栈
 
-### 前后端分层与安全边界
+| 层 | 技术 |
+| --- | --- |
+| 前端 | Vue 3 + TypeScript（strict）+ Pinia + Vue Router + Tailwind CSS + Vite |
+| 3D | Three.js / TresJS（KTX2 压缩贴图 + basis transcode） |
+| 数据 | Dexie.js + IndexedDB（离线优先，`sync_status` 重试队列） |
+| 后端 | FastAPI + SQLAlchemy 2.0（异步）+ PostgreSQL + Pydantic v2 + Alembic |
+| AI | 后端代理转发（浏览器禁止直连第三方），DeepSeek，失败降级到规则引擎 |
+| 部署 | Windows Server 原生（NSSM + uvicorn + nginx for Windows），GitHub Pages 静态 Demo |
+| 测试 | Vitest + fake-indexeddb、Playwright E2E、pytest + Alembic 迁移往返 |
+| CI | GitHub Actions：类型检查 / 单测 / E2E / 构建 / 后端测试 / 迁移测试 / Compose 校验 |
 
-前端 Vue 3 + Pinia + Vue Router 负责交互和状态；FastAPI + SQLAlchemy + PostgreSQL 负责账户、品鉴记录和茶文化检索；Nginx 负责 SPA fallback、API 代理、缓存和安全响应头。
+## 快速开始
 
-### 可验证的工程流程
-
-GitHub Actions 会在 push 和 Pull Request 时执行：
-
-- Vue/TypeScript 类型检查
-- 前端单元测试（Vitest + fake-indexeddb，评分与离线存储闭环）
-- Playwright 端到端测试（完整冲泡流程：首页 → 入席 → 选茶 → 选器 → 冲泡 → 品鉴 → 保存）
-- 生产构建
-- 后端 API 测试（pytest，SQLite 内存库）
-- 数据库迁移测试（真实 PostgreSQL，Alembic 往返升级/回滚）
-- Python 源码编译检查
-- Docker Compose 配置校验（旧部署方式保留，已弃用）
-
-## 项目结构
-
-```text
-tea-ceremony/
-├─ src/
-│  ├─ views/              # 茶室、选茶、冲泡、品鉴、茶灵等页面
-│  ├─ components/         # 茶汤、图表、冲泡交互组件
-│  ├─ stores/             # Pinia 业务状态
-│  ├─ services/           # API、IndexedDB、评分、AI 服务
-│  ├─ data/               # 茶叶、茶器、茶人、节气和文化资料
-│  └─ router/             # 路由和冲泡流程守卫
-├─ backend/
-│  ├─ app/routers/         # auth、teas、teawares、records、garden、culture、ai API（薄路由）
-│  ├─ app/services/        # 业务 service（base CRUD + tea/record/garden/auth + 文化检索/AI 代理）
-│  └─ seeds/               # 初始茶叶与文化数据
-├─ .github/               # CI、Issue 和 PR 模板
-├─ docker-compose.yml       # 旧 Docker 部署（已弃用，保留参考）
-├─ nginx.conf                # Linux/容器版（已弃用）
-└─ nginx-windows.conf        # Windows 原生生产版
-```
-
-## 本地运行
-
-### 只运行前端
+只玩前端（推荐先跑这个）：
 
 ```bash
 npm install
 npm run dev
 ```
 
-本地开发环境默认请求 `http://localhost:8000/api`。如果只想体验前端，内置茶叶目录和 IndexedDB 仍可工作。
-
-GitHub Pages Demo 使用内置茶叶目录和浏览器本地存储，完整账号同步功能需要运行本地后端（见下）。
-
-### 运行完整服务
-
-> 本地：先装好 PostgreSQL 和 Python 3.12（PG 装成本地 Windows 服务），再按下面走。
-> 生产部署（Windows Server）见 [DEPLOY.md](DEPLOY.md)。
+完整全栈（需要本地 PostgreSQL + Python 3.12）：
 
 ```powershell
-Copy-Item .env.example .env
-# 编辑 .env：SECRET_KEY、DATABASE_URL 指向本地 PG（localhost:5432）
+Copy-Item .env.example .env   # 编辑 SECRET_KEY、DATABASE_URL
 cd backend
 python -m venv .venv
 .\.venv\Scripts\pip install -r requirements.txt
 .\.venv\Scripts\alembic upgrade head
 .\.venv\Scripts\python -m seeds.run
-# 另开一个终端启动后端（开发热重载）：
 .\.venv\Scripts\uvicorn main:app --reload --port 8000
 ```
 
-首次启动后可导入种子数据：
+常用命令：`npm run type-check` · `npm run test` · `npm run build` · `npm run test:e2e`
+后端测试：`cd backend && .\.venv\Scripts\python -m pytest tests -q`
 
-```powershell
-cd backend; .\.venv\Scripts\python -m seeds.run
-```
+完整部署、架构说明、设计规范见：[DEPLOY.md](DEPLOY.md) · [CONTEXT.md](CONTEXT.md) · [DESIGN_SPEC.md](DESIGN_SPEC.md) · [3D_SPEC.md](3D_SPEC.md)
 
-## 常用命令
+## 参与贡献
 
-```bash
-npm run dev          # 开发服务器
-npm run type-check   # Vue/TypeScript 类型检查
-npm run build        # 类型检查 + 生产构建
-npm run preview      # 预览生产构建
-npm run smoke        # 检查生产预览下的主要路由
-npm run test         # 前端单元测试（Vitest）
-npm run test:e2e     # Playwright 端到端测试（需先安装浏览器：npx playwright install chromium）
-```
+欢迎从 Good First Issue 入手——补茶名数据、补英文翻译、补测试、补茶器图标都算。
+流程见 [CONTRIBUTING.md](CONTRIBUTING.md)，Issue 和 PR 模板已就位。
 
-后端测试（Python 3.12）：
+## 路线图
 
-```bash
-cd backend
-pip install -r requirements-dev.txt
-python -m pytest tests -q                    # API 测试（SQLite 内存库）
-TEST_DATABASE_URL=postgresql://... python -m pytest tests/test_migrations.py -q  # 迁移测试（真实 Postgres，未配置自动跳过）
-```
-
-> 迁移测试会对 `TEST_DATABASE_URL` 指向的库执行 `alembic downgrade base`，请务必使用专用测试库。
-
-欢迎通过 Issue 反馈问题或提出茶文化体验相关的改进建议，贡献流程见 [CONTRIBUTING.md](CONTRIBUTING.md)。
-
-## 简历项目描述
-
-> 独立设计并开发「一盏茶」沉浸式茶道体验应用，使用 Vue 3、TypeScript、Pinia、Dexie.js、FastAPI、PostgreSQL 和 Nginx 构建完整的选茶—冲泡—品鉴闭环；实现 IndexedDB 离线优先存储与失败重试、基于规则的可解释评分模型、可分享品鉴卡片、茶文化 RAG 检索与 AI 降级策略；AI 请求收敛到后端代理转发，配套 API 限流、统一错误格式、服务端日志与健康检查；通过 GitHub Actions 自动完成类型检查、单元测试、Playwright E2E、后端测试与 Compose 配置校验。
-
-## 后续路线图
-
-- 增加真实茶汤与茶器图片（茶叶图已落地 21 张 Pexels 可商用素材，仍有部分茶复用通用占位图），补充项目演示短视频
-- 生产环境接入 Redis 分布式限流与外部错误追踪（Sentry）
+- 真实茶汤与茶器摄影素材替换占位图
+- 茶单扩充到中国茶区主要品类（当前 40 款，目标 100+）
+- 多人共席（分享卡从只读进化到双人茶会）
+- 生产环境接入 Sentry 错误追踪与 Redis 限流
 
 ## 素材致谢
 
-- 首页茶山背景 `src/assets/tea-mountain-hero.jpg`：摄影作者 Tanmoy281，来源 [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Darjeeling-tea-plantation.jpg)，以 [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/deed.zh) 授权；本项目仅做尺寸缩放与晨雾色调处理，相同方式共享。
+首页茶山背景 `src/assets/tea-mountain-hero.jpg`：摄影作者 Tanmoy281，来源 [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Darjeeling-tea-plantation.jpg)，[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/deed.zh)；本项目仅做尺寸缩放与晨雾色调处理。
+茶叶摄影：Pexels 可商用素材。
 
 ## License
 

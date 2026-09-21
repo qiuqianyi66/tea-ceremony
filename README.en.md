@@ -1,151 +1,108 @@
-# 一盏茶 · Tea Ceremony
+# Tea Ceremony · 一盏茶
 
-An immersive online tea ceremony experience: from entering the tea room, choosing tea and teaware, boiling water and brewing, to structured tasting records — a complete digital tea session.
+> One tea, one room, one quiet moment.
+
+An immersive online tea ceremony: enter the room, pick a tea, boil water, brew, and taste — a complete gongfu cha session in the browser.
+Not an encyclopedia, not a timer. A digital tea room you can actually walk into.
 
 [中文](README.md) | **English**
 
 [![CI](https://github.com/qiuqianyi66/tea-ceremony/actions/workflows/ci.yml/badge.svg)](https://github.com/qiuqianyi66/tea-ceremony/actions/workflows/ci.yml)
 [![Vue 3](https://img.shields.io/badge/Vue-3-42b883?logo=vuedotjs&logoColor=white)](https://vuejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![PWA](https://img.shields.io/badge/PWA-offline-orange?logo=pwa)](https://web.dev/learn/pwa/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-Live static demo (GitHub Pages): [qiuqianyi66.github.io/tea-ceremony](https://qiuqianyi66.github.io/tea-ceremony/)
+## Try it now
 
-## Why this project
+👉 **Live demo (no signup, works offline)**：[qiuqianyi66.github.io/tea-ceremony](https://qiuqianyi66.github.io/tea-ceremony/)
 
-Most "tea culture" products stop at content display. **Tea Ceremony** turns cultural content into an actionable, feedback-driven, continuously recordable digital experience: pick your tea and teaware, control water temperature and steeping time, then complete a tasting based on liquor color, aroma and mouthfeel.
+![Tea Ceremony · cover](docs/screenshots/og-cover.png)
 
-![Home](docs/screenshots/home.png)
+## What it is
 
-## Core experience
+Most "tea culture" apps stop at articles and photos. Tea Ceremony turns culture into something you *do*:
 
-- **Tea room entrance**: time, solar term, themed tea room and ambient sound form an immersive home page
-- **Tea & teaware selection**: six tea categories, teaware unlocks, water source choices and cultural archives
-- **Real interactive brewing**: leaf-dose adjustment, temperature control, boiling/steam/liquor/outflow feedback, multi-infusion brewing
-- **Structured tasting**: observe color → smell aroma → taste, with an eight-dimension score and craft coefficient
-- **Shareable tasting card**: one-click QR code / share link / PNG with embedded QR — recipients open a read-only share page to view the session
-- **Personal growth**: IndexedDB offline history, XP, achievements and teaware collection
-- **AI tea spirit**: tea-culture RAG retrieval + LLM, falling back to rule-based replies when the network is unavailable
-- **PWA & deployment**: installable and offline-capable, native Windows Server deployment (NSSM + nginx, see DEPLOY.md)
+- **3D tea table**: TresJS / Three.js renders a wooden table with real teaware — steam on pour, liquor color on outflow, time / solar term / themed room shaping the mood
+- **Full loop**: prepare → boil → warm → awaken → brew → observe color → smell → taste, scored by an 8-dimension mouthfeel model × brewing-craft coefficient
+- **Offline-first**: Dexie.js + IndexedDB, records land locally first, sync when back online
+- **Shareable**: one-tap tasting card with QR code / read-only share link / PNG — send this session to a friend
+- **AI tea spirit**: tea-culture RAG + LLM through a backend proxy, gracefully falling back to rule-based replies when offline
 
-![Tasting share card](docs/screenshots/share.png)
+## Screens
 
-## Technical highlights
+| Immersive home | 3D brewing | Tasting card |
+| --- | --- | --- |
+| ![home](docs/screenshots/home.jpg) | ![brew](docs/screenshots/brew-3d-steeping.png) | ![card](docs/screenshots/share.png) |
 
-### Offline-first data layer
+![select](docs/screenshots/select.png)
+![pour](docs/screenshots/brew-3d-done.png)
+![growth](docs/screenshots/growth-desktop.png)
 
-The frontend wraps IndexedDB with Dexie.js: tasting records are written locally first, then synced to the server; failed records retry automatically when the network recovers. Finishing a tasting never depends on connectivity, and data is never lost to a single failed request.
+## Who it's for
 
-### Explainable scoring model
+1. **Tea beginners** who want guidance and atmosphere, not a wall of taxonomy
+2. **Regular drinkers** who want to record and build a personal archive
+3. **Slow-living folks** who want a five-minute, undistracted break
 
-Tasting results combine an eight-dimension mouthfeel score with a brewing-craft coefficient. Water temperature, steeping time, teaware and water source all affect the outcome, leaving room to grow into a more complete tea-ceremony model.
+No ads, no paywall, self-hostable, offline-capable.
 
-### Frontend/backend separation & security boundary
+## Stack
 
-Vue 3 + Pinia + Vue Router handle interaction and state; FastAPI + SQLAlchemy + PostgreSQL handle accounts, tasting records and cultural retrieval; Nginx handles SPA fallback, API proxying, caching and security headers.
+| Layer | Tech |
+| --- | --- |
+| Frontend | Vue 3 + TypeScript (strict) + Pinia + Vue Router + Tailwind CSS + Vite |
+| 3D | Three.js / TresJS (KTX2 compressed textures, basis transcoder) |
+| Data | Dexie.js + IndexedDB (offline-first, `sync_status` retry queue) |
+| Backend | FastAPI + SQLAlchemy 2.0 (async) + PostgreSQL + Pydantic v2 + Alembic |
+| AI | Backend proxy only (browser never calls third-party AI directly), DeepSeek, rule-based fallback |
+| Deploy | Native Windows Server (NSSM + uvicorn + nginx for Windows), GitHub Pages static demo |
+| Tests | Vitest + fake-indexeddb, Playwright E2E, pytest + Alembic migration round-trip |
+| CI | GitHub Actions: type-check / unit / E2E / build / backend / migration / compose |
 
-### Verifiable engineering pipeline
+## Quick start
 
-GitHub Actions runs on every push and Pull Request:
-
-- Vue/TypeScript type checking
-- Frontend unit tests (Vitest + fake-indexeddb, scoring & offline-storage loop)
-- Playwright end-to-end tests (full journey: home → enter → select tea → teaware → brew → taste → save)
-- Production build
-- Backend API tests (pytest, in-memory SQLite)
-- Database migration tests (real PostgreSQL, Alembic upgrade/rollback round-trip)
-- Python byte-compile check
-- Docker Compose configuration validation (legacy deployment, kept for reference)
-
-## Project structure
-
-```text
-tea-ceremony/
-├─ src/
-│  ├─ views/              # tea room, select, brew, taste, tea spirit pages
-│  ├─ components/         # liquor, chart, brewing interaction components
-│  ├─ stores/             # Pinia business state
-│  ├─ services/           # API, IndexedDB, scoring, AI services
-│  ├─ data/               # teas, teaware, solar terms and cultural archives
-│  └─ router/             # routes and brewing-flow guards
-├─ backend/
-│  ├─ app/routers/        # auth, teas, teawares, records, garden, culture, ai API (thin routers)
-│  ├─ app/services/       # business services (base CRUD + tea/record/garden/auth + culture retrieval/AI proxy)
-│  └─ seeds/              # seed teas and cultural data
-├─ .github/               # CI, issue and PR templates
-├─ docker-compose.yml       # legacy Docker deployment (deprecated, kept for reference)
-├─ nginx.conf                # Linux/container version (deprecated)
-└─ nginx-windows.conf        # native Windows production version
-```
-
-## Local development
-
-### Frontend only
+Frontend only (start here):
 
 ```bash
 npm install
 npm run dev
 ```
 
-The local dev environment requests `http://localhost:8000/api` by default. If you only want to try the frontend, the built-in tea catalog and IndexedDB still work.
-
-The GitHub Pages demo uses the built-in tea catalog and browser local storage; full account-sync features require running a local backend (see below).
-
-### Full stack
-
-> Local: install PostgreSQL and Python 3.12 first (PG runs as a local Windows service), then follow below.
-> Production (Windows Server): see [DEPLOY.md](DEPLOY.md).
+Full stack (requires local PostgreSQL + Python 3.12):
 
 ```powershell
-Copy-Item .env.example .env
-# edit .env: SECRET_KEY, DATABASE_URL pointing to local PG (localhost:5432)
+Copy-Item .env.example .env   # edit SECRET_KEY, DATABASE_URL
 cd backend
 python -m venv .venv
 .\.venv\Scripts\pip install -r requirements.txt
 .\.venv\Scripts\alembic upgrade head
 .\.venv\Scripts\python -m seeds.run
-# in a separate terminal, start the backend (dev hot reload):
 .\.venv\Scripts\uvicorn main:app --reload --port 8000
 ```
 
-Import seed data on first launch:
+Common: `npm run type-check` · `npm run test` · `npm run build` · `npm run test:e2e`
+Backend tests: `cd backend && .\.venv\Scripts\python -m pytest tests -q`
 
-```powershell
-cd backend; .\.venv\Scripts\python -m seeds.run
-```
+Docs: [DEPLOY.md](DEPLOY.md) · [CONTEXT.md](CONTEXT.md) · [DESIGN_SPEC.md](DESIGN_SPEC.md) · [3D_SPEC.md](3D_SPEC.md)
 
-## Commands
+## Contributing
 
-```bash
-npm run dev          # dev server
-npm run type-check   # Vue/TypeScript type checking
-npm run build        # type checking + production build
-npm run preview      # preview production build
-npm run smoke        # smoke-test main routes in production preview
-npm run test         # frontend unit tests (Vitest)
-npm run test:e2e     # Playwright E2E (first run: npx playwright install chromium)
-```
-
-Backend tests (Python 3.12):
-
-```bash
-cd backend
-pip install -r requirements-dev.txt
-python -m pytest tests -q                    # API tests (in-memory SQLite)
-TEST_DATABASE_URL=postgresql://... python -m pytest tests/test_migrations.py -q  # migration tests (real Postgres; auto-skipped if unset)
-```
-
-> Migration tests run `alembic downgrade base` against the `TEST_DATABASE_URL` database — always use a dedicated test database.
-
-## Resume summary
-
-> Independently designed and developed an immersive online tea-ceremony app, building the complete select-brew-taste loop with Vue 3, TypeScript, Pinia, Dexie.js, FastAPI, PostgreSQL and Nginx; implemented IndexedDB offline-first storage with retry, an explainable rule-based scoring model, shareable tasting cards, tea-culture RAG retrieval and AI fallback; routed AI requests through a backend proxy with API rate limiting, unified error format, server logging and health checks; automated type-checking, unit tests, Playwright E2E, backend tests and Compose validation via GitHub Actions.
+Start with a Good First Issue — adding a tea, translating a string, writing a test, drawing an icon all count.
+See [CONTRIBUTING.md](CONTRIBUTING.md). Issue and PR templates are in place.
 
 ## Roadmap
 
-- Real tea liquor & teaware photography, demo screenshots and short video
-- Tasting-record analytics dashboard (personal growth curves)
-- Redis-based distributed rate limiting and external error tracking (Sentry) for production
+- Replace placeholder teaware with real photography
+- Expand tea catalog from 40 to 100+ Chinese teas
+- Two-person shared sessions (evolve the read-only share card into a live tea party)
+- Production Sentry error tracking + Redis rate limiting
+
+## Credits
+
+Home hero `src/assets/tea-mountain-hero.jpg`: photographer Tanmoy281, via [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Darjeeling-tea-plantation.jpg), [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/deed.zh); resized and tone-mapped for morning-mist effect.
+Tea photography: Pexels, commercially licensed.
 
 ## License
 
-MIT © 2026 严恒 (qiuqianyi66)
+[MIT](LICENSE) © 2026 Yan Heng (qiuqianyi66)

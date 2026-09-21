@@ -73,3 +73,12 @@ verify_icons_*.png
 
 # PostgreSQL 备份输出（scripts/backup-postgres.sh 运行时产物，含生产数据）
 /backups/
+
+# .agents/skills 下的大型二进制参考素材（LUT/HDR/贴图/字体，非运行时资源）
+# 注意：已被跟踪的历史文件需手动 `git rm --cached <path>` 才会停止入库
+.agents/skills/**/*.bin
+.agents/skills/**/*.exr
+.agents/skills/**/*.hdr
+.agents/skills/**/*.tga
+.agents/skills/**/*.ttf
+.agents/skills/**/*.otf
