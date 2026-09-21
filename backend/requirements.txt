@@ -20,7 +20,7 @@ python-json-logger==4.2.0
 # starlette 显式锁定：fastapi 0.115 约束 <0.39，但避免依赖解析时被意外升到不兼容版本
 starlette==0.38.6
 # P1-2 Prometheus /metrics（SRE 四信号）
-prometheus-fastapi-instrumentator==7.1.0
+prometheus-fastapi-instrumentator==8.1.0
 # P1-11 生产多 worker（FastAPI 官方推荐 gunicorn + UvicornWorker）
 gunicorn==26.2.0
 # P1-13 AI 代理熔断（连续 5 次失败后 30s 快速降级，防上游故障雪崩）
