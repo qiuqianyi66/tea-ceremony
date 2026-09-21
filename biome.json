@@ -8,14 +8,24 @@
   "files": {
     "includes": [
       "**",
-      "!**/dist/**",
-      "!**/dev-dist/**",
-      "!**/node_modules/**",
-      "!**/coverage/**",
-      "!public/3d/**",
-      "!src/assets/**",
+      "!**/dist",
+      "!**/dev-dist",
+      "!**/node_modules",
+      "!**/coverage",
+      "!public/3d",
+      "!src/assets",
       "!**/*.css",
-      "!**/*.log"
+      "!**/*.log",
+      "!**/.agents",
+      "!**/.codex",
+      "!**/.playwright-mcp",
+      "!**/.vscode",
+      "!**/.idea",
+      "!**/.tmp",
+      "!**/backups",
+      "!**/.github",
+      "!**/scripts",
+      "!public/pwa-icon.svg"
     ]
   },
   "formatter": {
@@ -29,6 +39,9 @@
       "recommended": true,
       "style": {
         "noNonNullAssertion": "off"
+      },
+      "correctness": {
+        "noUnusedFunctionParameters": "off"
       }
     }
   },
@@ -36,6 +49,14 @@
     "formatter": {
       "quoteStyle": "single",
       "semicolons": "asNeeded"
+    }
+  },
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": "off"
+      }
     }
   },
   "overrides": [

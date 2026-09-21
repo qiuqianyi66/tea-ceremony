@@ -9,7 +9,9 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
       // vite-plugin-pwa 的 virtual 模块仅在 Vite 构建时存在；vitest 无该插件，指向 stub 保证可解析
-      'virtual:pwa-register': fileURLToPath(new URL('./src/test/mocks/virtual-pwa-register.ts', import.meta.url)),
+      'virtual:pwa-register': fileURLToPath(
+        new URL('./src/test/mocks/virtual-pwa-register.ts', import.meta.url),
+      ),
     },
   },
   test: {

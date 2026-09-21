@@ -26,7 +26,7 @@ test.describe('PWA 离线深链（navigateFallback）', () => {
   const deepLinks = ['/brew', '/share?token=offline-deep-link-fixture']
 
   for (const deepLink of deepLinks) {
-    test(`断网后直接访问 ${deepLink} 回退 index.html，不白屏`, async ({ context, page }) => {
+    test(`断网后直接访问 ${deepLink} 回退 index.html，不白屏`, async ({ context }) => {
       await context.setOffline(true)
       try {
         const offlinePage = await context.newPage()

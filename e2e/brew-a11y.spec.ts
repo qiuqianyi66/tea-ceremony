@@ -24,7 +24,10 @@ async function enterBrewing(page: Page) {
   await page.getByRole('button', { name: '选择 西湖龙井' }).click()
   await page.waitForURL('**/tools')
   await page.getByRole('button', { name: /白瓷盖碗/ }).click()
-  await page.getByRole('button', { name: /山泉|泉水|纯净|山涧|雨水|井水/ }).first().click()
+  await page
+    .getByRole('button', { name: /山泉|泉水|纯净|山涧|雨水|井水/ })
+    .first()
+    .click()
   await page.getByRole('button', { name: '开始冲泡 →' }).click()
   await page.waitForURL('**/brew')
 }

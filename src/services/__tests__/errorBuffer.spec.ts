@@ -38,7 +38,11 @@ describe('errorBuffer 容量上限（防本地无限膨胀）', () => {
     const now = Date.now()
     // 先写 100 条"旧错误"（ts 靠前）
     for (let i = 0; i < 100; i++) {
-      await db.errorBuffer.add({ kind: 'error', message: `old_${i}`, ts: new Date(now - 100000 + i).toISOString() })
+      await db.errorBuffer.add({
+        kind: 'error',
+        message: `old_${i}`,
+        ts: new Date(now - 100000 + i).toISOString(),
+      })
     }
     // 再写 MAX_ERRORS 条新错误 → 触发裁剪
     for (let i = 0; i < MAX_ERRORS; i++) {
