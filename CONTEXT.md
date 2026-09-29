@@ -58,6 +58,15 @@
 **原因**：离线优先是核心特性，埋点不能依赖网络；只存结构化事件（category/event/label/result），不采集用户输入等自由文本，隐私风险最低；2000 条封顶裁剪，防本地膨胀。
 **影响**：`src/services/tracking.ts` 白名单校验入参、track 永不 reject；T2.4 茶灵去留按 `getTrackingSummary()` 决策；未来若需远程分析，另行设计导出与用户同意机制。
 
+### ADR-007：技能库分工（全局权威 vs 项目专属）
+**决策**：AI 技能库分层管理——通用技能只存 `~/.agents/skills`（权威版），项目 `.agents/skills` 只保留项目定制/独有技能（db-migration、fastapi-endpoint、vue-component、show-me 的定制版 + frontend-design 项目 Anthropic 版 + tea 独有 61 个）。已删除 tea 中 60 个与全局重复（52 个内容一致）或旧版（8 个，全局为更新版）的通用副本。
+**原因**：原项目目录 126 个技能中 65 个与全局重名，双份维护必然漂移，项目内旧版会误导 AI 助手；通用技能放全局、定制技能放项目，归属清晰、单一权威。
+**影响**：项目内 AI 助手读 `.agents/skills` 只见项目专属技能，通用技能由全局提供；新增技能按归属落目录；本项目显式引用（db-migration、show-me、frontend-design）保持项目版不受影响；清理备份见临时目录 `skills-backup-20260929`。
+
+### ADR-008：全局技能库重构为 Spring Boot Full-stack Skill OS
+**决策**：全局技能库（~/.agents/skills）从 77 个重构为 101 个——61 保留合并 + 6 开源直装（SivaLabs/ECC）+ 3 开源改造 + 31 自造，形成以 Java + Spring Boot 为主栈、Vue/TS 前端与 AI Agent/Design 保持优势的 AI-native Full-stack Developer Skill OS；后端基线统一 Boot 4 / Java 21；fastapi-endpoint 降为 Secondary（项目版保留）。
+**原因**：目标定位以 Spring 生态为主后端，原库缺整条 Java/Spring 后端能力链；按“路由是瓶颈不是存储”将总量控制在 100-120；开源优先但许可证未核清不装（developer-kit 转自造）。
+**影响**：全局 = 101 个（分类与来源见 tea 根 `技能库体检清单.md` V2 最终版）；溯源规范 `~/.agents/skills/SOURCES.md`（repository/path/license/commit/adaptation）；备份 `Temp\skills-backup-20260929-v2` 可回滚；冲突审计 12 组结论已入体检清单；本项目 tea 后端仍为 FastAPI，不受影响。
 ---
 
 ## 阶段复盘记录
