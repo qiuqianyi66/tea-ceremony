@@ -23,13 +23,15 @@ $env:PGPASSWORD = 'postgres超管密码'
 & "C:\Program Files\PostgreSQL\17\bin\psql.exe" -U postgres -c "CREATE DATABASE tea_ceremony OWNER tea_user;"
 ```
 
-### 2. 装 Python 3.12
+### 2. 装 Python 3.12（版本钉死，必须 3.12.x）
 
 ```powershell
 winget install Python.Python.3.12
 # 新开一个 PowerShell 让 PATH 生效
 python --version   # 应显示 Python 3.12.x
 ```
+
+> 版本不对部署脚本会直接报错停止（`.python-version` 声明 3.12）。Windows 装错 Python 版本是部署第一大坑，故强制校验。
 
 ### 3. 装 NSSM（托管后端进程）
 
@@ -54,18 +56,9 @@ cd C:\tea
 
 ---
 
-## 二、配置后端
+## 二、后端部署（一条命令）
 
-### 1. 建 venv 并装依赖
-
-```powershell
-cd C:\tea\backend
-python -m venv .venv
-.\.venv\Scripts\python -m pip install --upgrade pip
-.\.venv\Scripts\pip install -r requirements.txt
-```
-
-### 2. 配置 `.env`
+### 1. 配置 `.env`
 
 在 `C:\tea\backend\` 放 `.env`（从仓库根 `.env.example` 复制后改）。**生产关键项**：
 
@@ -84,33 +77,28 @@ AI_PROXY_KEY=sk-你的key
 
 > 规则：`.env` 永不入库、永不回显密钥；只读不写时用 `Get-Content`，写入用整行替换。
 
-### 3. 跑数据库迁移 + 种子数据
+### 2. 跑一键部署脚本
 
-```powershell
-cd C:\tea\backend
-.\.venv\Scripts\alembic upgrade head
-.\.venv\Scripts\python -m seeds.run
-```
-
-### 4. 注册成 Windows 服务
-
-以**管理员** PowerShell 运行项目自带脚本：
+以**管理员** PowerShell 运行（脚本会校验 Python 3.12 → 建 venv → 按 `requirements.lock` 全量锁定安装依赖 → `alembic upgrade head` → 注册/重启 `tea-backend` 服务 → `/live` 健康断言）：
 
 ```powershell
 cd C:\tea
-.\scripts\install-windows-service.ps1
+.\scripts\deploy-backend.ps1
 ```
 
-脚本会：
-- 用 NSSM 注册 `tea-backend` 服务（uvicorn 单进程，监听 127.0.0.1:8000）
-- 设为开机自启、崩溃 5 秒后自动重启
-- stdout/stderr 落到 `C:\tea\logs\backend-out.log` / `backend-err.log`（10MB 轮转）
-- 启动后自动请求 `/live` 验证
-
-如果项目不在 `C:\tea` 或端口不是 8000：
+项目不在 `C:\tea` 或端口不同：
 
 ```powershell
-.\scripts\install-windows-service.ps1 -ProjectRoot D:\tea -Port 8000
+.\scripts\deploy-backend.ps1 -ProjectRoot D:\tea -Port 8000
+# 只校验不执行：
+.\scripts\deploy-backend.ps1 -DryRun
+```
+
+脚本幂等可重跑：服务已存在则只重启，不存在才注册。首装后可选补种子数据：
+
+```powershell
+cd C:\tea\backend
+.\.venv\Scripts\python -m seeds.run
 ```
 
 ---
@@ -178,32 +166,28 @@ Invoke-WebRequest http://127.0.0.1 | Select-Object StatusCode
 
 ## 五、日常维护
 
-### 日志
+### 升级代码（一条命令）
+
+```powershell
+cd C:\tea
+.\scripts\update-backend.ps1          # 后端：pull → 依赖 → 迁移 → 重启 → /live
+.\scripts\update-backend.ps1 -BuildFrontend   # 前端有变更时一起重建
+```
+
+脚本会先检查工作区有没有未提交改动（有则中止，防止 pull 冲突），全程幂等；重大 schema 变更前建议先停服务：
+
+```powershell
+Stop-Service tea-backend ; .\scripts\update-backend.ps1 ; Start-Service tea-backend
+```
+
+### 日志 / 重启 / 停止
 
 ```powershell
 Get-Content C:\tea\logs\backend-out.log -Wait -Tail 50
 Get-Content C:\tea\logs\backend-err.log -Wait -Tail 50
-```
-
-### 重启 / 停止
-
-```powershell
 Restart-Service tea-backend
 Stop-Service  tea-backend
 Restart-Service tea-nginx   # 如果注册了 nginx 服务
-```
-
-### 升级代码
-
-```powershell
-cd C:\tea
-git pull
-cd C:\tea\backend
-.\.venv\Scripts\alembic upgrade head          # 有迁移才跑
-cd C:\tea
-npm ci ; npm run build                          # 前端有变更才跑
-Restart-Service tea-backend
-# nginx 不用重启，静态文件直接生效
 ```
 
 ### 数据库备份（Windows 任务计划每日）
@@ -226,11 +210,36 @@ Get-Content $bak | & "C:\Program Files\PostgreSQL\17\bin\psql.exe" -U tea_user -
 
 每日自动备份：以管理员打开「任务计划程序」→ 创建任务 →
 - 触发器：每天凌晨 3 点
-- 操作：启动程序 `powershell.exe`，参数 `-File C:\tea\scripts\backup-postgres.ps1`（把上面 pg_dump 命令存成该 ps1，并加保留最近 14 份的清理逻辑）
+- 操作：启动程序 `powershell.exe`，参数 `-File C:\tea\scripts\backup-postgres.ps1`（脚本含保留最近 14 份的清理逻辑）
 
 ---
 
-## 六、生产安全配置
+## 六、依赖锁定维护（改依赖时必读）
+
+后端依赖**双层锁定**，重建环境不会漂移：
+
+- `requirements.txt` / `requirements-dev.txt` —— 顶层声明（人工维护，精确 `==`）
+- `requirements.lock` / `requirements-dev.lock` —— **全量锁定**（pip-tools 生成，含所有传递依赖；CI 与部署脚本都从这里安装）
+
+升级/新增依赖流程：
+
+```powershell
+# 1. 改顶层声明（requirements*.txt）
+# 2. 重新生成全量锁（务必带两个 --no-emit-*，防止本机 pip 镜像配置写进 lock 入库）
+cd C:\tea\backend
+.\.venv\Scripts\pip install pip-tools
+.\.venv\Scripts\python -m piptools compile --no-emit-index-url --no-emit-trusted-host --output-file requirements.lock requirements.txt
+.\.venv\Scripts\python -m piptools compile --no-emit-index-url --no-emit-trusted-host --output-file requirements-dev.lock requirements-dev.txt
+# 3. 本地按 lock 重装并验证
+.\.venv\Scripts\pip install -r requirements.lock
+.\.venv\Scripts\python -m pytest tests -q
+```
+
+> 规则：lock 文件不得包含 `--index-url` / `--trusted-host` 等机器私有配置；重新生成后检查文件头部，有残留就删掉再提交。
+
+---
+
+## 七、生产安全配置
 
 - **CORS**：生产走 nginx 同源反代 `/api`，无需额外跨域。
 - **限流**：`.env` 调 `RATE_LIMIT_MAX` / `RATE_LIMIT_LOGIN_MAX` / `RATE_LIMIT_AI_MAX`；单实例进程内存实现。
@@ -240,7 +249,7 @@ Get-Content $bak | & "C:\Program Files\PostgreSQL\17\bin\psql.exe" -U tea_user -
 
 ---
 
-## 七、域名和 HTTPS
+## 八、域名和 HTTPS
 
 1. 域名解析到 `120.26.49.122`。
 2. 申请证书（Let's Encrypt 或阿里云免费 SSL），得到 `fullchain.pem`、`privkey.pem`，放到 `C:\tea\certs\`。
@@ -254,7 +263,7 @@ Get-Content $bak | & "C:\Program Files\PostgreSQL\17\bin\psql.exe" -U tea_user -
 
 ---
 
-## 八、从旧 Docker 方案迁移（如已在跑容器）
+## 九、从旧 Docker 方案迁移（如已在跑容器）
 
 如果之前用 Docker Compose 部署过：
 

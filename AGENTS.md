@@ -137,7 +137,7 @@ cd backend && python -m py_compile app/main.py                  # 后端语法
 cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量
 ```
 
-部署（Windows 原生，非 Docker）：全流程见 `DEPLOY.md`；脚本 `scripts/install-windows-service.ps1`（NSSM 注册 tea-backend）、`scripts/backup-postgres.ps1`（pg_dump + 保留 14 天）。
+部署（Windows 原生，非 Docker）：全流程见 `DEPLOY.md`；一键脚本 `scripts/deploy-backend.ps1`（首装/重装：Python 3.12 校验 → venv → lock 安装 → 迁移 → 服务 → /live）、`scripts/update-backend.ps1`（日常升级：pull → lock → 迁移 → 重启 → /live）、`scripts/install-windows-service.ps1`（NSSM 注册）、`scripts/backup-postgres.ps1`（pg_dump + 保留 14 天）。依赖双锁定：`requirements.lock`/`requirements-dev.lock` 由 pip-tools 生成，CI 与部署统一从 lock 安装；重新生成必须带 `--no-emit-index-url --no-emit-trusted-host`（防本机镜像配置入库）。
 
 ## 12. 文档索引
 
