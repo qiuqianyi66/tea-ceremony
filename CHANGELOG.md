@@ -8,6 +8,7 @@
 
 - 生产级工程化五批收官（2026-09-20）：后端安全（XFF 限流 / 死连接 / 登录限流 / Host 校验）、可观测性（X-Request-ID / JSON 日志 / metrics / 探针分离 / 备份 / AI 熔断）、工程质量门（CI 7→11 job / 离线深链 / axe / web-vitals）、P2 按需（导出 JSON / KTX2 压缩 / SECURITY.md / 体积诊断）。基线：Vitest 142 / pytest 51 过 3 跳 / e2e 34 例 / 四园截图 ERRORS:[]。
 - AGENTS V4 文档治理（2026-10-01，ADR-009）：ADR 拆分为 `docs/ADR/` 独立文件（ADR-001~009 统一格式）、CONTEXT.md 精简为术语+ADR 索引+架构关键词、新增 `npm run quality` 统一门禁、commit 改英文 conventional commits、新增 AI Change Protocol 与 Modification Level。
+- P1 治理规范（2026-10-01）：新增 `docs/DATA_POLICY.md`（茶文化数据 id/source/verified/updated_at 硬性规范 + 存量六类数据集盘点）、`DESIGN_SPEC.md` 升级 V2.0（设计令牌体系/组件规则/Three.js 规则）、新增 `scripts/regression/` 回归截图基线（Home/Select/Brew/Taste/Garden/Share 六页，实测 ERRORS:[]）。
 
 ## [1.0.0] - 2026-09-04
 
