@@ -18,7 +18,8 @@
     "lint:fix": "biome check --write src e2e scripts",
     "verify": "npm run verify:static",
     "verify:static": "node scripts/scan-emoji.cjs",
-    "verify:ui": "node scripts/verify-gardens.cjs && node scripts/verify-pavilion.cjs && node scripts/verify-icons.cjs"
+    "verify:ui": "node scripts/verify-gardens.cjs && node scripts/verify-pavilion.cjs && node scripts/verify-icons.cjs",
+    "quality": "npm run lint && npm run type-check && npm run test && npm run build && npm run verify"
   },
   "dependencies": {
     "@tresjs/cientos": "^5.8.1",
