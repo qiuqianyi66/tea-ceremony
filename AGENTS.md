@@ -79,6 +79,7 @@
 - IndexedDB 统一走 `src/services/storage.ts`；API 统一走 `src/services/api.ts`。
 - 触控目标 ≥ 44px；状态五态齐全（hover/disabled/loading/error/empty）；正文对比度 ≥ 4.5:1；浏览器表面定制（选区/滚动条/焦点环/光标）。
 - 字体自托管（@font-face + swap），生产禁 Google Fonts link；全屏 Hero 用 `min-h-[100dvh]` 禁 `h-screen`；图标一个库一个家族，禁手绘 SVG 路径；引入第三方库前先查 package.json。
+- **设计令牌与组件规则**：色值/间距/圆角/阴影/动效令牌、组件规则、Three.js 规则（禁直接创建 renderer，统一 TresJS）见 `DESIGN_SPEC.md`；3D 详细约束见 `3D_SPEC.md`。
 - **设计门禁（强制 6 步）**：① Design Read（页面类型/受众/vibe/倾向体系 + 三拨盘 8/6/4，未输出禁止写码）→ ② 视觉方向（一句话 + 4-6 色令牌 + 字体角色）→ ③ 对照简报评审 → ④ 实现（调用 taste-skill / ui-ux-pro-max / frontend-design / impeccable，禁模板手感）→ ⑤ critique（层级/清晰/情感）→ ⑥ audit + 设计审计 9 条，未过审计不得提交。完整规范见全局技能 `frontend-design-spec`。
 - 设计禁令速查：AI 紫渐变 / 暖米白+陶土 / 纯黑灰（要 tint）/ Tailwind 默认色板 / Inter 与衬线体默认 / Fraunces·Instrument_Serif / eyebrow 眉题 / Hero+三卡片 / Emoji 当图标 / 玻璃拟态装饰 / 渐变文字 / bounce·elastic 动效 / 每节同款入场 / 「提交」式按钮文案，一律禁止。
 
