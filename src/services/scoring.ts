@@ -2,7 +2,7 @@
  * 品鉴评分算法
  */
 
-import type { TasteDimensions, TastingRecord } from '@/types/tasting'
+import type { TasteDimensions } from '@/types/tasting'
 import type { TeaWare } from '@/types/teaware'
 
 /** 工艺系数分解（可解释：温度 / 时间 / 茶器 / 水 各因子） */

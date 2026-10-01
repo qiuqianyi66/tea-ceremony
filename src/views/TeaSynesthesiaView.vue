@@ -184,7 +184,7 @@ function render() {
   // 底部光晕
   if (tea.value) {
     const glow = ctx.createRadialGradient(w / 2, h, 0, w / 2, h, h * 0.6)
-    glow.addColorStop(0, tea.value.soupColorMax + '30')
+    glow.addColorStop(0, `${tea.value.soupColorMax}30`)
     glow.addColorStop(1, 'transparent')
     ctx.fillStyle = glow
     ctx.fillRect(0, 0, w, h)

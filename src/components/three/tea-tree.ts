@@ -43,8 +43,6 @@ const SPECIES_COLORS: Record<TreeSpecies, string> = {
 
 const qTmp = new THREE.Quaternion()
 const up = new THREE.Vector3(0, 1, 0)
-const xAxis = new THREE.Vector3(1, 0, 0)
-const zAxis = new THREE.Vector3(0, 0, 1)
 
 /**
  * 递归生成枝干：从 baseY 向上长，每层分叉 2-3 根。
@@ -128,7 +126,6 @@ function growTree(spec: TreeSpec, branches: BranchInst[], leaves: LeafInst[]): v
   // 主干分两节略弯（不是一根直棍）
   let y = 0
   let dir = up.clone()
-  const bend = (seededRandom(spec.seed * 2.1) - 0.5) * 0.16
   for (let seg = 0; seg < 2; seg++) {
     const segLen = H * 0.42
     const segDir = dir.clone()

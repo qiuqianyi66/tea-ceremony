@@ -15,7 +15,6 @@ vi.mock('howler', () => ({
     volume() {}
     rate() {}
     pos() {}
-    constructor() {}
   },
   Howler: { volume: vi.fn(), mute: vi.fn(), autoUnlock: true, usingWebAudio: false },
 }))

@@ -29,7 +29,7 @@ function selectWare(ware: TeaWare) {
 
 // 备器页是冲泡前唯一的参数设定入口：水温 / 投茶量在此调整后带入冲泡页
 function onTempSlider(value: string) {
-  brew.setTargetTemp(parseInt(value))
+  brew.setTargetTemp(parseInt(value, 10))
 }
 
 function onWeightSlider(value: string) {

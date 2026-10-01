@@ -8,7 +8,7 @@
  */
 import * as THREE from 'three'
 import type { GardenPreset } from './garden-presets'
-import { DEFAULT_PRESET, GARDEN_PRESETS } from './garden-presets'
+import { DEFAULT_PRESET } from './garden-presets'
 
 /** 固定种子随机 */
 function seededRandom(seed: number): number {

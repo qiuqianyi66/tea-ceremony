@@ -12,7 +12,7 @@
  */
 
 import { Howl, Howler } from 'howler'
-import { onUnmounted, ref } from 'vue'
+import { getCurrentInstance, onUnmounted, ref } from 'vue'
 
 // ============ 类型定义 ============
 
@@ -695,7 +695,8 @@ function dispose() {
 // ============ 导出 API ============
 
 export function useAudio() {
-  onUnmounted(dispose)
+  // 仅组件上下文注册卸载清理；测试等非组件环境调用不注册（避免 Vue warn）
+  if (getCurrentInstance()) onUnmounted(dispose)
 
   // 兼容旧版 API 的别名
   const startAmbient = toggleAmbient

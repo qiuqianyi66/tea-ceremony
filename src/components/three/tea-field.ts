@@ -11,7 +11,7 @@
  */
 import * as THREE from 'three'
 import type { GardenPreset } from './garden-presets'
-import { DEFAULT_PRESET, GARDEN_PRESETS } from './garden-presets'
+import { DEFAULT_PRESET } from './garden-presets'
 import { createTreeForest, type TreeSpec, type TreeSpecies } from './tea-tree'
 import { getTerrainHeight, isDrainGroove, SOIL_GRAVEL, SOIL_LOESS } from './terrain'
 

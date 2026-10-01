@@ -188,7 +188,7 @@ export function recommendTeaEnhanced(
   if (term.name) parts.push(`今日${term.name}`)
   parts.push(`推荐一壶${best.tea.name}`)
 
-  return { tea: best.tea, reason: parts.join('，') + '。', score: best.score }
+  return { tea: best.tea, reason: `${parts.join('，')}。`, score: best.score }
 }
 
 // ============ 品鉴评语生成 ============
@@ -204,7 +204,7 @@ function ruleBasedNote(teaName: string, d: TasteDimensions, score: number): stri
   if (d.rhyme >= 4) parts.push('余韵绕舌')
   if (score >= 9) parts.push('堪称上品')
   else if (score <= 5) parts.push('下次可调整水温')
-  return parts.join('，') + '。'
+  return `${parts.join('，')}。`
 }
 
 export async function generateTastingNote(

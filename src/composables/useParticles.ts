@@ -12,8 +12,7 @@
 import { type Container, type Engine, type ISourceOptions, tsParticles } from '@tsparticles/engine'
 import { loadBubblesPreset } from '@tsparticles/preset-bubbles'
 import { loadFirePreset } from '@tsparticles/preset-fire'
-import { loadSlim } from '@tsparticles/slim'
-import { onUnmounted, type Ref, ref } from 'vue'
+import { onUnmounted, ref } from 'vue'
 
 // ============ 类型定义 ============
 
@@ -28,8 +27,6 @@ interface ParticleSystemState {
 
 // ============ 配置工厂 ============
 
-const COLOR_TEA_GOLD = '#9E8050'
-const COLOR_WOOD = '#5D4E37'
 const COLOR_STEAM = '#E6E0D8'
 const COLOR_RIPPLE = '#B4A08C'
 

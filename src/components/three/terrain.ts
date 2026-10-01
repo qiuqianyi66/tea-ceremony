@@ -10,7 +10,7 @@
  * 结构：东西走向山脊骨架（z 方向低频）→ 南坡（-z 侧）宽缓为茶园、北坡（+z 侧）陡峭为阴林
  */
 import * as THREE from 'three'
-import { DEFAULT_PRESET, GARDEN_PRESETS, type GardenPreset } from './garden-presets'
+import { DEFAULT_PRESET, type GardenPreset } from './garden-presets'
 
 export const TERRAIN_SIZE = 200
 export const TERRAIN_SEGMENTS = 200

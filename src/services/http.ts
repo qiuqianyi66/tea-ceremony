@@ -61,7 +61,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   // 附加认证 token
   const token = getAuthToken()
   if (token && token !== 'dev-token') {
-    headers['Authorization'] = `Bearer ${token}`
+    headers.Authorization = `Bearer ${token}`
   }
 
   try {

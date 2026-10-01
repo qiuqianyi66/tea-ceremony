@@ -7,7 +7,7 @@
  */
 import * as THREE from 'three'
 import type { GardenPreset } from './garden-presets'
-import { DEFAULT_PRESET, GARDEN_PRESETS } from './garden-presets'
+import { DEFAULT_PRESET } from './garden-presets'
 import { seededRandom } from './tea-plant'
 import { getTerrainHeight } from './terrain'
 
