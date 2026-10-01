@@ -68,6 +68,13 @@ if (-not (Test-Path (Join-Path $BackendDir ".env"))) {
     Write-Warning "  $BackendDir\.env 不存在。部署会继续，但生产必须配好 .env 再上线（模板见仓库根 .env.example）。"
 } else {
     Write-Host "  .env:    已存在" -ForegroundColor Green
+    # SECRET_KEY 强度预检：<32 字符时 uvicorn 启动即崩（main.py 校验），这里提前拦截（不回显密钥值）
+    $secretLine = Get-Content (Join-Path $BackendDir ".env") | Where-Object { $_ -match '^\s*SECRET_KEY\s*=' } | Select-Object -First 1
+    $secretVal = ($secretLine -replace '^\s*SECRET_KEY\s*=\s*', '').Trim('"').Trim("'")
+    if ($secretVal.Length -lt 32) {
+        Write-Error "backend\.env 的 SECRET_KEY 强度不足（当前 $($secretVal.Length) 字符，要求 ≥32）。生成：python -c ""import secrets; print(secrets.token_hex(32))""，然后整行替换 .env 中的 SECRET_KEY。"
+    }
+    Write-Host "  SECRET_KEY: 强度校验通过" -ForegroundColor Green
 }
 
 # --- 2. venv ---
