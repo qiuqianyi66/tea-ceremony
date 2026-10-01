@@ -2,6 +2,13 @@
 
 本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 与 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [Unreleased]
+
+### Added
+
+- 生产级工程化五批收官（2026-09-20）：后端安全（XFF 限流 / 死连接 / 登录限流 / Host 校验）、可观测性（X-Request-ID / JSON 日志 / metrics / 探针分离 / 备份 / AI 熔断）、工程质量门（CI 7→11 job / 离线深链 / axe / web-vitals）、P2 按需（导出 JSON / KTX2 压缩 / SECURITY.md / 体积诊断）。基线：Vitest 142 / pytest 51 过 3 跳 / e2e 34 例 / 四园截图 ERRORS:[]。
+- AGENTS V4 文档治理（2026-10-01，ADR-009）：ADR 拆分为 `docs/ADR/` 独立文件（ADR-001~009 统一格式）、CONTEXT.md 精简为术语+ADR 索引+架构关键词、新增 `npm run quality` 统一门禁、commit 改英文 conventional commits、新增 AI Change Protocol 与 Modification Level。
+
 ## [1.0.0] - 2026-09-04
 
 首个正式发布：沉浸式在线茶道体验应用，覆盖「入席 → 选茶 → 备器 → 煮水 → 冲泡 → 品鉴 → 个人成长」完整闭环，具备离线优先、可解释评分、AI 降级与生产级工程能力。

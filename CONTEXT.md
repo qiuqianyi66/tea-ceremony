@@ -1,7 +1,7 @@
 # CONTEXT.md — 一盏茶项目共享语言
 
-> 本文件定义项目的统一术语和架构决策。AI 助手和开发者都使用这里的术语沟通，避免每次重新解释。
-> 新增术语或架构变更时同步更新本文件。
+> 本文件定义项目的统一术语、ADR 索引与架构关键词。AI 助手和开发者都使用这里的术语沟通，避免每次重新解释。
+> 新增术语、架构决策或关键状态变更时同步更新本文件；ADR 正文在 `docs/ADR/`，架构细节在 `docs/architecture/system-overview.md`。
 
 ---
 
@@ -22,155 +22,48 @@
 | 业务异常 | service 层抛出的统一异常（BadRequest 400 / Unauthorized 401 / NotFound 404 / Conflict 409），router 不直接 raise HTTPException | `backend/app/exceptions.py` |
 | Service 层 | 后端业务逻辑下沉层：CRUD、幂等、密码哈希、JWT 签发；router 只做参数与响应 | `backend/app/services/` |
 | 幂等创建 | 品鉴记录 / 茶园种植按 `user_id + client_id` 去重，重复提交返回同一条 | `backend/app/services/record_service.py` |
-| 目标用户 | 茶小白 / 有品茶习惯的人 / 冥想·慢生活人群；功能取舍以“三类用户能否完成一席完整茶事”为准 | 定位见 README |
+| 目标用户 | 茶小白 / 有品茶习惯的人 / 冥想·慢生活人群；功能取舍以「三类用户能否完成一席完整茶事」为准 | 定位见 README |
 
 ---
 
 ## 架构决策记录（ADR）
 
-### ADR-001：离线优先的数据层
-**决策**：品鉴记录先写 IndexedDB（Dexie），再异步同步后端。
-**原因**：用户完成品茶不应依赖网络；数据不能因一次请求失败丢失。
-**影响**：所有品鉴相关操作必须处理 `sync_status` 三态；新增字段要考虑同步逻辑。
+ADR 独立文件见 `docs/ADR/`（ADR-009 起统一格式：Status / Context / Decision / Consequences / Rejected），索引：
 
-### ADR-002：可解释评分模型
-**决策**：用八维口感 × 工艺系数的可解释公式，不用黑盒模型。
-**原因**：用户需要理解为什么得到这个分数；便于调试和扩展。
-**影响**：评分在记录创建时计算并存储，不随逻辑变更而重算历史记录。
-
-### ADR-003：AI 降级策略
-**决策**：AI 茶灵网络不可用时自动回退到规则回复。
-**原因**：PWA 离线可用是核心特性；不能因为 LLM 不可用就整个功能失效。
-**影响**：`src/services/ai.ts` 必须保留规则回复分支。
-
-### ADR-004：前后端分离 + Nginx 代理
-**决策**：前端 Vue SPA，后端 FastAPI，Nginx 做 SPA fallback 和 API 代理。
-**原因**：部署简单，前后端独立开发，安全头统一在 Nginx 配置。
-**影响**：API 路径统一前缀 `/api`；前端开发环境代理到 `localhost:8000`。
-
-### ADR-005：SQLAlchemy 2.0 异步 + Alembic 迁移
-**决策**：后端用异步 SQLAlchemy，所有 schema 变更走 Alembic。
-**原因**：异步性能好；迁移可追溯、可回滚。
-**影响**：禁止手动改数据库；模型变更必须生成迁移脚本。
-
-### ADR-006：本地行为埋点（不远程上报）
-**决策**：行为埋点走 IndexedDB（trackingEvents 表）纯本地存储，不接第三方统计、不上报后端。
-**原因**：离线优先是核心特性，埋点不能依赖网络；只存结构化事件（category/event/label/result），不采集用户输入等自由文本，隐私风险最低；2000 条封顶裁剪，防本地膨胀。
-**影响**：`src/services/tracking.ts` 白名单校验入参、track 永不 reject；T2.4 茶灵去留按 `getTrackingSummary()` 决策；未来若需远程分析，另行设计导出与用户同意机制。
-
-### ADR-007：技能库分工（全局权威 vs 项目专属）
-**决策**：AI 技能库分层管理——通用技能只存 `~/.agents/skills`（权威版），项目 `.agents/skills` 只保留项目定制/独有技能（db-migration、fastapi-endpoint、vue-component、show-me 的定制版 + frontend-design 项目 Anthropic 版 + tea 独有 61 个）。已删除 tea 中 60 个与全局重复（52 个内容一致）或旧版（8 个，全局为更新版）的通用副本。
-**原因**：原项目目录 126 个技能中 65 个与全局重名，双份维护必然漂移，项目内旧版会误导 AI 助手；通用技能放全局、定制技能放项目，归属清晰、单一权威。
-**影响**：项目内 AI 助手读 `.agents/skills` 只见项目专属技能，通用技能由全局提供；新增技能按归属落目录；本项目显式引用（db-migration、show-me、frontend-design）保持项目版不受影响；清理备份见临时目录 `skills-backup-20260929`。
-
-### ADR-008：全局技能库重构为 Spring Boot Full-stack Skill OS
-**决策**：全局技能库（~/.agents/skills）从 77 个重构为 101 个——61 保留合并 + 6 开源直装（SivaLabs/ECC）+ 3 开源改造 + 31 自造，形成以 Java + Spring Boot 为主栈、Vue/TS 前端与 AI Agent/Design 保持优势的 AI-native Full-stack Developer Skill OS；后端基线统一 Boot 4 / Java 21；fastapi-endpoint 降为 Secondary（项目版保留）。
-**原因**：目标定位以 Spring 生态为主后端，原库缺整条 Java/Spring 后端能力链；按“路由是瓶颈不是存储”将总量控制在 100-120；开源优先但许可证未核清不装（developer-kit 转自造）。
-**影响**：全局 = 101 个（分类与来源见 tea 根 `技能库体检清单.md` V2 最终版）；溯源规范 `~/.agents/skills/SOURCES.md`（repository/path/license/commit/adaptation）；备份 `Temp\skills-backup-20260929-v2` 可回滚；冲突审计 12 组结论已入体检清单；本项目 tea 后端仍为 FastAPI，不受影响。
----
-
-## 阶段复盘记录
-
-### 复盘：企业级优化方案五批收官（2026-09-20）
-
-> 依据 AGENTS.md 决策纪律「证据回顾」：对照 `docs/OPTIMIZATION_PLAN.md` 总表验收标准 + git log 逐项核对。
-
-**验收决定：五批全部通过**（commit 0ea842c / ef7cef8 / 37a0e16 / 239412c / f726d79 / 4bc9d8f）
-
-| 批次 | 验收标准核对 | 证据 |
+| ADR | 主题 | 状态 |
 |---|---|---|
-| 第一批 P0 后端安全（6 项） | ✅ pytest 51 过 3 跳；XFF 限流 key 含真实 IP；重启 PG 不报死连接（ef7cef8 集成测试挂 CI）；11 次登录第 11 个 429；short key 启动报错；evil.com Host 400 | 实测 + 集成测试 |
-| 第二批 前端+部署（3 项） | ✅ SW 更新 prompt 不丢表单；CSP 头补全 0 violation；镜像多阶段 <400MB 非 root | 批内实测 |
-| 第三批 可观测性（6 项） | ✅ X-Request-ID；JSON 日志可 jq；/metrics 文本；pg_dump 14 天可恢复；gunicorn 4 worker；停 DB /ready 503 而 /live 200；熔断 5 次失败后 <100ms | 批内实测 |
-| 第四批 工程质量门（7 项） | ✅ CI 7→11 job 全绿；离线深链不 404；axe 0 critical；web-vitals 落 IndexedDB | CI + e2e |
-| 第五批 P2 按需（4 项实做） | ✅ P2-12 导出 JSON 3 单测；P2-8 KTX2 32.4MB→6.8MB 且截图纹理渲染 ERRORS:[]；P2-11 SECURITY.md；P2-4 体积诊断（P2-2/7 按"有告警时"判定不做，P2-1 按"给朋友试用时"不触发，均有证据） | 单测 + verify-gardens + 截图 |
+| [ADR-001](docs/ADR/ADR-001.md) | 离线优先的数据层 | Accepted |
+| [ADR-002](docs/ADR/ADR-002.md) | 可解释评分模型 | Accepted |
+| [ADR-003](docs/ADR/ADR-003.md) | AI 降级策略 | Accepted |
+| [ADR-004](docs/ADR/ADR-004.md) | 前后端分离 + Nginx 代理 | Accepted |
+| [ADR-005](docs/ADR/ADR-005.md) | SQLAlchemy 2.0 异步 + Alembic 迁移 | Accepted |
+| [ADR-006](docs/ADR/ADR-006.md) | 本地行为埋点（不远程上报） | Accepted |
+| [ADR-007](docs/ADR/ADR-007.md) | 技能库分工（全局权威 vs 项目专属） | Accepted |
+| [ADR-008](docs/ADR/ADR-008.md) | 全局技能库重构为 Spring Boot Full-stack Skill OS | Accepted |
+| [ADR-009](docs/ADR/ADR-009.md) | 文档治理与 AI 协作规范重构（V4） | Accepted |
 
-**达成**：可观测性 / 供应链安全 / 容器安全 / PWA 数据安全 / 前端质量门五维达个人开源项目企业级水位。
-
-**行动项（下一阶段）**：
-1. 用户已确认继续做剩余 P2：P2-3 严格 tsconfig、P2-5 视觉回归、P2-6 焦点管理+ARIA live、P2-9 前端本地错误缓冲、P2-10 brotli/HTTP2/HTTPS（本轮 123 计划）。
-2. P2-1 refresh token 等"给朋友试用"再触发；P2-2/7 等性能告警再触发，不做。
-3. 优化方案后基线：Vitest 142 / pytest 51 过 3 跳 / e2e 34 例 / 四园截图 ERRORS:[]。
-
-
+新决策一律写入 `docs/ADR/ADR-0XX.md`，禁止塞进本文档。
 
 ---
 
-## 目录速查
+## 架构关键词
 
-```
-src/
-├── views/          页面（路由目标）
-├── components/     可复用组件
-├── composables/    组合式函数（逻辑复用）
-├── stores/         Pinia 状态
-├── services/       API / IndexedDB / 评分 / AI
-├── data/           静态数据（茶、茶器、节气、文化）
-├── types/          TypeScript 类型
-├── router/         路由 + 冲泡流程守卫
-├── plugins/        Vue 插件
-└── assets/         静态资源
-
-backend/
-├── app/
-│   ├── routers/    API 路由
-│   ├── models/     SQLAlchemy ORM
-│   ├── schemas/    Pydantic 请求/响应
-│   ├── services/   业务逻辑（base CRUD + 四域 service + 文化检索/AI 代理）
-│   └── core/       配置、安全、数据库
-├── migrations/     Alembic 迁移
-└── seeds/          初始数据
-```
-
----
-
-## 常用命令
-
-| 操作 | 命令 |
-|------|------|
-| 前端开发 | `npm run dev` |
-| 类型检查 | `npm run type-check` |
-| 生产构建 | `npm run build` |
-| 前端单测 | `npm run test` |
-| E2E 测试 | `npm run test:e2e` |
-| 后端测试 | `cd backend && .\.venv\Scripts\python.exe -m pytest tests -q` |
-| 后端开发 | `cd backend && uvicorn main:app --reload --port 8000` |
-| 生成迁移 | `cd backend && alembic revision --autogenerate -m "msg"` |
-| 执行迁移 | `cd backend && alembic upgrade head` |
-| 导入种子 | `cd backend && .\.venv\Scripts\python -m seeds.run` |
-| 生产部署 | 见 DEPLOY.md（Windows 原生 NSSM+nginx，旧 Docker 已弃用） |
-
----
-
-## 技术栈版本
-
-| 技术 | 版本 |
-|------|------|
-| Vue | 3.5+ |
-| TypeScript | 6.0（严格模式） |
-| Pinia | 4.0 |
-| Tailwind CSS | 4.3 |
-| Vite | 8.1 |
-| Dexie | 4.4 |
-| Three.js / TresJS | 0.185 / 5.8 |
-| ECharts / Chart.js | 6.1 / 4.5 |
-| Vitest / Playwright | 4.1 / 1.62 |
-| FastAPI | 0.115 |
-| SQLAlchemy | 2.0.35 |
-| Alembic | 1.13 |
-| PostgreSQL | 16+ |
-| Python | 3.12+ |
-| Node | 22.18+ / 24.12+ |
+- 前端：Vue 3.5 + TS 6（strict）+ Pinia 4 + Tailwind 4 + Vite 8 + TresJS 5.8 / Three 0.185 + Dexie 4 + ECharts 6 / Chart.js 4，Node 22.18+
+- 后端：FastAPI 0.115 + SQLAlchemy 2.0（async）+ Alembic + PostgreSQL 16+ + Pydantic v2，Python 3.12+
+- 分层：前端 `views → stores → services`；后端 `router → service → model`，router 只做参数与响应；AI 请求必须走后端代理 `/api/ai/*`，禁止浏览器直连
+- 部署：Windows Server 原生（NSSM + uvicorn + nginx for Windows），Docker 已弃用；详见 `DEPLOY.md`
+- 详细架构、目录速查与数据流：`docs/architecture/system-overview.md`
 
 ---
 
 ## 待办与已知限制
 
-- [x] 单元测试与 E2E 测试已落地（Vitest 37 用例 / Playwright 完整流程 + 分享页 + 健康页）
-- [x] AI 第三方请求已收敛到后端代理（`/api/ai/*`，浏览器不再直连）
+- [x] 单元测试与 E2E 测试已落地（Vitest 142 用例 / Playwright 34 例 / pytest 51 过 3 跳，2026-09-20 基线）
+- [x] AI 第三方请求已收敛到后端代理（`/api/ai/*`，浏览器不再直连；DeepSeek）
 - [x] 用户公开品鉴卡片和分享链接已实现（二维码 / `/share` 只读页）
 - [x] 冲泡页已升级为 TresJS 3D 茶席 + 实景夜色暖光背景（`3D_SPEC.md`）
-- [ ] 第六阶段「简历与面试材料」未做（路线图最后一项）
+- [ ] 第六阶段「简历与面试材料」未做（用户明确不做，暂缓）
 - [ ] 演示短视频未做（用户暂缓）
 - [x] 迁移测试本地跑：`TEST_DATABASE_URL` 指向本地 PG 服务即可（不再依赖 Docker），CI 用 Postgres service
 - [ ] 生产规模扩展（Redis 分布式限流、Sentry 异常追踪）非必需，可按需推进
+- [ ] 生产级收敛 P1（数据治理 DATA_POLICY / 回归测试体系 / Design Spec 拆分）待下一轮（见 ADR-009）

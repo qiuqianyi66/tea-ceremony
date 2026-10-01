@@ -1,7 +1,7 @@
 # 系统架构总览
 
 > 「一盏茶」沉浸式在线茶道应用 — 前后端架构、业务域划分与核心数据流。
-> 最后更新：2026-09-11（后端 service 层抽取完成之后）
+> 最后更新：2026-10-01（AGENTS V4 文档治理：部署去 Docker、AI 切 DeepSeek、garden 降级纯观赏）
 
 ## 1. 分层架构
 
@@ -17,16 +17,16 @@ flowchart TB
         views --> three
     end
 
-    subgraph server["Docker Compose"]
-        nginx["Nginx<br/>SPA fallback + /api 反代 + 静态资源"]
-        api["FastAPI 后端"]
-        pg[("PostgreSQL 16+")]
+    subgraph server["Windows Server 原生（NSSM + nginx）"]
+        nginx["Nginx for Windows<br/>SPA fallback + /api 反代 + 静态资源"]
+        api["FastAPI 后端（uvicorn，NSSM 服务）"]
+        pg[("PostgreSQL 16+（Windows 服务）")]
         nginx --> api
         api --> pg
     end
 
     subgraph external["外部服务"]
-        llm["OpenRouter（LLM，AI 代理）"]
+        llm["DeepSeek（LLM，AI 代理）"]
     end
 
     services -- "/api/*（经 Nginx）" --> nginx
@@ -62,7 +62,7 @@ flowchart LR
 | 茶叶 | `stores/tea.ts` | `tea_service.py` | 六大茶类目录、产区/工艺关联详情 |
 | 冲泡 | `stores/brew.ts` | —（纯前端状态机） | BrewPhase 流转、水温/投茶量/进度 |
 | 品鉴 | `stores/taste.ts` + `progress.ts` | `record_service.py` | 四步流程、八维评分、成就判定 |
-| 茶园 | `stores/garden.ts` | `garden_service.py` | 种茶/浇水/采摘，client_id 幂等 upsert |
+| 茶园 | `stores/garden.ts` | —（后端 garden 域已删） | 纯观赏 3D 景观（T4.1 删养成），天气/音效/茶亭保留 |
 | 记录 | `stores/record.ts` | `record_service.py` | 品鉴历史 CRUD + 离线同步队列 |
 | 认证 | `stores/ui.ts`（会话） | `auth_service.py` | 注册/登录/JWT（30 天） |
 | 茶文化 | `services/`（读取） | `culture_service.py` | 产区/茶人/茶诗/知识图谱/搜索 |
@@ -100,7 +100,7 @@ sequenceDiagram
 flowchart LR
     A["前端 teaAI.ts"] --> B["POST /api/ai/*"]
     B --> C{"代理可用？"}
-    C -- 是 --> D["OpenRouter LLM"]
+    C -- 是 --> D["DeepSeek LLM"]
     C -- 否（502） --> E["本地规则回复"]
     D --> F["返回内容"]
     E --> F
@@ -114,7 +114,40 @@ flowchart LR
 
 ## 5. 部署拓扑
 
-- **Docker Compose**：`frontend`（Nginx 静态 + 反代）→ `backend`（uvicorn）→ `postgres`。
+- **Windows Server 原生**：nginx for Windows（静态 + `/api` 反代）→ uvicorn（NSSM 托管 `tea-backend` 服务）→ PostgreSQL（Windows 服务）。旧 Docker 方案已弃用，文件保留参考。
 - **Nginx**：SPA fallback（`/` 回 index.html）、`/api` 反向代理到 backend、安全响应头、静态资源缓存。
 - **PWA**：`vite-plugin-pwa` 生成 Service Worker，核心路由离线可访问。
-- **CI（GitHub Actions 7 job 门禁）**：type-check + build + smoke / Vitest / Playwright E2E / 后端 pytest / 迁移测试（真实 Postgres）/ 语法编译 / Compose 校验。
+- **CI（GitHub Actions 11 job 门禁）**：type-check + build + smoke / Vitest / Playwright E2E / 后端 pytest / 迁移测试（真实 Postgres）/ 语法编译 / Compose 校验等。
+
+## 6. 目录速查
+
+```
+src/
+├── views/          页面（路由目标）
+├── components/     可复用组件
+├── composables/    组合式函数（逻辑复用）
+├── stores/         Pinia 状态
+├── services/       API / IndexedDB / 评分 / AI
+├── data/           静态数据（茶、茶器、节气、文化）
+├── types/          TypeScript 类型
+├── router/         路由 + 冲泡流程守卫
+├── plugins/        Vue 插件
+└── assets/         静态资源
+
+backend/
+├── app/
+│   ├── routers/    API 路由
+│   ├── models/     SQLAlchemy ORM
+│   ├── schemas/    Pydantic 请求/响应
+│   ├── services/   业务逻辑（base CRUD + 四域 service + 文化检索/AI 代理）
+│   └── core/       配置、安全、数据库
+├── migrations/     Alembic 迁移
+└── seeds/          初始数据
+
+docs/
+├── ADR/            架构决策记录（ADR-001~009，独立文件）
+├── architecture/   系统架构总览
+├── api/            API 端点说明
+├── promotion/      开源推广素材
+└── screenshots/    页面截图与审计图
+```
