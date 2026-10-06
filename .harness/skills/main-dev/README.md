@@ -9,6 +9,7 @@
 | 5 | unit-test-write | 新增/修改逻辑必须带测试（TDD 垂直切片） |
 | 5-6 | unit-test-ci | 提交前验证：quality 门禁 + 后端测试 + 迁移往返 |
 | 6 | expert-reviewer | 代码评审：6 维 + 🔴🟡🟢🔵 分级，🟡 清零才过 |
+| 6-7 | agent-eval | 协作质量评估：基线两层维度（G1-5/T1-6）+ `scripts/agent-eval.cjs` 自动检查，0 分证据沉淀 AGENTS.md §13；每批收尾必跑 |
 | 8-10 | deploy-verify | 预发验证 → 上线部署 → 30 分钟观测 |
 
 ## 调用规则
