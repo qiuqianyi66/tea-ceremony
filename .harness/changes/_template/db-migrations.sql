@@ -1,0 +1,17 @@
+-- ============================================================
+-- {feat-name} 迁移脚本（up）
+-- 规则：追加不修改；成对提供 rollback.sql；upgrade/downgrade 往返测试
+-- 命名：索引 ix_{table}_{col} / 唯一 uk_{table}_{col} / 外键 fk_{table}_{col}
+-- ============================================================
+
+-- 示例（按需替换为实际变更，禁提交空模板或未核实语句）：
+-- CREATE TABLE IF NOT EXISTS {table_name} (
+--   id            SERIAL PRIMARY KEY,
+--   user_id       INT NOT NULL REFERENCES users(id),
+--   client_id     VARCHAR(64) NOT NULL,
+--   created_at    TIMESTAMP NOT NULL DEFAULT now(),
+--   UNIQUE (user_id, client_id)
+-- );
+--
+-- ALTER TABLE {table_name} ADD COLUMN {col} VARCHAR(50);
+-- CREATE INDEX ix_{table}_{col} ON {table_name}({col});
