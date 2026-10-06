@@ -1,5 +1,5 @@
 services:
-  # PostgreSQL 数据库
+  # PostgreSQL 数据库（schema 完全由 Flyway 管理：V1 表 + V2 文化种子）
   db:
     image: postgres:16-alpine
     restart: unless-stopped
@@ -7,67 +7,50 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-tea_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
       POSTGRES_DB: ${POSTGRES_DB:-tea_ceremony}
-    ports:
-      - "5432:5432"
+    # 不暴露宿主端口：仅容器网络内部访问（生产安全）；如需宿主直连调试，
+    # 取消下行注释映射（注意本机若装了原生 PostgreSQL 会占用 5432）
+    # ports:
+    #   - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  # Redis（分布式限流存储）
-  redis:
-    image: redis:7-alpine
-    restart: unless-stopped
-    # 仅绑定本机，避免无密码 Redis 暴露到公网
-    ports:
-      - "127.0.0.1:6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-
-  # FastAPI 后端
+  # Spring Boot 后端（Flyway 自动迁移 + Actuator 健康探针）
   backend:
     build: ./backend
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "8080:8080"
     environment:
-      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL must be set}
-      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY must be set}
-      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
-      # 允许的 Host 头（逗号分隔）：生产必须配置实际域名/IP，默认放行
-      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-*}
-      SENTRY_DSN: ${SENTRY_DSN:-}
+      DB_URL: ${DB_URL:-jdbc:postgresql://db:5432/tea_ceremony}
+      DB_USER: ${DB_USER:-tea_user}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
     depends_on:
       db:
         condition: service_healthy
-      redis:
-        condition: service_healthy
     healthcheck:
-      # P1-12：容器存活探针用 /live（纯 200，不查依赖）——DB 抖动不应触发容器重启；
-      # 就绪判断用 /ready（查 DB），由外部编排/负载均衡决定是否摘流量。
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/live')"]
+      # Actuator /actuator/health：容器存活探针，不依赖具体业务
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
 
-  # Vue 前端（Nginx 静态文件服务，P2-10：自定义镜像带 brotli 模块）
+  # Vue 前端（多阶段构建：node build -> nginx + brotli，产物自包含在镜像内）
   frontend:
-    build: ./nginx
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
     restart: unless-stopped
     ports:
       - "80:80"
-      # HTTPS 就绪后开放 443（证书挂载见 DEPLOY.md「七、域名和 HTTPS」）
-      # - "443:443"
-    volumes:
-      - ./dist:/usr/share/nginx/html:ro
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    # HTTPS 就绪后开放 443（证书挂载见 DEPLOY.md「HTTPS」章节）
+    # - "443:443"
     depends_on:
       backend:
         condition: service_healthy

@@ -195,6 +195,23 @@ jobs:
         working-directory: backend
         run: bandit -r app main.py
 
+  backend-springboot:
+    name: Backend Spring Boot tests (Maven + Testcontainers)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Run Maven tests
+        working-directory: backend
+        # 全量测试（单测 + 集成），Testcontainers 用 runner 自带 Docker 起 postgres:16
+        run: mvn -q test
+
   migration-test:
     name: Database migration tests (Postgres)
     runs-on: ubuntu-latest
@@ -238,3 +255,8 @@ jobs:
         uses: actions/checkout@v4
       - name: Validate docker-compose
         run: docker compose config --quiet
+        env:
+          # compose 必填变量（:? 保护生产）；CI 校验用占位值
+          POSTGRES_PASSWORD: ci-test
+          DB_PASSWORD: ci-test
+          JWT_SECRET: ci-test-secret

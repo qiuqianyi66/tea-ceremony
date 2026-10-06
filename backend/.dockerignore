@@ -7,3 +7,5 @@ __pycache__
 .env
 # 测试代码运行不需要
 tests
+# Maven 构建产物不进构建上下文（本地 target 大且 builder 阶段会重新生成）
+target

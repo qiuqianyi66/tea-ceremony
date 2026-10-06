@@ -1,10 +1,59 @@
-# 「一盏茶」生产部署（Windows Server 原生，无 Docker）
+# 「一盏茶」生产部署
 
 > 服务器：阿里云 ECS，Windows Server 2022，2 核 2G，40GB
-> 方案：PostgreSQL 安装成 Windows 服务 + Python venv + NSSM 托管 uvicorn + nginx for Windows 静态/反代。
-> **已弃用 Docker**：`docker-compose.yml`、`backend/Dockerfile`、`nginx/Dockerfile` 保留作历史参考，不再用于部署。
-> 为什么不用 gunicorn：gunicorn 官方只支持 Unix（依赖 fork/fcntl）；Windows 上直接用 uvicorn 单进程，单用户 2 核够用。
-> 为什么不用 Redis：单实例走进程内存限流（代码已支持 `REDIS_URL` 留空自动降级），少一个服务。
+>
+> **两套部署方式并存（按后端栈选择）**：
+> - **Spring Boot 新栈（推荐，后端重写完成）**：Docker Compose 编排（db/backend/frontend 三服务 + nginx 反代），见下节「〇、Spring Boot 新栈：Docker Compose 部署（推荐）」。
+> - **旧 FastAPI 栈（仅历史参考）**：PostgreSQL Windows 服务 + Python venv + NSSM + uvicorn + nginx for Windows，见「一~九」节（旧脚本 `scripts/deploy-backend.ps1` 等保留，不再新增功能）。
+>
+> 历史背景：旧栈时代 Docker 方案曾被弃用（`docker-compose.yml`、`backend/Dockerfile`、`nginx/Dockerfile` 保留作参考）；后端重写为 Spring Boot 后恢复 Compose 编排为主路径（AGENTS.md §11）。
+
+---
+
+## 〇、Spring Boot 新栈：Docker Compose 部署（推荐）
+
+### 0.1 前置
+
+- Docker + Docker Compose v2（Windows：Docker Desktop 或 WSL2 后端）。
+- 服务器放行 80（前端）、8080（可选直连后端）。
+
+### 0.2 首次部署
+
+```powershell
+cd C:\tea
+# 1. 准备 .env（从 .env.example 复制；必填三键）
+Copy-Item .env.example .env
+#    POSTGRES_PASSWORD / DB_PASSWORD / JWT_SECRET 必须改成强随机值
+#    （JWT_SECRET 生成：python -c "import secrets;print(secrets.token_hex(32))"）
+
+# 2. 起全套（db 就绪 → backend Flyway 迁移 → frontend 依赖 backend 健康）
+docker compose up -d --build
+
+# 3. 验证
+docker compose ps          # 三服务均 healthy
+Invoke-RestMethod http://localhost/actuator/health          # 后端存活（经 nginx 反代 /api 外，8080 直连亦可）
+Invoke-RestMethod http://localhost/api/v1/teas              # 匿名可读：200 + V2 文化种子
+```
+
+### 0.3 架构与数据
+
+- 服务：`db`（postgres:16-alpine，**不暴露宿主端口**，仅容器网络）/ `backend`（Spring Boot 8080，Flyway 自动迁移 V1+V2）/ `frontend`（nginx 80，多阶段镜像内含 vite 构建产物 + brotli，`/api/` 反代 backend:8080）。
+- schema 完全由 Flyway 管理；**旧 `database/init.sql` 已从编排移除**（预建表与 Flyway 冲突）。
+- 数据持久化：`pgdata` 卷；`docker compose down` 不丢数据；备份 `docker compose exec -T db pg_dump -U tea_user tea_ceremony > backup.sql`。
+- 健康检查：backend 用 Actuator `/actuator/health`（JRE-alpine busybox wget）。
+
+### 0.4 日常维护
+
+```powershell
+docker compose logs -f backend        # 后端日志（Flyway/启动错误看这里）
+docker compose pull && docker compose up -d   # 升级镜像
+docker compose down                   # 停（保留数据卷）
+docker compose down -v                # 停并删数据卷（谨慎：清空数据库）
+```
+
+### 0.5 HTTPS
+
+证书就绪后：取消 `nginx.conf` 443 server block 注释 + `docker compose.yml` frontend 的 `443:443` 映射注释，证书挂载到 `/etc/nginx/certs/`（详见旧栈「七」节 HTTPS 要点，配置结构一致）。
 
 ---
 

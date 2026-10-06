@@ -1,0 +1,48 @@
+# 前端容器构建上下文（compose build context=., dockerfile=nginx/Dockerfile）排除项
+# 保留：src / public / index.html / package*.json / vite.config.* / tsconfig* / env.d.ts / nginx/（Dockerfile + nginx.conf）
+
+# 版本控制
+.git
+
+# 依赖与构建产物（builder 阶段重新安装/构建）
+node_modules
+dist
+dev-dist
+test-results
+playwright-report
+
+# 后端与文档（前端镜像不需要）
+backend
+docs
+e2e
+scripts
+.harness
+.agents
+.claude
+.codex
+.idea
+.vscode
+.github
+database
+3D_SPEC.md
+AGENTS.md
+CHANGELOG.md
+CLAUDE.md
+CONTEXT.md
+CONTRIBUTING.md
+DATABASE_ER.md
+DEPLOY.md
+DESIGN_SPEC.md
+TESTING_SPEC.md
+README.md
+PLAN.md
+nginx-windows.conf
+
+# 密钥与环境
+.env
+.env.development
+.env.example
+
+# 其他生成物
+*.log
+*.pid
