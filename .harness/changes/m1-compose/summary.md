@@ -52,10 +52,11 @@
 - [x] `docker compose config` 校验通过（含必填变量）
 - [x] 环境变量键名与 application.yml 逐一核对（DB_URL/DB_USER/DB_PASSWORD/JWT_SECRET → ${...}）
 - [x] expert-reviewer 评审通过：🔴 0 / 🟡 0（见 review.md）
-- [ ] **本地 `docker compose up --build` 完整验证：被外部网络阻断**（auth.docker.io:443 不可达，2 次重试 + TCP 诊断确认；本地无 maven/node/nginx 镜像缓存）。CI runner（GitHub 网络正常）会覆盖 mvn test + compose config；完整构建冒烟待网络恢复后补跑（命令见 DEPLOY.md 〇.2）
+- [x] **本地 `docker compose up -d --build` 完整验证通过（2026-10-06，网络修复后）**：三服务全部 healthy；冒烟五项全绿（/actuator/health UP、GET /api/v1/teas 经 nginx 200 + V2 种子 total=66、POST /api/v1/records 无 token 401 统一格式、前端 80 → 200 text/html）；Flyway V1+V2 容器首启自动迁移 ✓
+- [x] 验证期修复 2 项（见 review.md 🟡→🟢 处理）：nginx brotli 版本锁定、健康检查 -Y off 禁代理
 - [x] DEPLOY.md / .env.example 同步完成
 
 ## 五、部署与观测
 
-- [ ] 完整编排冒烟（网络恢复后：docker compose up -d --build + 冒烟命令）
+- [x] 完整编排冒烟通过（2026-10-06）
 - [ ] 30 分钟观测期（随 M1 整体部署后执行）

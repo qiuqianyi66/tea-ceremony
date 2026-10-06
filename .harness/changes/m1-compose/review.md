@@ -58,12 +58,22 @@
 1. db 端口从"映射 5432"改为"不映射"：本地调试如需直连 db，取消 compose 注释即可（已写注释指引）——行为变化有据（本机 5432 被原生 PG 占用 + 生产安全）
 
 ### 🔵 提示（不阻塞，外部环境因素）
-1. **本地 `docker compose up --build` 完整验证被网络阻断**：`auth.docker.io:443` TCP 不可达（2 次重试 + Test-NetConnection 确认）、无系统代理、本地无 maven/node/nginx 镜像缓存 → 构建无法拉基础镜像。非代码缺陷；`docker compose config` 静态校验已过；CI（GitHub runner 网络正常）覆盖 mvn test + compose config；完整冒烟待网络恢复补跑（命令已写入 DEPLOY.md 〇.2）
+1. **本地构建一度被 Docker Hub 网络阻断**：auth.docker.io 被 DNS 污染（解析到 Facebook/Dropbox IP）且无代理 → 两次重试失败。处理：用户开启 mihomo 代理（127.0.0.1:9674）→ Docker Desktop 重启跟随系统代理（daemon pull 生效）；BuildKit 拉 registry 仍不走 daemon 代理 → 用 `docker pull` 预拉 4 个基础镜像到本地（daemon 代理）后构建通过。**机器侧结论**：Docker Desktop 代理跟随系统代理；BuildKit registry 拉取需镜像本地缓存或 daemon 级代理；daemon.json proxies 会注入容器环境变量（见修复 2）
+
+### 🟡 验证期修复（已处理并提交，原潜在缺陷）
+1. **nginx brotli 版本锁定**：`nginx:alpine`（1.31.x）/`nginx:1.30-alpine`（1.30.5）均与 Alpine 仓库 `nginx-mod-http-brotli`（依赖 nginx=1.30.4-r1 精确版本）错配，apk 装不上 → Dockerfile 锁 `nginx:1.30.4-alpine`（镜像内包版本恰为 1.30.4-r1）✓ 实测 brotli 安装成功
+2. **健康检查被代理污染**：daemon.json 代理配置会注入运行容器 HTTP_PROXY 环境变量，busybox wget 对 localhost 仍走代理 → 502 → healthcheck 加 `-Y off`（显式禁代理）✓ 实测 healthy
+
+### 完整验证结果（2026-10-06，网络修复后）
+- [x] `docker compose config` 通过
+- [x] `docker compose up -d --build`：三服务全部 healthy（db → backend → frontend 依赖链正确）
+- [x] 冒烟五项：/actuator/health `{"status":"UP"}` 200；GET /api/v1/teas 经 nginx 200（V2 种子 total=66）；POST /api/v1/records 无 token 401 统一格式；前端 80 → 200 text/html
+- [x] Flyway V1+V2 容器首启自动迁移（日志：Successfully applied 2 migrations）
 
 ## 自检清单
 
 - [x] 6 维全覆盖
-- [x] 🔴 零残留、🟡 清零
+- [x] 🔴 零残留、🟡 清零（2 项修复后）
 - [x] 评审记录已落盘（本文件）
 - [x] 变更文件全量覆盖（含需求文档/CI/文档，无遗漏）
-- [x] 未验证项如实声明（本地构建冒烟，含原因与替代验证路径）
+- [x] 完整构建 + 冒烟已验证（网络修复后补跑）

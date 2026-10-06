@@ -34,8 +34,9 @@ services:
       db:
         condition: service_healthy
     healthcheck:
-      # Actuator /actuator/health：容器存活探针，不依赖具体业务
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health || exit 1"]
+      # Actuator /actuator/health：容器存活探针，不依赖具体业务。
+      # -Y off：禁 wget 代理（daemon 代理配置会注入容器 http_proxy，localhost 探测必须直连）
+      test: ["CMD-SHELL", "wget -Y off -qO- http://localhost:8080/actuator/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
