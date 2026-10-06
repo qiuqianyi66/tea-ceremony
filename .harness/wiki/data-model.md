@@ -80,8 +80,8 @@ user_id, client_id, 状态（幂等 upsert 键 `user_id + client_id`）
 | 约束 | 规则 |
 |---|---|
 | 幂等键 | `tasting_records` / `garden_plants`：`user_id + client_id` 唯一 |
-| 工艺系数 | 0.8 - 1.2（越界视为数据异常） |
-| 八维评分 | 各维度 0 - 100 |
+| 工艺系数 | 前端计算（温度/时间/茶器/水源因子），实际 ≤ 1.0；后端透明存储不校验 |
+| 八维评分 | 各维度 1 - 5（前端 `TasteDimensions`：bitterness 为反向维度；overall 1-10） |
 | 软删除 | 引入时统一 `@SQLDelete` + `@SQLRestriction`（JPA）；VO 禁透出 `isDeleted` |
 | 审计字段 | 统一 created_at / updated_at / created_by（`@MappedSuperclass`） |
 | 金额 | `Integer`（分）；时间 `LocalDateTime` |

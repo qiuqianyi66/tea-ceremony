@@ -160,6 +160,96 @@ confidence:
 - 本方案即权威来源（F 编号已定），实施不再重复需求解析
 - 承接关系：本方案 + PLAN 批 A/B + PRD v2 §5/§7/§8 为 T7 全部需求依据
 
+---
+
+#### T8 record 细化方案（v1，2026-10-06，需求已确认 docs/prd/m1-record-requirements.md，执行中）
+
+> 依据：request-analysis 范式（需求文档先行，用户 2026-10-06 确认"去做吧"）；现状事实均经只读核实（V1 表结构 / 旧 record_service / 前端 scoring.ts），无编造。
+
+##### 1. 范围与边界
+
+| 方向 | 内容 |
+|---|---|
+| 做（F8-1/2/3/4） | 提交（client_id 幂等）、列表（倒序分页）、详情、删除——全部需登录 |
+| 不做 | 评分计算/校验（前端透传，后端纯存储）；IndexedDB 同步（前端）；软删除（V1 无列，物理删）；garden_plants（独立切片） |
+
+##### 2. 现状事实（已核实）
+
+- V1 `tasting_records` 已建：16 列 + `uk_tasting_records_user_client`（幂等键已就位）+ user/tea 索引 + FK——**T8 零迁移**
+- 旧语义（record_service.py）：POST 查重幂等 / 列表 created_at DESC + skip/limit(clamp 1-100) / 详情与删除按 `id + user_id` 归属 404 / 物理删除
+- 前端评分（scoring.ts）：TasteDimensions 八维 1-5 → overall 1-10（× processFactor ≤1.0）——后端透明存储
+- SecurityConfig `.anyRequest().authenticated()` → **records 自动受保护，无需改配置**
+- GlobalExceptionHandler 已覆盖：BusinessException / @Valid 400 / 类型不匹配 400 / 404 / 500
+
+##### 3. 接口契约（base `/api/v1`）
+
+| 接口 | 行为 | 响应 |
+|---|---|---|
+| `POST /api/v1/records` | 登录；client_id 必填；幂等：同 user+client 返回已有；tea_id/ware_id 非空校验存在 | `ApiResponse{data: RecordVo}` 200 / 400 / 401 |
+| `GET /api/v1/records?page=&size=` | 登录；本人记录 created_at DESC；page 1-based、size≤100 默认 20 | `ApiResponse{data:{items,total,page,size}}` 401 |
+| `GET /api/v1/records/{id}` | 登录；归属校验 | `ApiResponse{data: RecordVo}` 401 / 404 |
+| `DELETE /api/v1/records/{id}` | 登录；归属校验；物理删除 | `ApiResponse{data:{message:"已删除"}}` 401 / 404 |
+
+- RecordVo（snake_case）：id/tea_id/tea_name/brew_temp/brew_time/infusions/water_type/ware_id/dimensions/overall_score/process_factor/aroma_type/notes/weather/mood/created_at
+- 请求体（@Valid）：client_id 必填 ≤64；tea_name 必填 ≤100；infusions 默认 1；dimensions 必填对象；overall_score/process_factor 数值
+- 鉴权：全部需登录（JWT，默认 authenticated 已覆盖）
+
+##### 4. 实现要点
+
+- 命名：**`TastingRecord`**（禁 `Record`——java.lang.Record 冲突）；`@Table(name = "tasting_records")`
+- 幂等（承重墙）：`findByUserIdAndClientId` 查重 → 无则 insert → 捕获 `DataIntegrityViolationException`（并发唯一冲突）→ 再查返回已有
+- 列表：`findByUserIdOrderByCreatedAtDesc(userId, PageRequest)`（无需 Specification）
+- 关联校验：tea_id/ware_id 非空 → repository.existsById → 不存在 400 PARAM_INVALID
+- 越权：详情/删除一律 `id + userId` 条件查询，无 → 404（不泄露存在性）
+- 类包：`com.tea.record.{entity,repository,dto,vo,service,controller}`
+
+##### 5. 验收标准（Given-When-Then，详见需求文档）
+
+- **F8-1** Given 登录 + 首次 POST（含 client_id），Then 200 创建；Given 同 client_id 再 POST，Then 200 返回同一条（total 不变）
+- **F8-1b** Given 无 client_id，Then 400；Given 无 token，Then 401
+- **F8-1c** Given 不同用户同 client_id，Then 各得独立记录
+- **F8-2** Given N 条记录 GET 列表，Then 倒序 + 分页结构 + 仅本人
+- **F8-3** Given 他人记录 GET 详情，Then 404；Given 本人记录，Then 200 全字段
+- **F8-4** Given 本人记录 DELETE，Then 200 + 库中行消失；Given 他人/不存在，Then 404
+
+##### 5b. 承重墙与合规声明
+
+- **幂等承重墙（ADR-001）**：查重 + 唯一索引兜底 + 回归测试（重复提交不产生新行）——本次核心
+- **评分可解释性（ADR-002）**：后端不重算 dimensions/overall_score/process_factor，透明存储
+- 零迁移（V1 已就位）；错误码/分页/索引命名符合编码规范
+- T8.3 交付项：同步 `api-contract.md`（records 契约）+ **校正 `data-model.md` 评分口径**（八维 1-5、工艺系数 ≤1.0，wiki 漂移）
+
+##### 6. 测试计划
+
+- 单测：TastingRecordServiceTest（幂等查重/创建/归属 404/删除/分页排序参数/关联校验 400）
+- slice：TastingRecordControllerTest（@WebMvcTest：4 端点 + @Valid 400 + 401 映射）
+- 集成：TastingRecordIntegrationTest（Testcontainers：注册→提交→同 client 幂等→列表倒序→越权 404→删除→401）
+
+##### 7. 任务拆分（每片 ≤4h）
+
+| 片 | 内容 | 前置 |
+|---|---|---|
+| T8.1 | TastingRecord entity + Repository + dto/vo | 方案确认 |
+| T8.2 | TastingRecordService（幂等 + 校验 + 归属） | T8.1 |
+| T8.3 | TastingRecordController + api-contract/wiki 同步 | T8.2 |
+| T8.4 | 单测 + 集成测试 | T8.3 |
+| T8.5 | expert-reviewer 评审 + changes 三件套 + 提交 | T8.4 |
+
+##### 8. 决策点（方案确认，均给推荐）
+
+| # | 决策 | 推荐 | 备选 |
+|---|---|---|---|
+| D8-1 | 列表分页风格 | **page/size 统一**（PageResult，与 T7 一致；联调切片统一前端） | skip/limit 兼容旧契约（过渡期前端无感，但契约分叉留债） |
+| D8-2 | tea_id/ware_id 存在性 | **非空时校验存在**（未知 → 400 PARAM_INVALID，健壮性） | 透传（FK 违反落 500，旧行为缺陷） |
+
+##### 9. Token 优化
+
+- 技能按需：T8.5 前读 `expert-reviewer/SKILL.md`；编码沿用 T7 已读模式（coding-skill 约束已在 T7 执行）
+- 需求文档 `docs/prd/m1-record-requirements.md` 为需求权威（F8-x 已编号），实施不再重复解析
+- wiki 校正仅改描述性字段口径（不编造数值）
+
+---
+
 ## Trade-offs
 
 | 选择 | 取舍 |

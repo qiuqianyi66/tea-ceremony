@@ -60,6 +60,21 @@ description: tea 接口协议——现有端点、统一约定（前缀/鉴权/�
 
 **幂等**：`client_id` 重复提交（同用户）返回同一条已有记录；归属校验按 `user_id`，不可访问他人记录。
 
+### 品鉴记录 `/api/v1/records`（Spring Boot 目标，T8 已实现，需登录）
+
+| 方法 | 路径 | 请求体 / 参数 | 成功响应 | 错误 |
+|---|---|---|---|---|
+| POST | `/api/v1/records` | `RecordCreateRequest`（client_id **必填**） | `ApiResponse{data:RecordVo}` 200（幂等返回已有） | 400 / 401 |
+| GET | `/api/v1/records` | `page` 默认 1（1-based）、`size` 默认 20 上限 100 | `ApiResponse{data:{items:[RecordVo], total, page, size}}` 倒序 | 401 |
+| GET | `/api/v1/records/{id}` | — | `ApiResponse{data:RecordVo}` | 401 / 404 |
+| DELETE | `/api/v1/records/{id}` | — | `ApiResponse{data:{message:"已删除"}}` | 401 / 404 |
+
+`RecordVo`（snake_case）：`id, client_id, tea_id, tea_name, brew_temp, brew_time, infusions, water_type, ware_id, dimensions, overall_score, process_factor, aroma_type, notes, weather, mood, created_at`
+- 幂等：`user_id + client_id` 唯一（uk_tasting_records_user_client）；并发冲突由唯一索引兜底转幂等返回
+- 归属：详情/删除按 `id + user_id` 过滤，跨用户访问 404（不泄露存在性）
+- 评分：dimensions/overall_score/process_factor 前端计算（scoring.ts），后端透明存储不重算
+- 与旧 `/api/records` 差异：分页风格 skip/limit → page/size；`client_id` 可选 → 必填（V1 表 NOT NULL）；tea_id/ware_id 非空时校验存在（400）
+
 ### 茶园 `/api/garden-plants`（需登录）
 
 | 方法 | 路径 | 请求体 | 成功响应 | 错误 |
