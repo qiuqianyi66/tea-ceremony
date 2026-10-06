@@ -21,6 +21,8 @@
         <java.version>21</java.version>
         <!-- PRD v0.2 锁定：Spring AI Alibaba 1.1.2.0（agent 框架，AI 切片时启用） -->
         <spring-ai-alibaba.version>1.1.2.0</spring-ai-alibaba.version>
+        <!-- Testcontainers ≥1.21.4：Docker Engine v29 将最低 API 版本提至 1.44，1.21.2 的 docker-java 协商旧版本被 400 拒绝（npipe 空 /info） -->
+        <testcontainers.version>1.21.4</testcontainers.version>
     </properties>
 
     <dependencies>

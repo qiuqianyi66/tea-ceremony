@@ -1,0 +1,14 @@
+feat(backend): T6 auth slice with JWT security and integration tests
+
+批 B 第一片（提前完成，随批 A 评审闭合后提交）。
+- auth 域四件套：User 实体（JSONB preferredAroma）/UserRepository/AuthService/AuthController
+- 安全：BCrypt 哈希、jjwt 0.12.6 无状态 JWT（HS384 + Clock 注入）、JwtAuthenticationFilter、
+  SecurityConfig（/api/v1/auth/** 与 /actuator/health 放行，其余需认证）
+- 401 契约：补 AuthenticationEntryPoint，未认证/无效 token → 401 统一 ApiResponse
+  （原实现匿名访问受保护路径返回 403 空 body，与过滤器注释及编码规范 §6 不符）
+- 集成测试：AuthIntegrationTest 6 例（@SpringBootTest + Testcontainers postgres:16 + RANDOM_PORT 真实 HTTP）
+  register/login 真实走通、JSONB 往返、401/409/health 放行
+- pom：testcontainers.version 1.21.4（Docker Engine v29 最低 API 1.44 兼容修复）
+- 验证：mvn -q test 31/31 全绿（单测 25 + 集成 6）
+
+评审：expert-reviewer 6 维，🔴 0 / 🟡 0（.harness/changes/m1-auth/review.md）。
