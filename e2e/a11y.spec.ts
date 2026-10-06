@@ -7,12 +7,14 @@ import { expect, test } from '@playwright/test'
  * 扫公开页面（无需选茶/登录状态）：首页、登录页。
  */
 const PAGES: Array<{ path: string; name: string }> = [
-  { path: '/', name: '首页' },
-  { path: '/login', name: '登录页' },
+  // 路径必须相对 baseURL（CI base=/tea-ceremony/）：用 './login' 而非 '/login'。
+  // 前导斜杠会被解析为服务器根，丢失 base 前缀，触发 vite preview 的 base 提示页（无 title/lang）。
+  { path: '.', name: '首页' },
+  { path: 'login', name: '登录页' },
 ]
 
 for (const { path, name } of PAGES) {
-  test(`${name}（${path}）axe 扫描无 critical/serious 违规`, async ({ page }) => {
+  test(`${name} axe 扫描无 critical/serious 违规`, async ({ page }) => {
     await page.goto(path, { waitUntil: 'networkidle' })
 
     const results = await new AxeBuilder({ page })

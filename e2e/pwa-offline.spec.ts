@@ -13,7 +13,8 @@ import { expect, test } from '@playwright/test'
  */
 test.describe('PWA 离线深链（navigateFallback）', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/')
+    // 相对 baseURL（CI base=/tea-ceremony/）：'.' 落在 SW scope 内，前导 '/' 会跳出 scope。
+    await page.goto('.')
     await page.waitForFunction(
       async () => (await navigator.serviceWorker.getRegistration())?.active?.state === 'activated',
       undefined,
@@ -23,7 +24,8 @@ test.describe('PWA 离线深链（navigateFallback）', () => {
     await page.waitForTimeout(2000)
   })
 
-  const deepLinks = ['/brew', '/share?token=offline-deep-link-fixture']
+  // 相对路径（无 前导斜杠）：落在 SW scope（/tea-ceremony/）内，navigateFallback 才能命中。
+  const deepLinks = ['brew', 'share?token=offline-deep-link-fixture']
 
   for (const deepLink of deepLinks) {
     test(`断网后直接访问 ${deepLink} 回退 index.html，不白屏`, async ({ context }) => {
