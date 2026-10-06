@@ -183,5 +183,6 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量�
 - biome --write 的 organizeImports 会把 TresJS 模板组件导入转 type-only 导致运行时炸；biome.json 的 `**/*.vue` override 已关 useImportType/useExportType，且 biome.json 是严格 JSON 禁注释。
 - KTX2 工具链：装 Khronos KTX-Software 官方 exe 取 toktx.exe 转码；three basis transcoder 复制进 public/ 供 KTX2Loader 运行时加载；workbox runtimeCaching 的 /3d/ 必须补 `ktx2|wasm|js` 否则离线缓存失效。
 - 技能规范：新增/修改/删除技能必须按 `.harness/rules/技能规范.md`（frontmatter 必填、触发式描述、name=目录名、README 路由表同步；README 不列 = 不存在）。
+- 需求分析先行：批 B 及后续切片必须先产出需求文档（范围边界/做什么与不做什么/F-编号 + Given-When-Then 验收/影响分析）并经用户确认，才进方案设计；禁止跳过需求分析直接写方案（2026-10-06 沉淀）。
 
 **2026-10-01 V4 重构**：ADR 拆 `docs/ADR/` 独立文件（ADR-001~009，统一格式）、CONTEXT.md 精简为术语+ADR 索引+架构关键词、新增 `npm run quality` 统一门禁、commit 改英文 conventional、新增 AI Change Protocol + Modification Level。详见 ADR-009。
