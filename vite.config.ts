@@ -19,7 +19,8 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/api': 'http://localhost:8000',
+      // M1 前端联调切片：/api 切到 Spring Boot 新后端（旧 FastAPI 8000 退役，仅 AI 切片前 teaAI 404 自动降级）
+      '/api': 'http://localhost:8080',
     },
   },
   plugins: [

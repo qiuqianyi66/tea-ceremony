@@ -1,10 +1,11 @@
-/** 品鉴记录 API */
+/** 品鉴记录 API（Spring Boot /api/v1/records，契约见 .harness/wiki/api-contract.md） */
 
 import type { TasteDimensions, TastingRecord } from '@/types/tasting'
 import { requestOrMock } from '../http'
 
 export interface RecordCreateDto {
-  client_id?: string
+  /** 新契约必填：幂等键（V1 表 NOT NULL，uk_tasting_records_user_client） */
+  client_id: string
   tea_name: string
   tea_id?: number
   brew_temp?: number
@@ -20,16 +21,45 @@ export interface RecordCreateDto {
   mood?: string
 }
 
-interface RecordResponseDto extends RecordCreateDto {
+/** 新后端 RecordVo（snake_case 字段名；含 client_id/ware_id） */
+interface RecordVo {
   id: number
-  user_id?: number | null
+  client_id: string
+  tea_id?: number | null
+  tea_name: string
+  brew_temp?: number | null
+  brew_time?: number | null
+  infusions?: number | null
+  water_type?: string | null
+  ware_id?: number | null
+  dimensions?: TasteDimensions | null
+  overall_score?: number | null
+  process_factor?: number | null
+  aroma_type?: string | null
+  notes?: string | null
+  weather?: string | null
+  mood?: string | null
   created_at: string
+}
+
+interface ApiResponse<T> {
+  code: string
+  message: string
+  data: T
+}
+
+/** 新契约分页结构 */
+interface RecordPage {
+  items: RecordVo[]
+  total: number
+  page: number
+  size: number
 }
 
 export function toRecordDto(record: Partial<TastingRecord>): RecordCreateDto {
   const dto: RecordCreateDto = {
-    // exactOptionalPropertyTypes：id 可能为空（游客本地记录），显式 undefined 不合法，条件展开
-    ...(record.id ? { client_id: record.id } : {}),
+    // client_id 必填：本地记录均有 id（uuid/server-*）；兜底时间戳防 400
+    client_id: record.id ?? `local-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     tea_name: record.teaName ?? '未命名茶',
   }
   const teaId = record.teaApiId ?? Number(record.teaId)
@@ -48,7 +78,7 @@ export function toRecordDto(record: Partial<TastingRecord>): RecordCreateDto {
 }
 
 /** 将服务端 snake_case 记录还原为前端离线业务模型。 */
-function fromRecordDto(dto: RecordResponseDto): TastingRecord {
+function fromRecordDto(dto: RecordVo): TastingRecord {
   const dimensions = dto.dimensions ?? ({} as TasteDimensions)
   return {
     id: dto.client_id ?? `server-${dto.id}`,
@@ -81,19 +111,29 @@ function fromRecordDto(dto: RecordResponseDto): TastingRecord {
 }
 
 export const recordsApi = {
+  /** 列表（新契约分页；size 取上限 100 保持现有"一次全量"语义） */
   async list(): Promise<TastingRecord[]> {
-    const records = await requestOrMock<RecordResponseDto[]>('/records', undefined, [])
-    return records.map(fromRecordDto)
+    const result = await requestOrMock<ApiResponse<RecordPage>>(
+      '/v1/records?page=1&size=100',
+      undefined,
+      { code: 'OK', message: 'ok', data: { items: [], total: 0, page: 1, size: 20 } },
+    )
+    return result.data.items.map(fromRecordDto)
   },
 
+  /** 创建（幂等：client_id 重复提交返回已有记录）。不设 mock——失败抛错，供离线同步降级（history.ts catch） */
   async create(record: Partial<TastingRecord>) {
-    return requestOrMock('/records', {
+    const result = await requestOrMock<ApiResponse<RecordVo>>('/v1/records', {
       method: 'POST',
       body: JSON.stringify(toRecordDto(record)),
     })
+    return result.data
   },
 
   async delete(id: number) {
-    return requestOrMock(`/records/${id}`, { method: 'DELETE' })
+    const result = await requestOrMock<ApiResponse<{ message: string }>>(`/v1/records/${id}`, {
+      method: 'DELETE',
+    })
+    return result.data
   },
 }

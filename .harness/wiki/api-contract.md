@@ -25,6 +25,18 @@ description: tea 接口协议——现有端点、统一约定（前缀/鉴权/�
 
 `TokenResponse`：`{access_token, token_type:"bearer", user:{id, username, display_name, level, xp, preferred_type}}`
 
+### 认证 `/api/v1/auth`（Spring Boot 目标，T6 已实现，公开）
+
+| 方法 | 路径 | 请求体 | 成功响应 | 错误 |
+|---|---|---|---|---|
+| POST | `/api/v1/auth/register` | `{username, password, displayName?}` | `ApiResponse{data:TokenVo}` 200 | 400 用户名已存在 `BAD_REQUEST` |
+| POST | `/api/v1/auth/login` | `{username, password}` | `ApiResponse{data:TokenVo}` 200 | 401 用户名或密码错误 `UNAUTHORIZED` |
+
+`TokenVo`：`{token, expiresInSeconds, user:{id, username, displayName, level, xp}}`
+- **命名注意**：新后端无全局 snake_case 策略，UserVo/RegisterRequest 字段即 Java 名（`displayName` camelCase）；TeaVo/RecordVo 字段名本身是 snake_case，两套共存
+- 与旧 `/api/auth` 差异：响应包 `ApiResponse.data`；`access_token` → `token`；请求体 `display_name` → `displayName`；token_type 移除（JWT 直接作 Bearer token）
+- 前端适配（T10）：`src/services/api/auth.ts` 解包 `data` 并把 `user.displayName` 还原为 `display_name`（store 零改动）
+
 ### 茶叶 `/api/teas`（公开）
 
 | 方法 | 路径 | 参数 | 成功响应 | 错误 |
