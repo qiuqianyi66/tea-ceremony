@@ -1,4 +1,4 @@
-# main-dev-skill 总览（主开发流程，6 个）
+# main-dev-skill 总览（主开发流程，8 个）
 
 > 路由表：十阶段流水线对应关系。任务启动先读本表确定技能，再按需加载对应 SKILL.md。
 
@@ -9,6 +9,7 @@
 | 5 | unit-test-write | 新增/修改逻辑必须带测试（TDD 垂直切片） |
 | 5-6 | unit-test-ci | 提交前验证：quality 门禁 + 后端测试 + 迁移往返 |
 | 6 | expert-reviewer | 代码评审：6 维 + 🔴🟡🟢🔵 分级，🟡 清零才过 |
+| 6 | caveman-review | 评审输出格式变体：一行一条 finding + 严重度（用户点名 caveman/一行式评审时用；不改评审维度） |
 | 6-7 | agent-eval | 协作质量评估：基线两层维度（G1-5/T1-6）+ `scripts/agent-eval.cjs` 自动检查，0 分证据沉淀 AGENTS.md §13；每批收尾必跑 |
 | 8-10 | deploy-verify | 预发验证 → 上线部署 → 30 分钟观测 |
 
