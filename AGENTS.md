@@ -30,6 +30,7 @@
 - 前端 UI 改动截图验证：改前一张、改后一张，描述差异；改完按设计审计清单自查。
 - 上下文是稀缺资源：同一问题连续两次修正失败就停下，总结所学，请用户重开会话；探索性任务用只读手段，别污染主上下文。
 - 关键决策（新功能立项/方案评审）先用多角色质询（PM/架构师/UX/开发者/分析师各提一个反对意见）或深度批判四法（pre-mortem 默认首选）。
+- **写作风格（80% ASD-STE100，2026-10-06 融入）**：①每句一事实或一条指令，指令 ≤20 词、描述 ≤25 词；②主动语态，说清谁做什么；③同物同词——术语（契约字段/领域概念）定义一次后精确复用，禁换着叫；④先答案后细节（§0 已有，写解释时严格执行）；⑤步骤放编号列表，每段一个主题最多 6 句；⑥用用户的语言回答，句子简短；⑦流程/结构/架构超过 3 个部分时加 ASCII 图或引用架构图；⑧用户说"用 HTML 解释/做成网页"时，交付单文件交互式 HTML 页。评估与抽样流程见 `docs/agent-eval-baseline.md`。
 
 ## 3. 架构边界
 
@@ -166,6 +167,7 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量�
 - `.claude/agents/` — 三子代理（code-reviewer / consistency-verifier / red-line-auditor）
 - `.harness/skills/` — 技能全套 30 个（main-dev 6 / biz-dev 19 / trouble-shooting 5），每族带 README 路由表，按需渐进式加载（request-analysis 规则 + Wiki ≤3、coding-skill ≤4）
 - `.github/workflows/ci.yml` — CI 合并门禁（含 compose-validate）
+- `docs/agent-eval-baseline.md` — AI 协作评估基线（通用+专项维度、抽样会话评分流程、评估证据沉淀）
 
 禁止只凭文件名或经验猜实现；没找到依据就明说 "不确定 / 未找到"。
 
@@ -186,5 +188,6 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量�
 - 需求分析先行：批 B 及后续切片必须先产出需求文档（范围边界/做什么与不做什么/F-编号 + Given-When-Then 验收/影响分析）并经用户确认，才进方案设计；禁止跳过需求分析直接写方案（2026-10-06 沉淀）。
 - 数据库容器密码认证失败：先试候选已知密码（如历史 .env 值）再考虑重建卷；重建卷是最后手段，删前必须确认目标卷与生产/开发库卷独立（2026-10-06 沉淀）。
 - Canvas UI（canvasui.dev，MIT+Commons Clause）：25 个 canvas 特效组件库，Vue 版可用、Tailwind4/Three0.185 兼容；html-in-canvas 需 Chrome140+ flag/其余降级 overlay；禁转售组件本身。评估见 docs/canvas-ui.md，引入须过四维甄别 + 设计门禁（2026-10-06 沉淀）。
+- 写作风格 = 80% ASD-STE100（航空维修手册规范）：一句一事实/指令≤20词描述≤25词/主动语态/同物同词/先答案后细节/编号列表每段≤6句/用中文简短/>3部分加 ASCII 图/"用 HTML 解释"→单文件交互页。已消化入 §2，与现有"不废话/编号清单/中文"合并不重复；评估见 docs/agent-eval-baseline.md（2026-10-06 沉淀）。
 
 **2026-10-01 V4 重构**：ADR 拆 `docs/ADR/` 独立文件（ADR-001~009，统一格式）、CONTEXT.md 精简为术语+ADR 索引+架构关键词、新增 `npm run quality` 统一门禁、commit 改英文 conventional、新增 AI Change Protocol + Modification Level。详见 ADR-009。
