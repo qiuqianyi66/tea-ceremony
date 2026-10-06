@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -40,6 +41,8 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/**", "/actuator/health").permitAll()
+                        // 茶叶目录游客可浏览（PRD F2/F3；T7 只读放行）
+                        .requestMatchers(HttpMethod.GET, "/api/v1/teas/**").permitAll()
                         .anyRequest().authenticated())
                 // 未认证/无效 token 访问受保护接口 → 401 统一 ApiResponse（编码规范 §6）
                 .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> {

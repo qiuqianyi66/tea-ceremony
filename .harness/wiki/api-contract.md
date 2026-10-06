@@ -32,6 +32,17 @@ description: tea 接口协议——现有端点、统一约定（前缀/鉴权/�
 | GET | `/api/teas/` | `type?`（六大茶类） | `list[TeaResponse]` | — |
 | GET | `/api/teas/{tea_id}` | — | `TeaResponse` | 404 `NOT_FOUND` |
 
+### 茶叶目录 `/api/v1/teas`（Spring Boot 目标，T7 已实现，公开）
+
+| 方法 | 路径 | 参数 | 成功响应 | 错误 |
+|---|---|---|---|---|
+| GET | `/api/v1/teas` | `category?` 茶类、`origin?` 产地模糊、`page` 默认 1（1-based）、`size` 默认 20 上限 100 | `ApiResponse{data:{items:[TeaVo], total, page, size}}` 200 | 400 `PARAM_INVALID` |
+| GET | `/api/v1/teas/{id}` | — | `ApiResponse{data:TeaVo}` 200 | 404 `NOT_FOUND` |
+
+`TeaVo`（snake_case）：`id, name, category, origin, region_id, process_id, season, grade, altitude, best_temp, best_time, infusions, flavor[], story, description, historical_period, water_requirement, soup_color_min, soup_color_max, dry_tea_color`
+- 鉴权：GET 公开（游客可浏览，PRD F2/F3）；列表默认按 id 排序（seeds 顺序即茶类分组）
+- 与旧 `/api/teas` 差异：新契约分页 + snake_case 全字段；旧端点在过渡期保留（前端联调切片切换）
+
 ### 茶器 `/api/teawares`（公开）
 
 | 方法 | 路径 | 成功响应 |
