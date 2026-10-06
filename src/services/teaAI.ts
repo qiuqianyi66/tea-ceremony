@@ -19,7 +19,7 @@ async function callLLM(systemPrompt: string, userPrompt: string): Promise<string
   try {
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 8000)
-    const res = await fetch(`${API_BASE}/ai/chat`, {
+    const res = await fetch(`${API_BASE}/v1/ai/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: controller.signal,
@@ -33,7 +33,7 @@ async function callLLM(systemPrompt: string, userPrompt: string): Promise<string
     clearTimeout(timeout)
     if (!res.ok) return null
     const data = await res.json()
-    return data.content || null
+    return data.data?.content || null
   } catch {
     return null
   }
@@ -326,9 +326,10 @@ interface CultureSearchResult {
 
 async function fetchRAGContext(question: string): Promise<string> {
   try {
-    const res = await fetch(`${API_BASE}/culture/search?q=${encodeURIComponent(question)}`)
+    const res = await fetch(`${API_BASE}/v1/culture/search?q=${encodeURIComponent(question)}`)
     if (!res.ok) return ''
-    const data = (await res.json()) as CultureSearchResult
+    const wrapped = await res.json()
+    const data = wrapped.data as CultureSearchResult
     const parts: string[] = ['【茶文化知识库资料】']
 
     if (data.teas?.length) {
@@ -376,7 +377,7 @@ export async function askTeaMaster(question: string, history: ChatMessage[] = []
   ]
 
   try {
-    const res = await fetch(`${API_BASE}/ai/chat`, {
+    const res = await fetch(`${API_BASE}/v1/ai/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: AbortSignal.timeout(8000),
@@ -388,12 +389,12 @@ export async function askTeaMaster(question: string, history: ChatMessage[] = []
       return ruleBasedReply(question)
     }
     const data = await res.json()
-    if (!data.content) {
+    if (!data.data?.content) {
       void track({ category: 'ai', event: 'ai_ask', label: 'ask', result: 'degraded' })
       return ruleBasedReply(question)
     }
     void track({ category: 'ai', event: 'ai_ask', label: 'ask', result: 'success' })
-    return data.content
+    return data.data.content
   } catch {
     void track({ category: 'ai', event: 'ai_ask', label: 'ask', result: 'degraded' })
     return ruleBasedReply(question)

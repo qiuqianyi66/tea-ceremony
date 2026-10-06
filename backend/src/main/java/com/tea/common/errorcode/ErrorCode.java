@@ -16,7 +16,8 @@ public enum ErrorCode {
     FORBIDDEN("FORBIDDEN", HttpStatus.FORBIDDEN, "无权限访问"),
     NOT_FOUND("NOT_FOUND", HttpStatus.NOT_FOUND, "资源不存在"),
     CONFLICT("CONFLICT", HttpStatus.CONFLICT, "资源状态冲突"),
-    METHOD_NOT_ALLOWED("METHOD_NOT_ALLOWED", HttpStatus.METHOD_NOT_ALLOWED, "请求方法不支持");
+    METHOD_NOT_ALLOWED("METHOD_NOT_ALLOWED", HttpStatus.METHOD_NOT_ALLOWED, "请求方法不支持"),
+    BAD_GATEWAY("BAD_GATEWAY", HttpStatus.BAD_GATEWAY, "AI 服务暂不可用");
 
     private final String code;
     private final HttpStatus httpStatus;

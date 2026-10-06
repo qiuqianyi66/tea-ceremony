@@ -75,3 +75,44 @@ describe('teaAI 降级逻辑（后端代理不可用时）', () => {
     expect(reply).toContain('盖碗')
   })
 })
+
+describe('teaAI v1 成功路径（ApiResponse 解包）', () => {
+  it('askTeaMaster：v1 端点成功返回 LLM 内容，不走降级', async () => {
+    const mockFetch = vi.fn(async (url: string) => {
+      if (url.includes('culture/search')) {
+        return {
+          ok: true,
+          json: async () => ({
+            code: 'OK',
+            data: { teas: [], people: [], regions: [], poems: [] },
+          }),
+        }
+      }
+      return {
+        ok: true,
+        json: async () => ({ code: 'OK', data: { content: '这是 AI 茶博士回复' } }),
+      }
+    })
+    vi.stubGlobal('fetch', mockFetch)
+    const { askTeaMaster } = await freshTeaAI()
+    const reply = await askTeaMaster('你好')
+    expect(reply).toBe('这是 AI 茶博士回复')
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('/v1/ai/chat'),
+      expect.any(Object),
+    )
+  })
+
+  it('generateTastingNote：v1 成功返回 LLM 文风评语', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({ code: 'OK', data: { content: '这是 AI 生成的品鉴评语' } }),
+      })),
+    )
+    const { generateTastingNote } = await freshTeaAI()
+    const note = await generateTastingNote('西湖龙井', DIMENSIONS, 8.6)
+    expect(note).toBe('这是 AI 生成的品鉴评语')
+  })
+})

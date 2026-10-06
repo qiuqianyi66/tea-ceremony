@@ -40,7 +40,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/auth/**", "/actuator/health").permitAll()
+                        .requestMatchers("/api/v1/auth/**", "/api/v1/ai/**", "/api/v1/culture/**", "/actuator/health").permitAll()
                         // 茶叶目录游客可浏览（PRD F2/F3；T7 只读放行）
                         .requestMatchers(HttpMethod.GET, "/api/v1/teas/**").permitAll()
                         .anyRequest().authenticated())

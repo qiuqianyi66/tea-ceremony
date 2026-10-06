@@ -96,7 +96,7 @@ description: tea 接口协议——现有端点、统一约定（前缀/鉴权/�
 
 **幂等 upsert**：同 `user_id + client_id` 已存在则更新状态返回原 id，否则新建。
 
-### 茶文化 `/api/culture`（公开）
+### 茶文化 `/api/culture`（公开，旧 FastAPI，仅维护）
 
 | 方法 | 路径 | 参数 | 成功响应 | 错误 |
 |---|---|---|---|---|
@@ -112,13 +112,29 @@ description: tea 接口协议——现有端点、统一约定（前缀/鉴权/�
 | GET | `/api/culture/graph/{tea_id}` | — | 茶文化知识图谱 | 404 |
 | GET | `/api/culture/search` | `q` 默认空串 | 搜索结果 | — |
 
-### 茶灵 AI `/api/ai`（公开，LLM 不可用时 502，前端降级规则回复）
+### 文化搜索 `/api/v1/culture`（Spring Boot 目标，T11 已实现，公开）
+
+| 方法 | 路径 | 参数 | 成功响应 | 错误 |
+|---|---|---|---|---|
+| GET | `/api/v1/culture/search` | `q` 默认空串 | `ApiResponse<CultureSearchResult>`：`{teas,people,regions,poems}` 各 ≤5 | — |
+
+> item 字段：tea `{id,name,type}`；person `{id,name,dynasty,type}`；region `{id,name,province,type}`；poem `{id,title,author,type}`。culture 其余详情端点留后续 culture 切片。
+
+### 茶灵 AI `/api/ai`（公开，旧 FastAPI，仅维护；LLM 不可用时 502，前端降级规则回复）
 
 | 方法 | 路径 | 请求体 | 成功响应 | 错误 |
 |---|---|---|---|---|
 | POST | `/api/ai/recommend` | `{time, weather, mood}`（各 ≤20 字） | `{content}` 200 | 502 |
 | POST | `/api/ai/note` | `{tea_name, score(0-10), dimensions}` | `{content}` | 502 |
 | POST | `/api/ai/chat` | `{messages:[{role, content}]}`（1-20 条，content ≤4000 字） | `{content}` | 502 |
+
+### 茶灵 AI `/api/v1/ai`（Spring Boot 目标，T11 已实现，公开；LLM 不可用时 502，前端降级）
+
+| 方法 | 路径 | 请求体 | 成功响应 | 错误 |
+|---|---|---|---|---|
+| POST | `/api/v1/ai/chat` | `{messages:[{role(system/user/assistant), content≤4000}]`（1-20 条）；`agent?` ≤50 | `ApiResponse<{content}>` 200 | 400 校验失败；**502 BAD_GATEWAY**（无 key/上游失败） |
+
+> 透明代理：前端 messages 原样转发；仅成功调用落 `ai_usage_logs`（agent/model/tokens_in/tokens_out/latency；游客 user_id 空）。key 配置 `AI_DASHSCOPE_API_KEY`，无 key 占位 `disabled` 时 Service 显式 502。
 
 ### 系统
 

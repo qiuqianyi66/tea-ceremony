@@ -1,0 +1,16 @@
+feat(backend): T11 AI proxy, culture search, metering
+
+- ai 域：AiChatController/AiChatService（透明代理 + 502）、AiUsageLog entity/Repository、
+  dto（role pattern/content 4000/messages 20）、vo
+- culture 域：CultureSearchController + CultureSearchService（JdbcTemplate 跨 4 表
+  ILIKE，各 LIMIT 5，参数化防注入），5 个 vo
+- common：ErrorCode 加 BAD_GATEWAY，新增 BadGatewayException
+- 安全：SecurityConfig 放行 /api/v1/ai/**、/api/v1/culture/**（公开，游客 user_id 空）
+- 配置：spring-ai-alibaba-starter-dashscope 1.1.2.4-security-fix；
+  AI_DASHSCOPE_API_KEY 占位 disabled（无 key 启动成功，Service 显式 502 触发前端降级）
+- 计量：仅成功调用落 ai_usage_logs；计量落库失败容错，不影响已返回的 LLM 内容
+- 前端：teaAI.ts 三处路径切 v1 + ApiResponse 解包；降级规则引擎零改动（承重墙回归）
+- 测试：后端 82/82（新增 AiChatControllerTest 4 + CultureSearchIntegrationTest 4）；
+  前端 teaAI 8 测试全绿，npm run quality 通过
+
+评审：expert-reviewer 6 维，🔴 0 / 🟡 0（.harness/changes/m1-ai/review.md）。

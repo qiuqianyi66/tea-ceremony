@@ -1,6 +1,12 @@
 spring:
   application:
     name: tea-backend
+  # T11 AI（DashScope）：默认占位 disabled，防 starter 无 key 自动配置启动失败
+  # （DashScopeAgentAutoConfiguration 强制 key）；AiChatService 检测 disabled/空 → 502 触发前端降级；
+  # 生产经环境变量 AI_DASHSCOPE_API_KEY 注入真实 key（官方约定变量名）
+  ai:
+    dashscope:
+      api-key: ${AI_DASHSCOPE_API_KEY:disabled}
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/tea}
     username: ${DB_USER:tea}
