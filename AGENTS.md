@@ -188,6 +188,8 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量�
 - 需求分析先行：批 B 及后续切片必须先产出需求文档（范围边界/做什么与不做什么/F-编号 + Given-When-Then 验收/影响分析）并经用户确认，才进方案设计；禁止跳过需求分析直接写方案（2026-10-06 沉淀）。
 - 数据库容器密码认证失败：先试候选已知密码（如历史 .env 值）再考虑重建卷；重建卷是最后手段，删前必须确认目标卷与生产/开发库卷独立（2026-10-06 沉淀）。
 - Canvas UI（canvasui.dev，MIT+Commons Clause）：25 个 canvas 特效组件库，Vue 版可用、Tailwind4/Three0.185 兼容；html-in-canvas 需 Chrome140+ flag/其余降级 overlay；禁转售组件本身。评估见 docs/canvas-ui.md，引入须过四维甄别 + 设计门禁（2026-10-06 沉淀）。
+- E2E 测试导航路径必须相对 baseURL（'login'、'brew'、'garden'），禁止前导斜杠（'/login'）：CI vite base=/tea-ceremony/，前导斜杠跳出 SW scope（离线深链 ERR_DISCONNECTED）或命中 vite base 提示页（无 title/lang，axe 挂）；重测试（真实 IndexedDB 批量写）显式传 timeout（2026-10-06 沉淀）。
+- npm audit 本地必须加 `--registry=https://registry.npmjs.org`（npmmirror 不实现 audit endpoint）；`npm audit fix` 后跑 quality 验证无破坏再提交（2026-10-06 沉淀）。
 - 写作风格 = 80% ASD-STE100（航空维修手册规范）：一句一事实/指令≤20词描述≤25词/主动语态/同物同词/先答案后细节/编号列表每段≤6句/用中文简短/>3部分加 ASCII 图/"用 HTML 解释"→单文件交互页。已消化入 §2，与现有"不废话/编号清单/中文"合并不重复；评估见 docs/agent-eval-baseline.md（2026-10-06 沉淀）。
 
 **2026-10-01 V4 重构**：ADR 拆 `docs/ADR/` 独立文件（ADR-001~009，统一格式）、CONTEXT.md 精简为术语+ADR 索引+架构关键词、新增 `npm run quality` 统一门禁、commit 改英文 conventional、新增 AI Change Protocol + Modification Level。详见 ADR-009。
