@@ -1,0 +1,35 @@
+spring:
+  application:
+    name: tea-backend
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/tea}
+    username: ${DB_USER:tea}
+    password: ${DB_PASSWORD:tea}
+  jpa:
+    hibernate:
+      # 红线 #7：禁 ddl-auto: update；validate 仅校验 Entity 与迁移一致，schema 变更只走 Flyway
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  jackson:
+    default-property-inclusion: non_null
+
+server:
+  port: ${PORT:8080}
+
+tea:
+  jwt:
+    # dev 默认值仅本地开发；生产必须通过环境变量 JWT_SECRET 注入 ≥32 字节密钥
+    secret: ${JWT_SECRET:tea-dev-secret-key-please-change-in-production-0123456789}
+    expiration-minutes: ${JWT_EXPIRATION_MINUTES:1440}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when_authorized

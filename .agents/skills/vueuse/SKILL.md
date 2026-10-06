@@ -1,5 +1,5 @@
 ---
-name: vueuse-functions
+name: vueuse
 description: VueUse composable catalog. Load only when the user asks for VueUse, @vueuse/*, or to replace custom code with a VueUse helper. Do not auto-load for ordinary Vue component work.
 disable-model-invocation: true
 license: MIT

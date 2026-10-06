@@ -1,0 +1,11 @@
+spring:
+  datasource:
+    # 本地开发：Docker Postgres 容器（`docker run -d --name tea-postgres -e POSTGRES_DB=tea -e POSTGRES_USER=tea -e POSTGRES_PASSWORD=tea -p 5433:5432 postgres:16`）
+    # 宿主端口 5433：本机 PostgreSQL 17 Windows 服务占用 5432；容器内仍是 5432
+    url: ${DB_URL:jdbc:postgresql://localhost:5433/tea}
+    username: ${DB_USER:tea}
+    password: ${DB_PASSWORD:tea}
+
+logging:
+  level:
+    com.tea: DEBUG

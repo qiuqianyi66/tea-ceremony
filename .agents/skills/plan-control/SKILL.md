@@ -1,6 +1,7 @@
 ---
 name: plan-control
-description: Agent 控制协议（Plan Mode V4.1 Control Skill Final Edition）。Skill 只回答六个问题：什么时候规划、规划到什么程度、什么时候需要批准、什么时候可以执行、什么时候必须停止、如何证明完成。负责任务分诊、风险评分（Impact/Scope/Uncertainty/Irreversibility 各 0-3）、三档置信度（HIGH/MEDIUM/LOW+依据+条件）、Fast/Guided/Controlled 三策略、规划门禁、风险分级审批（Always/Batch/Auto）、执行边界与漂移检测、四层验证证据、七类失败恢复、完成契约与经验交接。不负责状态机、事件、调度、持久化、审计存储、可观测指标（属 Agent OS Runtime V5）。触发：用户说「/plan」「先出方案」「规划一下」「别急着做」「给个方案确认后再做」，或任务涉多文件/架构选择/高风险（删除、迁移、数据修改、生产或外部影响）/需求含糊或多种合理方案；复杂任务即使未明说也主动进入。不触发：纯问答、解释说明、文档阅读、明确步骤执行、小范围低风险修改（直接走 Fast Path）。
+description: Agent 控制协议（Plan Mode V4.1）：任务分诊、风险分级审批、执行边界与验证完成契约。当用户说「/plan」「先出方案」「规划一下」「别急着做」，或任务涉多文件/架构选择/高风险/需求含糊时触发；纯问答与明确步骤执行不触发。
+disable-model-invocation: true
 ---
 
 # Plan Mode V4.1 — Agent Control Protocol（Final Edition）

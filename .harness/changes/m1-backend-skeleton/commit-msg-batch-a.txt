@@ -1,0 +1,12 @@
+feat(m1): batch A backend skeleton with V1 migration and M1 docs
+
+M1 批 A 落地：Spring Boot 3.5.3 Maven 工程（T2）+ 基础骨架（T4）。
+- common：错误码表/统一 ApiResponse/业务异常四子类/全局异常处理器/AppConfig
+- V1 全量 13 表迁移（users/teas/tasting_records 等，ix_/uk_/fk_ 命名，client_id NOT NULL 幂等键已拍板）
+- T3 迁移往返实测通过（upgrade 14 表 → rollback 0 表 → re-upgrade 14 表）
+- T5 冒烟通过（health 200 / register+login / 带 token 404 / 401 统一 / 匿名受保护 403）
+- 异常处理器补 HttpMessageNotReadable→400、HttpRequestMethodNotSupported→405（评审 🟡 清零）
+- 技能规范化（66 技能路由表 + 5 人读页）、PLAN 批 A/B 方案、ADR-010~012、prd、CI 后端 job
+- 测试：common 8 单测 + 异常回归 2，全绿
+
+评审：expert-reviewer 6 维，🔴 0 / 🟡 0（.harness/changes/m1-backend-skeleton/review.md）。

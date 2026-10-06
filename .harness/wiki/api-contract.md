@@ -1,0 +1,114 @@
+---
+name: api-contract
+description: tea 接口协议——现有端点、统一约定（前缀/鉴权/错误格式）、目标 Spring Boot 演进（ApiResponse + 错误码 + 版本化）。编码前后端联调前对照，禁止私自改契约。
+---
+
+# 接口协议（api-contract）
+
+> 来源：docs/api/endpoints.md（从 backend/app/routers/ 反推，最后更新 2026-09-11）。后端重写为 Spring Boot 过程中契约逐步迁移，**公开端点的路径与语义保持兼容**。
+
+## 1. 统一约定
+
+- 前缀：`/api`
+- 鉴权：`Authorization: Bearer <access_token>`（公开端点除外）
+- 错误格式（现行 FastAPI）：`{"detail": "<中文>", "code": "<机器码>", "status": <HTTP>}`
+- 目标（Spring Boot）：`ApiResponse<T>` 统一包装 `{code, message, data}`；分页 `{items, total, page, size}`
+
+## 2. 端点清单
+
+### 认证 `/api/auth`（公开）
+
+| 方法 | 路径 | 请求体 | 成功响应 | 错误 |
+|---|---|---|---|---|
+| POST | `/api/auth/register` | `{username, password, display_name?}` | `TokenResponse` 200 | 400 用户名已存在 `BAD_REQUEST` |
+| POST | `/api/auth/login` | `{username, password}` | `TokenResponse` 200 | 401 用户名或密码错误 `UNAUTHORIZED` |
+
+`TokenResponse`：`{access_token, token_type:"bearer", user:{id, username, display_name, level, xp, preferred_type}}`
+
+### 茶叶 `/api/teas`（公开）
+
+| 方法 | 路径 | 参数 | 成功响应 | 错误 |
+|---|---|---|---|---|
+| GET | `/api/teas/` | `type?`（六大茶类） | `list[TeaResponse]` | — |
+| GET | `/api/teas/{tea_id}` | — | `TeaResponse` | 404 `NOT_FOUND` |
+
+### 茶器 `/api/teawares`（公开）
+
+| 方法 | 路径 | 成功响应 |
+|---|---|---|
+| GET | `/api/teawares/` | `list[TeaWareResponse]` |
+
+### 品鉴记录 `/api/records`（需登录）
+
+| 方法 | 路径 | 请求体 / 参数 | 成功响应 | 错误 |
+|---|---|---|---|---|
+| POST | `/api/records` | `RecordCreate`（含 `client_id?`） | `RecordResponse` 200 | 401 |
+| GET | `/api/records` | `skip?` 默认 0、`limit?` 默认 50 上限 100 | `list[RecordResponse]` 倒序 | 401 |
+| GET | `/api/records/{record_id}` | — | `RecordResponse` | 401 / 404 |
+| DELETE | `/api/records/{record_id}` | — | `{message:"已删除"}` | 401 / 404 |
+
+**幂等**：`client_id` 重复提交（同用户）返回同一条已有记录；归属校验按 `user_id`，不可访问他人记录。
+
+### 茶园 `/api/garden-plants`（需登录）
+
+| 方法 | 路径 | 请求体 | 成功响应 | 错误 |
+|---|---|---|---|---|
+| POST | `/api/garden-plants/` | `GardenPlantCreate`（含 `client_id`） | `GardenPlantResponse` 200 | 401 |
+| GET | `/api/garden-plants/` | — | `list[GardenPlantResponse]` | 401 |
+
+**幂等 upsert**：同 `user_id + client_id` 已存在则更新状态返回原 id，否则新建。
+
+### 茶文化 `/api/culture`（公开）
+
+| 方法 | 路径 | 参数 | 成功响应 | 错误 |
+|---|---|---|---|---|
+| GET | `/api/culture/regions` | `province?` | `list[RegionResponse]` | — |
+| GET | `/api/culture/regions/{region_id}` | — | `RegionResponse` | 404 |
+| GET | `/api/culture/people` | `dynasty?` | `list[PersonResponse]` | — |
+| GET | `/api/culture/people/{person_id}` | — | `PersonResponse` | 404 |
+| GET | `/api/culture/poems` | `author?` | `list[PoemResponse]` | — |
+| GET | `/api/culture/poems/{poem_id}` | — | `PoemResponse` | 404 |
+| GET | `/api/culture/processes` | — | 工艺列表 | — |
+| GET | `/api/culture/processes/{process_id}` | — | 工艺详情 | 404 |
+| GET | `/api/culture/teas/{tea_id}/detail` | — | 茶叶详情（含产区/工艺/关联） | 404 |
+| GET | `/api/culture/graph/{tea_id}` | — | 茶文化知识图谱 | 404 |
+| GET | `/api/culture/search` | `q` 默认空串 | 搜索结果 | — |
+
+### 茶灵 AI `/api/ai`（公开，LLM 不可用时 502，前端降级规则回复）
+
+| 方法 | 路径 | 请求体 | 成功响应 | 错误 |
+|---|---|---|---|---|
+| POST | `/api/ai/recommend` | `{time, weather, mood}`（各 ≤20 字） | `{content}` 200 | 502 |
+| POST | `/api/ai/note` | `{tea_name, score(0-10), dimensions}` | `{content}` | 502 |
+| POST | `/api/ai/chat` | `{messages:[{role, content}]}`（1-20 条，content ≤4000 字） | `{content}` | 502 |
+
+### 系统
+
+| 方法 | 路径 | 成功响应 | 错误 |
+|---|---|---|---|
+| GET | `/` | `{message:"一盏茶 API", version}` | — |
+| GET | `/health` | `{status:"ok", database:"ok", dev_mode}` | 503 数据库不可用 |
+
+> 目标 Spring Boot：Actuator 配置 `management.endpoints.web.base-path=/`，保持 `/health`（liveness）兼容，readiness 为 `/health/readiness`。
+
+## 3. 错误码表
+
+| code | status | 场景 |
+|---|---|---|
+| `BAD_REQUEST` | 400 | 重复用户名、参数校验失败 |
+| `UNAUTHORIZED` | 401 | 登录失败、token 缺失/失效 |
+| `FORBIDDEN` | 403 | 预留（权限不足） |
+| `NOT_FOUND` | 404 | 资源不存在或无权访问 |
+| `CONFLICT` | 409 | 预留（幂等冲突类） |
+| `VALIDATION_ERROR` | 422 | 请求体校验失败（`参数校验失败: <字段> <原因>`） |
+| `RATE_LIMITED` | 429 | 限流（IP+路径滑动窗口） |
+| `BAD_GATEWAY` | 502 | LLM 代理不可用（AI 路由，前端据此降级） |
+| `SERVICE_UNAVAILABLE` | 503 | 健康检查数据库不可用 |
+| `INTERNAL_ERROR` | 500 | 未捕获异常 |
+
+## 4. 契约变更规则
+
+- 🔴 公开端点路径与语义保持兼容；破坏性变更必须升版本（目标 `/api/v2`），禁静默改 v1 语义。
+- 🔴 前后端联调以本文件为准；改契约先改本文件再改代码。
+- 🟢 新增端点先在本文件登记（方法/路径/请求体/响应/错误），评审时核对。
+- 🟢 错误码可查、稳定、不随文案变化；AI 路由 502 是降级链触发信号，禁改状态码语义。

@@ -41,6 +41,9 @@ ADR 独立文件见 `docs/ADR/`（ADR-009 起统一格式：Status / Context / D
 | [ADR-007](docs/ADR/ADR-007.md) | 技能库分工（全局权威 vs 项目专属） | Accepted |
 | [ADR-008](docs/ADR/ADR-008.md) | 全局技能库重构为 Spring Boot Full-stack Skill OS | Accepted |
 | [ADR-009](docs/ADR/ADR-009.md) | 文档治理与 AI 协作规范重构（V4） | Accepted |
+| [ADR-010](docs/ADR/ADR-010.md) | 后端重写 ORM 选型（Spring Data JPA） | Accepted |
+| [ADR-011](docs/ADR/ADR-011.md) | 后端重写工程决策（Maven / Flyway / 无 Redis / seeds 迁移 / AI 成本告警 / 角色命名） | Accepted |
+| [ADR-012](docs/ADR/ADR-012.md) | 引入 Redis（两级缓存 / 语义缓存 / 分布式限流 / JWT 黑名单，修订 ADR-011 无 Redis） | Accepted |
 
 新决策一律写入 `docs/ADR/ADR-0XX.md`，禁止塞进本文档。
 

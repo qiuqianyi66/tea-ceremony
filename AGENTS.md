@@ -13,7 +13,7 @@
 
 ## 1. 项目身份
 
-「一盏茶」：沉浸式在线茶道应用——Vue 3.5 + TS 6（strict）+ Pinia 4 + Tailwind 4 + Vite 8 + TresJS 5.8/Three 0.185 + Dexie（离线优先 PWA）+ FastAPI + PostgreSQL。不是泡茶工具，是一座数字茶室。
+「一盏茶」：沉浸式在线茶道应用——Vue 3.5 + TS 6（strict）+ Pinia 4 + Tailwind 4 + Vite 8 + TresJS 5.8/Three 0.185 + Dexie（离线优先 PWA）+ **Spring Boot 3.5 + Spring AI Alibaba + PostgreSQL（后端重写中，旧 FastAPI 仅维护不新增）**。不是泡茶工具，是一座数字茶室。
 
 业务闭环：入席 → 选茶 → 备器 → 煮水 → 冲泡 → 品鉴记录 → 个人成长。
 
@@ -33,14 +33,14 @@
 
 ## 3. 架构边界
 
-- 前端 `views → stores → services`；后端 `router → service → model`（router 只做参数与响应）。详见 `docs/architecture/system-overview.md`。
+- 前端 `views → stores → services`；后端 `Controller → Service → Repository`（Controller 只做参数与响应）。详见 `docs/architecture/system-overview.md`。
 - **AI 请求必须走后端代理 `/api/ai/*`，禁止浏览器直连第三方 AI**；`teaAI.ts` 降级逻辑（网络不可用时规则回复）是承重墙，改动必须保留并回归。
 - `src/components/three/` 只做视觉层，不改状态机（`3D_SPEC.md`）。
 - IndexedDB 记录带 `sync_status`（pending/synced/failed），新增字段考虑同步逻辑；写入前 `toRaw` 去代理（防 DataCloneError）。
 - 评分模型：品鉴结果 = 八维口感评分 × 冲泡工艺系数，保持可解释性（读 `tea-tasting`）。
 - 品鉴卡分享：`share.ts` 纯函数 base64url，`/share` 只读页防御性校验（数据带版本字段，未知版本拒绝）。
 - PWA：`vite-plugin-pwa` 已配置，改静态资源注意缓存策略；视频不本地化、离线降级静态图。
-- 部署：Windows Server 原生（NSSM+uvicorn + nginx for Windows），Docker 已弃用保留参考。见 `DEPLOY.md`。
+- 部署：Docker Compose 编排（backend/frontend/postgres/nginx），详见 `DEPLOY.md`（旧 Windows 原生脚本保留参考）。
 
 ## 4. 开发流程（AI Change Protocol）
 
@@ -70,7 +70,7 @@
 | L2 | 业务逻辑 / 服务 | `npm run test` + L1 |
 | L3 | 架构 / 数据模型 | ADR + 迁移测试 + L2 |
 
-新增数据库表属 L3：必须写 ADR（写入 `docs/ADR/`）并走 Alembic 迁移 + upgrade/downgrade 往返测试。
+新增数据库表属 L3：必须写 ADR（写入 `docs/ADR/`）并走 Flyway 迁移 + upgrade/downgrade 往返测试（后端重写完成后；过渡期旧后端仍用 Alembic）。
 
 ## 6. 前端规范
 
@@ -85,16 +85,18 @@
 
 ## 7. 后端规范
 
-- FastAPI 路由在 `backend/app/routers/`，SQLAlchemy 2.0 异步，Pydantic v2 schema 与 ORM 分离。
-- router 只做三件事：声明路径与鉴权依赖、调用 service、声明响应模型；不写数据库查询、不 raise HTTPException。
-- 错误统一 `{detail, code, status}`：service 抛 BusinessError 子类（BadRequest/Unauthorized/NotFound/Conflict），见 `exceptions.py`。
-- 认证接口 `/api/auth`，需登录接口依赖 `get_current_user`。
-- 密码哈希 passlib [bcrypt]，**bcrypt 必须锁定 `==4.0.1`**（5.0 与 passlib 1.7.4 不兼容）。
+> 完整编码规范（分层/异常/对象模型/事务/数据访问/线程/安全/AI 集成）见 `.harness/rules/编码规范.md`（15 条红线零容忍），此处只列要点。
+
+- 后端重写为 Spring Boot 3.5 + Spring Data JPA + Spring AI Alibaba（**新代码按此规范；旧 FastAPI 代码仅维护，不新增功能**）。
+- 分层 `Controller → Service → Repository` 单向依赖；Controller 只做参数与响应，不写业务逻辑、不写数据库查询。
+- 错误统一 `ApiResponse<T>` + `{code, message}`：Service 抛 BusinessError 子类（BadRequest/Unauthorized/NotFound/Conflict）。
+- 认证：Spring Security + JWT；需登录接口加鉴权；密码哈希用 BCrypt。
+- 事务：写方法 `@Transactional(rollbackFor = Exception.class)`，只读 `readOnly = true`；禁事务内远程调用。
 
 ## 8. 数据规范
 
-- **绝对禁止直接改模型不生成迁移**。改库前先读 `.agents/skills/db-migration/SKILL.md`。
-- 流程：改模型 → `alembic revision --autogenerate` → 人工审核脚本（JSONB 等 PG 语法必须真实 Postgres 验证）→ `alembic upgrade head` → 迁移测试（upgrade/downgrade 往返）。
+- **绝对禁止直接改模型不生成迁移**。改库前先读 `.harness/rules/编码规范.md` 数据库规范；**新 Spring Boot 库改动走 `.harness/skills/biz-dev/09-db-migration`（Flyway）；过渡期旧 FastAPI 后端改动走 `.agents/skills/db-migration`（Alembic），新栈优先**。
+- 流程（后端重写后为 Flyway）：改模型 → 写迁移脚本（`db-migrations.sql` + `rollback.sql` 成对）→ 真实 Postgres 验证 → upgrade → 迁移测试（upgrade/downgrade 往返）。
 - 数据迁移要写迁移逻辑，不能只改表结构。
 - 茶文化数据：茶叶分类按六大茶类，冲泡参数符合茶类常识（`tea-tasting` 基准表）；不编造茶名/茶器/历史人物，不确定标 "待核实"；优先用 `src/data/` 已有数据。
 
@@ -133,15 +135,19 @@ node scripts/scan-emoji.cjs        # 禁 emoji 扫描
 node scripts/verify-icons.cjs      # lucide 图标渲染审计
 node scripts/verify-brew-mobile.cjs  # 冲泡页移动端触控（≥44px、无横向滚动）
 node scripts/audit-touch.cjs       # 全局触控目标审计
-cd backend && python -m py_compile app/main.py                  # 后端语法
-cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量
+cd backend && python -m py_compile app/main.py                  # 后端语法（旧 FastAPI，过渡期）
+cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量（旧 FastAPI，过渡期）
+# 后端重写完成后替换为：cd backend && mvn -q test              # 后端全量（Spring Boot）
 ```
 
-部署（Windows 原生，非 Docker）：全流程见 `DEPLOY.md`；一键脚本 `scripts/deploy-backend.ps1`（首装/重装：Python 3.12 校验 → venv → lock 安装 → 迁移 → 服务 → /live）、`scripts/update-backend.ps1`（日常升级：pull → lock → 迁移 → 重启 → /live）、`scripts/install-windows-service.ps1`（NSSM 注册）、`scripts/backup-postgres.ps1`（pg_dump + 保留 14 天）。依赖双锁定：`requirements.lock`/`requirements-dev.lock` 由 pip-tools 生成，CI 与部署统一从 lock 安装；重新生成必须带 `--no-emit-index-url --no-emit-trusted-host`（防本机镜像配置入库）。
+部署（Docker Compose 编排，后端重写后启用）：全流程见 `DEPLOY.md`；旧 Windows 原生脚本（`scripts/deploy-backend.ps1` / `update-backend.ps1` / `install-windows-service.ps1` / `backup-postgres.ps1`）保留参考。依赖双锁定：前端 `package-lock.json`；后端重写后 `pom.xml` + lock 管理。
 
 ## 12. 文档索引
 
 - `.agents/skills/*/SKILL.md` — 匹配到的技能必须先 Read 再执行
+- `.agents/skills/README.md` — 技能路由总表（66 个，按族分组，任务启动先读）
+- `.harness/rules/技能规范.md` — 技能治理唯一权威（模板/触发式描述/路由表维护，§5 增删改流程）
+- `docs/skills/` — 核心技能人读审查页（plan-control / tea-tasting / db-migration / fastapi-endpoint / vue-component，面向人核对）
 - `CONTEXT.md` — 术语 + ADR 索引 + 架构关键词（必读）
 - `docs/ADR/` — 架构决策记录（ADR-001~009；新决策写 ADR-0XX.md，禁止塞进 CONTEXT.md）
 - `docs/architecture/system-overview.md` — 架构分层、数据流、目录速查
@@ -151,7 +157,15 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量
 - `TESTING_SPEC.md` — 涉及测试时
 - `DEPLOY.md` — 涉及部署时
 - `CHANGELOG.md` — 版本与历史
-- 相关源码、配置、测试、`package.json`、`backend/requirements*.txt`、`nginx-windows.conf`
+- 相关源码、配置、测试、`package.json`、`backend/requirements*.txt`（旧 FastAPI，过渡期）、`nginx-windows.conf`
+- `.harness/rules/编码规范.md` — 编码规范唯一权威（后端/前端/数据库/部署四域 + 15 条红线）
+- `.harness/rules/工程结构.md` — 工程结构（根目录/前端/后端新旧/目标 Spring Boot/.harness/docs 分层）
+- `.harness/rules/开发流程规范.md` — 开发流程（十阶段流水线 + 分支提交 + 回滚 + 多 agent + review + token 按需加载）
+- `.harness/wiki/` — AI 编码上下文四件套（业务模型 / 接口协议 / 数据模型 / 领域术语），编码前按需读 ≤3 份
+- `.harness/changes/_template/` — 变更追踪模板（summary + db-migrations + rollback），与 git 分支同名
+- `.claude/agents/` — 三子代理（code-reviewer / consistency-verifier / red-line-auditor）
+- `.harness/skills/` — 技能全套 30 个（main-dev 6 / biz-dev 19 / trouble-shooting 5），每族带 README 路由表，按需渐进式加载（request-analysis 规则 + Wiki ≤3、coding-skill ≤4）
+- `.github/workflows/ci.yml` — CI 合并门禁（含 compose-validate）
 
 禁止只凭文件名或经验猜实现；没找到依据就明说 "不确定 / 未找到"。
 
@@ -168,5 +182,6 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量
 - `vite preview` 可能绑定 IPv6 ::1，`node scripts/smoke.mjs http://localhost:4173`（127.0.0.1 会全部 fetch failed）。
 - biome --write 的 organizeImports 会把 TresJS 模板组件导入转 type-only 导致运行时炸；biome.json 的 `**/*.vue` override 已关 useImportType/useExportType，且 biome.json 是严格 JSON 禁注释。
 - KTX2 工具链：装 Khronos KTX-Software 官方 exe 取 toktx.exe 转码；three basis transcoder 复制进 public/ 供 KTX2Loader 运行时加载；workbox runtimeCaching 的 /3d/ 必须补 `ktx2|wasm|js` 否则离线缓存失效。
+- 技能规范：新增/修改/删除技能必须按 `.harness/rules/技能规范.md`（frontmatter 必填、触发式描述、name=目录名、README 路由表同步；README 不列 = 不存在）。
 
 **2026-10-01 V4 重构**：ADR 拆 `docs/ADR/` 独立文件（ADR-001~009，统一格式）、CONTEXT.md 精简为术语+ADR 索引+架构关键词、新增 `npm run quality` 统一门禁、commit 改英文 conventional、新增 AI Change Protocol + Modification Level。详见 ADR-009。
