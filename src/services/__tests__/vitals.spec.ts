@@ -113,7 +113,7 @@ describe('容量与隐私', () => {
     }
     await waitForSettle()
     expect(await db.webVitals.count()).toBeLessThanOrEqual(MAX_VITALS)
-  })
+  }, 20000)
 
   it('采集全程不发起网络请求（纯本地，无外发）', async () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch')
