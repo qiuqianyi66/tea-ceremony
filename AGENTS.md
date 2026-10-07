@@ -89,7 +89,7 @@
 > 完整编码规范（分层/异常/对象模型/事务/数据访问/线程/安全/AI 集成）见 `.harness/rules/编码规范.md`（15 条红线零容忍），此处只列要点。
 
 - 后端重写为 Spring Boot 3.5 + Spring Data JPA + Spring AI Alibaba（**新代码按此规范；旧 FastAPI 代码仅维护，不新增功能**）。
-- 分层 `Controller → Service → Repository` 单向依赖；Controller 只做参数与响应，不写业务逻辑、不写数据库查询。
+- 分层 `Controller → Service → Repository` 单向依赖；Controller 只做参数与响应，不写业务逻辑、不写数据库查询。分层规则已机械化：`backend/src/test/java/com/tea/architecture/LayerDependencyTest.java`（ArchUnit，CI Maven test 门禁）。
 - 错误统一 `ApiResponse<T>` + `{code, message}`：Service 抛 BusinessError 子类（BadRequest/Unauthorized/NotFound/Conflict）。
 - 认证：Spring Security + JWT；需登录接口加鉴权；密码哈希用 BCrypt。
 - 事务：写方法 `@Transactional(rollbackFor = Exception.class)`，只读 `readOnly = true`；禁事务内远程调用。
@@ -108,7 +108,7 @@
 - **行为测试三规则**：只走公共接口；不 mock 内部协作者（mock 只用于跨进程/外部边界：网络、时钟、DB 驱动）；重构不改测试。
 - 宽重构走 expand-contract：先 expand（新旧并存、CI 保持绿）→ 按包分批迁移（每批独立 commit）→ contract（旧形式无引用后删除）。
 - E2E 用真实等待，选择器用可见文本/角色，不依赖动画中间态；测试发现的缺陷按根因修，单独 commit。
-- CI 12 job 是合并门禁（type-check+build+smoke / Vitest / Biome / npm+pip audit / E2E / axe / 后端语法 / pytest / ruff+bandit / Spring Boot Maven / 迁移测试 / Compose 校验）。
+- CI 13 job 是合并门禁（type-check+build+smoke / Vitest / Biome / npm+pip audit / E2E / axe / 后端语法 / pytest / ruff+bandit / Spring Boot Maven / 迁移测试 / Compose 校验 / harness 一致性）。
 
 ## 10. 禁止事项
 
@@ -124,7 +124,7 @@
 
 ## 11. 命令入口
 
-提交前默认跑：`npm run quality`（前端统一门禁）+ 后端 pytest。
+提交前默认跑：`npm run quality`（前端统一门禁）+ 后端 pytest + `node scripts/verify-harness.cjs`（治理一致性，已挂 CI）。
 
 ```
 npm run quality       # lint + type-check + test + build + verify（提交前必跑）
@@ -137,6 +137,8 @@ node scripts/verify-icons.cjs      # lucide 图标渲染审计
 node scripts/verify-brew-mobile.cjs  # 冲泡页移动端触控（≥44px、无横向滚动）
 node scripts/audit-touch.cjs       # 全局触控目标审计
 node scripts/eval-harness.cjs <切片> --verify  # harness 七维确定性评测（每切片必跑，总分<60 阻断；报告 docs/agent-eval/）
+node scripts/verify-harness.cjs    # harness 一致性体检（ADR/CI job/技能数/路径引用漂移），期望 ERRORS: []，CI 门禁
+node scripts/add-doc-meta.cjs      # docs 元信息头批量补齐（新文档缺 frontmatter 时跑）
 cd backend && python -m py_compile app/main.py                  # 后端语法（旧 FastAPI，过渡期）
 cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量（旧 FastAPI，过渡期）
 # 后端重写完成后替换为：cd backend && mvn -q test              # 后端全量（Spring Boot）
@@ -149,9 +151,11 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量�
 - `.agents/skills/*/SKILL.md` — 匹配到的技能必须先 Read 再执行
 - `.agents/skills/README.md` — 技能路由总表（66 个，按族分组，任务启动先读）
 - `.harness/rules/技能规范.md` — 技能治理唯一权威（模板/触发式描述/路由表维护，§5 增删改流程）
-- `docs/skills/` — 核心技能人读审查页（plan-control / tea-tasting / db-migration / fastapi-endpoint / vue-component，面向人核对）
+- `docs/skills/` — 核心技能人读审查页（plan-control / tea-tasting / db-migration / fastapi-endpoint / vue-component / caveman-review，面向人核对）
 - `CONTEXT.md` — 术语 + ADR 索引 + 架构关键词（必读）
 - `docs/ADR/` — 架构决策记录（ADR-001~013；新决策写 ADR-0XX.md，禁止塞进 CONTEXT.md）
+- `docs/plans/` — 迭代计划层（PLAN-* / TODO-PRIORITY / 环境审查清单）
+- `docs/reference/` — 稳定参考（error-codes.md 错误码表）
 - `docs/architecture/system-overview.md` — 架构分层、数据流、目录速查
 - `README.md` — 项目背景与定位
 - `3D_SPEC.md` — 3D 茶空间约束（改 three/ 前必读）
@@ -167,7 +171,7 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量�
 - `.harness/changes/_template/` — 变更追踪模板（summary + db-migrations + rollback），与 git 分支同名
 - `.claude/agents/` — 三子代理（code-reviewer / consistency-verifier / red-line-auditor）
 - `.harness/skills/` — 技能全套 32 个（main-dev 8 / biz-dev 19 / trouble-shooting 5），每族带 README 路由表，按需渐进式加载（request-analysis 规则 + Wiki ≤3、coding-skill ≤4）
-- `.github/workflows/ci.yml` — CI 合并门禁（含 compose-validate）
+- `.github/workflows/ci.yml` — CI 合并门禁（含 compose-validate / harness 一致性）
 - `docs/agent-eval-baseline.md` — AI 协作评估基线（通用+专项维度、抽样会话评分流程、评估证据沉淀）
 
 禁止只凭文件名或经验猜实现；没找到依据就明说 "不确定 / 未找到"。
@@ -191,9 +195,11 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量�
 - Canvas UI（canvasui.dev，MIT+Commons Clause）：25 个 canvas 特效组件库，Vue 版可用、Tailwind4/Three0.185 兼容；html-in-canvas 需 Chrome140+ flag/其余降级 overlay；禁转售组件本身。评估见 docs/canvas-ui.md，引入须过四维甄别 + 设计门禁（2026-10-06 沉淀）。
 - E2E 测试导航路径必须相对 baseURL（'login'、'brew'、'garden'），禁止前导斜杠（'/login'）：CI vite base=/tea-ceremony/，前导斜杠跳出 SW scope（离线深链 ERR_DISCONNECTED）或命中 vite base 提示页（无 title/lang，axe 挂）；重测试（真实 IndexedDB 批量写）显式传 timeout（2026-10-06 沉淀）。
 - npm audit 本地必须加 `--registry=https://registry.npmjs.org`（npmmirror 不实现 audit endpoint）；`npm audit fix` 后跑 quality 验证无破坏再提交（2026-10-06 沉淀）。
-- caveman-review 技能（main-dev）：评审输出格式变体，一行一条 finding（`L<line>: 🔴🟡🟢 <problem>. <fix>.`）+ 结尾 verdict；不改评审维度与红线，默认评审仍走 expert-reviewer，用户点名/需省 token 时用（2026-10-06 沉淀）。
+- caveman-review 技能（main-dev）：评审输出格式变体，一行一条 finding（`L<line>: 🔴🟡🟢 <problem>. <why>. <fix>.`，问题/根因/修复三要素 + 关键项附失败原文）+ 结尾 verdict；不改评审维度与红线，默认评审仍走 expert-reviewer，用户点名/需省 token 时用（2026-10-06 沉淀，2026-10-07 升级三要素）。
 - 写作风格 = 80% ASD-STE100（航空维修手册规范）：一句一事实/指令≤20词描述≤25词/主动语态/同物同词/先答案后细节/编号列表每段≤6句/用中文简短/>3部分加 ASCII 图/"用 HTML 解释"→单文件交互页。已消化入 §2，与现有"不废话/编号清单/中文"合并不重复；评估见 docs/agent-eval-baseline.md（2026-10-06 沉淀）。
 - 治理文档须与实现同步：改 CI job 数、ADR 编号、技能数量、代理位置后立即更新 AGENTS.md + 对应规则文档；发现漂移当场修，不遗留（2026-10-07 沉淀：一次修 6 处）。
 - 阿里 Harness 精读对照（2026-10-07）：五层结构/薄主会话/门禁阻断/经验三级进化/eval 评测，见 docs/research-harness-alibaba-2026-10.md；已验证我们的 AGENTS.md+三规则+技能路由方向同构，差距为流程流水线与 eval 自动化（可迁移清单见该文）。
+- 285 Harness 落地（2026-10-07）：①ArchUnit 分层测试机械化（红线 #1，错误信息三要素）②caveman-review 三要素升级（问题/根因/修复）③verify-harness.cjs 一致性体检（ADR/CI/技能数/路径，首跑抓出流程族 30→32 漂移并已修）。来源 docs/research-harness-engineering-285-2026-10.md。
+- 285 docs 结构化落地（2026-10-07）：docs 元信息头 65/65（add-doc-meta.cjs 按 git 时间批量补）；verify-harness 挂 CI 门禁（CI 12→13 job）；expert-reviewer 补三要素（每条 finding 带 FIX + 规则出处）；docs/plans + reference 两层已建。
 
 **2026-10-01 V4 重构**：ADR 拆 `docs/ADR/` 独立文件（ADR-001~009，统一格式）、CONTEXT.md 精简为术语+ADR 索引+架构关键词、新增 `npm run quality` 统一门禁、commit 改英文 conventional、新增 AI Change Protocol + Modification Level。详见 ADR-009。

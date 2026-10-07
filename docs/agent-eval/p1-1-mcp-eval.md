@@ -1,3 +1,9 @@
+---
+last_updated: 2026-10-07
+status: active
+owner: yanha
+---
+
 # eval-harness: p1-1-mcp
 
 > 确定性评测（零 LLM）。--verify=on。日期 2026-10-07

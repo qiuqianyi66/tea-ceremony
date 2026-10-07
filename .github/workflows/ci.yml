@@ -260,3 +260,17 @@ jobs:
           POSTGRES_PASSWORD: ci-test
           DB_PASSWORD: ci-test
           JWT_SECRET: ci-test-secret
+
+  harness-consistency:
+    name: Harness consistency（docs 漂移门禁）
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # verify-harness.cjs 纯 fs 无依赖，不需 npm ci；期望输出 ERRORS: []
+      - name: Run harness consistency check
+        run: node scripts/verify-harness.cjs
