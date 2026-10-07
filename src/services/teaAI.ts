@@ -316,7 +316,7 @@ function ruleBasedReply(question: string): string {
 
 // ============ RAG 知识库检索 ============
 
-/** /api/culture/search 响应结构（与 backend/app/routers/culture.py 对齐） */
+/** /api/culture/search 响应结构（与 backend Spring Boot /api/v1/culture/search 对齐） */
 interface CultureSearchResult {
   teas?: { id: number; name: string; type: string }[]
   people?: { id: number; name: string; dynasty?: string; type: string }[]
