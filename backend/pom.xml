@@ -119,6 +119,13 @@
             <artifactId>postgresql</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- 架构约束机械化（Harness 285"约束必须自动化"）：分层单向依赖 / 禁 Controller 查库 / 禁字段注入，规则见 .harness/rules/编码规范.md 红线 #1 -->
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit5</artifactId>
+            <version>1.3.0</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
