@@ -1,3 +1,9 @@
+---
+last_updated: 2026-10-06
+status: active
+owner: yanha
+---
+
 # m1-ai AI 切片 — 需求分析（PRD 级）
 
 > 阶段 1 产出（需求分析先行规范）。批 C 第二片（T11）：AI 代理域 + culture/search（RAG 检索）迁移到 Spring Boot `/api/v1`，前端 teaAI.ts 切 v1（降级链承重墙保留）。

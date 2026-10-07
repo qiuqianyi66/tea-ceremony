@@ -1,3 +1,9 @@
+---
+last_updated: 2026-10-07
+status: active
+owner: yanha
+---
+
 # M5 多智能体产品需求文档（PRD V2・企业级）
 
 > 一盏茶 AI 茶灵多智能体体系产品级需求。对齐 

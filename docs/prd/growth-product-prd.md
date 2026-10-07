@@ -1,3 +1,9 @@
+---
+last_updated: 2026-10-07
+status: active
+owner: yanha
+---
+
 # 成长体系（growth）产品需求文档（PRD V2 · 企业级）
 
 > 对齐 `frontend-product-prd.md` / `m5-agent-product-prd.md` 企业级写法。设计模式**参考行业 XP/等级系统最佳实践**（Trophy/人人都是产品经理激励体系：XP 绑核心价值行为 + 渐进阈值 + 等级解锁权益 + append-only 事件账本 + 防通胀），不造轮子。

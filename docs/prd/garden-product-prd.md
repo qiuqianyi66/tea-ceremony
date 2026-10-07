@@ -1,3 +1,9 @@
+---
+last_updated: 2026-10-07
+status: active
+owner: yanha
+---
+
 # 茶园（garden）产品需求文档（PRD V2 · 企业级）
 
 > 对齐 `frontend-product-prd.md` / `m5-agent-product-prd.md` 企业级写法。设计模式**参考成熟养成类产品**（蚂蚁森林/多多果园：能量生产→收集→使用 + 任务/社交/反馈/奖励四模块 + 排行榜 + 勋章，Kano 模型文献），不造轮子。

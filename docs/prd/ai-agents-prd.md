@@ -1,3 +1,9 @@
+---
+last_updated: 2026-10-07
+status: active
+owner: yanha
+---
+
 # M5 多智能体五专家注册 — 需求文档（PRD）
 
 > 切片：P0-1a（工程单 PLAN-harness-research-2026-10.md）· 版本：v1.0（2026-10-07）· 状态：**待用户确认**

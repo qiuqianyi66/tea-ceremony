@@ -1,3 +1,9 @@
+---
+last_updated: 2026-10-06
+status: active
+owner: yanha
+---
+
 # m1-compose 部署编排 — 需求分析（PRD 级）
 
 > 阶段 1 产出（开发流程规范：需求分析先行）。批 B 第四片（T9）：部署编排改造 + CI 接线。

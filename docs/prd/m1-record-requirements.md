@@ -1,3 +1,9 @@
+---
+last_updated: 2026-10-06
+status: active
+owner: yanha
+---
+
 # m1-record 品鉴记录 — 需求分析（PRD 级）
 
 > 阶段 1 产出（开发流程规范：需求分析先行，用户确认后才进方案设计）。

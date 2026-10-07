@@ -1,3 +1,9 @@
+---
+last_updated: 2026-10-07
+status: active
+owner: yanha
+---
+
 # M5-S1 多智能体：Orchestrator + librarian 专家试点 — 需求分析（PRD 级）
 
 > 阶段 1 产出（需求分析先行规范）。M5 多智能体主线第一片（S1）：Agent 意图路由骨架 + 茶文化学者（librarian）专家试点。

@@ -1,3 +1,9 @@
+---
+last_updated: 2026-10-07
+status: active
+owner: yanha
+---
+
 # 数据层产品需求文档（PRD V2 · 企业级）
 
 > 「一盏茶」数据层（PostgreSQL + Flyway + 离线 IndexedDB + 缓存）产品级需求。对齐 `frontend-product-prd.md` / `m5-agent-product-prd.md` 的企业级写法。

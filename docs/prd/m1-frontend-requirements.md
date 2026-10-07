@@ -1,3 +1,9 @@
+---
+last_updated: 2026-10-06
+status: active
+owner: yanha
+---
+
 # m1-frontend 前端联调 — 需求分析（PRD 级）
 
 > 阶段 1 产出（开发流程规范：需求分析先行）。批 C 第一片（T10）：前端 auth/teas/records 三域从旧 FastAPI 切换到 Spring Boot 新后端 `/api/v1`。

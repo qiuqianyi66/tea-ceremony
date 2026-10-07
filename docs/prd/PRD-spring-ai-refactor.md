@@ -1,3 +1,9 @@
+---
+last_updated: 2026-10-06
+status: active
+owner: yanha
+---
+
 # 「一盏茶」重构 PRD — Spring Boot + Spring AI Alibaba 版
 
 > 版本：v0.1（草案，待评审）

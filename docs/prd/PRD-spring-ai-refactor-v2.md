@@ -1,3 +1,9 @@
+---
+last_updated: 2026-10-06
+status: active
+owner: yanha
+---
+
 # 「一盏茶」重构 PRD v0.2 — Spring Boot + Spring AI Alibaba + .harness 治理体系
 
 > 版本：v0.2（草案，待评审；v0.1 保留为 
