@@ -132,9 +132,9 @@ description: tea 接口协议——现有端点、统一约定（前缀/鉴权/�
 
 | 方法 | 路径 | 请求体 | 成功响应 | 错误 |
 |---|---|---|---|---|
-| POST | `/api/v1/ai/chat` | `{messages:[{role(system/user/assistant), content≤4000}]`（1-20 条）；`agent?` ≤50（枚举：chat/advisor/taster/librarian/brewer/mentor；S1 生效 librarian） | `ApiResponse<{content, sources?}>` 200（sources=知识来源数组，透明代理为 null） | 400 校验失败/未知 agent PARAM_INVALID；**502 BAD_GATEWAY**（无 key/上游失败） |
+| POST | `/api/v1/ai/chat` | `{messages:[{role(system/user/assistant), content≤4000}]`（1-20 条）；`agent?` ≤50（枚举：chat/advisor/taster/librarian/brewer/mentor；S2 全量生效） | `ApiResponse<{content, sources?}>` 200（sources=知识来源数组，透明代理为 null） | 400 校验失败/未知 agent PARAM_INVALID；**502 BAD_GATEWAY**（无 key/上游失败） |
 
-> M5-S1 编排：`agent=librarian` 或文化意图关键词命中 → librarian 专家（RAG 检索 + 专家 prompt，回复附 sources）；其余回落透明代理（messages 原样转发）。未知 agent 值 400。仅成功调用落 `ai_usage_logs`（agent/model/tokens_in/tokens_out/latency；游客 user_id 空）。key 配置 `AI_DASHSCOPE_API_KEY`，无 key 占位 `disabled` 时 Service 显式 502。
+> M5-S2 编排：显式 `agent` → 对应专家（advisor 荐茶/teas+regions+processes、taster 品鉴/用户记录、librarian 文化/8 表 RAG、brewer 冲泡/工艺+茶器、mentor 成长/用户记录+常识；各专家回复附 sources）；无 agent 且文化意图关键词命中 → librarian；`agent=chat` 或无意图 → 回落透明代理（messages 原样转发）。未知 agent 值 400。仅成功调用落 `ai_usage_logs`（agent/model/tokens_in/tokens_out/latency；游客 user_id 空）。key 配置 `AI_DASHSCOPE_API_KEY`，无 key 占位 `disabled` 时 Service 显式 502。
 
 ### 系统
 
