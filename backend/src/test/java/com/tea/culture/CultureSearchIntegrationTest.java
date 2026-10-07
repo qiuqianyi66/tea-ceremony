@@ -28,7 +28,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 class CultureSearchIntegrationTest {
 
     @Container
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16")
+    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("pgvector/pgvector:pg16")
             .withDatabaseName("tea")
             .withUsername("tea")
             .withPassword("tea");
@@ -66,6 +66,21 @@ class CultureSearchIntegrationTest {
         assertThat(data.path("people").size()).isZero();
         assertThat(data.path("regions").size()).isZero();
         assertThat(data.path("poems").size()).isZero();
+        assertThat(data.path("teawares").size()).isZero();
+        assertThat(data.path("etiquettes").size()).isZero();
+        assertThat(data.path("relations").size()).isZero();
+        assertThat(data.path("processes").size()).isZero();
+    }
+
+    @Test
+    void searchHitsTeawareSeeds() throws Exception {
+        // 8 表 RAG（ADR-013）：茶器表纳入检索
+        ResponseEntity<String> res = rest.getForEntity("/api/v1/culture/search?q=紫砂", String.class);
+        assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode body = objectMapper.readTree(res.getBody());
+        assertThat(body.path("code").asText()).isEqualTo("OK");
+        assertThat(body.path("data").path("teawares").size()).isGreaterThan(0);
+        assertThat(body.path("data").path("teawares").get(0).path("type").asText()).isEqualTo("teaware");
     }
 
     @Test

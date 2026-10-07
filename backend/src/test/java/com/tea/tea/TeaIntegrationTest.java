@@ -25,7 +25,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 class TeaIntegrationTest {
 
     @Container
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16")
+    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("pgvector/pgvector:pg16")
             .withDatabaseName("tea")
             .withUsername("tea")
             .withPassword("tea");
