@@ -41,7 +41,7 @@ class AiChatControllerTest {
 
     @Test
     void chatReturnsContent() throws Exception {
-        when(aiChatService.chat(any(), any())).thenReturn(new AiChatVo("这是 AI 回复"));
+        when(aiChatService.chat(any(), any())).thenReturn(new AiChatVo("这是 AI 回复", null));
 
         mockMvc.perform(post("/api/v1/ai/chat").contentType(MediaType.APPLICATION_JSON).content(VALID_BODY))
                 .andExpect(status().isOk())
