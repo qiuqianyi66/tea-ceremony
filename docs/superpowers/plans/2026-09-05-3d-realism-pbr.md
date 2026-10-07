@@ -1,3 +1,9 @@
+---
+last_updated: 2026-09-05
+status: active
+owner: yanha
+---
+
 # 3D 真实感基础包（PBR 阴影/IBL/物理材质 + 比例构图修正）Implementation Plan
 
 > **For agentic workers:** 按 AGENTS.md §3.6 七步闭环执行；任务经用户 2026-09-05 批准（方案 A，含比例修正与构图微调）。

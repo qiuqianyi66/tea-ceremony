@@ -1,3 +1,9 @@
+---
+last_updated: 2026-09-05
+status: active
+owner: yanha
+---
+
 # 3D 视觉增强（茶席质感 + 空间纵深）Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.

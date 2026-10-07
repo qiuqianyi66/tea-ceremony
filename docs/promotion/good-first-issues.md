@@ -1,3 +1,9 @@
+---
+last_updated: 2026-09-21
+status: active
+owner: yanha
+---
+
 # Good First Issues 内容包
 
 > 在 GitHub → Issues → New issue 逐条新建。标签建议：`good first issue`、`help wanted`。

@@ -1,3 +1,9 @@
+---
+last_updated: 2026-09-21
+status: active
+owner: yanha
+---
+
 # 传播文案包
 
 > 每个平台一版。文案改到 90%，你按自己语气微调。发之前确认在线 Demo 能打开。
