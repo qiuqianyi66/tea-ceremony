@@ -1,3 +1,9 @@
+---
+last_updated: 2026-10-07
+status: active
+owner: yanha
+---
+
 # Harness Engineering 总纲（285）精读与一盏茶对照（2026-10-07）
 
 > 来源：语雀知识库「图灵AI大模型面试核心点(2026版)」→ 285.Harness Engineering 从入门到精通实战（14107 字，含 OpenAI/Anthropic/Stripe/HashiCorp 案例与落地路线）。本文 = 精读要点 + 一盏茶对照 + 可落地清单。
@@ -77,25 +83,27 @@
 
 | 285 实践 | 一盏茶现状 | 差距 |
 |---|---|---|
-| AGENTS.md 50-100 行地图 | ~200 行（含学习记录，维护规则定 200-350） | △ 偏长；可评估把学习记录外置 docs/ 精简主体 |
+| AGENTS.md 50-100 行地图 | 204 行（含学习记录，维护规则定 200-350） | ✅ 评估结案（2026-10-07）：在维护区间维持现状；学习记录不外置（见 §10-4） |
 | 三层上下文 | AGENTS.md(T1) + skills/rules/wiki(T2/T3) | ✅ 同构 |
 | Agent 专业化六角色 | .claude/agents 三子代理（评审） | ✅ 有评审；无研究/清理角色（够用） |
-| 架构约束机械化（ArchUnit/Linter 三要素） | biome+type-check+CI 13 job；后端分层规则在文档 | △ **后端无 ArchUnit 分层测试**——直接可落地 |
+| 架构约束机械化（ArchUnit/Linter 三要素） | biome+type-check+CI 13 job；后端分层规则在文档 | ✅ 已落地（2026-10-07）：`backend/src/test/.../LayerDependencyTest.java`（红线 #1 四规则，错误信息三要素），CI Maven test 门禁 |
 | 反馈循环（agent 审 agent） | review.md + code-reviewer/consistency-verifier | ✅ |
-| 熵管理/Doc-gardening | 手动漂移自查（治理同步纪律） | △ 可脚本化（P3 一键体检升级） |
+| 熵管理/Doc-gardening | 手动漂移自查（治理同步纪律） | ✅ 已落地（2026-10-07）：`scripts/verify-harness.cjs`（ADR/CI job/技能数/路径），首跑抓出流程族 30→32 漂移已修；已挂 CI 合并门禁（harness-consistency job，CI 13 job） |
 | 持久化记忆（文件系统） | HANDOFF + .harness/changes 三件套 | ✅ |
 | JSON 追踪优于 Markdown | changes/ 是 Markdown 三件套 | △ 可选（JSON state 单一状态源） |
 | 结构化执行五步 | AI Change Protocol + Modification Level | ✅ |
-| 错误信息即 prompt | biome/checkstyle 自带部分 | △ 检查自定义规则是否带"怎么修+去哪看" |
+| docs 五层知识库（architecture/conventions/design/plans/reference + 元信息头） | architecture 合并式 / prd 代 design / .harness/rules 代 conventions；plans、reference 原缺失，无元信息头规范 | ✅ 已落地（2026-10-07）：`docs/plans/`、`docs/reference/error-codes.md` 新建；工程结构.md §六 补 plans/reference 层 + frontmatter 规范；verify-harness.cjs 检查目录惯例与元信息覆盖率 |
+| 错误信息即 prompt | biome/checkstyle 自带部分 | ✅ 已落地（2026-10-07）：ArchUnit 报错三要素 + caveman-review / expert-reviewer finding 均带 FIX + 规则出处；biome 无自定义规则（消息定制受限），架构约束由 ArchUnit 承担 |
 | 时间盲区/确定性子采样 | 无此场景（非长时 agent 集群） | — 不适用 |
 | 每周环境审查 | 漂移当场修习惯 | ✅ 可固化为清单 |
 
-## 10. 建议优先项（按一盏茶价值排序）
+## 10. 建议优先项（按一盏茶价值排序，2026-10-07 落地状态已更新）
 
-1. **P1 后端 ArchUnit 分层依赖测试**：把编码规范.md 的分层规则机械化（Controller→Service→Repository 单向 + 禁 Controller 直查 DB + 构造器注入），CI 强制——这是 285"约束必须自动化"最直接的落地。
-2. **P1 Linter 三要素审计**：检查现有 biome/checkstyle 自定义规则报错是否含"怎么修+去哪看"，缺的补。
-3. **P2 Doc-gardening 脚本**：AGENTS.md/docs 漂移自动扫描（ADR 编号/CI job 数/技能数量/路径引用），替代手动自查（P3 一键体检升级为定时）。
-4. **P2 AGENTS.md 精简评估**：学习记录外置（docs/lessons.md 或独立文档），主体压向 100 行地图模式——**需用户拍板**（当前 200 行含历史沉淀，外置有收益但动文档结构）。
-5. **P3 JSON 状态文件**：changes/ 三件套旁加 state.json（单一状态源，Agent 不易覆盖）。
+1. **P1 后端 ArchUnit 分层依赖测试**：✅ **已落地（2026-10-07）**——`backend/src/test/java/com/tea/architecture/LayerDependencyTest.java` 四规则（Controller 禁查库 / 禁反向依赖 / Repository 不依赖上层 / 禁字段注入），错误信息三要素，CI Maven test 门禁。
+2. **P1 Linter 三要素审计**：✅ **已落地（2026-10-07）**——ArchUnit / caveman-review / expert-reviewer 三要素化（FIX + 规则出处）；biome 无自定义规则且消息定制受限，架构约束由 ArchUnit 承担，审计闭合。
+3. **P2 Doc-gardening 脚本**：✅ **已落地并挂 CI（2026-10-07）**——`scripts/verify-harness.cjs` 期望 `ERRORS: []`，首跑抓出流程族 30→32 漂移已修；新增 `harness-consistency` CI job（CI 12→13）；配套 `add-doc-meta.cjs` 批量补元信息头（docs 65/65）。
+4. **P2 AGENTS.md 精简评估**：✅ **评估完成（2026-10-07）**——当前 204 行在维护区间（200-350，AGENTS.md §13 维护规则），285 的 50-100 行是轻量场景建议；学习记录外置 docs/lessons.md 收益有限（维护规则已限长），维持现状不外置。
+5. **P3 JSON 状态文件**：待办（changes/ 三件套旁加 state.json，单一状态源）。
+6. **每周环境审查**：✅ 已固化（2026-10-07）——`docs/plans/environment-review.md` 30 分钟清单。
 
 > 注：285 是总纲；配合已沉淀的 `research-harness-alibaba-2026-10.md`（阿里落地细节）与 `research-multiagent-278-2026-10.md`（多智能体蓝图），三者构成完整的 harness 学习底座。

@@ -1,3 +1,9 @@
+---
+last_updated: 2026-09-20
+status: active
+owner: yanha
+---
+
 # 企业级优化调研：GitHub 同类项目横纵分析
 
 > 调研时间：2026-09-18

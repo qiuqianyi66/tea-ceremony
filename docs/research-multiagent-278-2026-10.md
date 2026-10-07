@@ -1,3 +1,9 @@
+---
+last_updated: 2026-10-07
+status: active
+owner: yanha
+---
+
 # 多智能体架构深度解析（278）精读与一盏茶 M5 对照（2026-10-07）
 
 > 来源：语雀知识库「图灵AI大模型面试核心点(2026版)」→ 278.多智能体架构深度解析.pdf（NotebookLM 生成的 High-Availability AI Blueprint，16 页，14.5MB）。本文 = 全文精读 + 一盏茶 M5 对照 + 可借鉴清单。

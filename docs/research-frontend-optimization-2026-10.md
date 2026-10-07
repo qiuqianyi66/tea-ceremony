@@ -1,3 +1,9 @@
+---
+last_updated: 2026-10-07
+status: active
+owner: yanha
+---
+
 # 前端优化增量研究（2026-10-07）
 
 > 外部学习（GitHub/Gitee/掘金/CSDN/SegmentFault/官方文档）× 项目现状（PERF_BASELINE / research-frontend-2026-09-18 / 本次实测）对照产出的增量优化建议。

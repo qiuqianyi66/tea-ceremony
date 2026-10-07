@@ -1,3 +1,9 @@
+---
+last_updated: 2026-09-20
+status: active
+owner: yanha
+---
+
 # 前端企业级差距调研（research-frontend）
 
 > 调研时间：2026-09-18

@@ -1,3 +1,9 @@
+---
+last_updated: 2026-09-20
+status: active
+owner: yanha
+---
+
 # 后端企业级优化差距调研（research-backend）
 
 > 调研日期：2026-09-18
