@@ -202,7 +202,7 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量�
 - 285 Harness 落地（2026-10-07）：①ArchUnit 分层测试机械化（红线 #1，错误信息三要素）②caveman-review 三要素升级（问题/根因/修复）③verify-harness.cjs 一致性体检（ADR/CI/技能数/路径，首跑抓出流程族 30→32 漂移并已修）。来源 docs/research-harness-engineering-285-2026-10.md。
 - 285 docs 结构化落地（2026-10-07）：docs 元信息头 65/65（add-doc-meta.cjs 按 git 时间批量补）；verify-harness 挂 CI 门禁（CI 12→13 job）；expert-reviewer 补三要素（每条 finding 带 FIX + 规则出处）；docs/plans + reference 两层已建。
 - 流程断点审计（2026-10-07）：开发流程规范 7 处结构修复——流程路径分级（L0-L3↔十阶段）、小改动判据、.claude/agents 标注环境可用性（豆包用 expert-reviewer/verify-harness 替代）、wiki 选择映射、提交前验证矩阵、经验三级进化落点（docs/plans/patterns.md）、完成标准加 HANDOFF/环境审查。来源开发流程规范 §一/§四/§六-九。
-- 路径引用漂移审计（2026-10-07）：`src/services/storage.ts`/`api.ts` 实为目录（storage//api/）、`src/data/waters.ts` 不存在（水源数据在 constants.ts），三处已修；verify-harness 路径检查纳入 src/backend 前缀 + .agents 路由表双向核对 + 各族 README 数 + status 值域。
+- 路径引用漂移审计（2026-10-07）：storage.ts/api.ts 实为目录（src/services/storage/ 与 src/services/api/）、waters.ts 不存在（水源数据在 src/data/constants.ts），三处已修；verify-harness 路径检查纳入 src/backend 前缀 + .agents 路由表双向核对 + 各族 README 数 + status 值域。
 - GitHub push（2026-10-07）：~/.ssh/config 走 ssh.github.com:443 可能被本地网络重置；用一次性 `$env:GIT_SSH_COMMAND="ssh -o HostName=github.com -o Port=22"` 走 22 端口，不动全局配置。
 
 **2026-10-01 V4 重构**：ADR 拆 `docs/ADR/` 独立文件（ADR-001~009，统一格式）、CONTEXT.md 精简为术语+ADR 索引+架构关键词、新增 `npm run quality` 统一门禁、commit 改英文 conventional、新增 AI Change Protocol + Modification Level。详见 ADR-009。
