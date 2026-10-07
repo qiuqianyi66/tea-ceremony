@@ -1,6 +1,7 @@
 # 一盏茶 待办优先级清单（2026-10-07 更新）
 
 > 全景待办梳理（基于仓库/记忆/PRD 核验），按优先级 P0/P1/P2 排序。P0=主线/承重/用户点名；P1=价值/体验；P2=工程卫生/发布。
+> **harness 研究落地工程单（P1 新增项详见）→ `docs/PLAN-harness-research-2026-10.md`（2026-10-07，含执行顺序/依赖/验证级别）**
 
 ## P0（现在就该做）
 
@@ -16,6 +17,12 @@
 
 | # | 事项 | 现状 | 下一步 |
 |---|---|---|---|
+| P1-R0 | **后端 ArchUnit 分层测试**（研究新增） | 分层规则在编码规范.md，无机械化测试 | 分层规则 → ArchUnit 测试（单向依赖/禁 Controller 查库/构造器注入）→ CI 门禁 |
+| P1-R1 | **MCP 工具化试点**（研究新增，技术比对查证 Spring AI Alibaba 原生支持） | 未做 | culture-search 暴露为 MCP tool → ChatClient defaultTools 自动注册 |
+| P1-R2 | **Orchestrator 复杂度路由**（研究新增） | 路由已有（显式/文化域/回落） | query 复杂度分级 → 廉价 vs 深度路径 |
+| P1-R3 | **review 结构化纠错三要素**（研究新增） | caveman-review 有格式 | finding 升级：问题/根因（为什么）/修复指引 + 附失败输出原文 |
+| P1-R4 | **文档一致性机械化**（研究新增） | 漂移靠手动自查 | eval-harness 加"文档一致性"维（ADR 索引/CI job 数/路径引用） |
+| P1-R5 | **审计员风险标记**（278 研究新增） | sources 字段已有 | LibrarianAgent 输出加"⚠ 无来源"标记（逐句对证据） |
 | P1-1 | M2 ai_usage_logs 消费端 | 已拍板未做（每日统计+预算告警） | 后端定时任务 + 前端看板（可选） |
 | P1-2 | 前端优化 P-O 系列 | 研究已出（docs/research-frontend-optimization-2026-10.md） | P-O4 RAG 引用展示 → P-O1 Web Vitals → P-O2/P-O3 性能 |
 | P1-3 | 生产上线（HTTPS+域名） | nginx.conf HTTPS 块已留位注释 | 证书挂载 → 启用 443 → 跳转 |
