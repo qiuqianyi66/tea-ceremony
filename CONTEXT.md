@@ -44,6 +44,7 @@ ADR 独立文件见 `docs/ADR/`（ADR-009 起统一格式：Status / Context / D
 | [ADR-010](docs/ADR/ADR-010.md) | 后端重写 ORM 选型（Spring Data JPA） | Accepted |
 | [ADR-011](docs/ADR/ADR-011.md) | 后端重写工程决策（Maven / Flyway / 无 Redis / seeds 迁移 / AI 成本告警 / 角色命名） | Accepted |
 | [ADR-012](docs/ADR/ADR-012.md) | 引入 Redis（两级缓存 / 语义缓存 / 分布式限流 / JWT 黑名单，修订 ADR-011 无 Redis） | Accepted |
+| [ADR-013](docs/ADR/ADR-013.md) | pgvector + pg_trgm 混合检索（S2 知识检索升级，同库扩展） | Accepted |
 
 新决策一律写入 `docs/ADR/ADR-0XX.md`，禁止塞进本文档。
 
@@ -69,4 +70,5 @@ ADR 独立文件见 `docs/ADR/`（ADR-009 起统一格式：Status / Context / D
 - [ ] 演示短视频未做（用户暂缓）
 - [x] 迁移测试本地跑：`TEST_DATABASE_URL` 指向本地 PG 服务即可（不再依赖 Docker），CI 用 Postgres service
 - [ ] 生产规模扩展（Redis 分布式限流、Sentry 异常追踪）非必需，可按需推进
-- [ ] 生产级收敛 P1（数据治理 DATA_POLICY / 回归测试体系 / Design Spec 拆分）待下一轮（见 ADR-009）
+- [x] 生产级收敛 P1（数据治理 DATA_POLICY / 测试体系 TESTING_SPEC / Design Spec 拆分 DESIGN_SPEC+3D_SPEC，2026-10 完成）
+- [ ] 生产级收敛 P2（回归测试体系剩余 / 部署运维 PRD 化）待排期
