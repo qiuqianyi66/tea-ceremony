@@ -85,3 +85,4 @@ verify_icons_*.png
 .agents/skills/**/*.tga
 .agents/skills/**/*.ttf
 .agents/skills/**/*.otf
+.env.development
