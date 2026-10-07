@@ -128,7 +128,7 @@ const noMigrate = /无(数据库)?迁移|零迁移|无迁移/.test(summaryText);
   // 内容级：密钥/密码/占位符真值 + 新增 .env 文件
   try {
     const diff = execSync('git diff HEAD~5 -- . ":(exclude)package-lock.json" ":(exclude)pnpm-lock.yaml"', { cwd: root, encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 });
-    if (/BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|password\s*[:=]\s*(?!\$\{)\S|api[_-]?key\s*[:=]\s*(?!\$\{)\S|secret\s*[:=]\s*(?!\$\{)\S/i.test(diff)) violations++;
+    if (/BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|password\s*[:=]\s*(?!(?:\$\{|\}|[a-zA-Z_$][\w$]*))["']?[^\s"'$}=]|api[_-]?key\s*[:=]\s*(?!(?:\$\{|\}|[a-zA-Z_$][\w$]*))["']?[^\s"'$}=]|secret\s*[:=]\s*(?!(?:\$\{|\}|[a-zA-Z_$][\w$]*))["']?[^\s"'$}=]/i.test(diff)) violations++;
     if (/^\+\s*\.env(?![.\w])/m.test(diff)) violations++;
   } catch { /* diff 不可用时仅路径级判定 */ }
   scores.safety = violations === 0 ? 100 : Math.max(0, 100 - violations * 40);
