@@ -136,6 +136,18 @@ description: tea 接口协议——现有端点、统一约定（前缀/鉴权/�
 
 > M5-S2 编排：显式 `agent` → 对应专家（advisor 荐茶/teas+regions+processes、taster 品鉴/用户记录、librarian 文化/8 表 RAG、brewer 冲泡/工艺+茶器、mentor 成长/用户记录+常识；各专家回复附 sources）；无 agent 且文化意图关键词命中 → librarian；`agent=chat` 或无意图 → 回落透明代理（messages 原样转发）。未知 agent 值 400。仅成功调用落 `ai_usage_logs`（agent/model/tokens_in/tokens_out/latency；游客 user_id 空）。key 配置 `AI_DASHSCOPE_API_KEY`，无 key 占位 `disabled` 时 Service 显式 502。
 
+### MCP 工具协议 `/mcp`（P1-1 已实现，公开，非 HTTP JSON 契约）
+
+| 端点 | 传输 | 说明 |
+|---|---|---|
+| `GET /mcp` | SSE（`text/event-stream`） | MCP 握手：返回 `event:endpoint` + `data:/mcp/messages?sessionId=...` |
+| `POST /mcp/messages?sessionId=...` | SSE + JSON-RPC 2.0 | MCP 协议消息（initialize/listTools/callTool） |
+
+- 工具：`cultureSearch(query)`——8 表文化检索（同 `/api/v1/culture/search` 语义，返回紧凑 JSON：`{teas,people,regions,poems,teawares,etiquettes,relations,processes}` 各 name 列表）
+- 鉴权：公开（与 `/api/v1/culture/**` 同风险等级：只读公开知识检索；**未来接入敏感工具必须单独收紧**，见 SecurityConfig 注释）
+- 接入：外部 MCP client（Claude Code/Codex/Goose 等）配置 server 地址 `http://<host>:8080/mcp`
+- 配置源：`spring.ai.mcp.server.*`（name/version/type=SYNC/capabilities.tool/sse-endpoint/sse-message-endpoint）
+
 ### 系统
 
 | 方法 | 路径 | 成功响应 | 错误 |

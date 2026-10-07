@@ -41,6 +41,9 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/**", "/api/v1/ai/**", "/api/v1/culture/**", "/actuator/health").permitAll()
+                        // MCP 工具协议端点（P1-1）：culture-search 只读公开知识检索，与 /api/v1/culture/** 同风险等级；
+                        // 未来接入敏感工具（写操作/个人数据）时必须单独收紧鉴权
+                        .requestMatchers("/mcp", "/mcp/messages").permitAll()
                         // 茶叶目录游客可浏览（PRD F2/F3；T7 只读放行）
                         .requestMatchers(HttpMethod.GET, "/api/v1/teas/**").permitAll()
                         .anyRequest().authenticated())

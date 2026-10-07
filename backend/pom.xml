@@ -102,6 +102,12 @@
             <artifactId>spring-ai-alibaba-starter-dashscope</artifactId>
             <version>${spring-ai-dashscope.version}</version>
         </dependency>
+        <!-- MCP server（P1-1 工具化试点）：SSE WebMVC transport——@Tool bean 经 ToolCallbackProvider 注册为 MCP 工具，外部 agent（Claude Code/Codex/Goose）可经标准 MCP 协议 HTTP 调用；版本对齐 spring-ai 1.1.2（与 alibaba 1.1.2.4-security-fix 的 spring-ai 基础版本一致） -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-mcp-server-webmvc</artifactId>
+            <version>1.1.2</version>
+        </dependency>
 
         <!-- 测试：单元 + 集成（Testcontainers Postgres） -->
         <dependency>

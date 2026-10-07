@@ -7,6 +7,17 @@ spring:
   ai:
     dashscope:
       api-key: ${AI_DASHSCOPE_API_KEY:disabled}
+    # P1-1 MCP server：ToolCallbackProvider 注册的 @Tool（culture-search）经 SSE WebMVC transport 暴露，
+    # 外部 agent（Claude Code/Codex/Goose 等）可经标准 MCP 协议调用（SSE 端点 /mcp，消息端点 /mcp/messages）
+    mcp:
+      server:
+        name: tea-mcp-server
+        version: 1.0.0
+        type: SYNC
+        capabilities:
+          tool: true
+        sse-endpoint: /mcp
+        sse-message-endpoint: /mcp/messages
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/tea}
     username: ${DB_USER:tea}

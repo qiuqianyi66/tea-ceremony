@@ -1,3 +1,9 @@
+---
+last_updated: 2026-10-07
+status: active
+owner: yanha
+---
+
 # 一盏茶 工程单 PLAN — harness 研究落地（2026-10-07）
 
 > 目的：把 5 篇研究底座（278/285/阿里/最新进展/技术比对）提炼为可执行工程单，与既有 TODO-PRIORITY 合并统一排序。每项标：现状 / 下一步 / 验证级别（AGENTS.md §5 Modification Level）/ 依赖。
@@ -29,11 +35,11 @@
 
 | # | 事项 | 依据 | 下一步 | 验证 |
 |---|---|---|---|---|
-| P1-0 | **后端 ArchUnit 分层测试** | 285"约束必须自动化"；OpenAI Linter 机械化 | 编码规范.md 分层规则 → ArchUnit 测试（Controller→Service→Repository 单向/禁 Controller 查库/构造器注入）→ CI 门禁 | L2 |
-| P1-1 | **MCP 工具化试点** | 技术比对查证：Spring AI Alibaba 原生支持 | 新建 MCP server 模块：culture-search 暴露为 MCP tool → ChatClient defaultTools 自动注册 | L2 |
+| P1-0 | **后端 ArchUnit 分层测试** | 285"约束必须自动化"；OpenAI Linter 机械化 | ✅ 已落地（2026-10-07）：backend/src/test/java/com/tea/architecture/LayerDependencyTest.java（红线 #1 四规则：Controller 禁查库/禁反向依赖/Repository 不依赖上层/禁字段注入，错误信息三要素），CI Maven test 门禁 | L2 |
+| P1-1 | **MCP 工具化试点** | 技术比对查证：Spring AI Alibaba 原生支持 | ✅ 已落地（2026-10-07）：CultureSearchTool（@Tool）+ McpToolConfig（ToolCallbackProvider）+ SSE WebMVC transport（GET /mcp 握手 /mcp/messages JSON-RPC）+ Security 放行 + 测试 6（mvn 133 全绿）+ Docker 冒烟 `event:endpoint data:/mcp/messages?sessionId=`；MCP 是暴露层，承重墙零改动 | L2 |
 | P1-2 | **Orchestrator 复杂度路由** | 最新动向：Model Router 成本 -64% | query 复杂度分级 → 廉价路径（文化域/回落）vs 深度路径（专家+慢模型） | L2 |
-| P1-3 | **review 结构化纠错三要素** | 最新动向：纠错=什么错/为什么/该怎样+附失败原文 | review.md/caveman-review finding 格式升级（问题/根因/修复指引） | L1 |
-| P1-4 | **文档一致性机械化** | OpenAI linter+CI 验证知识库 | eval-harness 加"文档一致性"维：ADR 索引/CI job 数/路径引用漂移自动抓 | L2 |
+| P1-3 | **review 结构化纠错三要素** | 最新动向：纠错=什么错/为什么/该怎样+附失败原文 | ✅ 已落地（2026-10-07）：caveman-review SKILL.md + docs/skills/caveman-review.md 升级为 `L<line>: <severity> <problem>. <why>. <fix>.` + 关键项附失败原文 | L1 |
+| P1-4 | **文档一致性机械化** | OpenAI linter+CI 验证知识库 | ✅ 已落地（2026-10-07）：scripts/verify-harness.cjs（ADR 连续性/CI job 数/技能数/路径引用），首跑抓出流程族 30→32 漂移已修，期望 ERRORS: [] | L2 |
 | P1-5 | **审计员风险标记** | 278 审计员铁律 | LibrarianAgent 输出加"⚠ 无来源"标记（逐句对证据） | L2 |
 | P1-6 | M2 ai_usage_logs 消费端 | 既有 | 每日统计+预算告警（后端定时任务） | L2 |
 | P1-7 | 前端优化 P-O 系列 | 既有（研究已出） | P-O4 RAG 引用展示 → P-O1 Web Vitals → P-O2/P-O3 | L1/L2 |
@@ -45,8 +51,8 @@
 
 | # | 事项 | 下一步 |
 |---|---|---|
-| P2-1 | AGENTS.md 精简评估（50-100 行地图模式） | 学习记录外置 docs/lessons.md → 主体压向 100 行（**需用户拍板**） |
-| P2-2 | doc-gardening 脚本化 | eval-harness 一致性维落地后挂 CI 定时（每周） |
+| P2-1 | AGENTS.md 精简评估（50-100 行地图模式） | ✅ 评估完成（2026-10-07）：204 行在维护区间 200-350，维持现状；学习记录已按维护规则限长，不外置 |
+| P2-2 | doc-gardening 脚本化 | ✅ 已落地并挂 CI 合并门禁（2026-10-07）：scripts/verify-harness.cjs + harness-consistency job（CI 13 job） |
 | P2-3 | 架构文档成熟度评分追踪 | docs/architecture/system-overview 加"各域/层成熟度评分"节 |
 | P2-4 | 开源曝光落地 | Good First Issue / 传播帖 / release / Discussions |
 | P2-5 | 仓库卫生 | .git 160MB / 旧 jpg fallback（filter-repo 待拍板） |
