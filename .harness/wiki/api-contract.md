@@ -89,6 +89,8 @@ description: tea 接口协议——现有端点、统一约定（前缀/鉴权/�
 
 ### 茶园 `/api/garden-plants`（需登录）
 
+> ⚠ 未实现：旧栈 routers 未提供该端点、新栈待茶园切片（V1 已建 garden_plants 表）。当前调用 404；实现后移除本标注。
+
 | 方法 | 路径 | 请求体 | 成功响应 | 错误 |
 |---|---|---|---|---|
 | POST | `/api/garden-plants/` | `GardenPlantCreate`（含 `client_id`） | `GardenPlantResponse` 200 | 401 |

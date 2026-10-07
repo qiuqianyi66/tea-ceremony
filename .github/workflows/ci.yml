@@ -274,3 +274,8 @@ jobs:
       # verify-harness.cjs 纯 fs 无依赖，不需 npm ci；期望输出 ERRORS: []
       - name: Run harness consistency check
         run: node scripts/verify-harness.cjs
+      # red-line-auditor / consistency-verifier 的豆包机械化替代（红线 15 条可判定子集 + wiki 契约双向核对）
+      - name: Run red-line audit
+        run: node scripts/audit-redlines.cjs
+      - name: Run wiki drift audit
+        run: node scripts/audit-wiki-drift.cjs

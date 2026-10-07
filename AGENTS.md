@@ -138,6 +138,8 @@ node scripts/verify-brew-mobile.cjs  # 冲泡页移动端触控（≥44px、无�
 node scripts/audit-touch.cjs       # 全局触控目标审计
 node scripts/eval-harness.cjs <切片> --verify  # harness 七维确定性评测（每切片必跑，总分<60 阻断；报告 docs/agent-eval/）
 node scripts/verify-harness.cjs    # harness 一致性体检（ADR/CI job/技能数/路径/wiki 四件套/子代理/审查页/changes 门禁），期望 ERRORS: []，CI 门禁
+node scripts/audit-redlines.cjs    # 红线机械化审计（替代 red-line-auditor；R2/7/8/9/10/11/12/14），期望 ERRORS: []，CI 门禁
+node scripts/audit-wiki-drift.cjs  # wiki 契约漂移审计（替代 consistency-verifier；api-contract 端点 vs 代码路由双向核对），期望 ERRORS: []，CI 门禁
 node scripts/add-doc-meta.cjs      # docs 元信息头批量补齐（新文档缺 frontmatter 时跑）
 cd backend && python -m py_compile app/main.py                  # 后端语法（旧 FastAPI，过渡期）
 cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量（旧 FastAPI，过渡期）
@@ -169,7 +171,7 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量�
 - `.harness/rules/开发流程规范.md` — 开发流程（十阶段流水线 + 分支提交 + 回滚 + 多 agent + review + token 按需加载）
 - `.harness/wiki/` — AI 编码上下文四件套（业务模型 / 接口协议 / 数据模型 / 领域术语），编码前按需读 ≤3 份
 - `.harness/changes/_template/` — 变更追踪模板（summary + db-migrations + rollback），与 git 分支同名
-- `.claude/agents/` — 三子代理（code-reviewer / consistency-verifier / red-line-auditor）
+- `.claude/agents/` — 三子代理（code-reviewer / consistency-verifier / red-line-auditor；Claude Code 专用。豆包环境等效：expert-reviewer / audit-wiki-drift.cjs + verify-harness.cjs / audit-redlines.cjs，见开发流程规范 §子代理）
 - `.harness/skills/` — 技能全套 32 个（main-dev 8 / biz-dev 19 / trouble-shooting 5），每族带 README 路由表，按需渐进式加载（request-analysis 规则 + Wiki ≤3、coding-skill ≤4）
 - `.github/workflows/ci.yml` — CI 合并门禁（含 compose-validate / harness 一致性）
 - `docs/agent-eval-baseline.md` — AI 协作评估基线（通用+专项维度、抽样会话评分流程、评估证据沉淀）
@@ -204,5 +206,6 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量�
 - 流程断点审计（2026-10-07）：开发流程规范 7 处结构修复——流程路径分级（L0-L3↔十阶段）、小改动判据、.claude/agents 标注环境可用性（豆包用 expert-reviewer/verify-harness 替代）、wiki 选择映射、提交前验证矩阵、经验三级进化落点（docs/plans/patterns.md）、完成标准加 HANDOFF/环境审查。来源开发流程规范 §一/§四/§六-九。
 - 路径引用漂移审计（2026-10-07）：storage.ts/api.ts 实为目录（src/services/storage/ 与 src/services/api/）、waters.ts 不存在（水源数据在 src/data/constants.ts），三处已修；verify-harness 路径检查纳入 src/backend 前缀 + .agents 路由表双向核对 + 各族 README 数 + status 值域。
 - GitHub push（2026-10-07）：~/.ssh/config 走 ssh.github.com:443 可能被本地网络重置；用一次性 `$env:GIT_SSH_COMMAND="ssh -o HostName=github.com -o Port=22"` 走 22 端口，不动全局配置。
+- 三子代理豆包机械化替代（2026-10-07）：.claude/agents 是 Claude Code 配置，豆包运行时改走 audit-redlines.cjs（红线 15 条可机械子集 R2/7/8/9/10/11/12/14）+ audit-wiki-drift.cjs（api-contract 端点 vs 代码路由双向核对）+ expert-reviewer，均挂 CI harness job；首跑抓出 .env.development 被 git 跟踪（已解跟踪）、garden-plants 契约登记但无实现（已标注未实现）。
 
 **2026-10-01 V4 重构**：ADR 拆 `docs/ADR/` 独立文件（ADR-001~009，统一格式）、CONTEXT.md 精简为术语+ADR 索引+架构关键词、新增 `npm run quality` 统一门禁、commit 改英文 conventional、新增 AI Change Protocol + Modification Level。详见 ADR-009。
