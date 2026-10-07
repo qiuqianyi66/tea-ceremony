@@ -2,6 +2,7 @@
 import QRCode from 'qrcode'
 import { ref } from 'vue'
 import { buildTeaShareUrl, encodeTeaShare } from '@/services/share'
+import { colorTokens } from '@/styles/colorTokens'
 import type { Tea } from '@/types/tea'
 
 const props = defineProps<{
@@ -99,7 +100,8 @@ async function downloadCard() {
   if (!ctx) return
 
   const background = ctx.createLinearGradient(0, 0, 900, 1120)
-  background.addColorStop(0, '#FAF6F0')
+  background.addColorStop(0, colorTokens.cream)
+  // #EDE1CF 为扩展色（cream 深一档），待 DESIGN_SPEC 增补后入 colorTokens
   background.addColorStop(1, '#EDE1CF')
   ctx.fillStyle = background
   ctx.fillRect(0, 0, canvas.width, canvas.height)
@@ -111,21 +113,21 @@ async function downloadCard() {
   ctx.fill()
   ctx.globalAlpha = 1
 
-  ctx.strokeStyle = '#9E8050'
+  ctx.strokeStyle = colorTokens.teaGold
   ctx.lineWidth = 3
   roundRect(ctx, 34, 34, 832, 1052, 24)
   ctx.stroke()
 
-  ctx.fillStyle = '#9E8050'
+  ctx.fillStyle = colorTokens.teaGold
   ctx.font = '24px sans-serif'
   ctx.letterSpacing = '6px'
   ctx.fillText('一盏茶  ·  TEA CARD', 78, 100)
   ctx.letterSpacing = '0px'
 
-  ctx.fillStyle = '#5D4E37'
+  ctx.fillStyle = colorTokens.wood
   ctx.font = 'bold 56px serif'
   ctx.fillText(props.tea.name, 78, 190)
-  ctx.fillStyle = '#7E6A55'
+  ctx.fillStyle = colorTokens.woodLight
   ctx.font = '26px sans-serif'
   ctx.fillText(
     `${props.tea.type}  ·  ${props.tea.origin}  ·  ${props.tea.altitude ?? '产地海拔'}`,
@@ -141,12 +143,12 @@ async function downloadCard() {
     ctx.fillStyle = 'rgba(201,169,110,.18)'
     roundRect(ctx, x, y, 112, 44, 22)
     ctx.fill()
-    ctx.fillStyle = '#5D4E37'
+    ctx.fillStyle = colorTokens.wood
     ctx.fillText(f, x + 24, y + 29)
   })
 
   // 描述（折行最多 6 行）
-  ctx.fillStyle = '#7E6A55'
+  ctx.fillStyle = colorTokens.woodLight
   ctx.font = '26px serif'
   const maxWidth = 740
   let cursorY = 420
@@ -173,7 +175,7 @@ async function downloadCard() {
   ctx.moveTo(78, 700)
   ctx.lineTo(822, 700)
   ctx.stroke()
-  ctx.fillStyle = '#7E6A55'
+  ctx.fillStyle = colorTokens.woodLight
   ctx.font = '24px sans-serif'
   ctx.fillText(
     `水温 ${props.tea.bestTemp}°C    首泡 ${props.tea.bestTime}s    可冲 ${props.tea.infusions} 泡`,
@@ -183,7 +185,7 @@ async function downloadCard() {
 
   // 故事首句
   const storyLine = props.tea.story.slice(0, 34)
-  ctx.fillStyle = '#9E8050'
+  ctx.fillStyle = colorTokens.teaGold
   ctx.font = 'italic 24px serif'
   ctx.fillText(`“${storyLine}…”`, 78, 810)
 
@@ -215,7 +217,7 @@ async function downloadCard() {
     // 二维码渲染失败时仍交付无二维码版本
   }
 
-  ctx.fillStyle = '#9E8050'
+  ctx.fillStyle = colorTokens.teaGold
   ctx.font = '20px sans-serif'
   ctx.fillText('一席茶，一方天地，一念清心', 78, 1065)
 

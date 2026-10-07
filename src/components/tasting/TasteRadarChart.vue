@@ -21,6 +21,7 @@ import {
 } from 'chart.js'
 import { computed } from 'vue'
 import { Radar } from 'vue-chartjs'
+import { colorTokens } from '@/styles/colorTokens'
 
 // 注册 Chart.js 组件
 ChartJS.register(
@@ -52,16 +53,16 @@ const props = withDefaults(defineProps<Props>(), {
   size: 280,
 })
 
-// 维度配置（按 DESIGN_SPEC.md 顺序）
+// 维度配置（色值走 DESIGN_SPEC 令牌常量；#C9A96E 为扩展色，待 DESIGN_SPEC 增补后入 colorTokens）
 const DIMENSIONS = [
-  { key: 'bitterness', label: '苦涩度', color: '#7E6A55' },
-  { key: 'sweetness', label: '甜度', color: '#9E8050' },
-  { key: 'aftertaste', label: '回甘', color: '#6B7D5A' },
-  { key: 'body', label: '醇厚度', color: '#5D4E37' },
-  { key: 'aroma', label: '香气', color: '#A33B2E' },
-  { key: 'rhyme', label: '汤感', color: '#36454F' },
+  { key: 'bitterness', label: '苦涩度', color: colorTokens.woodLight },
+  { key: 'sweetness', label: '甜度', color: colorTokens.teaGold },
+  { key: 'aftertaste', label: '回甘', color: colorTokens.bamboo },
+  { key: 'body', label: '醇厚度', color: colorTokens.wood },
+  { key: 'aroma', label: '香气', color: colorTokens.cinnabar },
+  { key: 'rhyme', label: '汤感', color: colorTokens.indigoDeep },
   { key: 'shape', label: '身心', color: '#C9A96E' },
-  { key: 'mind', label: '整体', color: '#3D3225' },
+  { key: 'mind', label: '整体', color: colorTokens.ink },
 ] as const
 
 // 计算标签和数据
@@ -87,7 +88,7 @@ const chartOptions = computed<ChartOptions<'radar'>>(() => ({
         usePointStyle: true,
         padding: 16,
         font: { size: 11, family: 'Noto Sans SC, sans-serif' },
-        color: '#3D3225',
+        color: colorTokens.ink,
       },
     },
     tooltip: {
@@ -115,6 +116,7 @@ const chartOptions = computed<ChartOptions<'radar'>>(() => ({
         backdropColor: 'transparent',
       },
       grid: {
+        // colorTokens.ink 的 alpha 变体（令牌表暂未含透明色，alpha 就地标注来源）
         color: 'rgba(61, 50, 37, 0.1)',
         circular: true,
       },
@@ -123,7 +125,7 @@ const chartOptions = computed<ChartOptions<'radar'>>(() => ({
       },
       pointLabels: {
         font: { size: 11, family: 'Noto Serif SC, serif', weight: 500 },
-        color: '#3D3225',
+        color: colorTokens.ink,
         padding: 12,
       },
     },
