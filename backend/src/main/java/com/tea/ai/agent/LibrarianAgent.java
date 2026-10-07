@@ -111,6 +111,20 @@ public class LibrarianAgent {
         if (!hit.poems().isEmpty()) {
             sb.append("诗：").append(String.join("、", hit.poems().stream().map(p -> p.title() + "（" + p.author() + "）").toList())).append("\n");
         }
+        if (!hit.teawares().isEmpty()) {
+            sb.append("茶器：").append(String.join("、", hit.teawares().stream().map(t -> t.name()).toList())).append("\n");
+        }
+        if (!hit.etiquettes().isEmpty()) {
+            sb.append("茶礼：").append(String.join("、", hit.etiquettes().stream().map(e -> e.name()).toList())).append("\n");
+        }
+        if (!hit.relations().isEmpty()) {
+            sb.append("关系：").append(String.join("、", hit.relations().stream()
+                    .map(r -> r.relation() + "（" + r.source() + "→" + r.target() + "）").toList())).append("\n");
+        }
+        if (!hit.processes().isEmpty()) {
+            sb.append("工艺：").append(String.join("、", hit.processes().stream()
+                    .map(p -> p.name() + (p.teaCategory() == null ? "" : "（" + p.teaCategory() + "）")).toList())).append("\n");
+        }
         return sb.isEmpty() ? "（无命中）" : sb.toString();
     }
 
@@ -120,6 +134,10 @@ public class LibrarianAgent {
         hit.people().forEach(p -> sources.add("人·" + p.name()));
         hit.regions().forEach(r -> sources.add("产区·" + r.name()));
         hit.poems().forEach(p -> sources.add("诗·" + p.title()));
+        hit.teawares().forEach(t -> sources.add("茶器·" + t.name()));
+        hit.etiquettes().forEach(e -> sources.add("茶礼·" + e.name()));
+        hit.relations().forEach(r -> sources.add("关系·" + r.relation()));
+        hit.processes().forEach(p -> sources.add("工艺·" + p.name()));
         return sources;
     }
 }

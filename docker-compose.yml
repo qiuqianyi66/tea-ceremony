@@ -1,7 +1,8 @@
 services:
-  # PostgreSQL 数据库（schema 完全由 Flyway 管理：V1 表 + V2 文化种子）
+  # PostgreSQL 数据库（schema 完全由 Flyway 管理：V1 表 + V2 文化种子/向量检索）
+  # ADR-013：pgvector/pgvector:pg16（同 PG16，含 vector + pg_trgm 扩展；数据卷兼容）
   db:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg16
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-tea_user}

@@ -116,9 +116,9 @@ description: tea 接口协议——现有端点、统一约定（前缀/鉴权/�
 
 | 方法 | 路径 | 参数 | 成功响应 | 错误 |
 |---|---|---|---|---|
-| GET | `/api/v1/culture/search` | `q` 默认空串 | `ApiResponse<CultureSearchResult>`：`{teas,people,regions,poems}` 各 ≤5 | — |
+| GET | `/api/v1/culture/search` | `q` 默认空串 | `ApiResponse<CultureSearchResult>`：`{teas,people,regions,poems,teawares,etiquettes,relations,processes}` 各 ≤5（M5-S2 8 表 RAG，ADR-013） | — |
 
-> item 字段：tea `{id,name,type}`；person `{id,name,dynasty,type}`；region `{id,name,province,type}`；poem `{id,title,author,type}`。culture 其余详情端点留后续 culture 切片。
+> item 字段：tea `{id,name,type}`；person `{id,name,dynasty,type}`；region `{id,name,province,type}`；poem `{id,title,author,type}`；teaware `{id,name,type}`；etiquette `{id,name,type}`；relation `{id,relation,source,target,type}`；process `{id,name,teaCategory,type}`。culture 其余详情端点留后续 culture 切片。
 
 ### 茶灵 AI `/api/ai`（公开，旧 FastAPI，仅维护；LLM 不可用时 502，前端降级规则回复）
 
