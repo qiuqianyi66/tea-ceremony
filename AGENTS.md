@@ -178,7 +178,7 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量�
 
 ## 13. 更新记录
 
-**维护规则**：保持短（超 500 行就是在跟自己打架，200-350 行最舒服）；只留救过命的规则（问 "删掉这行会让 AI 犯错吗？" 不会就删）；命令必须真实（从 package.json/scripts 抄）；写规则不写建议（给 "禁止 X" 不给 "建议用 X"）；AI 每次犯错在此加一行，已有规则覆盖就收紧，不重复。**经验三级进化（2026-10-07）**：踩坑先写 lesson（单次记录）→ 跨项目复现归纳 pattern → 验证后晋升 instinct 自动生效；每级晋升需人工确认，防错误经验扩散。
+**维护规则**：保持短（超 500 行就是在跟自己打架，200-350 行最舒服）；只留救过命的规则（问 "删掉这行会让 AI 犯错吗？" 不会就删）；命令必须真实（从 package.json/scripts 抄）；写规则不写建议（给 "禁止 X" 不给 "建议用 X"）；AI 每次犯错在此加一行，已有规则覆盖就收紧，不重复。**经验三级进化（2026-10-07）**：踩坑先写 lesson（单次记录）→ 跨项目复现归纳 pattern → 验证后晋升 instinct 自动生效；每级晋升需人工确认，防错误经验扩散。**修剪（执行路径）**：稳定经验迁入 `docs/plans/patterns.md`（pattern 池，见开发流程规范 §八），AGENTS 留一行索引；学习记录可压缩为一行，不删除。
 
 **学习记录（近况沉淀）**：
 - 删除/覆盖文件前先 Read 确认无独立价值；恢复成本高于删除成本。
@@ -201,5 +201,6 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量�
 - 阿里 Harness 精读对照（2026-10-07）：五层结构/薄主会话/门禁阻断/经验三级进化/eval 评测，见 docs/research-harness-alibaba-2026-10.md；已验证我们的 AGENTS.md+三规则+技能路由方向同构，差距为流程流水线与 eval 自动化（可迁移清单见该文）。
 - 285 Harness 落地（2026-10-07）：①ArchUnit 分层测试机械化（红线 #1，错误信息三要素）②caveman-review 三要素升级（问题/根因/修复）③verify-harness.cjs 一致性体检（ADR/CI/技能数/路径，首跑抓出流程族 30→32 漂移并已修）。来源 docs/research-harness-engineering-285-2026-10.md。
 - 285 docs 结构化落地（2026-10-07）：docs 元信息头 65/65（add-doc-meta.cjs 按 git 时间批量补）；verify-harness 挂 CI 门禁（CI 12→13 job）；expert-reviewer 补三要素（每条 finding 带 FIX + 规则出处）；docs/plans + reference 两层已建。
+- 流程断点审计（2026-10-07）：开发流程规范 7 处结构修复——流程路径分级（L0-L3↔十阶段）、小改动判据、.claude/agents 标注环境可用性（豆包用 expert-reviewer/verify-harness 替代）、wiki 选择映射、提交前验证矩阵、经验三级进化落点（docs/plans/patterns.md）、完成标准加 HANDOFF/环境审查。来源开发流程规范 §一/§四/§六-九。
 
 **2026-10-01 V4 重构**：ADR 拆 `docs/ADR/` 独立文件（ADR-001~009，统一格式）、CONTEXT.md 精简为术语+ADR 索引+架构关键词、新增 `npm run quality` 统一门禁、commit 改英文 conventional、新增 AI Change Protocol + Modification Level。详见 ADR-009。

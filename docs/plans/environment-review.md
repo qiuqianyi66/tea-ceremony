@@ -38,6 +38,7 @@ owner: tea-harness
 - [ ] docs 新文档带 frontmatter（`node scripts/add-doc-meta.cjs --dry-run` 应无 noFm）
 - [ ] 已过期文档标记 `status: deprecated`，不删除（留档）
 - [ ] plans/ 与 reference/ 目录惯例未被绕过（新计划类入 plans/，新稳定参考入 reference/）
+- [ ] **内容级抽查**：system-overview / wiki 四件套 / error-codes 抽 1-2 篇，正文 vs 实现对照（verify-harness 只查元数据，内容活性靠本条）
 
 ## 发现处理
 
