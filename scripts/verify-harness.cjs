@@ -172,6 +172,66 @@ if (noMetaFiles.length > 0) {
   warnings.push(`docs/ 缺元信息头 ${noMetaFiles.length} 个：${names}${noMetaFiles.length > 5 ? ' …' : ''}（新文档必须带 last_updated/status/owner，或跑 node scripts/add-doc-meta.cjs）`);
 }
 
+// 8. wiki 四件套存在性（工程结构.md §六：business-model / api-contract / data-model / glossary）
+const WIKI_FOUR = ['business-model.md', 'api-contract.md', 'data-model.md', 'glossary.md'];
+const wikiDir = path.join(ROOT, '.harness/wiki');
+if (!fs.existsSync(wikiDir)) {
+  errors.push('.harness/wiki/ 不存在（wiki 四件套缺失）');
+} else {
+  for (const wf of WIKI_FOUR) {
+    if (!fs.existsSync(path.join(wikiDir, wf))) errors.push(`.harness/wiki/${wf} 缺失（wiki 四件套）`);
+  }
+}
+
+// 9. .claude/agents 三子代理存在性（AGENTS.md §12 声明）
+const CLAUDE_AGENTS = ['code-reviewer.md', 'consistency-verifier.md', 'red-line-auditor.md'];
+const claudeDir = path.join(ROOT, '.claude/agents');
+if (!fs.existsSync(claudeDir)) {
+  warnings.push('.claude/agents/ 不存在（环境可用性依赖标注见开发流程规范 §四，缺目录不阻断）');
+} else {
+  for (const ca of CLAUDE_AGENTS) {
+    if (!fs.existsSync(path.join(claudeDir, ca))) errors.push(`.claude/agents/${ca} 缺失（三子代理声明）`);
+  }
+}
+
+// 10. docs/skills 审查页存在性（AGENTS.md §12 声明 6 页）
+const SKILL_PAGES = ['plan-control.md', 'tea-tasting.md', 'db-migration.md', 'fastapi-endpoint.md', 'vue-component.md', 'caveman-review.md'];
+const docsSkillsDir = path.join(ROOT, 'docs/skills');
+if (!fs.existsSync(docsSkillsDir)) {
+  errors.push('docs/skills/ 不存在（核心技能人读审查页）');
+} else {
+  for (const sp of SKILL_PAGES) {
+    if (!fs.existsSync(path.join(docsSkillsDir, sp))) errors.push(`docs/skills/${sp} 缺失（审查页声明）`);
+  }
+}
+
+// 11. changes 变更记录门禁：_template 三件套 + 每切片 review.md 存在且结论行格式合规
+const changesDir = path.join(ROOT, '.harness/changes');
+if (fs.existsSync(changesDir)) {
+  const tpl = path.join(changesDir, '_template');
+  for (const tf of ['summary.md', 'db-migrations.sql', 'rollback.sql']) {
+    if (!fs.existsSync(path.join(tpl, tf))) errors.push(`.harness/changes/_template/${tf} 缺失（三件套模板）`);
+  }
+  const slices = fs.readdirSync(changesDir, { withFileTypes: true })
+    .filter(d => d.isDirectory() && d.name !== '_template')
+    .map(d => d.name);
+  for (const s of slices) {
+    const sDir = path.join(changesDir, s);
+    const rv = path.join(sDir, 'review.md');
+    if (!fs.existsSync(rv)) {
+      errors.push(`.harness/changes/${s}/review.md 缺失（每切片必须 review）`);
+    } else {
+      const rvText = fs.readFileSync(rv, 'utf8');
+      // 结论行格式兼容历史变体：🔴 0 / 🟡 0、顿号/斜杠/逗号分隔、emoji 顺序可变、中文"零/清零/无"计数
+      if (!/🔴\s*(清零?|无|[零0-9]+)[\s、,，/]*🟡\s*(清零?|无|[零0-9]+)/.test(rvText)) {
+        errors.push(`.harness/changes/${s}/review.md 结论行缺格式（需 \`🔴 N 🟡 N\`）`);
+      }
+    }
+    const sm = path.join(sDir, 'summary.md');
+    if (!fs.existsSync(sm)) errors.push(`.harness/changes/${s}/summary.md 缺失（每切片必须 summary）`);
+  }
+}
+
 // 输出
 console.log('=== Harness 一致性体检 ===');
 console.log(`AGENTS.md ${agentsLines} 行 | ADR ${adrNums.length} 个 | CI ${ciJobs} job | .agents/skills ${agentsSkillDirs} 个 | .harness/skills ${harnessTotal} 个`);

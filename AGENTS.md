@@ -137,7 +137,7 @@ node scripts/verify-icons.cjs      # lucide 图标渲染审计
 node scripts/verify-brew-mobile.cjs  # 冲泡页移动端触控（≥44px、无横向滚动）
 node scripts/audit-touch.cjs       # 全局触控目标审计
 node scripts/eval-harness.cjs <切片> --verify  # harness 七维确定性评测（每切片必跑，总分<60 阻断；报告 docs/agent-eval/）
-node scripts/verify-harness.cjs    # harness 一致性体检（ADR/CI job/技能数/路径引用漂移），期望 ERRORS: []，CI 门禁
+node scripts/verify-harness.cjs    # harness 一致性体检（ADR/CI job/技能数/路径/wiki 四件套/子代理/审查页/changes 门禁），期望 ERRORS: []，CI 门禁
 node scripts/add-doc-meta.cjs      # docs 元信息头批量补齐（新文档缺 frontmatter 时跑）
 cd backend && python -m py_compile app/main.py                  # 后端语法（旧 FastAPI，过渡期）
 cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量（旧 FastAPI，过渡期）
