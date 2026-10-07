@@ -14,11 +14,11 @@
 | 品鉴 | 观色、闻香、品味三步评分流程 | `src/views/TasteView.vue` |
 | 八维评分 | 汤色、香气、滋味、苦涩、生津、喉韵、耐泡度、协调性 | `src/services/scoring.ts` |
 | 工艺系数 | 水温、投茶量、时间、茶器、水源对评分的修正系数（0.8-1.2） | `src/services/scoring.ts` |
-| 离线优先 | 数据先写 IndexedDB，再异步同步后端 | `src/services/storage.ts` |
+| 离线优先 | 数据先写 IndexedDB，再异步同步后端 | `src/services/storage/` |
 | 同步状态 | pending / synced / failed 三态 | `src/types/tasting.ts` |
 | AI 茶灵 | 茶文化 RAG 检索 + LLM 对话（走后端代理），网络不可用时降级规则回复 | `src/services/teaAI.ts` |
 | 茶器 | 泡茶器具（盖碗、紫砂壶、玻璃杯等），影响工艺系数 | `src/data/teawares.ts` |
-| 水源 | 冲泡用水（纯净水、矿泉水、山泉水），影响工艺系数 | `src/data/waters.ts` |
+| 水源 | 冲泡用水（纯净水、矿泉水、山泉水），影响工艺系数 | `src/data/constants.ts` |
 | 业务异常 | service 层抛出的统一异常（BadRequest 400 / Unauthorized 401 / NotFound 404 / Conflict 409），router 不直接 raise HTTPException | `backend/app/exceptions.py` |
 | Service 层 | 后端业务逻辑下沉层：CRUD、幂等、密码哈希、JWT 签发；router 只做参数与响应 | `backend/app/services/` |
 | 幂等创建 | 品鉴记录 / 茶园种植按 `user_id + client_id` 去重，重复提交返回同一条 | `backend/app/services/record_service.py` |

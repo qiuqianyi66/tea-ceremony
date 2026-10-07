@@ -77,7 +77,7 @@
 
 - Vue 3 Composition API + `<script setup lang="ts">`，禁止 Options API、禁止 `any`；组件 ≤ 200 行超了拆；Props/Emits 必须带类型；副作用在 onMounted/onUnmounted 管理。
 - 状态：业务用 Pinia（`src/stores/`），局部用 `ref/reactive`；样式：Tailwind 4，不写自定义 CSS 文件。
-- IndexedDB 统一走 `src/services/storage.ts`；API 统一走 `src/services/api.ts`。
+- IndexedDB 统一走 `src/services/storage/`；API 统一走 `src/services/api/`。
 - 触控目标 ≥ 44px；状态五态齐全（hover/disabled/loading/error/empty）；正文对比度 ≥ 4.5:1；浏览器表面定制（选区/滚动条/焦点环/光标）。
 - 字体自托管（@font-face + swap），生产禁 Google Fonts link；全屏 Hero 用 `min-h-[100dvh]` 禁 `h-screen`；图标一个库一个家族，禁手绘 SVG 路径；引入第三方库前先查 package.json。
 - **设计令牌与组件规则**：色值/间距/圆角/阴影/动效令牌、组件规则、Three.js 规则（禁直接创建 renderer，统一 TresJS）见 `DESIGN_SPEC.md`；3D 详细约束见 `3D_SPEC.md`。

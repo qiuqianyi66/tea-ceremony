@@ -3,11 +3,11 @@
  * Harness 一致性体检（doc-gardening，Harness 285「熵管理」落地 / PLAN P1-R4）。
  *
  * 检查 AGENTS.md 声明的治理数字 vs 仓库实际，漂移即报错：
- *   1. ADR 编号连续性 + AGENTS.md 声明值 vs docs/ADR 实际
- *   2. CI job 数声明 vs .github/workflows/ci.yml 实际
- *   3. 技能数量声明（.agents/skills 66、.harness/skills 32） vs 实际目录
- *   4. 关键路径引用（docs/ .harness/ .agents/ scripts/）存在性
- *   5. AGENTS.md 行数（维护规则 200-350）
+ *   ADR 编号连续性 + 声明值 / CI job 数 / 技能数（.agents 66、.harness 32 三族）
+ *   各族 README 声明数 + .agents 路由表双向核对（README 不列 = 不存在）
+ *   关键路径引用（docs/ .harness/ .agents/ scripts/ src/ backend/）存在性
+ *   wiki 四件套 / changes 三件套+review 门禁 / docs/skills 审查页 / .claude agents
+ *   docs 元信息头（缺失 + status 值域）/ AGENTS.md 行数（维护规则 200-350）
  *
  * 用法：node scripts/verify-harness.cjs   期望输出 ERRORS: []
  * 有错误 exit 1（可挂 CI），无错误 exit 0。
@@ -136,9 +136,48 @@ if (skillRules) {
   }
 }
 
-// 5. 关键路径引用存在性（AGENTS.md 中 docs/ .harness/ .agents/ scripts/ 开头的反引号路径）
+// 4d. .agents/skills/README.md 路由表双向核对（技能规范.md：README 不列 = 不存在）
+const agentsReadmeText = read('.agents/skills/README.md');
+if (agentsReadmeText) {
+  const listed = new Set();
+  for (const m of agentsReadmeText.matchAll(/\[[^\]]+\]\(([^)]+?\/SKILL\.md)\)/g)) {
+    const p = m[1].replace(/\\/g, '/');
+    listed.add(p.split('/')[0]);
+    if (!fs.existsSync(path.join(ROOT, '.agents/skills', p))) {
+      errors.push(`.agents/skills/README.md 路由表链接不存在：${p}`);
+    }
+  }
+  const agentsActual = fs.existsSync(path.join(ROOT, '.agents/skills'))
+    ? fs.readdirSync(path.join(ROOT, '.agents/skills'), { withFileTypes: true })
+        .filter(d => d.isDirectory() && fs.existsSync(path.join(ROOT, '.agents/skills', d.name, 'SKILL.md')))
+        .map(d => d.name)
+    : [];
+  for (const d of agentsActual) {
+    if (!listed.has(d)) errors.push(`.agents/skills/${d}/SKILL.md 未列入路由表 README（技能规范：README 不列 = 不存在）`);
+  }
+}
+
+// 4e. .harness/skills 各族 README 技能数声明 vs 实际（main-dev / biz-dev / trouble-shooting）
+for (const fam of families) {
+  const famReadme = read(`.harness/skills/${fam}/README.md`);
+  if (!famReadme) {
+    errors.push(`.harness/skills/${fam}/README.md 缺失（各族路由表）`);
+    continue;
+  }
+  const m = famReadme.match(new RegExp('(' + fam + ').*?(\\d+) 个[)）]'));
+  if (!m) {
+    warnings.push(`.harness/skills/${fam}/README.md 未找到“${fam} N 个”声明`);
+    continue;
+  }
+  const claimed = parseInt(m[2], 10);
+  if (claimed !== famCounts[fam]) {
+    errors.push(`.harness/skills/${fam}/README.md 声明 ${claimed} 个，实际 ${famCounts[fam]} 个`);
+  }
+}
+
+// 5. 关键路径引用存在性（AGENTS.md 中 docs/ .harness/ .agents/ scripts/ src/ backend/ 开头的反引号路径）
 const seen = new Set();
-const pathRefs = agents.match(/`((?:docs|\.harness|\.agents|scripts)\/[^`]+)`/g) || [];
+const pathRefs = agents.match(/`((?:docs|\.harness|\.agents|scripts|src|backend)\/[^`]+)`/g) || [];
 for (const raw of pathRefs) {
   const p = raw.slice(1, -1);
   if (seen.has(p) || /\s/.test(p) || p.includes('*')) continue;   // 带空格/通配符的是命令或 glob，跳过
@@ -170,6 +209,20 @@ const noMetaFiles = allDocs.filter(f => {
 if (noMetaFiles.length > 0) {
   const names = noMetaFiles.slice(0, 5).map(f => path.relative(ROOT, f).replace(/\\/g, '/')).join(', ');
   warnings.push(`docs/ 缺元信息头 ${noMetaFiles.length} 个：${names}${noMetaFiles.length > 5 ? ' …' : ''}（新文档必须带 last_updated/status/owner，或跑 node scripts/add-doc-meta.cjs）`);
+}
+
+// 7b. docs 元信息头 status 值域（active|draft|deprecated）
+const VALID_STATUS = new Set(['active', 'draft', 'deprecated']);
+const badStatus = [];
+for (const f of allDocs) {
+  const c = fs.readFileSync(f, 'utf8');
+  const m = c.match(/^---[\s\S]*?---/);
+  if (!m) continue;
+  const st = m[0].match(/^status:\s*(\S+)\s*$/m);
+  if (st && !VALID_STATUS.has(st[1])) badStatus.push(path.relative(ROOT, f).replace(/\\/g, '/'));
+}
+if (badStatus.length > 0) {
+  warnings.push(`docs/ 元信息头 status 值域异常 ${badStatus.length} 个：${badStatus.slice(0, 3).join(', ')}（合法值 active|draft|deprecated）`);
 }
 
 // 8. wiki 四件套存在性（工程结构.md §六：business-model / api-contract / data-model / glossary）
