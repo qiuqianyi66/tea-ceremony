@@ -19,8 +19,8 @@
 
     <properties>
         <java.version>21</java.version>
-        <!-- PRD v0.2 锁定：Spring AI Alibaba 1.1.2.0（agent 框架，AI 切片时启用） -->
-        <spring-ai-alibaba.version>1.1.2.0</spring-ai-alibaba.version>
+        <!-- M5-S1 统一：agent-framework 与 dashscope 同为 1.1.2.4-security-fix（消 1.1.2.0/1.1.2.4 混用冲突风险，S1 需求 F-S1-1） -->
+        <spring-ai-alibaba.version>1.1.2.4-security-fix</spring-ai-alibaba.version>
         <!-- T11 迭代核实：DashScope starter 1.1.2.4-security-fix（旧 spring-ai-alibaba-starter 已停更于 1.0.0-M6.1） -->
         <spring-ai-dashscope.version>1.1.2.4-security-fix</spring-ai-dashscope.version>
         <!-- Testcontainers ≥1.21.4：Docker Engine v29 将最低 API 版本提至 1.44，1.21.2 的 docker-java 协商旧版本被 400 拒绝（npipe 空 /info） -->
