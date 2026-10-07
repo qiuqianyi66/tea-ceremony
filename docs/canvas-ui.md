@@ -1,3 +1,9 @@
+---
+last_updated: 2026-10-06
+status: active
+owner: yanha
+---
+
 # Canvas UI — 技术评估与使用前提
 
 > 2026-10-06 评估（用户引入认知，先学习后判断可用性）。来源：`C:\Users\yanha\Desktop\canvas-ui`（github.com/DavidHDev/canvas-ui，v0.1.0，MIT + Commons Clause）。状态：**候选可用，未立项**——引入须过四维甄别 + 设计门禁（AGENTS.md §2）。

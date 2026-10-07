@@ -1,3 +1,9 @@
+---
+last_updated: 2026-09-20
+status: active
+owner: yanha
+---
+
 # 「一盏茶」企业级优化方案（OPTIMIZATION_PLAN）
 
 > 决策版方案：由 `docs/ENTERPRISE_GAP.md`（三路调研：前端/后端/GitHub 横纵）整合而来。

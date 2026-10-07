@@ -1,3 +1,9 @@
+---
+last_updated: 2026-10-07
+status: active
+owner: yanha
+---
+
 # HANDOFF-2026-10-06-execution.md — 昨日执行上下文（供新对话接续）
 
 > 新对话接续：直接说「读 HANDOFF-2026-10-06-execution.md 继续」即可。

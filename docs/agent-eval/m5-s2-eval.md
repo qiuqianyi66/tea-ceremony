@@ -1,3 +1,9 @@
+---
+last_updated: 2026-10-07
+status: active
+owner: yanha
+---
+
 # eval-harness: m5-s2
 
 > 确定性评测（零 LLM）。--verify=on。日期 2026-10-07

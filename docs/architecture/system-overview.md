@@ -1,7 +1,13 @@
+---
+last_updated: 2026-10-01
+status: active
+owner: yanha
+---
+
 # 系统架构总览
 
 > 「一盏茶」沉浸式在线茶道应用 — 前后端架构、业务域划分与核心数据流。
-> 最后更新：2026-10-01（AGENTS V4 文档治理：部署去 Docker、AI 切 DeepSeek、garden 降级纯观赏）
+> 最后更新：2026-10-07（后端重写中：本文件 §2 后端分层为旧 FastAPI 描述，目标 Spring Boot 结构见 `.harness/rules/工程结构.md` §四）
 
 ## 1. 分层架构
 
@@ -114,10 +120,10 @@ flowchart LR
 
 ## 5. 部署拓扑
 
-- **Windows Server 原生**：nginx for Windows（静态 + `/api` 反代）→ uvicorn（NSSM 托管 `tea-backend` 服务）→ PostgreSQL（Windows 服务）。旧 Docker 方案已弃用，文件保留参考。
+- **Docker Compose 编排（现行）**：backend / frontend / postgres / nginx 四服务，详见 `DEPLOY.md`；旧 Windows 原生脚本（NSSM + nginx for Windows）保留参考。
 - **Nginx**：SPA fallback（`/` 回 index.html）、`/api` 反向代理到 backend、安全响应头、静态资源缓存。
 - **PWA**：`vite-plugin-pwa` 生成 Service Worker，核心路由离线可访问。
-- **CI（GitHub Actions 11 job 门禁）**：type-check + build + smoke / Vitest / Playwright E2E / 后端 pytest / 迁移测试（真实 Postgres）/ 语法编译 / Compose 校验等。
+- **CI（GitHub Actions 12 job 门禁）**：type-check + build + smoke / Vitest / Biome / npm+pip audit / E2E / axe / 后端语法 / pytest / ruff+bandit / Spring Boot Maven / 迁移测试 / Compose 校验。
 
 ## 6. 目录速查
 

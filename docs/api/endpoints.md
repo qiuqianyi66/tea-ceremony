@@ -1,3 +1,9 @@
+---
+last_updated: 2026-09-11
+status: active
+owner: yanha
+---
+
 # API 端点清单
 
 > 从 `backend/app/routers/*.py` 与 `backend/app/main.py` 反推，最后更新：2026-09-11。

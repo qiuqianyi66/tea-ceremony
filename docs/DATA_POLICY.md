@@ -1,3 +1,9 @@
+---
+last_updated: 2026-10-01
+status: active
+owner: yanha
+---
+
 # 数据治理规范（DATA_POLICY）
 
 > 覆盖 `src/data/` 全部茶文化数据集（茶 / 茶人 / 节气 / 产区 / 工艺 / 茶器）。

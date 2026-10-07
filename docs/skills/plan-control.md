@@ -1,3 +1,9 @@
+---
+last_updated: 2026-10-06
+status: active
+owner: yanha
+---
+
 # plan-control — 人读审查页
 
 > 面向人的审查页。模型执行规则见 `.agents/skills/plan-control/SKILL.md`。

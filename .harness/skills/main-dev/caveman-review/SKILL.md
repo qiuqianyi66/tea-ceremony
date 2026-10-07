@@ -20,12 +20,18 @@ description: 轻量代码评审输出风格——一行一条 finding + 严重�
 
 1. 确认评审范围：`git diff`（本地改动）或 MR/分支范围（评审前先读 `changes/summary.md` 变更清单）。
 2. 覆盖**全部变更文件**，不遗漏新增/删除/改名文件。
-3. 每行一条 finding，格式：`L<line>: <severity> <problem>. <fix>.`
+3. 每行一条 finding，格式：`L<line>: <severity> <problem>. <why>. <fix>. <see>.`
    - Severity：🔴 critical · 🟡 warn · 🟢 nit。
+   - problem：事实（什么错了），附失败输出原文片段（截断 ≤ 60 字符，用 `“...”` 引原文）。
+   - why：根因（为什么错，一句话；Harness 285「错误信息即 prompt」：Agent 读到 why 才能自修复，不需人介入）。
+   - fix：最短解法（怎么改，给到具体 API/写法级）。
+   - see：规则出处（红线编号/文档路径；🟡 以上必填，与 expert-reviewer 对齐；🔴 必须给）。
    - 只报真问题；非 issue 不写（"skip non-issues"）。
-   - 一行 ≤ 80 字符；problem 说清事实，fix 给最短解法。
+   - 一行 ≤ 100 字符（含原文片段可放宽到 120）。
 4. 按文件分组输出；文件间空一行。
 5. 结尾一行 verdict：`🔴 <n> / 🟡 <n> / 🟢 <n> — <一句话结论>`。
+
+示例：`L42: 🟡 裸 SQL 拼接。 why: 用户输入直入 WHERE，可注入。 fix: 改命名参数 :name。 see: 编码规范红线 #3。 “WHERE name = '${name}'”`
 
 ## 红线
 
@@ -37,6 +43,8 @@ description: 轻量代码评审输出风格——一行一条 finding + 严重�
 ## 检查清单
 
 - [ ] 覆盖全部变更文件（含新增/删除）
-- [ ] 每行一条 finding，含行号 + 严重度 + 问题 + 修复
+- [ ] 每行一条 finding，含行号 + 严重度 + 问题 + 根因 + 修复
+- [ ] 🟡 以上 finding 带规则出处（see）
+- [ ] 关键 finding 附失败输出原文（≤ 60 字符）
 - [ ] 按文件分组，结尾有 verdict
 - [ ] 红线问题未降级

@@ -1,3 +1,9 @@
+---
+last_updated: 2026-10-07
+status: active
+owner: yanha
+---
+
 # 一盏茶 前端企业级工程规范（含重点代码样例）
 
 > 与 

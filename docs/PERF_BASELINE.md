@@ -1,3 +1,9 @@
+---
+last_updated: 2026-09-10
+status: active
+owner: yanha
+---
+
 # 性能基线（PERF_BASELINE）
 
 > 记录时间：2026-09-10（V3 P1 深化收尾时建立）

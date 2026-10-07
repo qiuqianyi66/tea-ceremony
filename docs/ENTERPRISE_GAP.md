@@ -1,3 +1,9 @@
+---
+last_updated: 2026-09-20
+status: active
+owner: yanha
+---
+
 # 「一盏茶」企业级优化差距报告（ENTERPRISE_GAP）
 
 > 生成时间：2026-09-18

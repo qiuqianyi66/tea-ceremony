@@ -1,3 +1,9 @@
+---
+last_updated: 2026-10-07
+status: active
+owner: yanha
+---
+
 # agent-eval-baseline — AI 协作评估基线
 
 > 目的：为「一盏茶」的 AI 协作（本项目内所有 AI 编码助手 + 后续 agent 开发）建立可度量、可沉淀的评估基线。不是一次性打分，是持续收敛机制：每次评估的证据写回 AGENTS.md §13，规则只留救过命的。

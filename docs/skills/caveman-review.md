@@ -1,3 +1,9 @@
+---
+last_updated: 2026-10-06
+status: active
+owner: yanha
+---
+
 # caveman-review 人读审查页
 
 > 面向人核对。AI 编码助手评审前先读 `SKILL.md`，人审查本页即可。
@@ -14,12 +20,14 @@
 ## 审查要点
 
 1. 与 expert-reviewer 边界清晰：不降级评审维度，不改红线。
-2. 格式强制：`L<line>: <severity> <problem>. <fix>.`、按文件分组、结尾 verdict。
-3. 🔴 禁降级（红线沿用编码规范）。
-4. 覆盖全部变更文件。
+2. 格式强制：`L<line>: <severity> <problem>. <why>. <fix>. <see>.`（问题 / 根因 / 修复 / 规则出处；285「错误信息即 prompt」三要素 + why 增强）、按文件分组、结尾 verdict。
+3. 关键 finding 附失败输出原文（截断 ≤ 60 字符）；🟡 以上必带 see（规则出处）。
+4. 🔴 禁降级（红线沿用编码规范）。
+5. 覆盖全部变更文件。
 
 ## 怎么知道它在生效
 
-- 评审输出为一行一条 finding，每行含行号 + 严重度 + 问题 + 修复。
+- 评审输出为一行一条 finding，每行含行号 + 严重度 + 问题 + 根因 + 修复 + 规则出处。
+- 关键 finding 附失败输出原文片段。
 - 输出结尾有一行 verdict。
 - 未触发时（默认流程）评审输出为 expert-reviewer 完整表格。

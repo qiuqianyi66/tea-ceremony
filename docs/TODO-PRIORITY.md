@@ -1,3 +1,9 @@
+---
+last_updated: 2026-10-07
+status: active
+owner: yanha
+---
+
 # 一盏茶 待办优先级清单（2026-10-07 更新）
 
 > 全景待办梳理（基于仓库/记忆/PRD 核验），按优先级 P0/P1/P2 排序。P0=主线/承重/用户点名；P1=价值/体验；P2=工程卫生/发布。
@@ -17,11 +23,11 @@
 
 | # | 事项 | 现状 | 下一步 |
 |---|---|---|---|
-| P1-R0 | **后端 ArchUnit 分层测试**（研究新增） | 分层规则在编码规范.md，无机械化测试 | 分层规则 → ArchUnit 测试（单向依赖/禁 Controller 查库/构造器注入）→ CI 门禁 |
+| P1-R0 | **后端 ArchUnit 分层测试**（研究新增） | ✅ 已落地（2026-10-07）：LayerDependencyTest 四规则（分层单向/禁 Controller 查库/构造器注入），CI Maven test 门禁 | 分层规则 → ArchUnit 测试（单向依赖/禁 Controller 查库/构造器注入）→ CI 门禁 |
 | P1-R1 | **MCP 工具化试点**（研究新增，技术比对查证 Spring AI Alibaba 原生支持） | 未做 | culture-search 暴露为 MCP tool → ChatClient defaultTools 自动注册 |
 | P1-R2 | **Orchestrator 复杂度路由**（研究新增） | 路由已有（显式/文化域/回落） | query 复杂度分级 → 廉价 vs 深度路径 |
-| P1-R3 | **review 结构化纠错三要素**（研究新增） | caveman-review 有格式 | finding 升级：问题/根因（为什么）/修复指引 + 附失败输出原文 |
-| P1-R4 | **文档一致性机械化**（研究新增） | 漂移靠手动自查 | eval-harness 加"文档一致性"维（ADR 索引/CI job 数/路径引用） |
+| P1-R3 | **review 结构化纠错三要素**（研究新增） | ✅ 已落地（2026-10-07）：caveman-review 升级 problem/why/fix + 附失败原文 | finding 升级：问题/根因（为什么）/修复指引 + 附失败输出原文 |
+| P1-R4 | **文档一致性机械化**（研究新增） | ✅ 已落地（2026-10-07）：scripts/verify-harness.cjs（ADR/CI job/技能数/路径），期望 ERRORS: [] | eval-harness 加"文档一致性"维（ADR 索引/CI job 数/路径引用） |
 | P1-R5 | **审计员风险标记**（278 研究新增） | sources 字段已有 | LibrarianAgent 输出加"⚠ 无来源"标记（逐句对证据） |
 | P1-1 | M2 ai_usage_logs 消费端 | 已拍板未做（每日统计+预算告警） | 后端定时任务 + 前端看板（可选） |
 | P1-2 | 前端优化 P-O 系列 | 研究已出（docs/research-frontend-optimization-2026-10.md） | P-O4 RAG 引用展示 → P-O1 Web Vitals → P-O2/P-O3 性能 |
@@ -37,6 +43,7 @@
 | P2-2 | 仓库卫生 | .git 历史 160MB、旧 jpg fallback 12.8MB | filter-repo 重写（待拍板）、删不删决策 |
 | P2-3 | HANDOFF 交接文档 | 10-06 版在仓库，10-07 未更新 | 会话收尾更新 |
 | P2-4 | 残留数据清理 | 冒烟测试用户 smoke102054 在本地 db；Exited postgres:16 旧容器 | 本地可清（不影响生产） |
+| P2-5 | **doc-gardening 脚本化**（研究新增） | ✅ 已落地并挂 CI 门禁（2026-10-07）：verify-harness.cjs + harness-consistency job（CI 13 job） | 已闭合 |
 
 ## 执行原则
 
