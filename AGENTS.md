@@ -108,7 +108,7 @@
 - **行为测试三规则**：只走公共接口；不 mock 内部协作者（mock 只用于跨进程/外部边界：网络、时钟、DB 驱动）；重构不改测试。
 - 宽重构走 expand-contract：先 expand（新旧并存、CI 保持绿）→ 按包分批迁移（每批独立 commit）→ contract（旧形式无引用后删除）。
 - E2E 用真实等待，选择器用可见文本/角色，不依赖动画中间态；测试发现的缺陷按根因修，单独 commit。
-- CI 11 job 是合并门禁（type-check+build+smoke / Vitest / E2E / 后端语法 / pytest / 迁移测试 / Compose 校验等）。
+- CI 12 job 是合并门禁（type-check+build+smoke / Vitest / Biome / npm+pip audit / E2E / axe / 后端语法+pytest / ruff+bandit / Spring Boot Maven / 迁移测试 / Compose 校验）。
 
 ## 10. 禁止事项
 
@@ -150,7 +150,7 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量�
 - `.harness/rules/技能规范.md` — 技能治理唯一权威（模板/触发式描述/路由表维护，§5 增删改流程）
 - `docs/skills/` — 核心技能人读审查页（plan-control / tea-tasting / db-migration / fastapi-endpoint / vue-component，面向人核对）
 - `CONTEXT.md` — 术语 + ADR 索引 + 架构关键词（必读）
-- `docs/ADR/` — 架构决策记录（ADR-001~009；新决策写 ADR-0XX.md，禁止塞进 CONTEXT.md）
+- `docs/ADR/` — 架构决策记录（ADR-001~012；新决策写 ADR-0XX.md，禁止塞进 CONTEXT.md）
 - `docs/architecture/system-overview.md` — 架构分层、数据流、目录速查
 - `README.md` — 项目背景与定位
 - `3D_SPEC.md` — 3D 茶空间约束（改 three/ 前必读）
@@ -192,5 +192,6 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量�
 - npm audit 本地必须加 `--registry=https://registry.npmjs.org`（npmmirror 不实现 audit endpoint）；`npm audit fix` 后跑 quality 验证无破坏再提交（2026-10-06 沉淀）。
 - caveman-review 技能（main-dev）：评审输出格式变体，一行一条 finding（`L<line>: 🔴🟡🟢 <problem>. <fix>.`）+ 结尾 verdict；不改评审维度与红线，默认评审仍走 expert-reviewer，用户点名/需省 token 时用（2026-10-06 沉淀）。
 - 写作风格 = 80% ASD-STE100（航空维修手册规范）：一句一事实/指令≤20词描述≤25词/主动语态/同物同词/先答案后细节/编号列表每段≤6句/用中文简短/>3部分加 ASCII 图/"用 HTML 解释"→单文件交互页。已消化入 §2，与现有"不废话/编号清单/中文"合并不重复；评估见 docs/agent-eval-baseline.md（2026-10-06 沉淀）。
+- 治理文档须与实现同步：改 CI job 数、ADR 编号、技能数量、代理位置后立即更新 AGENTS.md + 对应规则文档；发现漂移当场修，不遗留（2026-10-07 沉淀：一次修 6 处）。
 
 **2026-10-01 V4 重构**：ADR 拆 `docs/ADR/` 独立文件（ADR-001~009，统一格式）、CONTEXT.md 精简为术语+ADR 索引+架构关键词、新增 `npm run quality` 统一门禁、commit 改英文 conventional、新增 AI Change Protocol + Modification Level。详见 ADR-009。

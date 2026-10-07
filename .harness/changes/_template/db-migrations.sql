@@ -1,0 +1,12 @@
+-- ============================================================
+-- {feat-name} 数据库迁移（upgrade）
+-- 迁移编号：{YYYYMMDD-NN}（参考已有迁移编号规则）
+-- 目的：{一句话说明}
+-- 规则：改模型必须成对；执行前 Read .harness/rules/编码规范.md 数据库规范；
+--       迁移要写迁移逻辑，不能只改表结构。
+-- ============================================================
+
+-- 示例（按需修改或删除，禁止保留无效语句）：
+-- ALTER TABLE {table} ADD COLUMN {column} {type} NOT NULL DEFAULT {default};
+-- CREATE INDEX idx_{table}_{column} ON {table} ({column});
+-- UPDATE {table} SET {new_field} = {migration_logic} WHERE {old_field} IS NOT NULL;
