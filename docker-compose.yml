@@ -30,6 +30,9 @@ services:
       DB_USER: ${DB_USER:-tea_user}
       DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
+      # T11 AI（DashScope）：默认 disabled（无 key 时 AiChatService 502 → 前端降级规则引擎）；
+      # 生产填真实 key（官方变量名 AI_DASHSCOPE_API_KEY）启用 AI 功能，见 DEPLOY.md 0.2
+      AI_DASHSCOPE_API_KEY: ${AI_DASHSCOPE_API_KEY:-disabled}
     depends_on:
       db:
         condition: service_healthy

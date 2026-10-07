@@ -25,6 +25,8 @@ cd C:\tea
 Copy-Item .env.example .env
 #    POSTGRES_PASSWORD / DB_PASSWORD / JWT_SECRET 必须改成强随机值
 #    （JWT_SECRET 生成：python -c "import secrets;print(secrets.token_hex(32))"）
+#    AI_DASHSCOPE_API_KEY 可选：填 DashScope key 启用 AI 品鉴对话；不填默认 disabled，
+#    后端 /api/ai/* 返回 502 → 前端自动降级规则引擎（T11 降级链，production 可无 key 部署）
 
 # 2. 起全套（db 就绪 → backend Flyway 迁移 → frontend 依赖 backend 健康）
 docker compose up -d --build
