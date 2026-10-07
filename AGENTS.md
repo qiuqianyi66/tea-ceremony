@@ -108,7 +108,7 @@
 - **行为测试三规则**：只走公共接口；不 mock 内部协作者（mock 只用于跨进程/外部边界：网络、时钟、DB 驱动）；重构不改测试。
 - 宽重构走 expand-contract：先 expand（新旧并存、CI 保持绿）→ 按包分批迁移（每批独立 commit）→ contract（旧形式无引用后删除）。
 - E2E 用真实等待，选择器用可见文本/角色，不依赖动画中间态；测试发现的缺陷按根因修，单独 commit。
-- CI 12 job 是合并门禁（type-check+build+smoke / Vitest / Biome / npm+pip audit / E2E / axe / 后端语法+pytest / ruff+bandit / Spring Boot Maven / 迁移测试 / Compose 校验）。
+- CI 12 job 是合并门禁（type-check+build+smoke / Vitest / Biome / npm+pip audit / E2E / axe / 后端语法 / pytest / ruff+bandit / Spring Boot Maven / 迁移测试 / Compose 校验）。
 
 ## 10. 禁止事项
 
