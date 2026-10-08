@@ -20,6 +20,7 @@ import com.tea.ai.agent.MentorAgent;
 import com.tea.ai.agent.TasterAgent;
 import com.tea.ai.dto.AiChatRequest;
 import com.tea.ai.dto.ChatMessageDto;
+import com.tea.ai.entity.AiChatMessage;
 import com.tea.ai.entity.AiChatSession;
 import com.tea.ai.vo.AiChatVo;
 import com.tea.common.exception.BadGatewayException;
@@ -27,10 +28,13 @@ import com.tea.common.exception.BadRequestException;
 import com.tea.common.exception.NotFoundException;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.ChatClient.CallResponseSpec;
 import org.springframework.ai.chat.client.ChatClient.ChatClientRequestSpec;
 import org.springframework.ai.chat.messages.AssistantMessage;
+import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.metadata.ChatResponseMetadata;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.model.Generation;
@@ -228,6 +232,70 @@ class AiChatServiceTest {
 
         assertEquals("推荐", vo.content());
         assertNull(vo.sessionId());
+    }
+
+    @Test
+    void ownedSessionAnchorsHistoryBeforeTransparentCall() {
+        mockTransparentReply("锚定回答");
+        AiChatService service = service("test-key");
+        AiChatRequest r = new AiChatRequest(List.of(new ChatMessageDto("user", "继续")), "chat", 3);
+        when(orchestrator.routeToAgent(r)).thenReturn(AgentType.CHAT);
+        when(memoryService.requireSession(1, 3)).thenReturn(new AiChatSession());
+        AiChatMessage oldUser = new AiChatMessage();
+        oldUser.setRole("user");
+        oldUser.setContent("上次问的");
+        AiChatMessage oldAssistant = new AiChatMessage();
+        oldAssistant.setRole("assistant");
+        oldAssistant.setContent("上次答的");
+        when(memoryService.anchorHistory(1, 3)).thenReturn(List.of(oldUser, oldAssistant));
+
+        AiChatVo vo = service.chat(1, r);
+
+        assertEquals("锚定回答", vo.content());
+        assertEquals(3, vo.sessionId());
+        verify(memoryService).appendMessage(3, "user", "继续", "chat", null);
+        verify(memoryService).appendMessage(3, "assistant", "锚定回答", "chat", null);
+        ArgumentCaptor<List<Message>> captor = ArgumentCaptor.forClass(List.class);
+        verify(reqSpec).messages(captor.capture());
+        List<Message> sent = captor.getValue();
+        assertEquals(3, sent.size());
+        assertEquals("上次问的", ((UserMessage) sent.get(0)).getText());
+        assertEquals("上次答的", ((AssistantMessage) sent.get(1)).getText());
+        assertEquals("继续", ((UserMessage) sent.get(2)).getText());
+    }
+
+    @Test
+    void userMessagePersistedBeforeLlmFailure() {
+        AiChatService service = service("disabled");
+        AiChatRequest r = new AiChatRequest(List.of(new ChatMessageDto("user", "问")), "chat", 3);
+        when(orchestrator.routeToAgent(r)).thenReturn(AgentType.CHAT);
+        when(memoryService.requireSession(1, 3)).thenReturn(new AiChatSession());
+        when(memoryService.anchorHistory(1, 3)).thenReturn(List.of());
+
+        assertThrows(BadGatewayException.class, () -> service.chat(1, r));
+
+        verify(memoryService).appendMessage(3, "user", "问", "chat", null);
+        verify(memoryService, never()).appendMessage(eq(3), eq("assistant"), any(), any(), any());
+    }
+
+    @Test
+    void topicDefaultsToFirstUserMessageTruncatedTo20() {
+        AiChatService service = service("test-key");
+        String first = "今天想喝什么茶好呢帮我看看一二三四五六七八九十";  // 24 字
+        AiChatRequest r = new AiChatRequest(List.of(
+                new ChatMessageDto("user", first),
+                new ChatMessageDto("assistant", "推荐龙井"),
+                new ChatMessageDto("user", "继续")), "advisor");
+        when(orchestrator.routeToAgent(r)).thenReturn(AgentType.ADVISOR);
+        when(advisor.chat(1, r)).thenReturn(new AiChatVo("推荐", List.of()));
+        AiChatSession session = new AiChatSession();
+        session.setId(7);
+        when(memoryService.createSession(eq(1), eq(first.substring(0, 20)), eq("advisor")))
+                .thenReturn(session);
+
+        AiChatVo vo = service.chat(1, r);
+
+        assertEquals(7, vo.sessionId());
     }
 
     private void mockTransparentReply(String text) {

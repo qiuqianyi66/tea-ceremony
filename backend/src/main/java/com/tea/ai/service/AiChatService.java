@@ -9,6 +9,7 @@ import com.tea.ai.agent.MentorAgent;
 import com.tea.ai.agent.TasterAgent;
 import com.tea.ai.dto.AiChatRequest;
 import com.tea.ai.dto.ChatMessageDto;
+import com.tea.ai.entity.AiChatMessage;
 import com.tea.ai.entity.AiChatSession;
 import com.tea.ai.vo.AiChatVo;
 import com.tea.common.exception.BadGatewayException;
@@ -28,7 +29,8 @@ import org.springframework.stereotype.Service;
  * AI 聊天服务（M5-S2：五专家派发 + 透明代理回落 + 会话记忆旁路）。
  * 承重墙：key 不可用/上游失败 → 502（前端 teaAI.ts 降级规则引擎）；仅成功调用落计量。
  * 路由：AgentOrchestrator 判定专家类型；null/CHAT 回落透明代理（T11 行为不变）。
- * 记忆旁路：登录用户 + 响应成功后落库（user+assistant）；落库失败不影响 AI 响应（同计量旁路）。
+ * 记忆旁路：登录用户会话内落库——F-8 用户消息 dispatch 前先行（502 不丢），assistant 成功后落；落库失败不影响 AI 响应（同计量旁路）。
+ * 多轮锚定：带 sessionId → 历史 ≤20 前插（F-6，278 Save Plan）。
  * 防越权：带 sessionId 时先 requireSession（非本人 → 404 显式失败）。
  */
 @Slf4j
@@ -74,8 +76,71 @@ public class AiChatService {
             memoryService.requireSession(userId, req.sessionId());
         }
         AgentType type = orchestrator.routeToAgent(req);
-        AiChatVo vo = dispatch(type, userId, req);
-        return remember(userId, req, type, vo);
+        // F-6 多轮锚定（278 Save Plan）：有 sessionId → 历史（≤20）前插进请求 messages
+        AiChatRequest anchored = anchor(userId, req);
+        // F-8 降级不丢用户消息：dispatch 前先落库（LLM 失败/502 时用户消息已提交，响应仍走既有降级抛出路径）
+        Integer sessionId = resolveSession(userId, req, type);
+        persist(sessionId, "user", lastUserMessage(req), agentOf(type, req));
+        AiChatVo vo = dispatch(type, userId, anchored);
+        if (sessionId != null) {
+            persist(sessionId, "assistant", vo.content(), agentOf(type, req));
+            return new AiChatVo(vo.content(), vo.sources(), sessionId);
+        }
+        return vo;
+    }
+
+    /** F-6 多轮锚定：登录 + 有 sessionId → 读历史（归属已校验）转 ChatMessageDto 前插；其余原样返回。 */
+    private AiChatRequest anchor(Integer userId, AiChatRequest req) {
+        if (userId == null || req.sessionId() == null) {
+            return req;
+        }
+        List<AiChatMessage> history = memoryService.anchorHistory(userId, req.sessionId());
+        if (history == null || history.isEmpty()) {
+            return req;
+        }
+        List<ChatMessageDto> prefix = new ArrayList<>();
+        for (AiChatMessage m : history) {
+            if (m.getContent() == null || m.getContent().isBlank()) {
+                continue;
+            }
+            if ("user".equals(m.getRole()) || "assistant".equals(m.getRole())) {
+                prefix.add(new ChatMessageDto(m.getRole(), m.getContent()));
+            }
+        }
+        if (prefix.isEmpty()) {
+            return req;
+        }
+        List<ChatMessageDto> all = new ArrayList<>(prefix);
+        all.addAll(req.messages());
+        return new AiChatRequest(all, req.agent(), req.sessionId());
+    }
+
+    /** 会话解析：游客 null（不落）；已有 sessionId 原样；登录无 sessionId → 开新会话（用户 M5-S2 语义）。失败仅 warn 返回 null。 */
+    private Integer resolveSession(Integer userId, AiChatRequest req, AgentType type) {
+        if (userId == null) {
+            return null;
+        }
+        if (req.sessionId() != null) {
+            return req.sessionId();
+        }
+        try {
+            return memoryService.createSession(userId, topicOf(req), agentOf(type, req)).getId();
+        } catch (Exception e) {
+            log.warn("create chat session failed: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /** 落一条消息（旁路：失败仅 warn，不影响已成功路径；F-8 用户消息先行由调用时序保证）。 */
+    private void persist(Integer sessionId, String role, String content, String agent) {
+        if (sessionId == null) {
+            return;
+        }
+        try {
+            memoryService.appendMessage(sessionId, role, content, agent, null);
+        } catch (Exception e) {
+            log.warn("save chat message failed: {}", e.getMessage());
+        }
     }
 
     /** 五专家派发；null/CHAT 回落透明代理。 */
@@ -98,38 +163,23 @@ public class AiChatService {
         return transparentChat(userId, req);
     }
 
-    /**
-     * 会话记忆旁路（M5-S2）：登录用户 + 成功响应后落库。
-     * 游客不落；sessionId 归属已在 chat() 前置校验（此处直接续写）；
-     * 落库异常仅 warn，不影响已成功的 AI 响应（承重墙不变量）。
-     */
-    private AiChatVo remember(Integer userId, AiChatRequest req, AgentType type, AiChatVo vo) {
-        if (userId == null) {
-            return vo;
-        }
-        try {
-            Integer sessionId = req.sessionId();
-            if (sessionId == null) {
-                sessionId = memoryService.createSession(userId, topicOf(req), agentOf(type, req)).getId();
-            }
-            String agent = agentOf(type, req);
-            memoryService.appendMessage(sessionId, "user", lastUserMessage(req), agent, null);
-            memoryService.appendMessage(sessionId, "assistant", vo.content(), agent, null);
-            return new AiChatVo(vo.content(), vo.sources(), sessionId);
-        } catch (Exception e) {
-            log.warn("save chat memory failed: {}", e.getMessage());
-            return vo;
-        }
-    }
-
     private String agentOf(AgentType type, AiChatRequest req) {
-        return req.agent() != null ? req.agent() : type.name().toLowerCase();
+        if (req.agent() != null) {
+            return req.agent();
+        }
+        // 透明代理（type 为 null）归 chat，与 api-contract 一致
+        return type == null ? "chat" : type.name().toLowerCase();
     }
 
-    /** 会话标题：最后一条用户消息前 100 字（空 → 空串）。 */
+    /** 会话标题（chat 自动建会话时缺省）：首条用户消息前 20 字（决策 D-3/O-6 拍板；空 → 空串）。 */
     private String topicOf(AiChatRequest req) {
-        String last = lastUserMessage(req);
-        return last.length() > 100 ? last.substring(0, 100) : last;
+        for (ChatMessageDto m : req.messages()) {
+            if ("user".equals(m.role()) && m.content() != null && !m.content().isBlank()) {
+                String c = m.content();
+                return c.length() > 20 ? c.substring(0, 20) : c;
+            }
+        }
+        return "";
     }
 
     /** 最后一条用户消息（截断 500 字，防超长输入；与 BaseExpertAgent 同规则）。 */

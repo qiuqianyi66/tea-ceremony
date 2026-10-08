@@ -24,6 +24,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class ChatMemoryService {
 
     private static final int MAX_HISTORY = 100;
+    /** 多轮锚定上限（278 Save Plan；决策 D-2/O-4 拍板）。 */
+    private static final int ANCHOR_LIMIT = 20;
 
     private final AiChatSessionRepository sessionRepository;
     private final AiChatMessageRepository messageRepository;
@@ -70,6 +72,20 @@ public class ChatMemoryService {
     public AiChatSession requireSession(Integer userId, Integer sessionId) {
         return sessionRepository.findByIdAndUserId(sessionId, userId)
                 .orElseThrow(() -> new NotFoundException("会话不存在"));
+    }
+
+    /** 会话全部消息（F-3）：归属校验后按 created_at 正序返回，供历史端点。 */
+    @Transactional(readOnly = true)
+    public List<AiChatMessage> listMessages(Integer userId, Integer sessionId) {
+        requireSession(userId, sessionId);
+        return messageRepository.findBySessionIdOrderByCreatedAtAsc(sessionId);
+    }
+
+    /** 多轮锚定（F-6，278 Save Plan）：归属校验后返回最近 ≤20 条历史（正序，供 LLM 请求前插）。 */
+    @Transactional(readOnly = true)
+    public List<AiChatMessage> anchorHistory(Integer userId, Integer sessionId) {
+        requireSession(userId, sessionId);
+        return history(sessionId, ANCHOR_LIMIT);
     }
 
     @Transactional(readOnly = true)
