@@ -143,4 +143,44 @@ class ChatMemoryServiceTest {
                 .hasMessage("会话不存在");
         verify(sessionRepository, never()).delete(any());
     }
+
+    @Test
+    void listMessagesOwnedReturnsAscending() {
+        when(sessionRepository.findByIdAndUserId(9, 1)).thenReturn(Optional.of(session(9)));
+        when(messageRepository.findBySessionIdOrderByCreatedAtAsc(9))
+                .thenReturn(List.of(message(1), message(2)));
+
+        List<AiChatMessage> msgs = service.listMessages(1, 9);
+
+        assertThat(msgs).extracting(AiChatMessage::getId).containsExactly(1, 2);
+    }
+
+    @Test
+    void listMessagesOthersThrows404() {
+        when(sessionRepository.findByIdAndUserId(9, 1)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.listMessages(1, 9))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessage("会话不存在");
+    }
+
+    @Test
+    void anchorHistoryOwnedReturnsRecentAscending() {
+        when(sessionRepository.findByIdAndUserId(9, 1)).thenReturn(Optional.of(session(9)));
+        when(messageRepository.findBySessionIdOrderByIdDesc(eq(9), any(Pageable.class)))
+                .thenReturn(List.of(message(3), message(2), message(1)));
+
+        List<AiChatMessage> history = service.anchorHistory(1, 9);
+
+        assertThat(history).extracting(AiChatMessage::getId).containsExactly(1, 2, 3);
+    }
+
+    @Test
+    void anchorHistoryOthersThrows404() {
+        when(sessionRepository.findByIdAndUserId(9, 1)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.anchorHistory(1, 9))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessage("会话不存在");
+    }
 }

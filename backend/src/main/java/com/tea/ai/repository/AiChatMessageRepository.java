@@ -7,8 +7,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
  * AI 会话消息 Repository。最近 N 条用 id 倒序 + Pageable；顺序反转由 Service 负责（行为测试三规则）。
+ * 正序全量用于会话历史端点（F-3，created_at 升序）。
  */
 public interface AiChatMessageRepository extends JpaRepository<AiChatMessage, Integer> {
 
     List<AiChatMessage> findBySessionIdOrderByIdDesc(Integer sessionId, Pageable pageable);
+
+    List<AiChatMessage> findBySessionIdOrderByCreatedAtAsc(Integer sessionId);
 }

@@ -40,7 +40,8 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/auth/**", "/api/v1/ai/**", "/api/v1/culture/**", "/actuator/health").permitAll()
+                        .requestMatchers("/api/v1/auth/**", "/api/v1/ai/chat", "/api/v1/culture/**", "/actuator/health").permitAll()
+                        // M5-S2 会话管理：/api/v1/ai/sessions/** 需登录（游客 401，F-10）；仅 /chat 保持公开（前端降级链游客可用）
                         // MCP 工具协议端点（P1-1）：culture-search 只读公开知识检索，与 /api/v1/culture/** 同风险等级；
                         // 未来接入敏感工具（写操作/个人数据）时必须单独收紧鉴权
                         .requestMatchers("/mcp", "/mcp/messages").permitAll()
