@@ -134,9 +134,10 @@ description: tea 接口协议——现有端点、统一约定（前缀/鉴权/�
 
 | 方法 | 路径 | 请求体 | 成功响应 | 错误 |
 |---|---|---|---|---|
-| POST | `/api/v1/ai/chat` | `{messages:[{role(system/user/assistant), content≤4000}]`（1-20 条）；`agent?` ≤50（枚举：chat/advisor/taster/librarian/brewer/mentor；S2 全量生效） | `ApiResponse<{content, sources?}>` 200（sources=知识来源数组，透明代理为 null） | 400 校验失败/未知 agent PARAM_INVALID；**502 BAD_GATEWAY**（无 key/上游失败） |
+| POST | `/api/v1/ai/chat` | `{messages:[{role(system/user/assistant), content≤4000}]`（1-20 条）；`agent?` ≤50（枚举：chat/advisor/taster/librarian/brewer/mentor；S2 全量生效）；`sessionId?`（≥1，M5-S2 会话记忆：带值=续写会话，缺省=登录用户开新会话） | `ApiResponse<{content, sources?, sessionId?}>` 200（sources=知识来源数组，透明代理为 null；sessionId=登录用户会话 id，游客/落库失败为 null） | 400 校验失败/未知 agent PARAM_INVALID；404 会话不存在或非本人（sessionId 越权）；**502 BAD_GATEWAY**（无 key/上游失败） |
 
 > M5-S2 编排：显式 `agent` → 对应专家（advisor 荐茶/teas+regions+processes、taster 品鉴/用户记录、librarian 文化/8 表 RAG、brewer 冲泡/工艺+茶器、mentor 成长/用户记录+常识；各专家回复附 sources）；无 agent 且文化意图关键词命中 → librarian；`agent=chat` 或无意图 → 回落透明代理（messages 原样转发）。未知 agent 值 400。仅成功调用落 `ai_usage_logs`（agent/model/tokens_in/tokens_out/latency；游客 user_id 空）。key 配置 `AI_DASHSCOPE_API_KEY`，无 key 占位 `disabled` 时 Service 显式 502。
+> M5-S2 会话记忆（2026-10-08）：登录用户响应成功落 `ai_chat_sessions`/`ai_messages`（user+assistant 各一条，agent 归类；游客不落）；带 `sessionId` 先做归属校验（非本人 → 404，不浪费 LLM 调用）；落库失败仅日志不影响响应（旁路，同计量）。prompt 版本化：专家 system prompt 读 `agent_prompts` active 版本，无则回退内置常量。
 
 ### MCP 工具协议 `/mcp`（P1-1 已实现，公开，非 HTTP JSON 契约）
 

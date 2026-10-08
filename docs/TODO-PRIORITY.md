@@ -15,7 +15,7 @@ owner: yanha
 |---|---|---|---|
 | P0-1a | **M5-S1 多智能体试点** | ✅ 完成（31c54ce）：AgentType 枚举 + AgentOrchestrator 路由 + librarian 专家 + AiUsageLogger + sources | 已交付 |
 | P0-1b | **M5-S2 数据库落地** | ✅ 完成（4d79c70+6634677）：ADR-013 + pgvector 镜像 + V3 迁移（culture_chunks/会话记忆表）+ 往返测试 + 8 表 RAG + CI/Testcontainers 同步 | 已交付 |
-| P0-1c | **M5-S2 剩余**：混合检索查询实现（pgvector 向量路径）、embedding 回填管线、五专家注册（advisor/taster/brewer/mentor）、会话记忆读写（ai_chat_sessions/ai_messages 已建表无代码）、prompt 版本化（agent_prompts 表无数据） | 表/基建就绪，代码未写 | 混合检索+embedding 依赖 AI key（P0-3）；专家注册/会话记忆可先行 |
+| P0-1c | **M5-S2 剩余**：混合检索查询实现（pgvector 向量路径）、embedding 回填管线、会话记忆读写（ai_chat_sessions/ai_messages 已建表无代码）、prompt 版本化（agent_prompts 表无数据） | 表/基建就绪；五专家注册已由 P0-1a（31c54ce）覆盖 ✅；会话记忆+prompt 版本化已开工（2026-10-08，docs/plans/PLAN-P0） | 混合检索+embedding 依赖 AI key（P0-3）；会话记忆读写在 PLAN-P0 路线 A |
 | P0-2 | **前端返工（企业级规范落地）** | 示范完成（colorTokens.ts 10 令牌 + TasteRadarChart/TeaKnowledgeCard 2 组件）；**518 处硬编码剩余 ~500 处未替换**；视觉会变页面需先补 DESIGN_SPEC + 截图验证（从未成功截图） | 逐文件等价替换（值=令牌直接换）→ 视觉批次过设计门禁 |
 | P0-3 | **AI key 启用** | 当前 502 降级态（无 key） | 用户填 `AI_DASHSCOPE_API_KEY` 到 .env → `docker compose up -d backend` |
 
