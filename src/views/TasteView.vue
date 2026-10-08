@@ -677,14 +677,15 @@ const averageDimensions = computed(() => {
 
 <style scoped>
 .taste-dark {
-  --color-wood: #e8d5b0;
-  --color-wood-light: #b8a080;
-  --color-cream: #1a120a;
-  --color-paper: #2a1f15;
-  --color-tea-gold: #c9a96e;
-  --color-ink: #f5e6c8;
+  /* 暗色 6 令牌 = @theme -dark 变体（值见 DESIGN_SPEC），此处仅做别名重绑定 */
+  --color-wood: var(--color-wood-dark);
+  --color-wood-light: var(--color-wood-light-dark);
+  --color-cream: var(--color-cream-dark);
+  --color-paper: var(--color-paper-dark);
+  --color-tea-gold: var(--color-tea-gold-dark);
+  --color-ink: var(--color-ink-dark);
   background: linear-gradient(160deg, #0f1a14 0%, #1a2420 50%, #0d1410 100%);
-  color: #e8d5b0;
+  color: var(--color-wood-dark);
 }
 .taste-dark :deep(.glass-panel) {
   background: rgba(26, 18, 12, 0.72) !important;
@@ -699,7 +700,7 @@ const averageDimensions = computed(() => {
 }
 .taste-dark textarea {
   background: rgba(245, 241, 230, 0.06);
-  color: #e8d5b0;
+  color: var(--color-wood-dark);
   border-color: rgba(201, 169, 110, 0.25);
 }
 .taste-dark textarea::placeholder { color: rgba(232, 213, 176, 0.35); }

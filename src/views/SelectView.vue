@@ -234,7 +234,7 @@ const types = getAllTypes()
 .mood-btn:hover { border-color: rgba(201, 169, 110, 0.5); }
 .mood-btn.active {
   background: rgba(201, 169, 110, 0.85);
-  border-color: transparent; color: #1a120a; font-weight: 500;
+  border-color: transparent; color: var(--color-cream-dark); font-weight: 500;
 }
 
 /* 茶类筛选 */
@@ -254,7 +254,7 @@ const types = getAllTypes()
 .type-btn.active {
   background: rgba(201, 169, 110, 0.2);
   border-color: rgba(201, 169, 110, 0.7);
-  color: #e8d5b0;
+  color: var(--color-wood-dark);
 }
 
 /* 茶叶网格 */
@@ -317,7 +317,7 @@ const types = getAllTypes()
   color: rgba(201, 169, 110, 0.9);
 }
 .master-name {
-  font-size: 0.78rem; color: #e8d5b0; margin: 0;
+  font-size: 0.78rem; color: var(--color-wood-dark); margin: 0;
 }
 .master-quote {
   font-size: 0.7rem; color: rgba(245, 241, 230, 0.45);

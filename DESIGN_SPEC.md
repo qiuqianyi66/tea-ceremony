@@ -28,6 +28,23 @@
 | `indigo-deep` 黛青 | `#36454F` | AI 茶灵相关 | — |
 | `paper` 纸色 | `#F5F0E8` | 卡片背景 | `--color-paper` |
 
+### 暗色变体（-dark，深色茶席 brew-dark / taste-dark）
+
+| 令牌 | 色值 | 用途 | CSS 变量 |
+|------|------|------|---------|
+| `cream-dark` 暗宣纸 | `#1A120A` | 暗色页面背景（近黑） | `--color-cream-dark` |
+| `paper-dark` 暗纸 | `#2A1F15` | 暗色卡片/面板 | `--color-paper-dark` |
+| `ink-dark` 暗墨（暖白） | `#F5E6C8` | 暗色正文 | `--color-ink-dark` |
+| `tea-gold-dark` 暗茶汤金 | `#C9A96E` | 暗色场景唯一强调色 | `--color-tea-gold-dark` |
+| `wood-dark` 暗木 | `#E8D5B0` | 暗色主文字/标题 | `--color-wood-dark` |
+| `wood-light-dark` 暗木浅 | `#B8A080` | 暗色次要文字 | `--color-wood-light-dark` |
+| `wood-deep-dark` 深棕 | `#3A2A1A` | 暗色滚动条 thumb（浏览器表面定制） | `--color-wood-deep-dark` |
+| `wood-deep-dark-hover` 深棕亮 | `#5A4030` | 暗色滚动条 hover | `--color-wood-deep-dark-hover` |
+
+> 暗色变体值不可随意改动；`brew-dark` / `taste-dark` 作用域以别名重绑定（`--color-wood: var(--color-wood-dark)`）复用浅色令牌名，Tailwind 工具类照常解析。
+> 茶金亮化发光派生（`#F0E0C0` / `#E8B860` / `#E8C87A`，标题/温度/滑杆高光）为装饰性派生色，待令牌化，暂允许裸值并注释。
+> TS 消费（Chart.js/ECharts）走 `src/styles/colorTokens.ts` 的 `*Dark` 常量，与 CSS 令牌同值。
+
 ### 场景配色（锁定）
 
 - 首页：墨色 → 宣纸白 → 木色
@@ -35,6 +52,7 @@
 - AI 茶灵：黛青 + 茶汤金
 - 成就/收藏：朱砂印章感
 - 茶席：竹青 + 茶汤金
+- 深色茶席（冲泡/品鉴/茶灵/选茶）：暗色变体令牌（-dark 系），唯一强调色 `tea-gold-dark`
 
 ### 对比度底线
 

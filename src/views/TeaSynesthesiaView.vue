@@ -361,7 +361,7 @@ onUnmounted(() => {
 }
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #c9a96e, #e8d9b8);
+  background: linear-gradient(90deg, var(--color-tea-gold-dark), #e8d9b8);
   border-radius: 999px;
   transition: width 0.5s linear;
 }
@@ -390,7 +390,7 @@ onUnmounted(() => {
   color: #1a2420;
   font-weight: 500;
 }
-.synth-btn.primary:hover { background: #c9a96e; }
+.synth-btn.primary:hover { background: var(--color-tea-gold-dark); }
 
 /* 结束态 */
 .synth-overlay.finish {

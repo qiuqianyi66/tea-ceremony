@@ -13,6 +13,17 @@
   --color-cinnabar: #A33B2E;
   --color-indigo-deep: #36454F;
 
+  /* 暗色茶席变体（brew-dark / taste-dark）：浅色令牌的暗色镜像，色值权威在 DESIGN_SPEC「一、色彩令牌·暗色变体」 */
+  --color-wood-dark: #e8d5b0;
+  --color-wood-light-dark: #b8a080;
+  --color-cream-dark: #1a120a;
+  --color-paper-dark: #2a1f15;
+  --color-tea-gold-dark: #c9a96e;
+  --color-ink-dark: #f5e6c8;
+  /* 浏览器表面定制：暗色滚动条（木色深棕档，thumb / hover） */
+  --color-wood-deep-dark: #3a2a1a;
+  --color-wood-deep-dark-hover: #5a4030;
+
   /* 字体角色（DESIGN_SPEC 二）：正文黑体 / 标题衬线。系统字体栈，不引入外部字体资产（PWA 离线优先） */
   --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
   --font-serif: 'Songti SC', 'SimSun', 'Noto Serif SC', 'Source Han Serif CN', serif;
@@ -209,8 +220,8 @@ a {
 /* 深色茶席页（.brew-dark）暗色版浏览器表面定制：只作用于冲泡页，不污染全局浅色主题。
    选区 = 茶金实底深字；滚动条 = 8px 深棕 thumb + 透明 track；焦点环 = 茶金 2px。 */
 .brew-dark ::selection {
-  background: #c9a96e;
-  color: #1a120a;
+  background: var(--color-tea-gold-dark);
+  color: var(--color-cream-dark);
 }
 .brew-dark ::-webkit-scrollbar {
   width: 8px;
@@ -219,14 +230,14 @@ a {
   background: transparent;
 }
 .brew-dark ::-webkit-scrollbar-thumb {
-  background: #3a2a1a;
+  background: var(--color-wood-deep-dark);
   border-radius: 4px;
 }
 .brew-dark ::-webkit-scrollbar-thumb:hover {
-  background: #5a4030;
+  background: var(--color-wood-deep-dark-hover);
 }
 .brew-dark :focus-visible {
-  outline: 2px solid #c9a96e;
+  outline: 2px solid var(--color-tea-gold-dark);
   outline-offset: 2px;
   border-radius: 2px;
 }
@@ -240,11 +251,11 @@ body:has(.brew-dark)::-webkit-scrollbar-track {
   background: transparent;
 }
 body:has(.brew-dark)::-webkit-scrollbar-thumb {
-  background: #3a2a1a;
+  background: var(--color-wood-deep-dark);
   border-radius: 4px;
 }
 body:has(.brew-dark)::-webkit-scrollbar-thumb:hover {
-  background: #5a4030;
+  background: var(--color-wood-deep-dark-hover);
 }
 
 /* 标准属性滚动条着色：现代 Chrome 默认 overlay 滚动条会忽略 ::-webkit-scrollbar，
@@ -252,7 +263,7 @@ body:has(.brew-dark)::-webkit-scrollbar-thumb:hover {
 body:has(.brew-dark),
 .brew-dark {
   scrollbar-width: thin;
-  scrollbar-color: #3a2a1a transparent;
+  scrollbar-color: var(--color-wood-deep-dark) transparent;
 }
 
 /* 尊重系统减弱动效偏好（prefers-reduced-motion）：动画与过渡降为瞬时 */

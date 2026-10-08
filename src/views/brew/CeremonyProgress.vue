@@ -36,17 +36,17 @@ defineProps<{
   font-size: 0.75rem; font-weight: 600;
   background: rgba(42, 31, 21, 0.9);
   border: 2px solid rgba(201, 169, 110, 0.4);
-  color: #b8a080; z-index: 1; transition: all 0.3s;
+  color: var(--color-wood-light-dark); z-index: 1; transition: all 0.3s;
 }
 .ceremony-dot.active {
-  background: linear-gradient(135deg, #c9a96e, #8b6b3a);
-  border-color: #e8c87a; color: #1a120a;
+  background: linear-gradient(135deg, var(--color-tea-gold-dark), #8b6b3a);
+  border-color: #e8c87a; color: var(--color-cream-dark);
   box-shadow: 0 0 16px rgba(201, 169, 110, 0.5);
 }
 .ceremony-dot.done {
   background: rgba(201, 169, 110, 0.3);
   border-color: rgba(201, 169, 110, 0.6);
-  color: #c9a96e;
+  color: var(--color-tea-gold-dark);
 }
 .ceremony-step > span {
   margin-top: 0.4rem; font-size: 0.72rem; letter-spacing: 0.05em;
@@ -58,6 +58,6 @@ defineProps<{
   background: rgba(201, 169, 110, 0.15);
 }
 .ceremony-line.filled {
-  background: linear-gradient(90deg, #c9a96e, rgba(201, 169, 110, 0.3));
+  background: linear-gradient(90deg, var(--color-tea-gold-dark), rgba(201, 169, 110, 0.3));
 }
 </style>

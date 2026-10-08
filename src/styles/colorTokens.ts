@@ -24,6 +24,18 @@ export const colorTokens = {
   indigoDeep: '#36454F',
   /** 卡片背景 */
   paper: '#F5F0E8',
+  /** 暗色茶席变体（brew-dark / taste-dark）：与 CSS -dark 令牌同值，供 JS/图表消费 */
+  creamDark: '#1a120a',
+  /** 暗色卡片背景 */
+  paperDark: '#2a1f15',
+  /** 暗色正文（暖白） */
+  inkDark: '#f5e6c8',
+  /** 暗色强调（暗色场景唯一强调色） */
+  teaGoldDark: '#c9a96e',
+  /** 暗色主文字/标题 */
+  woodDark: '#e8d5b0',
+  /** 暗色次要文字 */
+  woodLightDark: '#b8a080',
 } as const
 
 export type ColorToken = keyof typeof colorTokens

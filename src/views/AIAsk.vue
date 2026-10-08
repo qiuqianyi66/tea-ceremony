@@ -59,7 +59,7 @@ async function sendMessage(text?: string) {
     <!-- 顶栏 -->
     <header class="ai-topbar">
       <div class="ai-title-wrap">
-        <IconBot class="w-6 h-6 text-[#c9a96e]" />
+        <IconBot class="w-6 h-6 text-[var(--color-tea-gold-dark)]" />
         <div>
           <h2 class="ai-title">茶灵</h2>
           <p class="ai-sub">你的私人茶道师傅</p>
@@ -74,7 +74,7 @@ async function sendMessage(text?: string) {
     <div ref="scrollRef" class="ai-chat">
       <!-- 初始空状态 -->
       <div v-if="messages.length === 0" class="ai-empty">
-        <IconCupSoda class="w-14 h-14 mx-auto mb-4 text-[#c9a96e]" />
+        <IconCupSoda class="w-14 h-14 mx-auto mb-4 text-[var(--color-tea-gold-dark)]" />
         <p class="ai-empty-text">有什么关于茶的问题想问？</p>
         <div class="ai-suggestions">
           <button v-for="s in suggestions" :key="s" @click="sendMessage(s)"
@@ -189,13 +189,13 @@ async function sendMessage(text?: string) {
   padding: 0.7rem 0.95rem; border-radius: 1rem; border-top-left-radius: 0.2rem;
   background: rgba(16, 26, 22, 0.75);
   border: 1px solid rgba(201, 169, 110, 0.2);
-  font-size: 0.88rem; line-height: 1.7; color: #e8d5b0;
+  font-size: 0.88rem; line-height: 1.7; color: var(--color-wood-dark);
 }
 .ai-user-bubble {
   max-width: 75%;
   padding: 0.7rem 0.95rem; border-radius: 1rem; border-top-right-radius: 0.2rem;
   background: rgba(201, 169, 110, 0.9);
-  color: #1a120a;
+  color: var(--color-cream-dark);
   font-size: 0.88rem; line-height: 1.6;
 }
 
@@ -223,7 +223,7 @@ async function sendMessage(text?: string) {
   flex: 1; padding: 0.75rem 1rem; border-radius: 0.8rem;
   background: rgba(245, 241, 230, 0.08);
   border: 1px solid rgba(245, 241, 230, 0.15);
-  color: #e8d5b0; font-size: 0.9rem;
+  color: var(--color-wood-dark); font-size: 0.9rem;
   outline: none; transition: border-color 0.25s;
   font-family: inherit;
 }
@@ -232,7 +232,7 @@ async function sendMessage(text?: string) {
 .ai-send-btn {
   padding: 0.75rem 1.4rem; border-radius: 0.8rem;
   background: rgba(201, 169, 110, 0.9);
-  color: #1a120a; font-weight: 500;
+  color: var(--color-cream-dark); font-weight: 500;
   border: none; cursor: pointer; transition: background 0.25s;
   font-family: inherit; font-size: 0.9rem;
   min-height: 2.75rem;

@@ -21,7 +21,7 @@ const ui = useUiStore()
           :key="t.id"
           class="pointer-events-auto rounded-xl border px-4 py-2.5 text-sm leading-snug shadow-lg backdrop-blur-sm"
           :class="[
-            'border-[var(--color-tea-gold)]/40 bg-[#1a120a]/92 text-[#f5f1e6]',
+            'border-[var(--color-tea-gold)]/40 bg-[var(--color-cream-dark)]/92 text-[#f5f1e6]',
             t.type === 'success' && 'border-[#aed581]/50',
             t.type === 'error' && 'border-[#ef5350]/55',
           ]"

@@ -34,14 +34,14 @@ function applyUpdate() {
     <Transition name="pwa-update">
       <div
         v-if="needRefresh"
-        class="fixed bottom-4 right-4 z-[110] flex max-w-[92vw] items-center gap-3 rounded-xl border border-[var(--color-tea-gold)]/40 bg-[#1a120a]/95 px-4 py-3 text-sm leading-snug text-[#f5f1e6] shadow-lg backdrop-blur-sm"
+        class="fixed bottom-4 right-4 z-[110] flex max-w-[92vw] items-center gap-3 rounded-xl border border-[var(--color-tea-gold)]/40 bg-[var(--color-cream-dark)]/95 px-4 py-3 text-sm leading-snug text-[#f5f1e6] shadow-lg backdrop-blur-sm"
         role="status"
         aria-live="polite"
       >
         <span>新版本已就绪，更新后体验最新内容</span>
         <button
           type="button"
-          class="shrink-0 rounded-lg bg-[var(--color-tea-gold)] px-3 py-1.5 font-medium text-[#1a120a]"
+          class="shrink-0 rounded-lg bg-[var(--color-tea-gold)] px-3 py-1.5 font-medium text-[var(--color-cream-dark)]"
           @click="applyUpdate"
         >
           立即更新

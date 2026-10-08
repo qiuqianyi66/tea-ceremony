@@ -118,7 +118,7 @@ function finish() {
     particleCount: 90,
     spread: 75,
     origin: { y: 0.6 },
-    colors: ['#C9A96E', colorTokens.teaGold, '#E8D9B8', '#6B8E23', colorTokens.wood],
+    colors: [colorTokens.teaGoldDark, colorTokens.teaGold, '#E8D9B8', '#6B8E23', colorTokens.wood],
     scalar: 1.1,
   })
   setTimeout(() => {
@@ -127,14 +127,14 @@ function finish() {
       angle: 60,
       spread: 55,
       origin: { x: 0 },
-      colors: ['#C9A96E', colorTokens.teaGold, '#E8D9B8'],
+      colors: [colorTokens.teaGoldDark, colorTokens.teaGold, '#E8D9B8'],
     })
     confetti({
       particleCount: 50,
       angle: 120,
       spread: 55,
       origin: { x: 1 },
-      colors: ['#C9A96E', colorTokens.teaGold, '#E8D9B8'],
+      colors: [colorTokens.teaGoldDark, colorTokens.teaGold, '#E8D9B8'],
     })
   }, 250)
 }

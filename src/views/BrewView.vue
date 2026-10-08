@@ -479,7 +479,7 @@ watch(
         @click="brewSkin = s.id"
         class="min-w-[44px] min-h-[44px] px-3 flex items-center justify-center rounded-full transition-all"
         :class="brewSkin === s.id
-          ? 'bg-[var(--color-tea-gold)]/80 text-[#1a120a]'
+          ? 'bg-[var(--color-tea-gold)]/80 text-[var(--color-cream-dark)]'
           : 'text-[var(--color-wood-light)]/70 hover:text-[var(--color-wood)]'"
       >
         {{ s.label }}
@@ -698,18 +698,20 @@ watch(
 
 <style scoped>
 /* UI 方向 A：毛玻璃深色面板 + 琥珀描边 + 发光温度
-   与 3D 夜色暖光茶席背景协调 */
+   与 3D 夜色暖光茶席背景协调
+   暗色 6 令牌 = @theme -dark 变体（值见 DESIGN_SPEC），此处仅做别名重绑定；
+   发光派生色（#f0e0c0 / #e8b860 / #e8c87a 茶金亮化）待令牌化，暂保留裸值。 */
 .brew-dark {
-  --color-wood: #e8d5b0;
-  --color-wood-light: #b8a080;
-  --color-cream: #1a120a;
-  --color-paper: #2a1f15;
-  --color-tea-gold: #c9a96e;
-  --color-ink: #f5e6c8;
+  --color-wood: var(--color-wood-dark);
+  --color-wood-light: var(--color-wood-light-dark);
+  --color-cream: var(--color-cream-dark);
+  --color-paper: var(--color-paper-dark);
+  --color-tea-gold: var(--color-tea-gold-dark);
+  --color-ink: var(--color-ink-dark);
   /* 胶片颗粒强度旋钮：参考 three.js FilmPass noise 默认 0.02、上限约 0.08，
      本场景实拍感取 0.04 起步，范围 0.03~0.05 可调（抖音截图感） */
   --grain-opacity: 0.04;
-  color: #e8d5b0;
+  color: var(--color-wood-dark);
 }
 
 .brew-dark :deep(.glass-panel) {

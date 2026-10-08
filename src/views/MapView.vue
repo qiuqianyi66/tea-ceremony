@@ -7,6 +7,7 @@ import { CanvasRenderer } from 'echarts/renderers'
 import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { useRouter } from 'vue-router'
 import chinaMapUrl from '@/data/china-map.json?url'
+import { colorTokens } from '@/styles/colorTokens'
 import { type TeaRegion as MountainRegion, TEA_REGIONS } from '@/data/tea-mountain-regions'
 import { findTeaByName, getTeaRegion, type TeaRegion, teaRegions } from '@/data/tea-regions'
 
@@ -116,9 +117,9 @@ async function initChart(): Promise<void> {
       tooltip: {
         trigger: 'item',
         backgroundColor: 'rgba(26, 18, 12, 0.92)',
-        borderColor: '#c9a96e',
+        borderColor: colorTokens.teaGoldDark,
         borderWidth: 1,
-        textStyle: { color: '#f5e6c8', fontSize: 13 },
+        textStyle: { color: colorTokens.inkDark, fontSize: 13 },
         formatter: (params: unknown) => {
           const p = params as { name: string; data?: { value?: number } }
           const region = getTeaRegion(p.name)
@@ -128,7 +129,7 @@ async function initChart(): Promise<void> {
           }
           const teaNames = region.famousTeas.map((t) => t.name).join('、')
           return `<div style="font-weight:bold;margin-bottom:4px;color:#e8c87a">${p.name}</div>
-          <div style="margin-bottom:4px;color:#c9a96e;font-size:12px">${region.zone}</div>
+          <div style="margin-bottom:4px;color:${colorTokens.teaGoldDark};font-size:12px">${region.zone}</div>
           <div style="margin-bottom:4px;font-size:12px">代表名茶：${teaNames}</div>
           <div style="opacity:0.7;font-size:11px">${region.climate.slice(0, 30)}…</div>`
         },
@@ -203,7 +204,7 @@ onUnmounted(() => {
 const categoryColors: Record<string, string> = {
   绿茶: '#7ba05b',
   白茶: '#d4c5a0',
-  黄茶: '#c9a96e',
+  黄茶: colorTokens.teaGoldDark,
   乌龙茶: '#b87333',
   红茶: '#8b3a3a',
   黑茶: '#3d2b1f',

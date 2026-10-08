@@ -53,7 +53,7 @@ const props = withDefaults(defineProps<Props>(), {
   size: 280,
 })
 
-// 维度配置（色值走 DESIGN_SPEC 令牌常量；#C9A96E 为扩展色，待 DESIGN_SPEC 增补后入 colorTokens）
+// 维度配置（色值全部走 DESIGN_SPEC 令牌常量，含暗色变体 teaGoldDark）
 const DIMENSIONS = [
   { key: 'bitterness', label: '苦涩度', color: colorTokens.woodLight },
   { key: 'sweetness', label: '甜度', color: colorTokens.teaGold },
@@ -61,7 +61,7 @@ const DIMENSIONS = [
   { key: 'body', label: '醇厚度', color: colorTokens.wood },
   { key: 'aroma', label: '香气', color: colorTokens.cinnabar },
   { key: 'rhyme', label: '汤感', color: colorTokens.indigoDeep },
-  { key: 'shape', label: '身心', color: '#C9A96E' },
+  { key: 'shape', label: '身心', color: colorTokens.teaGoldDark },
   { key: 'mind', label: '整体', color: colorTokens.ink },
 ] as const
 
