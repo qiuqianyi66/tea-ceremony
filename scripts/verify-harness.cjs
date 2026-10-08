@@ -77,15 +77,18 @@ if (structureRules) {
 // 3. CI job 数（只统计 jobs: 块内的两空格缩进 job 名，排除 on: 下的 push/pull_request）
 const ci = read('.github/workflows/ci.yml');
 let ciJobs = 0;
+let ciJobsList = [];
+let ciClaim = null;
 if (!ci) {
   errors.push('.github/workflows/ci.yml 不存在');
 } else {
   const jobsIdx = ci.search(/^jobs:$/m);
   const jobsBody = jobsIdx >= 0 ? ci.slice(jobsIdx) : ci;
   ciJobs = (jobsBody.match(/^  [a-z][a-z0-9-]*:$/gm) || []).length;
-  const claim = agents.match(/CI (\d+) job/);
-  if (claim && ciJobs !== parseInt(claim[1], 10)) {
-    errors.push(`AGENTS.md 声明 CI ${claim[1]} job，ci.yml 实际 ${ciJobs} job`);
+  ciJobsList = (jobsBody.match(/^  [a-z][a-z0-9-]*:$/gm) || []).map(s => s.replace(/^  /, '').replace(/:$/, ''));
+  ciClaim = agents.match(/CI (\d+) job/);
+  if (ciClaim && ciJobs !== parseInt(ciClaim[1], 10)) {
+    errors.push(`AGENTS.md 声明 CI ${ciClaim[1]} job，ci.yml 实际 ${ciJobs} job`);
   }
 }
 
@@ -329,6 +332,7 @@ if (fs.existsSync(changesDir)) {
 // 输出
 console.log('=== Harness 一致性体检 ===');
 console.log(`AGENTS.md ${agentsLines} 行 | ADR ${adrNums.length} 个 | CI ${ciJobs} job | .agents/skills ${agentsSkillDirs} 个 | .harness/skills ${harnessTotal} 个`);
+console.log(`CI jobs 进出: ci.yml ${ciJobs} [${ciJobsList.join(', ')}] vs AGENTS.md 声明 ${ciClaim ? ciClaim[1] : '（未声明）'}${ciClaim && ciJobs !== parseInt(ciClaim[1], 10) ? ' ⚠ 不一致' : ''}`);
 for (const w of warnings) console.log(`⚠ ${w}`);
 if (errors.length === 0) {
   console.log('ERRORS: []');
