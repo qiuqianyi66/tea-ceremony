@@ -3,6 +3,8 @@ package com.tea.architecture;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.domain.JavaField;
+import com.tngtech.archunit.core.domain.JavaMethod;
+import com.tngtech.archunit.core.domain.JavaAnnotation;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.lang.ArchCondition;
@@ -10,7 +12,9 @@ import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.lang.ConditionEvents;
 import com.tngtech.archunit.lang.SimpleConditionEvent;
 import org.junit.jupiter.api.Test;
+import org.springframework.transaction.annotation.Transactional;
 
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.methods;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
 /**
@@ -65,6 +69,48 @@ public class LayerDependencyTest {
         });
 
     /**
+     * 编码规范 §7 + ADR-014：service 写方法 @Transactional 必须带 rollbackFor；只读必须 readOnly=true。
+     * 基线 2026-10-08：6 处写方法缺 rollbackFor（已修复 c562252），readOnly 9 处全部合规。
+     */
+    public static final ArchRule transactionalWriteMethodsNeedRollbackFor = methods()
+        .that().areDeclaredInClassesThat().resideInAPackage("..service..")
+        .and().areAnnotatedWith(Transactional.class)
+        .should(new ArchCondition<>("写方法声明 rollbackFor / 只读声明 readOnly=true") {
+            @Override
+            public void check(JavaMethod method, ConditionEvents events) {
+                JavaAnnotation annotation = method.getAnnotationOfType(Transactional.class.getName());
+                if (Boolean.TRUE.equals(annotation.get("readOnly"))) {
+                    events.add(SimpleConditionEvent.satisfied(method, "只读方法 readOnly=true"));
+                } else if (annotation.get("rollbackFor") == null) {
+                    events.add(SimpleConditionEvent.violated(method,
+                        "❌ 写方法 @Transactional 缺 rollbackFor 属性。\n"
+                        + "✅ FIX: 改为 @Transactional(rollbackFor = Exception.class)。\n"
+                        + "📖 See: .harness/rules/编码规范.md §7（事务）+ ADR-014"));
+                }
+            }
+        });
+
+    /**
+     * 编码规范 §7 + ADR-014：controller 方法统一返回 ApiResponse<T>（错误由全局异常处理器兜底）。
+     * 基线 2026-10-08：6 个 controller 14 个方法全部 ApiResponse，0 违规。
+     * getRawReturnType 取原始类型（getReturnType().getName() 会含泛型参数）。
+     */
+    public static final ArchRule controllersReturnApiResponse = methods()
+        .that().areDeclaredInClassesThat().resideInAPackage("..controller..")
+        .and().arePublic()
+        .should(new ArchCondition<>("返回 ApiResponse<?>") {
+            @Override
+            public void check(JavaMethod method, ConditionEvents events) {
+                if (!method.getRawReturnType().getName().equals("com.tea.common.response.ApiResponse")) {
+                    events.add(SimpleConditionEvent.violated(method,
+                        "❌ Controller 方法返回 " + method.getReturnType().getName() + "，非 ApiResponse。\n"
+                        + "✅ FIX: 返回 ApiResponse<T>（成功 ApiResponse.ok(...)，错误由全局异常处理器兜底）。\n"
+                        + "📖 See: .harness/rules/编码规范.md §7（响应契约）+ ADR-014"));
+                }
+            }
+        });
+
+    /**
      * Surefire 执行入口：编程式运行全部规则（唯一执行路径，禁被 ArchUnit 引擎静默跳过）。
      */
     @Test
@@ -76,5 +122,7 @@ public class LayerDependencyTest {
         serviceMustNotDependOnController.check(classes);
         repositoryMustNotDependOnUpperLayers.check(classes);
         noFieldInjection.check(classes);
+        transactionalWriteMethodsNeedRollbackFor.check(classes);
+        controllersReturnApiResponse.check(classes);
     }
 }
