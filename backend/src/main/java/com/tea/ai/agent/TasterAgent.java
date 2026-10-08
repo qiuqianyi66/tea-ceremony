@@ -2,6 +2,7 @@ package com.tea.ai.agent;
 
 import com.tea.ai.dto.AiChatRequest;
 import com.tea.ai.service.AiUsageLogger;
+import com.tea.ai.service.PromptService;
 import com.tea.ai.vo.AiChatVo;
 import com.tea.common.response.PageResult;
 import com.tea.record.service.TastingRecordService;
@@ -45,8 +46,9 @@ public class TasterAgent extends BaseExpertAgent {
     public TasterAgent(ChatClient.Builder chatClientBuilder,
                        TastingRecordService tastingRecordService,
                        AiUsageLogger usageLogger,
+                       PromptService promptService,
                        @Value("${spring.ai.dashscope.api-key:}") String apiKey) {
-        super(chatClientBuilder, usageLogger, apiKey);
+        super(chatClientBuilder, usageLogger, promptService, apiKey);
         this.tastingRecordService = tastingRecordService;
     }
 
@@ -55,7 +57,7 @@ public class TasterAgent extends BaseExpertAgent {
         String question = lastUserMessage(req);
         List<RecordVo> records = recentRecords(userId);
         long start = System.currentTimeMillis();
-        ChatResponse response = callLlm(SYSTEM_PROMPT + "\n\n【用户品鉴记录】\n" + renderContext(records), question);
+        ChatResponse response = callLlm(systemPrompt("taster", SYSTEM_PROMPT) + "\n\n【用户品鉴记录】\n" + renderContext(records), question);
         return toVo(userId, req, response, collectSources(records), start);
     }
 

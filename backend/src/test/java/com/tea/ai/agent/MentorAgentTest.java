@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 import com.tea.ai.dto.AiChatRequest;
 import com.tea.ai.dto.ChatMessageDto;
 import com.tea.ai.service.AiUsageLogger;
+import com.tea.ai.service.PromptService;
 import com.tea.ai.vo.AiChatVo;
 import com.tea.common.exception.BadGatewayException;
 import com.tea.common.response.PageResult;
@@ -45,6 +46,7 @@ class MentorAgentTest {
     private final TastingRecordService tastingService = mock(TastingRecordService.class);
     private final CultureSearchService search = mock(CultureSearchService.class);
     private final AiUsageLogger usageLogger = mock(AiUsageLogger.class);
+    private final PromptService promptService = mock(PromptService.class);
 
     private MentorAgent agent(String apiKey) {
         when(builder.build()).thenReturn(chatClient);
@@ -56,7 +58,7 @@ class MentorAgentTest {
         when(response.getMetadata()).thenReturn(metadata);
         when(metadata.getModel()).thenReturn("qwen-plus");
         when(metadata.getUsage()).thenReturn(null);
-        return new MentorAgent(builder, tastingService, search, usageLogger, apiKey);
+        return new MentorAgent(builder, tastingService, search, usageLogger, promptService, apiKey);
     }
 
     private static AiChatRequest question(String q) {

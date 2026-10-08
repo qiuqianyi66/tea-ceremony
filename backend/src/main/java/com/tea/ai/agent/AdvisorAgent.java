@@ -2,6 +2,7 @@ package com.tea.ai.agent;
 
 import com.tea.ai.dto.AiChatRequest;
 import com.tea.ai.service.AiUsageLogger;
+import com.tea.ai.service.PromptService;
 import com.tea.ai.vo.AiChatVo;
 import com.tea.culture.service.CultureSearchService;
 import com.tea.culture.vo.CultureSearchResult;
@@ -38,8 +39,9 @@ public class AdvisorAgent extends BaseExpertAgent {
     public AdvisorAgent(ChatClient.Builder chatClientBuilder,
                         CultureSearchService cultureSearchService,
                         AiUsageLogger usageLogger,
+                        PromptService promptService,
                         @Value("${spring.ai.dashscope.api-key:}") String apiKey) {
-        super(chatClientBuilder, usageLogger, apiKey);
+        super(chatClientBuilder, usageLogger, promptService, apiKey);
         this.cultureSearchService = cultureSearchService;
     }
 
@@ -48,7 +50,7 @@ public class AdvisorAgent extends BaseExpertAgent {
         String question = lastUserMessage(req);
         CultureSearchResult hit = cultureSearchService.search(question);
         long start = System.currentTimeMillis();
-        ChatResponse response = callLlm(SYSTEM_PROMPT + "\n\n【知识库检索结果】\n" + renderContext(hit), question);
+        ChatResponse response = callLlm(systemPrompt("advisor", SYSTEM_PROMPT) + "\n\n【知识库检索结果】\n" + renderContext(hit), question);
         return toVo(userId, req, response, collectSources(hit), start);
     }
 

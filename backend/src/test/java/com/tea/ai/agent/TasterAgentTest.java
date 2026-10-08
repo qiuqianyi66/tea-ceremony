@@ -14,6 +14,7 @@ import static org.mockito.Mockito.when;
 import com.tea.ai.dto.AiChatRequest;
 import com.tea.ai.dto.ChatMessageDto;
 import com.tea.ai.service.AiUsageLogger;
+import com.tea.ai.service.PromptService;
 import com.tea.ai.vo.AiChatVo;
 import com.tea.common.exception.BadGatewayException;
 import com.tea.common.response.PageResult;
@@ -42,6 +43,7 @@ class TasterAgentTest {
     private final ChatResponseMetadata metadata = mock(ChatResponseMetadata.class);
     private final TastingRecordService tastingService = mock(TastingRecordService.class);
     private final AiUsageLogger usageLogger = mock(AiUsageLogger.class);
+    private final PromptService promptService = mock(PromptService.class);
 
     private TasterAgent agent(String apiKey) {
         when(builder.build()).thenReturn(chatClient);
@@ -53,7 +55,7 @@ class TasterAgentTest {
         when(response.getMetadata()).thenReturn(metadata);
         when(metadata.getModel()).thenReturn("qwen-plus");
         when(metadata.getUsage()).thenReturn(null);
-        return new TasterAgent(builder, tastingService, usageLogger, apiKey);
+        return new TasterAgent(builder, tastingService, usageLogger, promptService, apiKey);
     }
 
     private static AiChatRequest question(String q) {

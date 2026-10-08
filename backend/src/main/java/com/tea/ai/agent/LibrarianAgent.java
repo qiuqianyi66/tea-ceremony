@@ -3,6 +3,7 @@ package com.tea.ai.agent;
 import com.tea.ai.dto.AiChatRequest;
 import com.tea.ai.dto.ChatMessageDto;
 import com.tea.ai.service.AiUsageLogger;
+import com.tea.ai.service.PromptService;
 import com.tea.ai.vo.AiChatVo;
 import com.tea.common.exception.BadGatewayException;
 import com.tea.culture.service.CultureSearchService;
@@ -38,15 +39,18 @@ public class LibrarianAgent {
     private final ChatClient chatClient;
     private final CultureSearchService cultureSearchService;
     private final AiUsageLogger usageLogger;
+    private final PromptService promptService;
     private final String apiKey;
 
     public LibrarianAgent(ChatClient.Builder chatClientBuilder,
                           CultureSearchService cultureSearchService,
                           AiUsageLogger usageLogger,
+                          PromptService promptService,
                           @Value("${spring.ai.dashscope.api-key:}") String apiKey) {
         this.chatClient = chatClientBuilder.build();
         this.cultureSearchService = cultureSearchService;
         this.usageLogger = usageLogger;
+        this.promptService = promptService;
         this.apiKey = apiKey;
     }
 
@@ -64,7 +68,7 @@ public class LibrarianAgent {
         ChatResponse response;
         try {
             response = chatClient.prompt()
-                    .system(SYSTEM_PROMPT + "\n\n【知识库检索结果】\n" + context)
+                    .system(promptService.getPrompt("librarian", SYSTEM_PROMPT) + "\n\n【知识库检索结果】\n" + context)
                     .user(question)
                     .call().chatResponse();
         } catch (Exception e) {

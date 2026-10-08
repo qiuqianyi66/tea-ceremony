@@ -14,6 +14,7 @@ import static org.mockito.Mockito.when;
 import com.tea.ai.dto.AiChatRequest;
 import com.tea.ai.dto.ChatMessageDto;
 import com.tea.ai.service.AiUsageLogger;
+import com.tea.ai.service.PromptService;
 import com.tea.ai.vo.AiChatVo;
 import com.tea.common.exception.BadGatewayException;
 import com.tea.culture.service.CultureSearchService;
@@ -41,6 +42,7 @@ class AdvisorAgentTest {
     private final ChatResponseMetadata metadata = mock(ChatResponseMetadata.class);
     private final CultureSearchService search = mock(CultureSearchService.class);
     private final AiUsageLogger usageLogger = mock(AiUsageLogger.class);
+    private final PromptService promptService = mock(PromptService.class);
 
     private AdvisorAgent agent(String apiKey) {
         when(builder.build()).thenReturn(chatClient);
@@ -52,7 +54,7 @@ class AdvisorAgentTest {
         when(response.getMetadata()).thenReturn(metadata);
         when(metadata.getModel()).thenReturn("qwen-plus");
         when(metadata.getUsage()).thenReturn(null);
-        return new AdvisorAgent(builder, search, usageLogger, apiKey);
+        return new AdvisorAgent(builder, search, usageLogger, promptService, apiKey);
     }
 
     private static AiChatRequest question(String q) {

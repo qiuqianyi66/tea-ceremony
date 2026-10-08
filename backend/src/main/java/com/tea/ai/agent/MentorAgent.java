@@ -2,6 +2,7 @@ package com.tea.ai.agent;
 
 import com.tea.ai.dto.AiChatRequest;
 import com.tea.ai.service.AiUsageLogger;
+import com.tea.ai.service.PromptService;
 import com.tea.ai.vo.AiChatVo;
 import com.tea.common.response.PageResult;
 import com.tea.culture.service.CultureSearchService;
@@ -49,8 +50,9 @@ public class MentorAgent extends BaseExpertAgent {
                        TastingRecordService tastingRecordService,
                        CultureSearchService cultureSearchService,
                        AiUsageLogger usageLogger,
+                       PromptService promptService,
                        @Value("${spring.ai.dashscope.api-key:}") String apiKey) {
-        super(chatClientBuilder, usageLogger, apiKey);
+        super(chatClientBuilder, usageLogger, promptService, apiKey);
         this.tastingRecordService = tastingRecordService;
         this.cultureSearchService = cultureSearchService;
     }
@@ -61,7 +63,7 @@ public class MentorAgent extends BaseExpertAgent {
         List<RecordVo> records = recentRecords(userId);
         CultureSearchResult hit = cultureSearchService.search(question);
         long start = System.currentTimeMillis();
-        ChatResponse response = callLlm(SYSTEM_PROMPT + "\n\n" + renderContext(records, hit), question);
+        ChatResponse response = callLlm(systemPrompt("mentor", SYSTEM_PROMPT) + "\n\n" + renderContext(records, hit), question);
         return toVo(userId, req, response, collectSources(records, hit), start);
     }
 
