@@ -209,5 +209,7 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量�
 - 路径引用漂移审计（2026-10-07）：storage.ts/api.ts 实为目录（src/services/storage/ 与 src/services/api/）、waters.ts 不存在（水源数据在 src/data/constants.ts），三处已修；verify-harness 路径检查纳入 src/backend 前缀 + .agents 路由表双向核对 + 各族 README 数 + status 值域。
 - GitHub push（2026-10-07）：~/.ssh/config 走 ssh.github.com:443 可能被本地网络重置；用一次性 `$env:GIT_SSH_COMMAND="ssh -o HostName=github.com -o Port=22"` 走 22 端口，不动全局配置。
 - 三子代理豆包机械化替代（2026-10-07）：.claude/agents 是 Claude Code 配置，豆包运行时改走 audit-redlines.cjs（红线 15 条可机械子集 R2/7/8/9/10/11/12/14）+ audit-wiki-drift.cjs（api-contract 端点 vs 代码路由双向核对）+ expert-reviewer，均挂 CI harness job；首跑抓出 .env.development 被 git 跟踪（已解跟踪）、garden-plants 契约登记但无实现（已标注未实现）。
+- 开工前先查目标功能是否已实现：`git log --oneline -10`（用户可能自行提交，0f3549d 会话记忆即先例）；已实现 → 补缺验证，禁止从零重写（2026-10-08 沉淀）。
+- 编码：路由回落路径禁对可能为 null 的枚举直接 `.name()`——AgentOrchestrator 返回 null（透明代理）时 agent 归类须 fallback "chat"，否则集成测试 500（2026-10-08 沉淀）。
 
 **2026-10-01 V4 重构**：ADR 拆 `docs/ADR/` 独立文件（ADR-001~009，统一格式）、CONTEXT.md 精简为术语+ADR 索引+架构关键词、新增 `npm run quality` 统一门禁、commit 改英文 conventional、新增 AI Change Protocol + Modification Level。详见 ADR-009。
