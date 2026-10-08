@@ -141,7 +141,7 @@ node scripts/verify-harness.cjs    # harness 一致性体检（ADR/CI job/技能
 node scripts/audit-redlines.cjs    # 红线机械化审计（替代 red-line-auditor；R2/7/8/9/10/11/12/14），期望 ERRORS: []，CI 门禁
 node scripts/audit-wiki-drift.cjs  # wiki 契约漂移审计（替代 consistency-verifier；api-contract 端点 vs 代码路由双向核对），期望 ERRORS: []，CI 门禁
 node scripts/add-doc-meta.cjs      # docs 元信息头批量补齐（新文档缺 frontmatter 时跑）
-cd backend && python -m py_compile app/main.py                  # 后端语法（旧 FastAPI，过渡期）
+cd backend && python -m py_compile main.py                  # 后端语法（旧 FastAPI，过渡期；main.py 在 backend/ 根）
 cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量（旧 FastAPI，过渡期）
 # 后端重写完成后替换为：cd backend && mvn -q test              # 后端全量（Spring Boot）
 ```
