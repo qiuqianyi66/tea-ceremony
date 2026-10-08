@@ -156,9 +156,9 @@ const chartData = computed(() => {
       backgroundColor: 'rgba(200, 155, 60, 0.15)',
       borderColor: '#C89B3C',
       pointBackgroundColor: '#C89B3C',
-      pointBorderColor: '#F5F0E8',
+      pointBorderColor: colorTokens.paper,
       pointHoverBackgroundColor: '#C89B3C',
-      pointHoverBorderColor: '#F5F0E8',
+      pointHoverBorderColor: colorTokens.paper,
     },
   ]
 
@@ -171,12 +171,12 @@ const chartData = computed(() => {
       label: '历史均值',
       data: averageData.value,
       backgroundColor: 'rgba(93, 78, 55, 0.1)',
-      borderColor: '#5D4E37',
+      borderColor: colorTokens.wood,
       borderDash: [6, 4],
-      pointBackgroundColor: '#5D4E37',
-      pointBorderColor: '#F5F0E8',
-      pointHoverBackgroundColor: '#5D4E37',
-      pointHoverBorderColor: '#F5F0E8',
+      pointBackgroundColor: colorTokens.wood,
+      pointBorderColor: colorTokens.paper,
+      pointHoverBackgroundColor: colorTokens.wood,
+      pointHoverBorderColor: colorTokens.paper,
     })
   }
 

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { getSoupColor } from '@/data/teas'
+import { colorTokens } from '@/styles/colorTokens'
 import type { Tea } from '@/types/tea'
 
 const props = defineProps<{
@@ -10,7 +11,7 @@ const props = defineProps<{
 }>()
 
 const soupColor = computed(() => {
-  if (!props.tea) return '#F5F0E8'
+  if (!props.tea) return colorTokens.paper
   return getSoupColor(props.tea, props.steepTime)
 })
 

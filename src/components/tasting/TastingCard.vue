@@ -3,6 +3,7 @@ import QRCode from 'qrcode'
 import { ref } from 'vue'
 import { getScoreLevel } from '@/services/scoring'
 import { buildShareUrl, encodeShareData, toShareData } from '@/services/share'
+import { colorTokens } from '@/styles/colorTokens'
 import type { TastingRecord } from '@/types/tasting'
 
 const props = defineProps<{
@@ -103,26 +104,26 @@ async function downloadCard() {
   if (!ctx) return
 
   const background = ctx.createLinearGradient(0, 0, 900, 1120)
-  background.addColorStop(0, '#FAF6F0')
+  background.addColorStop(0, colorTokens.cream)
   background.addColorStop(1, '#EDE1CF')
   ctx.fillStyle = background
   ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-  ctx.strokeStyle = '#9E8050'
+  ctx.strokeStyle = colorTokens.teaGold
   ctx.lineWidth = 3
   roundRect(ctx, 34, 34, 832, 1052, 24)
   ctx.stroke()
 
-  ctx.fillStyle = '#9E8050'
+  ctx.fillStyle = colorTokens.teaGold
   ctx.font = '24px sans-serif'
   ctx.letterSpacing = '6px'
   ctx.fillText('一盏茶  ·  TASTING NOTE', 78, 100)
   ctx.letterSpacing = '0px'
 
-  ctx.fillStyle = '#5D4E37'
+  ctx.fillStyle = colorTokens.wood
   ctx.font = 'bold 52px serif'
   ctx.fillText(props.record.teaName, 78, 180)
-  ctx.fillStyle = '#7E6A55'
+  ctx.fillStyle = colorTokens.woodLight
   ctx.font = '24px sans-serif'
   ctx.fillText(
     `${new Date(props.record.date).toLocaleDateString()}  ·  第 ${props.record.infusions} 泡`,
@@ -133,7 +134,7 @@ async function downloadCard() {
   ctx.fillStyle = scoreLevel.color
   ctx.font = 'bold 100px sans-serif'
   ctx.fillText(String(props.record.overallScore), 660, 180)
-  ctx.fillStyle = '#7E6A55'
+  ctx.fillStyle = colorTokens.woodLight
   ctx.font = '24px sans-serif'
   ctx.fillText(scoreLevel.text, 708, 225)
 
@@ -145,15 +146,15 @@ async function downloadCard() {
     ctx.fillStyle = 'rgba(255,255,255,.65)'
     roundRect(ctx, x, y, 155, 110, 14)
     ctx.fill()
-    ctx.fillStyle = '#7E6A55'
+    ctx.fillStyle = colorTokens.woodLight
     ctx.font = '22px sans-serif'
     ctx.fillText(label, x + 62, y + 38)
-    ctx.fillStyle = '#5D4E37'
+    ctx.fillStyle = colorTokens.wood
     ctx.font = 'bold 42px sans-serif'
     ctx.fillText(String(props.record.dimensions[key]), x + 67, y + 84)
   })
 
-  ctx.fillStyle = '#7E6A55'
+  ctx.fillStyle = colorTokens.woodLight
   ctx.font = '24px sans-serif'
   ctx.fillText(`水温 ${props.record.brewTemp}°C    浸泡 ${props.record.brewTime}s`, 78, 680)
   if (props.record.weather || props.record.mood) {
@@ -168,7 +169,7 @@ async function downloadCard() {
     ctx.moveTo(78, 760)
     ctx.lineTo(822, 760)
     ctx.stroke()
-    ctx.fillStyle = '#7E6A55'
+    ctx.fillStyle = colorTokens.woodLight
     ctx.font = 'italic 24px serif'
     ctx.fillText(`“${props.record.notes.slice(0, 42)}”`, 78, 815)
   }
@@ -192,7 +193,7 @@ async function downloadCard() {
     // 二维码渲染失败时仍交付无二维码版本
   }
 
-  ctx.fillStyle = '#9E8050'
+  ctx.fillStyle = colorTokens.teaGold
   ctx.font = '20px sans-serif'
   ctx.fillText('一席茶，一方天地，一念清心', 78, 1065)
 

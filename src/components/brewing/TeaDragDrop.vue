@@ -262,7 +262,7 @@ onUnmounted(() => {
           'transition-all duration-300',
           dropZoneActive
             ? (wareMatchScore === 1
-                ? 'border-[var(--color-tea-gold)] bg-[var(--color-tea-gold)]/10 shadow-[0_0_30px_#9E8050]'
+                ? 'border-[var(--color-tea-gold)] bg-[var(--color-tea-gold)]/10 shadow-[0_0_30px_var(--color-tea-gold)]'
                 : 'border-[var(--color-tea-gold)]/50 bg-[var(--color-tea-gold)]/5')
             : 'border-dashed border-[var(--color-wood-light)] hover:border-[var(--color-tea-gold)]/50',
           isOverVessel && 'scale-[1.02]',

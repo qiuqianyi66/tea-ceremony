@@ -17,6 +17,7 @@ import {
 } from 'chart.js'
 import { computed } from 'vue'
 import { Line } from 'vue-chartjs'
+import { colorTokens } from '@/styles/colorTokens'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip, Legend)
 
@@ -70,7 +71,7 @@ const lineOptions = computed<ChartOptions<'line'>>(() => ({
         usePointStyle: true,
         padding: 12,
         font: { size: 10, family: 'Noto Sans SC, sans-serif' },
-        color: '#3D3225',
+        color: colorTokens.ink,
       },
     },
     tooltip: {
@@ -148,7 +149,7 @@ const lineData = computed(() => ({
       backgroundColor: 'rgba(200, 155, 60, 0.12)',
       borderColor: '#C89B3C',
       pointBackgroundColor: '#C89B3C',
-      pointBorderColor: '#F5F0E8',
+      pointBorderColor: colorTokens.paper,
       fill: true,
       yAxisID: 'y',
     },
@@ -156,10 +157,10 @@ const lineData = computed(() => ({
       label: '工艺系数',
       data: processData.value,
       backgroundColor: 'rgba(93, 78, 55, 0.08)',
-      borderColor: '#5D4E37',
+      borderColor: colorTokens.wood,
       borderDash: [6, 4],
-      pointBackgroundColor: '#5D4E37',
-      pointBorderColor: '#F5F0E8',
+      pointBackgroundColor: colorTokens.wood,
+      pointBorderColor: colorTokens.paper,
       fill: false,
       yAxisID: 'y',
     },

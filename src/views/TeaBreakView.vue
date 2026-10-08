@@ -14,6 +14,7 @@ import { useRouter } from 'vue-router'
 import { startBoiling, stopBoiling } from '@/composables/useAudio'
 import { TEA_POEMS } from '@/data/teaPoems'
 import TeaTreeCanvas from './break/TeaTreeCanvas.vue'
+import { colorTokens } from '@/styles/colorTokens'
 
 const router = useRouter()
 
@@ -117,7 +118,7 @@ function finish() {
     particleCount: 90,
     spread: 75,
     origin: { y: 0.6 },
-    colors: ['#C9A96E', '#9E8050', '#E8D9B8', '#6B8E23', '#5D4E37'],
+    colors: ['#C9A96E', colorTokens.teaGold, '#E8D9B8', '#6B8E23', colorTokens.wood],
     scalar: 1.1,
   })
   setTimeout(() => {
@@ -126,14 +127,14 @@ function finish() {
       angle: 60,
       spread: 55,
       origin: { x: 0 },
-      colors: ['#C9A96E', '#9E8050', '#E8D9B8'],
+      colors: ['#C9A96E', colorTokens.teaGold, '#E8D9B8'],
     })
     confetti({
       particleCount: 50,
       angle: 120,
       spread: 55,
       origin: { x: 1 },
-      colors: ['#C9A96E', '#9E8050', '#E8D9B8'],
+      colors: ['#C9A96E', colorTokens.teaGold, '#E8D9B8'],
     })
   }, 250)
 }

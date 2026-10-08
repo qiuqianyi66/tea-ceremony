@@ -9,6 +9,7 @@ import { getSoupColor } from '@/data/teas'
 import { useBrewStore } from '@/stores/brew'
 import { useTeaStore } from '@/stores/tea'
 import { BrewPhase } from '@/types/brewing'
+import { colorTokens } from '@/styles/colorTokens'
 import CeremonyProgress from './brew/CeremonyProgress.vue'
 
 const router = useRouter()
@@ -207,7 +208,7 @@ const ceremonyStepIndex = computed(() => {
 
 // ============ 计算属性 ============
 const soupColor = computed(() => {
-  if (!store.currentTea) return '#F5F0E8'
+  if (!store.currentTea) return colorTokens.paper
   // 注水越急，茶叶翻动越明显，显色略快；这是视觉反馈，不改变实际计时。
   const visualSteepTime = brewState.steepTime * (0.8 + pourSpeed.value * 0.4)
   return getSoupColor(store.currentTea, visualSteepTime)

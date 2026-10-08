@@ -13,6 +13,7 @@ import { useBrewStore } from '@/stores/brew'
 import { useProgressStore } from '@/stores/progress'
 import { useTasteStore } from '@/stores/taste'
 import { useTeaStore } from '@/stores/tea'
+import { colorTokens } from '@/styles/colorTokens'
 import type { TasteDimensions, TastingRecord } from '@/types/tasting'
 import TasteObserveStep from './taste/TasteObserveStep.vue'
 import TasteStepIndicator from './taste/TasteStepIndicator.vue'
@@ -32,7 +33,7 @@ const step = ref<TastingStep>('observe')
 
 // ============ 观色 ============
 const soupColor = computed(() => {
-  if (!store.currentTea) return '#F5F0E8'
+  if (!store.currentTea) return colorTokens.paper
   return getSoupColor(store.currentTea, brewState.steepTime)
 })
 
