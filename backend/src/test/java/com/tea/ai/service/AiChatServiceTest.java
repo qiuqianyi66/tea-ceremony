@@ -3,7 +3,9 @@ package com.tea.ai.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -18,9 +20,11 @@ import com.tea.ai.agent.MentorAgent;
 import com.tea.ai.agent.TasterAgent;
 import com.tea.ai.dto.AiChatRequest;
 import com.tea.ai.dto.ChatMessageDto;
+import com.tea.ai.entity.AiChatSession;
 import com.tea.ai.vo.AiChatVo;
 import com.tea.common.exception.BadGatewayException;
 import com.tea.common.exception.BadRequestException;
+import com.tea.common.exception.NotFoundException;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.chat.client.ChatClient;
@@ -47,9 +51,10 @@ class AiChatServiceTest {
     private final BrewerAgent brewer = mock(BrewerAgent.class);
     private final MentorAgent mentor = mock(MentorAgent.class);
     private final AiUsageLogger usageLogger = mock(AiUsageLogger.class);
+    private final ChatMemoryService memoryService = mock(ChatMemoryService.class);
 
     private AiChatService service(String apiKey) {
-        return new AiChatService(builder, usageLogger, orchestrator,
+        return new AiChatService(builder, usageLogger, orchestrator, memoryService,
                 librarian, advisor, taster, brewer, mentor, apiKey);
     }
 
@@ -154,6 +159,75 @@ class AiChatServiceTest {
         BadRequestException ex = assertThrows(BadRequestException.class,
                 () -> service.chat(null, req("robot")));
         assertEquals("未知 agent 类型: robot", ex.getMessage());
+    }
+
+    @Test
+    void loggedInChatCreatesSessionAndPersistsMessages() {
+        AiChatService service = service("test-key");
+        when(orchestrator.routeToAgent(req("advisor"))).thenReturn(AgentType.ADVISOR);
+        when(advisor.chat(1, req("advisor"))).thenReturn(new AiChatVo("推荐", List.of("茶·龙井")));
+        AiChatSession session = new AiChatSession();
+        session.setId(7);
+        when(memoryService.createSession(eq(1), eq("你好"), eq("advisor"))).thenReturn(session);
+
+        AiChatVo vo = service.chat(1, req("advisor"));
+
+        assertEquals(7, vo.sessionId());
+        verify(memoryService).appendMessage(7, "user", "你好", "advisor", null);
+        verify(memoryService).appendMessage(7, "assistant", "推荐", "advisor", null);
+    }
+
+    @Test
+    void guestChatDoesNotPersist() {
+        AiChatService service = service("test-key");
+        when(orchestrator.routeToAgent(req("advisor"))).thenReturn(AgentType.ADVISOR);
+        when(advisor.chat(null, req("advisor"))).thenReturn(new AiChatVo("推荐", List.of()));
+
+        AiChatVo vo = service.chat(null, req("advisor"));
+
+        assertNull(vo.sessionId());
+        verify(memoryService, never()).createSession(any(), any(), any());
+        verify(memoryService, never()).appendMessage(any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void ownedSessionReusedWithoutNewSession() {
+        AiChatService service = service("test-key");
+        AiChatRequest r = new AiChatRequest(List.of(new ChatMessageDto("user", "继续")), "advisor", 3);
+        when(orchestrator.routeToAgent(r)).thenReturn(AgentType.ADVISOR);
+        when(advisor.chat(1, r)).thenReturn(new AiChatVo("推荐", List.of()));
+        when(memoryService.requireSession(1, 3)).thenReturn(new AiChatSession());
+
+        AiChatVo vo = service.chat(1, r);
+
+        assertEquals(3, vo.sessionId());
+        verify(memoryService, never()).createSession(any(), any(), any());
+        verify(memoryService).appendMessage(3, "user", "继续", "advisor", null);
+    }
+
+    @Test
+    void othersSessionThrows404BeforeDispatch() {
+        AiChatService service = service("test-key");
+        AiChatRequest r = new AiChatRequest(List.of(new ChatMessageDto("user", "问")), "advisor", 99);
+        when(orchestrator.routeToAgent(r)).thenReturn(AgentType.ADVISOR);
+        when(memoryService.requireSession(1, 99)).thenThrow(new NotFoundException("会话不存在"));
+
+        assertThrows(NotFoundException.class, () -> service.chat(1, r));
+        verify(advisor, never()).chat(any(), any());
+        verify(memoryService, never()).appendMessage(any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void memoryFailureStillReturnsReply() {
+        AiChatService service = service("test-key");
+        when(orchestrator.routeToAgent(req("advisor"))).thenReturn(AgentType.ADVISOR);
+        when(advisor.chat(1, req("advisor"))).thenReturn(new AiChatVo("推荐", List.of()));
+        when(memoryService.createSession(any(), any(), any())).thenThrow(new RuntimeException("db down"));
+
+        AiChatVo vo = service.chat(1, req("advisor"));
+
+        assertEquals("推荐", vo.content());
+        assertNull(vo.sessionId());
     }
 
     private void mockTransparentReply(String text) {
