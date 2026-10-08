@@ -213,5 +213,6 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量�
 - 三子代理豆包机械化替代（2026-10-07）：.claude/agents 是 Claude Code 配置，豆包运行时改走 audit-redlines.cjs（红线 15 条可机械子集 R2/7/8/9/10/11/12/14）+ audit-wiki-drift.cjs（api-contract 端点 vs 代码路由双向核对）+ expert-reviewer，均挂 CI harness job；首跑抓出 .env.development 被 git 跟踪（已解跟踪）、garden-plants 契约登记但无实现（已标注未实现）。
 - 开工前先查目标功能是否已实现：`git log --oneline -10`（用户可能自行提交，0f3549d 会话记忆即先例）；已实现 → 补缺验证，禁止从零重写（2026-10-08 沉淀）。
 - 编码：路由回落路径禁对可能为 null 的枚举直接 `.name()`——AgentOrchestrator 返回 null（透明代理）时 agent 归类须 fallback "chat"，否则集成测试 500（2026-10-08 沉淀）。
+- 技能准入 O-11（2026-10-08）：frontmatter 加 `type: executable|knowledge|flow` 三值；executable 必填 `verification` 验证命令（三条约束由 verify-harness.cjs §4f 机械化强制）；已标 6 个可执行类技能（db-migration/fastapi-endpoint/vue-component/agent-eval/unit-test-ci/3d-scene）。
 
 **2026-10-01 V4 重构**：ADR 拆 `docs/ADR/` 独立文件（ADR-001~009，统一格式）、CONTEXT.md 精简为术语+ADR 索引+架构关键词、新增 `npm run quality` 统一门禁、commit 改英文 conventional、新增 AI Change Protocol + Modification Level。详见 ADR-009。

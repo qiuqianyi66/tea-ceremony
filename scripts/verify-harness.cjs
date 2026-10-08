@@ -175,6 +175,47 @@ for (const fam of families) {
   }
 }
 
+// 4f. 技能 frontmatter type/verification 标注（O-11，K7 技能准入）
+//    type 值域三值；type: executable 必填 verification；声明 verification 必须 type: executable
+const VALID_TYPES = new Set(['executable', 'knowledge', 'flow']);
+const SKILL_ROOTS = [
+  path.join(ROOT, '.agents/skills'),
+  ...families.map(f => path.join(ROOT, `.harness/skills/${f}`)),
+];
+function collectSkillFrontmatters() {
+  const out = [];
+  for (const dir of SKILL_ROOTS) {
+    if (!fs.existsSync(dir)) continue;
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (!e.isDirectory()) continue;
+      const sf = path.join(dir, e.name, 'SKILL.md');
+      if (fs.existsSync(sf)) {
+        const text = fs.readFileSync(sf, 'utf8');
+        const front = (text.match(/^---[\s\S]*?---/) || [''])[0];
+        out.push({ rel: path.relative(ROOT, sf).replace(/\\/g, '/'), front });
+      }
+    }
+  }
+  return out;
+}
+function fmField(front, name) {
+  const m = front.match(new RegExp(`^${name}:\\s*(.+?)\\s*$`, 'm'));
+  return m ? m[1] : null;
+}
+for (const s of collectSkillFrontmatters()) {
+  const type = fmField(s.front, 'type');
+  const verification = fmField(s.front, 'verification');
+  if (type && !VALID_TYPES.has(type)) {
+    errors.push(`❌ ${s.rel} type 值域非法：${type}。\n✅ FIX: 改为 executable|knowledge|flow 之一。\n📖 See: .harness/rules/技能规范.md §2（O-11）`);
+  }
+  if (type === 'executable' && !verification) {
+    errors.push(`❌ ${s.rel} type: executable 缺 verification 验证命令。\n✅ FIX: 补 frontmatter verification 字段（可运行命令）。\n📖 See: .harness/rules/技能规范.md §2（O-11）`);
+  }
+  if (verification && type !== 'executable') {
+    errors.push(`❌ ${s.rel} 声明 verification 但 type=${type || '（缺省）'}。\n✅ FIX: type 改为 executable。\n📖 See: .harness/rules/技能规范.md §2（O-11）`);
+  }
+}
+
 // 5. 关键路径引用存在性（AGENTS.md 中 docs/ .harness/ .agents/ scripts/ src/ backend/ 开头的反引号路径）
 const seen = new Set();
 const pathRefs = agents.match(/`((?:docs|\.harness|\.agents|scripts|src|backend)\/[^`]+)`/g) || [];
