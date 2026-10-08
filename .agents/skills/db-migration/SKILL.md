@@ -1,6 +1,8 @@
 ---
 name: db-migration
 description: 一盏茶项目的数据库迁移规范。当用户要求修改数据库表结构、新增字段、或执行数据迁移时触发。
+type: executable
+verification: cd backend && alembic upgrade head
 ---
 
 # 数据库迁移规范
