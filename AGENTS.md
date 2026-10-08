@@ -188,6 +188,7 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量�
 - 冲泡页零点击闭环：煮水→温杯→醒茶→出汤全自动，仅 READY 拖一次注水；禁止为温杯/醒茶/出汤加回手动确认按钮。
 - 新功能立项先过四维甄别（自由/用户/竞品/伪需求）；"团队自己会不会用" 是硬门槛，伪需求优先降级或砍。
 - PowerShell 往 .vue 写含 JS 模板字符串的代码（如 `/tea/${id}`）用单引号 here-string（@'...'@），防 `$` 插值破坏；动手前先探测行尾（HomeView LF，TeaRoom/MapView/TeaDetailView CRLF 混合）。
+- Edit/Write 工具对 CRLF 混合文件做字符串替换同样会把全文件归一为 LF（MapView 2026-10-08 教训：300 行行尾噪音）；修复 = 在 HEAD 字节上重放替换保留原行尾（.tmp/fix-mapview-eol.cjs），改 .vue 前先探测行尾。
 - `vite preview` 可能绑定 IPv6 ::1，`node scripts/smoke.mjs http://localhost:4173`（127.0.0.1 会全部 fetch failed）。
 - biome --write 的 organizeImports 会把 TresJS 模板组件导入转 type-only 导致运行时炸；biome.json 的 `**/*.vue` override 已关 useImportType/useExportType，且 biome.json 是严格 JSON 禁注释。
 - KTX2 工具链：装 Khronos KTX-Software 官方 exe 取 toktx.exe 转码；three basis transcoder 复制进 public/ 供 KTX2Loader 运行时加载；workbox runtimeCaching 的 /3d/ 必须补 `ktx2|wasm|js` 否则离线缓存失效。
