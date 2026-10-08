@@ -1,10 +1,10 @@
 ---
-last_updated: 2026-10-07
+last_updated: 2026-10-08
 status: active
 owner: yanha
 ---
 
-# 一盏茶 待办优先级清单（2026-10-07 更新）
+# 一盏茶 待办优先级清单（2026-10-08 更新）
 
 > 全景待办梳理（基于仓库/记忆/PRD 核验），按优先级 P0/P1/P2 排序。P0=主线/承重/用户点名；P1=价值/体验；P2=工程卫生/发布。
 > **harness 研究落地工程单（P1 新增项详见）→ `docs/PLAN-harness-research-2026-10.md`（2026-10-07，含执行顺序/依赖/验证级别）**
@@ -13,7 +13,7 @@ owner: yanha
 
 | # | 事项 | 现状 | 下一步 |
 |---|---|---|---|
-| P0-1a | **M5-S1 多智能体试点** | ✅ 完成（47c4a81b）：AgentType 枚举 + AgentOrchestrator 路由 + librarian 专家 + AiUsageLogger + sources | 已交付 |
+| P0-1a | **M5-S1 多智能体试点** | ✅ 完成（31c54ce）：AgentType 枚举 + AgentOrchestrator 路由 + librarian 专家 + AiUsageLogger + sources | 已交付 |
 | P0-1b | **M5-S2 数据库落地** | ✅ 完成（4d79c70+6634677）：ADR-013 + pgvector 镜像 + V3 迁移（culture_chunks/会话记忆表）+ 往返测试 + 8 表 RAG + CI/Testcontainers 同步 | 已交付 |
 | P0-1c | **M5-S2 剩余**：混合检索查询实现（pgvector 向量路径）、embedding 回填管线、五专家注册（advisor/taster/brewer/mentor）、会话记忆读写（ai_chat_sessions/ai_messages 已建表无代码）、prompt 版本化（agent_prompts 表无数据） | 表/基建就绪，代码未写 | 混合检索+embedding 依赖 AI key（P0-3）；专家注册/会话记忆可先行 |
 | P0-2 | **前端返工（企业级规范落地）** | 示范完成（colorTokens.ts 10 令牌 + TasteRadarChart/TeaKnowledgeCard 2 组件）；**518 处硬编码剩余 ~500 处未替换**；视觉会变页面需先补 DESIGN_SPEC + 截图验证（从未成功截图） | 逐文件等价替换（值=令牌直接换）→ 视觉批次过设计门禁 |
@@ -23,11 +23,11 @@ owner: yanha
 
 | # | 事项 | 现状 | 下一步 |
 |---|---|---|---|
-| P1-R0 | **后端 ArchUnit 分层测试**（研究新增） | ✅ 已落地（2026-10-07）：LayerDependencyTest 四规则（分层单向/禁 Controller 查库/构造器注入），CI Maven test 门禁 | 分层规则 → ArchUnit 测试（单向依赖/禁 Controller 查库/构造器注入）→ CI 门禁 |
-| P1-R1 | **MCP 工具化试点**（研究新增，技术比对查证 Spring AI Alibaba 原生支持） | 未做 | culture-search 暴露为 MCP tool → ChatClient defaultTools 自动注册 |
+| P1-R0 | **后端 ArchUnit 分层测试**（研究新增） | ✅ 已落地（2026-10-07）：LayerDependencyTest 四规则（分层单向/禁 Controller 查库/构造器注入），CI Maven test 门禁 | 已闭合（933faaa 修正规则真实执行于 surefire） |
+| P1-R1 | **MCP 工具化试点**（研究新增，技术比对查证 Spring AI Alibaba 原生支持） | ✅ 已落地（2026-10-07，046a8a2）：8 表 RAG 暴露为 MCP tool + SSE WebMVC transport + Security 放行；验证 mvn 133 全绿 + eval p1-1-mcp 100/100 | 已交付：契约登记 .harness/wiki/api-contract.md；技术债 2 项随 agent-framework 升级处理（mcp-core 双版本、SyncMcpToolProvider WARN） |
 | P1-R2 | **Orchestrator 复杂度路由**（研究新增） | 路由已有（显式/文化域/回落） | query 复杂度分级 → 廉价 vs 深度路径 |
-| P1-R3 | **review 结构化纠错三要素**（研究新增） | ✅ 已落地（2026-10-07）：caveman-review 升级 problem/why/fix + 附失败原文 | finding 升级：问题/根因（为什么）/修复指引 + 附失败输出原文 |
-| P1-R4 | **文档一致性机械化**（研究新增） | ✅ 已落地（2026-10-07）：scripts/verify-harness.cjs（ADR/CI job/技能数/路径），期望 ERRORS: [] | eval-harness 加"文档一致性"维（ADR 索引/CI job 数/路径引用） |
+| P1-R3 | **review 结构化纠错三要素**（研究新增） | ✅ 已落地（2026-10-07）：caveman-review 升级 problem/why/fix + 附失败原文 | 已闭合（三要素含 FIX + 规则出处，expert-reviewer 同步） |
+| P1-R4 | **文档一致性机械化**（研究新增） | ✅ 已落地（2026-10-07）：scripts/verify-harness.cjs 现 11 类检查（ADR 索引/CI job 数/技能数/路径/路由双向核对/status 值域…），期望 ERRORS: [] | 已闭合：挂 CI 13 job harness-consistency 门禁；audit-redlines.cjs + audit-wiki-drift.cjs 同挂门禁（2026-10-08） |
 | P1-R5 | **审计员风险标记**（278 研究新增） | sources 字段已有 | LibrarianAgent 输出加"⚠ 无来源"标记（逐句对证据） |
 | P1-1 | M2 ai_usage_logs 消费端 | 已拍板未做（每日统计+预算告警） | 后端定时任务 + 前端看板（可选） |
 | P1-2 | 前端优化 P-O 系列 | 研究已出（docs/research-frontend-optimization-2026-10.md） | P-O4 RAG 引用展示 → P-O1 Web Vitals → P-O2/P-O3 性能 |
@@ -41,7 +41,7 @@ owner: yanha
 |---|---|---|---|
 | P2-1 | 开源曝光落地 | README/og/推广包已备 | Good First Issue 实际开、传播帖发、release、Discussions |
 | P2-2 | 仓库卫生 | .git 历史 160MB、旧 jpg fallback 12.8MB | filter-repo 重写（待拍板）、删不删决策 |
-| P2-3 | HANDOFF 交接文档 | 10-06 版在仓库，10-07 未更新 | 会话收尾更新 |
+| P2-3 | HANDOFF 交接文档 | ✅ 已闭合（2026-10-08 补录）：HANDOFF-2026-10-07 补 audit 脚本/三子代理等效表/.env 解跟踪/行数 212 | 会话收尾刷新 last_updated 与 §1 成果链 |
 | P2-4 | 残留数据清理 | 冒烟测试用户 smoke102054 在本地 db；Exited postgres:16 旧容器 | 本地可清（不影响生产） |
 | P2-5 | **doc-gardening 脚本化**（研究新增） | ✅ 已落地并挂 CI 门禁（2026-10-07）：verify-harness.cjs + harness-consistency job（CI 13 job） | 已闭合 |
 
