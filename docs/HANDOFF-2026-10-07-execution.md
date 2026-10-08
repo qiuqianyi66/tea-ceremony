@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-10-07
+last_updated: 2026-10-08
 status: active
 owner: yanha
 ---
@@ -8,6 +8,7 @@ owner: yanha
 
 > 新对话接续：直接说「读 HANDOFF-2026-10-07-execution.md 继续」即可。
 > 本文档只记事实与路径，不展开原理；细节按路径读原文。
+> 2026-10-08 补录：audit 脚本 / 三子代理等效 / .env 解跟踪 / 行数校正（见 §1"2026-10-08 补录"）。
 
 ## 1. 今天（10-07）完成（全部已提交 push，CI 13 job 全绿基线）
 
@@ -17,6 +18,10 @@ owner: yanha
   - `0fb5c29`：wiki 四件套 / .claude/agents 三子代理 / docs/skills 6 页 / changes 切片门禁（_template 三件套 + 每切片 summary+review + 结论行格式，正则兼容 7 种历史变体）；补录 `m5-s2/review.md`。
   - `eed2a46`：路径检查纳入 `src/`、`backend/` 前缀（补盲区）；.agents/skills/README 路由双向核对（链接存在 + 技能目录必列入）；三族 README 技能数；frontmatter status 值域（active|draft|deprecated）。审计 73 个唯一引用：69 有效全存在，ADR-0XX 为刻意模板占位。
   - 修复 3 处真实漂移：storage.ts/api.ts 实为目录（storage//api/，AGENTS.md + 编码规范.md + CONTEXT.md 三处）、waters.ts → constants.ts。
+  - **2026-10-08 补录**：
+    - `a6726b1` 三子代理豆包机械化替代：`audit-redlines.cjs`（红线机械子集 R2/7/8/9/10/11/12/14）+ `audit-wiki-drift.cjs`（api-contract 端点 vs 代码路由双向核对）+ expert-reviewer，均挂 CI harness job；`.claude/agents` 标注豆包等效路径；首跑抓出 .env.development 被 git 跟踪（解跟踪）+ garden-plants 契约登记但无实现（已诚实标注"未实现"）。
+    - `99f265c` 学习记录自引用路径修复：AGENTS.md §13 三处路径漂移（storage.ts/api.ts 实为目录、waters.ts 不存在）已修正。
+    - `465ccf9` .env.development 解跟踪（git rm --cached + .gitignore）。
 - 历史积压清零：72 个未提交文件分 4 组提交（治理 d494a11 / PRD 00b1e8e / research 892e60c / misc 151264b+a7f5cb2）；工作区 **0 未提交**。
 
 **M5 多智能体主线**
@@ -32,7 +37,7 @@ owner: yanha
 
 1. M5 重构核心 = 多智能体（用户反复点名）；"专家 = 工具 + 协议层解耦" 模式经 P1-1 验证成立。
 2. 数据库选型：pgvector + pg_trgm 混合检索（不换库、不加新服务，Postgres 16 原生扩展；独立向量库等十万级文档+多租户再考虑）。
-3. 285 落地范围 = 架构约束机械化 / 三要素 / 一致性体检挂 CI / docs 五层 / 流程断点修复；AGENTS.md 209 行维持现状（200-350 维护区间）。
+3. 285 落地范围 = 架构约束机械化 / 三要素 / 一致性体检挂 CI / docs 五层 / 流程断点修复；AGENTS.md 212 行维持现状（200-350 维护区间）。
 4. git push：本地网络对 GitHub SSH 443 间歇性重置，用一次性 `$env:GIT_SSH_COMMAND="ssh -o HostName=github.com -o Port=22"` 走 22 端口，不动全局配置。
 5. 阶段六（简历）暂缓（用户明确不做）；docs status deprecated 遍历 + P3 JSON 状态文件 = 可选低价值项，不做不阻断闭环。
 
@@ -60,7 +65,8 @@ owner: yanha
 
 ## 5. 关键路径速查
 
-- 一致性体检：`node scripts/verify-harness.cjs`（期望 `ERRORS: []`；AGENTS.md 209 行 | ADR 13 | CI 13 | .agents 66 | .harness 32）。
+- 一致性体检：`node scripts/verify-harness.cjs`（期望 `ERRORS: []`；AGENTS.md 212 行 | ADR 13 | CI 13 | .agents 66 | .harness 32）。
+- 红线/契约机械化：`node scripts/audit-redlines.cjs` + `node scripts/audit-wiki-drift.cjs`（均期望 `ERRORS: []`，CI 门禁）。
 - 七维评测：`node scripts/eval-harness.cjs <切片> --verify`（每切片必跑，总分<60 阻断；报告 `docs/agent-eval/`）。
 - 元信息头补齐：`node scripts/add-doc-meta.cjs`（幂等）。
 - 工程单：`docs/PLAN-harness-research-2026-10.md`；需求模板 `docs/prd/_template/requirements-template.md`。
