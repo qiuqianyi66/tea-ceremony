@@ -278,6 +278,26 @@ class AiChatServiceTest {
         verify(memoryService, never()).appendMessage(eq(3), eq("assistant"), any(), any(), any());
     }
 
+    @Test
+    void topicDefaultsToFirstUserMessageTruncatedTo20() {
+        AiChatService service = service("test-key");
+        String first = "今天想喝什么茶好呢帮我看看一二三四五六七八九十";  // 24 字
+        AiChatRequest r = new AiChatRequest(List.of(
+                new ChatMessageDto("user", first),
+                new ChatMessageDto("assistant", "推荐龙井"),
+                new ChatMessageDto("user", "继续")), "advisor");
+        when(orchestrator.routeToAgent(r)).thenReturn(AgentType.ADVISOR);
+        when(advisor.chat(1, r)).thenReturn(new AiChatVo("推荐", List.of()));
+        AiChatSession session = new AiChatSession();
+        session.setId(7);
+        when(memoryService.createSession(eq(1), eq(first.substring(0, 20)), eq("advisor")))
+                .thenReturn(session);
+
+        AiChatVo vo = service.chat(1, r);
+
+        assertEquals(7, vo.sessionId());
+    }
+
     private void mockTransparentReply(String text) {
         when(builder.build()).thenReturn(chatClient);
         when(chatClient.prompt()).thenReturn(reqSpec);

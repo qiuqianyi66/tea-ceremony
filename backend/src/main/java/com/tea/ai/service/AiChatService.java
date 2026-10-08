@@ -171,10 +171,15 @@ public class AiChatService {
         return type == null ? "chat" : type.name().toLowerCase();
     }
 
-    /** 会话标题：最后一条用户消息前 100 字（空 → 空串）。 */
+    /** 会话标题（chat 自动建会话时缺省）：首条用户消息前 20 字（决策 D-3/O-6 拍板；空 → 空串）。 */
     private String topicOf(AiChatRequest req) {
-        String last = lastUserMessage(req);
-        return last.length() > 100 ? last.substring(0, 100) : last;
+        for (ChatMessageDto m : req.messages()) {
+            if ("user".equals(m.role()) && m.content() != null && !m.content().isBlank()) {
+                String c = m.content();
+                return c.length() > 20 ? c.substring(0, 20) : c;
+            }
+        }
+        return "";
     }
 
     /** 最后一条用户消息（截断 500 字，防超长输入；与 BaseExpertAgent 同规则）。 */
