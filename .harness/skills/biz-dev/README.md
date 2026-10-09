@@ -7,7 +7,7 @@
 |---|---|---|
 | 01-crud-scaffold | 标准 CRUD（茶叶/茶器/文化） | ✅ |
 | 02-pagination-query | 列表/历史/目录分页 | ✅ |
-| 03-caffeine-cache | 高频读低变数据缓存（**裁 redis**） | ✅ 替代 |
+| 03-caffeine-cache | 两级缓存：Caffeine L1 + Redis L2（ADR-012 四场景） | ✅ L1 已用 / L2 待 M2-M3 |
 | 04-spring-event-async | 异步解耦（**裁 RocketMQ**） | ✅ 替代 |
 | 05-transaction-consistency | 多写操作一致性（品鉴提交） | ✅ |
 | 06-exception-handling | 统一异常体系 | ✅ |
