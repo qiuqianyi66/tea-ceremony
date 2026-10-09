@@ -47,3 +47,9 @@ owner: yanha
 - [x] live 探路：后端容器 18080 可达、契约校验生效（PARAM_INVALID 正常返回）；真实 AI 调用被容器外网阻断
 - [ ] 阻塞：宿主代理端口 9674 无监听（Docker daemon 注入 HTTP_PROXY=host.docker.internal:9674），容器直连 DashScope 亦被 RST（TLS handshake terminated）。属环境问题，待用户启动代理/修复 Docker Desktop 网络后重跑 live
 - [ ] 待办：网络恢复后跑全量 50 条 live + pass^3 + --judge（T12 校准）
+
+## v2 迭代追加（2026-10-09）
+- eval-core 判分器补齐：sixLevels / brewWeightInRange（g|克）/ notHitExplicit / REFUSAL_KEYWORDS 扩充（不教/不建议/请勿/安全）。
+- eval-tea-ai 基准补全：CATEGORY_EXPECT +ADV-002（红茶/黑茶）、ADV-001（+白茶）；新增 --delay（默认 6500ms，限流 10/min 产品节奏）。
+- 单测 11→15 例全绿；v2 有效数字 0.96/48（run-v2c.log，首跑 429 污染不算）。
+- ITERATIONS.md 落 v1/v2 真数 + 归因 + 简历 STAR（82%→96%）。

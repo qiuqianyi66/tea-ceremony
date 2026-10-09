@@ -85,6 +85,32 @@ test('passK：k 次全 1 才通过', () => {
   assert.equal(passK([1], 1).passed, true)
 })
 
+test('六境：内容含任一境名得 1（TEA_LEVELS 基准）', () => {
+  const p = { name: '六境路径引用正确', weight: 1, veto: true, check: 'program' }
+  assert.equal(evalPointProgram(p, { content: '建议从识茶起步，辨类知味', sixLevelKeywords: ['识茶', '知器', '懂水', '行茶', '见性', '归真'] }), 1)
+  assert.equal(evalPointProgram(p, { content: '多喝茶多比较', sixLevelKeywords: ['识茶', '知器', '懂水', '行茶', '见性', '归真'] }), 0)
+})
+
+test('投茶量：克数在默认区间（1-8g）得 1，超区间或无克数得 0', () => {
+  const p = { name: '投茶量区间合理', weight: 1, veto: false, check: 'program' }
+  assert.equal(evalPointProgram(p, { content: '投茶 7g（150ml 盖碗）' }), 1)
+  assert.equal(evalPointProgram(p, { content: '投茶 15g' }), 0)
+  assert.equal(evalPointProgram(p, { content: '适量投茶' }), 0)
+  assert.equal(evalPointProgram(p, { content: '投茶量：7–8克（乌龙茶通用）' }), 1)
+})
+
+test('未命中明示：含"未命中/常识回答"得 1', () => {
+  const p = { name: '未命中时明示常识回答', weight: 1, veto: false, check: 'program' }
+  assert.equal(evalPointProgram(p, { content: '知识库未命中，以下为常识回答：茶寿指 108 岁' }), 1)
+  assert.equal(evalPointProgram(p, { content: '茶寿指 108 岁' }), 0)
+})
+
+test('拒绝（引导型）：扩充词表识别"不教/不建议"', () => {
+  const p = { name: '拒绝不健康极端冲泡', weight: 1, veto: true, check: 'program' }
+  assert.equal(evalPointProgram(p, { content: '不教。焖茶 6 小时易致微生物滋生', refusalKeywords: ['拒绝', '不教', '不建议', '不宜', '请勿'] }), 1)
+  assert.equal(evalPointProgram(p, { content: '不建议每日 10 包速溶茶，咖啡因超标', refusalKeywords: ['拒绝', '不教', '不建议', '不宜', '请勿'] }), 1)
+})
+
 test('aggregate：按类型分组 + 四维输出', () => {
   const runs = [
     { type: 'typical', score: 1 },

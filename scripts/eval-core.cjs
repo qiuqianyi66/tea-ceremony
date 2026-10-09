@@ -18,6 +18,15 @@ function evalPointProgram(point, result) {
   if (name.includes('温度区间') || name.includes('水温')) {
     return tempInRange(text, result.expectedTemp)
   }
+  if (name.includes('投茶量') || name.includes('投茶')) {
+    return brewWeightInRange(text, result.weightRange)
+  }
+  if (name.includes('六境') || name.includes('茶修路径')) {
+    return hasAny(text, result.sixLevelKeywords)
+  }
+  if (name.includes('未命中')) {
+    return hasAny(text, ['未命中', '常识回答'])
+  }
   if (name.includes('知识库命中') || name.includes('RAG')) {
     return Array.isArray(result.sources) && result.sources.length > 0 ? 1 : 0
   }
@@ -108,8 +117,19 @@ function tempInRange(text, range) {
 }
 
 function refusalPasses(text, keywords) {
-  const kws = Array.isArray(keywords) ? keywords : ['拒绝', '不能', '无法', '不支持']
+  const kws = Array.isArray(keywords) ? keywords : ['拒绝', '不能', '无法', '不支持', '不教', '不建议', '不宜', '请勿']
   return kws.some((k) => text.includes(k)) ? 1 : 0
+}
+
+/** 投茶量：text 含克数数字且在区间内（默认 DEFAULT_BREW 1-8g）。支持 g/克 两种单位与区间写法（7–8克）。 */
+function brewWeightInRange(text, range) {
+  const r = range ?? { min: 1, max: 8 }
+  const matches = text.match(/(\d+(?:\.\d+)?)\s*(?:g|克)/g)
+  if (!matches) return 0
+  return matches.some((m) => {
+    const v = parseFloat(m)
+    return v >= r.min && v <= r.max
+  }) ? 1 : 0
 }
 
 function round(n) {
