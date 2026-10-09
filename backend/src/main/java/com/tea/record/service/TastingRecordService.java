@@ -4,6 +4,7 @@ import com.tea.common.exception.BadRequestException;
 import com.tea.common.exception.ConflictException;
 import com.tea.common.exception.NotFoundException;
 import com.tea.common.response.PageResult;
+import com.tea.garden.service.GardenEnergyService;
 import com.tea.record.dto.RecordCreateRequest;
 import com.tea.record.entity.TastingRecord;
 import com.tea.record.repository.TastingRecordRepository;
@@ -32,6 +33,7 @@ public class TastingRecordService {
     private final TastingRecordRepository recordRepository;
     private final TeaRepository teaRepository;
     private final TeaWareRepository teaWareRepository;
+    private final GardenEnergyService gardenEnergyService;
 
     @Transactional(rollbackFor = Exception.class)
     public RecordVo create(Integer userId, RecordCreateRequest req) {
@@ -64,7 +66,10 @@ public class TastingRecordService {
         record.setWeather(req.weather());
         record.setMood(req.mood());
         try {
-            return RecordVo.from(recordRepository.save(record));
+            TastingRecord saved = recordRepository.save(record);
+            // S1 能量记账（ADR-015）：同事务，client_id 复用品鉴记录防重；失败整体回滚不污染品鉴
+            gardenEnergyService.recordTasting(userId, saved.getClientId(), saved.getNotes());
+            return RecordVo.from(saved);
         } catch (DataIntegrityViolationException ex) {
             // 并发同 client_id 提交：唯一索引兜底 → 转幂等返回已有记录
             return RecordVo.from(recordRepository.findByUserIdAndClientId(userId, req.client_id())

@@ -63,7 +63,11 @@ describe('garden 生长计算（纯函数）', () => {
   })
 
   it('getGrowthProgress：按天数归一化到 0-1，已采/枯萎为 1', () => {
-    expect(getGrowthProgress(makePlant())).toBe(0)
+    // makePlant 与 getGrowthProgress 各取一次 Date.now()，跨毫秒时差会让 toBe(0) 偶发失败，
+    // 与 getPlantDays 断言同模式：当天内、接近 0
+    const freshProgress = getGrowthProgress(makePlant())
+    expect(freshProgress).toBeGreaterThanOrEqual(0)
+    expect(freshProgress).toBeLessThan(0.01)
     expect(getGrowthProgress(makePlant({ plantedAt: daysAgo(7) }))).toBeCloseTo(0.5)
     expect(getGrowthProgress(makePlant({ status: 'harvested' }))).toBe(1)
   })

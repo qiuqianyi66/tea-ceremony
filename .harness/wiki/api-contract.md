@@ -87,16 +87,23 @@ description: tea 接口协议——现有端点、统一约定（前缀/鉴权/�
 - 评分：dimensions/overall_score/process_factor 前端计算（scoring.ts），后端透明存储不重算
 - 与旧 `/api/records` 差异：分页风格 skip/limit → page/size；`client_id` 可选 → 必填（V1 表 NOT NULL）；tea_id/ware_id 非空时校验存在（400）
 
-### 茶园 `/api/garden-plants`（需登录）
-
-> ⚠ 未实现：旧栈 routers 未提供该端点、新栈待茶园切片（V1 已建 garden_plants 表）。当前调用 404；实现后移除本标注。
+### 茶园 `/api/v1/garden-plants` + `/api/v1/garden-energy`（需登录，S1 已实现，ADR-015）
 
 | 方法 | 路径 | 请求体 | 成功响应 | 错误 |
 |---|---|---|---|---|
-| POST | `/api/garden-plants/` | `GardenPlantCreate`（含 `client_id`） | `GardenPlantResponse` 200 | 401 |
-| GET | `/api/garden-plants/` | — | `list[GardenPlantResponse]` | 401 |
+| POST | `/api/v1/garden-plants` | `GardenPlantCreate`（含 `client_id`，`plant_type` 可空） | `ApiResponse{data:GardenPlantVo}` 200（幂等 upsert） | 400 / 401 |
+| GET | `/api/v1/garden-plants` | — | `ApiResponse{data:list[GardenPlantVo]}` | 401 |
+| GET | `/api/v1/garden-energy` | — | `ApiResponse{data:GardenEnergySummaryVo}` | 401 |
+| POST | `/api/v1/garden-energy/collect` | — | `ApiResponse{data:GardenEnergySummaryVo}`（收集后最新） | 401 |
 
-**幂等 upsert**：同 `user_id + client_id` 已存在则更新状态返回原 id，否则新建。
+`GardenPlantVo`（snake_case）：`id, client_id, plant_type, status, energy, created_at, updated_at`
+`GardenEnergySummaryVo`（snake_case）：`pending_amount, collected_amount, total_energy, phase, phase_thresholds`
+- 幂等 upsert：`user_id + client_id` 唯一（uk_garden_plants_user_client）；并发冲突唯一索引兜底转幂等返回
+- 能量账本（ADR-015）：品鉴落库同事务记账（amount = brew-base 5 + 笔记每 100 字 ×10，配置化），`client_id` 复用品鉴记录防重
+- 收集：未收事件置已收 + 累加 `plants.energy` + 阶段推进（planted/growing/blooming/harvested，只升不降）
+- 阶段阈值（application.yml `garden.energy.phases`）：planted 0 / growing 100 / blooming 300 / harvested 600
+- 归属：全部按 `user_id` 过滤；游客前端不调能量接口（纯观赏降级）
+- 与旧 `/api/garden-plants/` 差异：路径对齐新栈 `/api/v1/`；旧端点从未实现（404），无兼容负担
 
 ### 茶文化 `/api/culture`（公开，旧 FastAPI，仅维护）
 

@@ -7,6 +7,8 @@ spring:
   ai:
     dashscope:
       api-key: ${AI_DASHSCOPE_API_KEY:disabled}
+      # 百炼工作空间专属 endpoint（sk-ws- key 必须配专属 base-url；根地址即可，completionsPath 自带 /api/v1）
+      base-url: ${AI_DASHSCOPE_BASE_URL:https://dashscope.aliyuncs.com}
     # P1-1 MCP server：ToolCallbackProvider 注册的 @Tool（culture-search）经 SSE WebMVC transport 暴露，
     # 外部 agent（Claude Code/Codex/Goose 等）可经标准 MCP 协议调用（SSE 端点 /mcp，消息端点 /mcp/messages）
     mcp:
@@ -41,6 +43,17 @@ tea:
     # dev 默认值仅本地开发；生产必须通过环境变量 JWT_SECRET 注入 ≥32 字节密钥
     secret: ${JWT_SECRET:tea-dev-secret-key-please-change-in-production-0123456789}
     expiration-minutes: ${JWT_EXPIRATION_MINUTES:1440}
+
+garden:
+  energy:
+    rules:
+      brew-base: 5          # 每次冲泡基础能量（D2 配置化，ADR-015）
+      note-per-100: 10      # 笔记每 100 字能量
+    phases:                 # 阶段阈值（D4 已确认），只升不降推进
+      planted: 0
+      growing: 100
+      blooming: 300
+      harvested: 600
 
 management:
   endpoints:

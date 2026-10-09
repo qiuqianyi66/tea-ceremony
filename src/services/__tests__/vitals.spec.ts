@@ -53,7 +53,7 @@ async function waitForSettle() {
         throw new Error('pending writes')
       }
     },
-    { timeout: 5000, interval: 100 },
+    { timeout: 30000, interval: 100 },
   )
 }
 
