@@ -47,5 +47,5 @@
 - [x] 迁移成对：`V4__garden_energy.sql`（up）+ rollback.sql（down）
 - [x] up 验证：Docker 临时 PG（5433）V1-V4 全 up，pending→planted 归并 + energy 列 + 账本表核验
 - [x] down 验证：往返测试（up→down→up）通过，down 后账本表/energy 列消失、status 回滚
-- [ ] Testcontainers 集成测试覆盖 V4 up（mvn test，随 A3 后端域完成后跑）
+- [x] Testcontainers 集成测试覆盖 V4 up（后端全量 mvn test 通过，含 V4 up 无冲突、ddl-auto validate）
 - [x] 无红线冲突（ddl-auto: validate / 命名 / 注释）

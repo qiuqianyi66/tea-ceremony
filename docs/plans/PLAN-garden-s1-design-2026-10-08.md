@@ -1,9 +1,10 @@
 ---
 name: garden-s1-design
 description: 茶园 S1 切片实施方案设计——能量事件账本 + 品鉴自动产能量 + 一键收集 + 阶段推进（3D 映射）。需求来源 garden-product-prd.md（V2.0 active），本文件为方案设计层，实现前需用户确认。
-status: confirmed
+status: active
 owner: yanha
 date: 2026-10-08
+last_updated: 2026-10-09
 confirmed: 2026-10-09（用户授权按推荐执行，D1-D5 全确认）
 ---
 
