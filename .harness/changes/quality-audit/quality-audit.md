@@ -4,11 +4,11 @@ status: active
 owner: yanha
 ---
 
-# 质量四性审计 — 批 3 安全性修复清单
+# 质量四性审计 — 批 3/批 4 安全性+可扩展性修复清单
 
-审计时间：2026-10-09。范围：全库（批 3 安全性核对 + 修复）。
+审计时间：2026-10-09。范围：全库。
 
-## 核对结果（批 3 五项）
+## 批 3 安全性核对结果
 
 | 核对项 | 结果 | 证据 |
 | --- | --- | --- |
@@ -41,8 +41,19 @@ application.yml: 中危 限流阈值硬编码风险. 无配置项. 新增 tea.ra
 
 - [x] `mvn test -Dtest=RateLimitFilterTest`：5/5 通过
 - [x] `npm audit --registry=https://registry.npmjs.org`：0 vulnerabilities
-- [ ] `mvn -q test` 全量（等后台结果）
+- [x] `mvn -q test` 全量：exit=0（180 tests 全绿）
 - [ ] 批 1 主门禁重跑（audit-redlines + verify-harness）全绿
+
+## 批 4 可扩展性核对结果
+
+| 核对项 | 结果 | 证据 |
+| --- | --- | --- |
+| 契约登记 | ✅ | audit-wiki-drift 37=37 全绿；限流为 Filter 基础设施，不新增 API 端点，无需契约登记 |
+| 配置化 | ✅ | 限流 `tea.ratelimit.*` @Value 注入（环境变量沿用旧栈 RATE_LIMIT_*）；garden.energy 配置化（GardenEnergyProperties） |
+| 迁移成对 | ✅ | 全部切片（m1-*/m5-s2/garden-s1）db-migrations.sql + rollback.sql 成对；Flyway V1-V4 命名规范 |
+| 增量演进 | ✅ | 本轮未动承重墙（teaAI.ts 降级链/评分模型/幂等）；限流可配置可回退（删 filter 注册即回退） |
+
+批 4 无命中，无需修复。
 
 ## 未修项（记录不修）
 
