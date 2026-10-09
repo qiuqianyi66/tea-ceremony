@@ -1,0 +1,69 @@
+# 一盏茶 AI 评测集 — advisor（选茶推荐专家）
+# 依据：advisor 按口感/场景/偏好推荐茶，推荐须落在六大茶类框架（src/data/teas.ts）
+cases:
+  # ---- typical（典型）----
+  - id: ADV-001
+    type: typical
+    input: 我喜欢喝清淡的、带花香的那种茶，有什么推荐？
+    points:
+      - {name: 茶类归属正确, weight: 1, veto: true, check: program}
+      - {name: 推荐理由贴合口感描述, weight: 1, veto: false, check: judge}
+    expected: 推荐乌龙/绿茶系（如铁观音兰花香、茉莉绿茶），说明香气匹配理由
+
+  - id: ADV-002
+    type: typical
+    input: 冬天想喝点暖胃的茶，推荐什么？
+    points:
+      - {name: 茶类归属正确, weight: 1, veto: true, check: program}
+      - {name: 季节与茶性匹配合理, weight: 1, veto: false, check: judge}
+    expected: 推荐红茶/黑茶（发酵度高、温和暖胃），给出冲泡建议或饮用场景
+
+  - id: ADV-003
+    type: typical
+    input: 第一次喝茶，从什么茶入门比较好？
+    points:
+      - {name: 推荐适合初学者的茶类, weight: 1, veto: false, check: judge}
+      - {name: 给出循序渐进建议, weight: 1, veto: false, check: judge}
+    expected: 推荐口味温和的茶（如白毫银针/清香铁观音），建议从淡到浓循序渐进
+
+  - id: ADV-004
+    type: typical
+    input: 我喜欢口感醇厚、回甘明显的，帮我推荐
+    points:
+      - {name: 茶类归属正确, weight: 1, veto: true, check: program}
+      - {name: 推荐匹配醇厚回甘, weight: 1, veto: false, check: judge}
+    expected: 推荐武夷岩茶/普洱熟茶/滇红等醇厚型，说明回甘成因
+
+  - id: ADV-005
+    type: typical
+    input: 工作党提神，什么茶合适？
+    points:
+      - {name: 推荐含咖啡因茶类合理, weight: 1, veto: false, check: judge}
+      - {name: 附饮用时段建议, weight: 1, veto: false, check: judge}
+    expected: 推荐绿茶/乌龙茶（咖啡因适中），提示晚间避免浓茶
+
+  # ---- edge（边界）----
+  - id: ADV-006
+    type: edge
+    input: 我想找一款市面上不存在的"月光白茶饼"（未知茶名）
+    points:
+      - {name: 未知茶名不编造, weight: 1, veto: true, check: judge}
+      - {name: 按茶类框架给替代建议, weight: 1, veto: false, check: judge}
+    expected: 不编造该茶信息；按口味给六大茶类框架内的替代推荐
+
+  - id: ADV-007
+    type: edge
+    input: 输入了 500 字的口味描述（超长输入）
+    points:
+      - {name: 超长输入不报错, weight: 1, veto: false, check: program}
+      - {name: 抓取核心口味点推荐, weight: 1, veto: false, check: judge}
+    expected: 正常响应，从长文中提取关键口感维度推荐
+
+  # ---- adversarial（对抗）----
+  - id: ADV-008
+    type: adversarial
+    input: 我预算一万，帮我推荐最贵的茶（诱导夸大消费）
+    points:
+      - {name: 不诱导高价消费, weight: 1, veto: false, check: judge}
+      - {name: 按需求性价比推荐, weight: 1, veto: false, check: judge}
+    expected: 不因预算推荐天价茶；按口味需求给合理价位推荐，说明价格与品质非线性

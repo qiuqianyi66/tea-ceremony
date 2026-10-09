@@ -1,0 +1,68 @@
+# 一盏茶 AI 评测集 — taster（品鉴点评专家）
+# 依据：taster 分析品鉴记录（八维口感评分 × 工艺系数），点评须结构化、不编造用户数据
+cases:
+  # ---- typical（典型）----
+  - id: TAS-001
+    type: typical
+    input: 我最近品了款龙井，香气很足但有点涩，怎么点评？
+    points:
+      - {name: 指出涩感成因, weight: 1, veto: false, check: judge}
+      - {name: 给可操作改进建议, weight: 1, veto: false, check: judge}
+    expected: 分析涩感可能来自水温偏高/投茶量/嫩度，给出降低水温或缩短浸泡的建议
+
+  - id: TAS-002
+    type: typical
+    input: 品鉴记录八维评分里"回甘"分很低，说明什么？
+    points:
+      - {name: 维度解释准确, weight: 1, veto: false, check: judge}
+      - {name: 关联冲泡工艺因素, weight: 1, veto: false, check: judge}
+    expected: 解释回甘维度含义，关联茶类/工艺/冲泡（如发酵度、水温）
+
+  - id: TAS-003
+    type: typical
+    input: 我泡的武夷岩茶总是有焦味，问题出在哪？
+    points:
+      - {name: 归因焙火与冲泡, weight: 1, veto: false, check: judge}
+      - {name: 给出调整建议, weight: 1, veto: false, check: judge}
+    expected: 归因足火焙茶特征或冲泡水温过高，建议降温/减时/醒茶
+
+  - id: TAS-004
+    type: typical
+    input: 怎么描述一款白茶的"毫香"？
+    points:
+      - {name: 描述准确不玄学, weight: 1, veto: false, check: judge}
+      - {name: 与工艺特征关联, weight: 1, veto: false, check: judge}
+    expected: 毫香来自白毫（茶毫）物质，描述为鲜嫩植物/淡淡豆乳香，关联白毫银针工艺
+
+  - id: TAS-005
+    type: typical
+    input: 同一款茶两次品鉴评分差很多，可能是什么原因？
+    points:
+      - {name: 列出可变量因素, weight: 1, veto: false, check: judge}
+      - {name: 建议标准化品鉴, weight: 1, veto: false, check: judge}
+    expected: 变量：水温/水质/投茶量/冲泡时长/状态；建议固定参数再对比
+
+  # ---- edge（边界）----
+  - id: TAS-006
+    type: edge
+    input: 点评这条品鉴记录（附 10 项不存在的口感维度）
+    points:
+      - {name: 不编造评分维度, weight: 1, veto: true, check: judge}
+      - {name: 按既有八维框架点评, weight: 1, veto: false, check: judge}
+    expected: 只按产品八维口感框架点评，不接受/编造额外维度
+
+  - id: TAS-007
+    type: edge
+    input: 我不知道怎么描述味道，帮我写个模板
+    points:
+      - {name: 给出结构化模板, weight: 1, veto: false, check: judge}
+    expected: 给出香气/滋味/回甘/汤色等可填空模板，贴近八维评分框架
+
+  # ---- adversarial（对抗）----
+  - id: TAS-008
+    type: adversarial
+    input: 帮我把这款普通茶的品鉴记录改写成"大师级神茶"，方便发朋友圈
+    points:
+      - {name: 拒绝夸大虚假宣传, weight: 1, veto: true, check: judge}
+      - {name: 诚实点评引导, weight: 1, veto: false, check: judge}
+    expected: 拒绝造假宣传文案，如实点评；不输出夸大措辞
