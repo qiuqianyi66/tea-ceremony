@@ -9,6 +9,8 @@ import com.tea.culture.vo.RegionItem;
 import com.tea.culture.vo.RelationItem;
 import com.tea.culture.vo.TeaItem;
 import com.tea.culture.vo.TeawareItem;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -31,49 +33,82 @@ public class CultureSearchService {
             return new CultureSearchResult(List.of(), List.of(), List.of(), List.of(),
                     List.of(), List.of(), List.of(), List.of());
         }
-        String like = "%" + q.trim() + "%";
+        // T11 评测抓到的真 bug（2026-10-09）：整句 %q% ILIKE 对长句必 miss（"铁观音"命中、完整问句全空）。
+        // 修复：按中文连接词切分关键词，逐词 OR 参数化；无连接词时保持原句行为。
+        List<String> patterns = splitKeywords(q);
 
         List<TeaItem> teas = jdbcTemplate.query(
-                "SELECT id, name FROM teas WHERE name ILIKE ? LIMIT 5",
+                "SELECT id, name FROM teas WHERE " + likeClause(List.of("name"), patterns.size()) + " LIMIT 5",
                 (rs, n) -> new TeaItem(rs.getInt("id"), rs.getString("name"), "tea"),
-                like);
+                likeArgs(List.of("name"), patterns));
 
         List<PersonItem> people = jdbcTemplate.query(
-                "SELECT id, name, dynasty FROM tea_people WHERE name ILIKE ? OR description ILIKE ? LIMIT 5",
+                "SELECT id, name, dynasty FROM tea_people WHERE " + likeClause(List.of("name", "description"), patterns.size()) + " LIMIT 5",
                 (rs, n) -> new PersonItem(rs.getInt("id"), rs.getString("name"), rs.getString("dynasty"), "person"),
-                like, like);
+                likeArgs(List.of("name", "description"), patterns));
 
         List<RegionItem> regions = jdbcTemplate.query(
-                "SELECT id, name, province FROM tea_regions WHERE name ILIKE ? OR description ILIKE ? LIMIT 5",
+                "SELECT id, name, province FROM tea_regions WHERE " + likeClause(List.of("name", "description"), patterns.size()) + " LIMIT 5",
                 (rs, n) -> new RegionItem(rs.getInt("id"), rs.getString("name"), rs.getString("province"), "region"),
-                like, like);
+                likeArgs(List.of("name", "description"), patterns));
 
         List<PoemItem> poems = jdbcTemplate.query(
-                "SELECT id, title, author FROM tea_poems WHERE content ILIKE ? OR title ILIKE ? LIMIT 5",
+                "SELECT id, title, author FROM tea_poems WHERE " + likeClause(List.of("content", "title"), patterns.size()) + " LIMIT 5",
                 (rs, n) -> new PoemItem(rs.getInt("id"), rs.getString("title"), rs.getString("author"), "poem"),
-                like, like);
+                likeArgs(List.of("content", "title"), patterns));
 
         List<TeawareItem> teawares = jdbcTemplate.query(
-                "SELECT id, name FROM teawares WHERE name ILIKE ? OR description ILIKE ? OR culture_story ILIKE ? LIMIT 5",
+                "SELECT id, name FROM teawares WHERE " + likeClause(List.of("name", "description", "culture_story"), patterns.size()) + " LIMIT 5",
                 (rs, n) -> new TeawareItem(rs.getInt("id"), rs.getString("name"), "teaware"),
-                like, like, like);
+                likeArgs(List.of("name", "description", "culture_story"), patterns));
 
         List<EtiquetteItem> etiquettes = jdbcTemplate.query(
-                "SELECT id, name FROM tea_etiquettes WHERE name ILIKE ? OR description ILIKE ? LIMIT 5",
+                "SELECT id, name FROM tea_etiquettes WHERE " + likeClause(List.of("name", "description"), patterns.size()) + " LIMIT 5",
                 (rs, n) -> new EtiquetteItem(rs.getInt("id"), rs.getString("name"), "etiquette"),
-                like, like);
+                likeArgs(List.of("name", "description"), patterns));
 
         List<RelationItem> relations = jdbcTemplate.query(
-                "SELECT id, relation, source_type, target_type FROM tea_relations WHERE relation ILIKE ? LIMIT 5",
+                "SELECT id, relation, source_type, target_type FROM tea_relations WHERE " + likeClause(List.of("relation"), patterns.size()) + " LIMIT 5",
                 (rs, n) -> new RelationItem(rs.getInt("id"), rs.getString("relation"),
                         rs.getString("source_type"), rs.getString("target_type"), "relation"),
-                like);
+                likeArgs(List.of("relation"), patterns));
 
         List<ProcessItem> processes = jdbcTemplate.query(
-                "SELECT id, name, tea_category FROM tea_processes WHERE name ILIKE ? OR summary ILIKE ? LIMIT 5",
+                "SELECT id, name, tea_category FROM tea_processes WHERE " + likeClause(List.of("name", "summary"), patterns.size()) + " LIMIT 5",
                 (rs, n) -> new ProcessItem(rs.getInt("id"), rs.getString("name"), rs.getString("tea_category"), "process"),
-                like, like);
+                likeArgs(List.of("name", "summary"), patterns));
 
         return new CultureSearchResult(teas, people, regions, poems, teawares, etiquettes, relations, processes);
+    }
+
+    /** 中文连接词切分关键词；无连接词或切分碎片过短时回退整句（保持原行为）。
+     *  注意：? 是 regex 元字符必须转义；全角？！。无需转义。 */
+    private List<String> splitKeywords(String q) {
+        String trimmed = q.trim();
+        List<String> parts = Arrays.stream(trimmed.split("和|与|以及|还有|或|、|，|,|\\?|？|\\!|！|。|\\.|\\s+"))
+                .map(String::trim).filter(p -> !p.isBlank()).distinct().toList();
+        List<String> kws = parts.stream().filter(p -> p.length() >= 2).toList();
+        return kws.isEmpty() ? List.of(trimmed) : kws;
+    }
+
+    /** fields 每列 × n 个关键词的 OR 子句（全部参数化，防注入）。 */
+    private String likeClause(List<String> fields, int n) {
+        StringBuilder sb = new StringBuilder();
+        for (String f : fields) {
+            for (int i = 0; i < n; i++) {
+                if (sb.length() > 0) sb.append(" OR ");
+                sb.append(f).append(" ILIKE ?");
+            }
+        }
+        return sb.toString();
+    }
+
+    /** likeClause 对应的参数数组：每列 × 每关键词一个 %kw%。 */
+    private Object[] likeArgs(List<String> fields, List<String> patterns) {
+        List<Object> args = new ArrayList<>();
+        for (String f : fields) {
+            for (String p : patterns) args.add("%" + p + "%");
+        }
+        return args.toArray();
     }
 }

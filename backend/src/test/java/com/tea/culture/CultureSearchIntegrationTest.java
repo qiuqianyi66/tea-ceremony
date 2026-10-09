@@ -90,6 +90,19 @@ class CultureSearchIntegrationTest {
     }
 
     @Test
+    void longSentenceQueryHitsTeas() throws Exception {
+        // T11 评测抓到的真 bug：整句 %q% ILIKE 对长句必 miss（"铁观音"命中、完整问句全空）。
+        // 修复：连接词切分关键词 + OR 参数化；本用例回归：长句须命中铁观音。
+        ResponseEntity<String> res = rest.getForEntity("/api/v1/culture/search?q=铁观音和武夷岩茶有什么区别？", String.class);
+        assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode body = objectMapper.readTree(res.getBody());
+        assertThat(body.path("code").asText()).isEqualTo("OK");
+        JsonNode teas = body.path("data").path("teas");
+        assertThat(teas.size()).isGreaterThan(0);
+        assertThat(teas.get(0).path("name").asText()).contains("铁观音");
+    }
+
+    @Test
     void aiChatWithoutKeyReturns502() {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
