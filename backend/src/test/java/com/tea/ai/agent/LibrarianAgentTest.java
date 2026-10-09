@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 
 import com.tea.ai.dto.AiChatRequest;
 import com.tea.ai.dto.ChatMessageDto;
+import com.tea.ai.service.AgentSkillRouter;
 import com.tea.ai.service.AiUsageLogger;
 import com.tea.ai.service.PromptService;
 import com.tea.ai.vo.AiChatVo;
@@ -43,6 +44,7 @@ class LibrarianAgentTest {
     private final CultureSearchService search = mock(CultureSearchService.class);
     private final AiUsageLogger usageLogger = mock(AiUsageLogger.class);
     private final PromptService promptService = mock(PromptService.class);
+    private final AgentSkillRouter skillRouter = mock(AgentSkillRouter.class);
 
     private LibrarianAgent agent(String apiKey) {
         when(builder.build()).thenReturn(chatClient);
@@ -54,7 +56,8 @@ class LibrarianAgentTest {
         when(response.getMetadata()).thenReturn(metadata);
         when(metadata.getModel()).thenReturn("qwen-plus");
         when(metadata.getUsage()).thenReturn(null);
-        return new LibrarianAgent(builder, search, usageLogger, promptService, apiKey);
+        when(skillRouter.detect(anyString())).thenReturn(null);
+        return new LibrarianAgent(builder, search, usageLogger, promptService, skillRouter, apiKey);
     }
 
     private static AiChatRequest question(String q) {

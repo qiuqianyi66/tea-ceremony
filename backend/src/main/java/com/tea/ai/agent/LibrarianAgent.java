@@ -2,6 +2,7 @@ package com.tea.ai.agent;
 
 import com.tea.ai.dto.AiChatRequest;
 import com.tea.ai.dto.ChatMessageDto;
+import com.tea.ai.service.AgentSkillRouter;
 import com.tea.ai.service.AiUsageLogger;
 import com.tea.ai.service.PromptService;
 import com.tea.ai.vo.AiChatVo;
@@ -40,17 +41,20 @@ public class LibrarianAgent {
     private final CultureSearchService cultureSearchService;
     private final AiUsageLogger usageLogger;
     private final PromptService promptService;
+    private final AgentSkillRouter skillRouter;
     private final String apiKey;
 
     public LibrarianAgent(ChatClient.Builder chatClientBuilder,
                           CultureSearchService cultureSearchService,
                           AiUsageLogger usageLogger,
                           PromptService promptService,
+                          AgentSkillRouter skillRouter,
                           @Value("${spring.ai.dashscope.api-key:}") String apiKey) {
         this.chatClient = chatClientBuilder.build();
         this.cultureSearchService = cultureSearchService;
         this.usageLogger = usageLogger;
         this.promptService = promptService;
+        this.skillRouter = skillRouter;
         this.apiKey = apiKey;
     }
 
@@ -64,11 +68,20 @@ public class LibrarianAgent {
         String context = renderContext(hit);
         List<String> sources = collectSources(hit);
 
+        // T08 运行时技能（ADR-017）：按领域关键词命中 → 注入子指令；未命中不膨胀上下文
+        String domain = skillRouter.detect(question);
+        String skill = domain == null ? "" : skillRouter.load("librarian", domain);
+        String system = promptService.getPrompt("librarian", SYSTEM_PROMPT);
+        if (!skill.isBlank()) {
+            system += "\n\n【领域技能·" + domain + "】\n" + skill;
+        }
+        system += "\n\n【知识库检索结果】\n" + context;
+
         long start = System.currentTimeMillis();
         ChatResponse response;
         try {
             response = chatClient.prompt()
-                    .system(promptService.getPrompt("librarian", SYSTEM_PROMPT) + "\n\n【知识库检索结果】\n" + context)
+                    .system(system)
                     .user(question)
                     .call().chatResponse();
         } catch (Exception e) {
