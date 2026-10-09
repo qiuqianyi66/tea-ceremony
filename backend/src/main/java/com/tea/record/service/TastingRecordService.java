@@ -33,7 +33,7 @@ public class TastingRecordService {
     private final TeaRepository teaRepository;
     private final TeaWareRepository teaWareRepository;
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public RecordVo create(Integer userId, RecordCreateRequest req) {
         if (req.tea_id() != null && !teaRepository.existsById(req.tea_id())) {
             throw new BadRequestException("茶叶不存在");
@@ -94,7 +94,7 @@ public class TastingRecordService {
         return RecordVo.from(record);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void delete(Integer userId, Integer id) {
         TastingRecord record = recordRepository.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new NotFoundException("记录不存在"));

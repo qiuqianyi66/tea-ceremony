@@ -77,15 +77,18 @@ if (structureRules) {
 // 3. CI job 数（只统计 jobs: 块内的两空格缩进 job 名，排除 on: 下的 push/pull_request）
 const ci = read('.github/workflows/ci.yml');
 let ciJobs = 0;
+let ciJobsList = [];
+let ciClaim = null;
 if (!ci) {
   errors.push('.github/workflows/ci.yml 不存在');
 } else {
   const jobsIdx = ci.search(/^jobs:$/m);
   const jobsBody = jobsIdx >= 0 ? ci.slice(jobsIdx) : ci;
   ciJobs = (jobsBody.match(/^  [a-z][a-z0-9-]*:$/gm) || []).length;
-  const claim = agents.match(/CI (\d+) job/);
-  if (claim && ciJobs !== parseInt(claim[1], 10)) {
-    errors.push(`AGENTS.md 声明 CI ${claim[1]} job，ci.yml 实际 ${ciJobs} job`);
+  ciJobsList = (jobsBody.match(/^  [a-z][a-z0-9-]*:$/gm) || []).map(s => s.replace(/^  /, '').replace(/:$/, ''));
+  ciClaim = agents.match(/CI (\d+) job/);
+  if (ciClaim && ciJobs !== parseInt(ciClaim[1], 10)) {
+    errors.push(`AGENTS.md 声明 CI ${ciClaim[1]} job，ci.yml 实际 ${ciJobs} job`);
   }
 }
 
@@ -172,6 +175,47 @@ for (const fam of families) {
   const claimed = parseInt(m[2], 10);
   if (claimed !== famCounts[fam]) {
     errors.push(`.harness/skills/${fam}/README.md 声明 ${claimed} 个，实际 ${famCounts[fam]} 个`);
+  }
+}
+
+// 4f. 技能 frontmatter type/verification 标注（O-11，K7 技能准入）
+//    type 值域三值；type: executable 必填 verification；声明 verification 必须 type: executable
+const VALID_TYPES = new Set(['executable', 'knowledge', 'flow']);
+const SKILL_ROOTS = [
+  path.join(ROOT, '.agents/skills'),
+  ...families.map(f => path.join(ROOT, `.harness/skills/${f}`)),
+];
+function collectSkillFrontmatters() {
+  const out = [];
+  for (const dir of SKILL_ROOTS) {
+    if (!fs.existsSync(dir)) continue;
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (!e.isDirectory()) continue;
+      const sf = path.join(dir, e.name, 'SKILL.md');
+      if (fs.existsSync(sf)) {
+        const text = fs.readFileSync(sf, 'utf8');
+        const front = (text.match(/^---[\s\S]*?---/) || [''])[0];
+        out.push({ rel: path.relative(ROOT, sf).replace(/\\/g, '/'), front });
+      }
+    }
+  }
+  return out;
+}
+function fmField(front, name) {
+  const m = front.match(new RegExp(`^${name}:\\s*(.+?)\\s*$`, 'm'));
+  return m ? m[1] : null;
+}
+for (const s of collectSkillFrontmatters()) {
+  const type = fmField(s.front, 'type');
+  const verification = fmField(s.front, 'verification');
+  if (type && !VALID_TYPES.has(type)) {
+    errors.push(`❌ ${s.rel} type 值域非法：${type}。\n✅ FIX: 改为 executable|knowledge|flow 之一。\n📖 See: .harness/rules/技能规范.md §2（O-11）`);
+  }
+  if (type === 'executable' && !verification) {
+    errors.push(`❌ ${s.rel} type: executable 缺 verification 验证命令。\n✅ FIX: 补 frontmatter verification 字段（可运行命令）。\n📖 See: .harness/rules/技能规范.md §2（O-11）`);
+  }
+  if (verification && type !== 'executable') {
+    errors.push(`❌ ${s.rel} 声明 verification 但 type=${type || '（缺省）'}。\n✅ FIX: type 改为 executable。\n📖 See: .harness/rules/技能规范.md §2（O-11）`);
   }
 }
 
@@ -288,6 +332,7 @@ if (fs.existsSync(changesDir)) {
 // 输出
 console.log('=== Harness 一致性体检 ===');
 console.log(`AGENTS.md ${agentsLines} 行 | ADR ${adrNums.length} 个 | CI ${ciJobs} job | .agents/skills ${agentsSkillDirs} 个 | .harness/skills ${harnessTotal} 个`);
+console.log(`CI jobs 进出: ci.yml ${ciJobs} [${ciJobsList.join(', ')}] vs AGENTS.md 声明 ${ciClaim ? ciClaim[1] : '（未声明）'}${ciClaim && ciJobs !== parseInt(ciClaim[1], 10) ? ' ⚠ 不一致' : ''}`);
 for (const w of warnings) console.log(`⚠ ${w}`);
 if (errors.length === 0) {
   console.log('ERRORS: []');

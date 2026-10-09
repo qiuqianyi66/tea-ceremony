@@ -48,6 +48,7 @@
 
 所有 AI 修改必须按序走完，缺一步不算完成：
 
+0. **开工自查**：先 `git log --oneline -10` 查目标功能是否已实现；已实现 → 补缺验证，禁止从零重写。
 1. **理解上下文**——读相关文件 + 匹配技能 `SKILL.md` 后再动手。
 2. **确认影响范围**——涉及承重 / 有版本 / 有迁移路径的改动，先问再做。
 3. **修改**——按 §5 纪律，只动必须动的。
@@ -156,7 +157,7 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量�
 - `.harness/rules/技能规范.md` — 技能治理唯一权威（模板/触发式描述/路由表维护，§5 增删改流程）
 - `docs/skills/` — 核心技能人读审查页（plan-control / tea-tasting / db-migration / fastapi-endpoint / vue-component / caveman-review，面向人核对）
 - `CONTEXT.md` — 术语 + ADR 索引 + 架构关键词（必读）
-- `docs/ADR/` — 架构决策记录（ADR-001~013；新决策写 ADR-0XX.md，禁止塞进 CONTEXT.md）
+- `docs/ADR/` — 架构决策记录（ADR-001~014；新决策写 ADR-0XX.md，禁止塞进 CONTEXT.md）
 - `docs/plans/` — 迭代计划层（PLAN-* / TODO-PRIORITY / 环境审查清单）
 - `docs/reference/` — 稳定参考（error-codes.md 错误码表）
 - `docs/architecture/system-overview.md` — 架构分层、数据流、目录速查
@@ -212,5 +213,7 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量�
 - 三子代理豆包机械化替代（2026-10-07）：.claude/agents 是 Claude Code 配置，豆包运行时改走 audit-redlines.cjs（红线 15 条可机械子集 R2/7/8/9/10/11/12/14）+ audit-wiki-drift.cjs（api-contract 端点 vs 代码路由双向核对）+ expert-reviewer，均挂 CI harness job；首跑抓出 .env.development 被 git 跟踪（已解跟踪）、garden-plants 契约登记但无实现（已标注未实现）。
 - 开工前先查目标功能是否已实现：`git log --oneline -10`（用户可能自行提交，0f3549d 会话记忆即先例）；已实现 → 补缺验证，禁止从零重写（2026-10-08 沉淀）。
 - 编码：路由回落路径禁对可能为 null 的枚举直接 `.name()`——AgentOrchestrator 返回 null（透明代理）时 agent 归类须 fallback "chat"，否则集成测试 500（2026-10-08 沉淀）。
+- 技能准入 O-11（2026-10-08）：frontmatter 加 `type: executable|knowledge|flow` 三值；executable 必填 `verification` 验证命令（三条约束由 verify-harness.cjs §4f 机械化强制）；已标 6 个可执行类技能（db-migration/fastapi-endpoint/vue-component/agent-eval/unit-test-ci/3d-scene）。
+- ArchUnit 泛型返回类型（2026-10-08）：`getReturnType().getName()` 含泛型参数（如 `ApiResponse<X>`），比较原始类型用 `method.getRawReturnType().getName()`；事务注解属性用 `getAnnotationOfType(类型名)`（类对象版有泛型推断冲突）。ADR-014。
 
 **2026-10-01 V4 重构**：ADR 拆 `docs/ADR/` 独立文件（ADR-001~009，统一格式）、CONTEXT.md 精简为术语+ADR 索引+架构关键词、新增 `npm run quality` 统一门禁、commit 改英文 conventional、新增 AI Change Protocol + Modification Level。详见 ADR-009。

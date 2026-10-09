@@ -1,6 +1,8 @@
 ---
 name: fastapi-endpoint
 description: 为一盏茶项目生成符合规范的 FastAPI 接口。当用户要求新增 API、修改后端路由、或添加后端功能时触发。
+type: executable
+verification: cd backend && python -m py_compile main.py
 ---
 
 # FastAPI 接口生成规范

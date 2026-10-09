@@ -1,6 +1,8 @@
 ---
 name: vue-component
 description: 为一盏茶项目生成符合规范的 Vue 3 组件。当用户要求新建页面、组件、或修改 Vue 组件时触发。
+type: executable
+verification: npm run type-check
 ---
 
 # Vue 3 组件生成规范
