@@ -11,7 +11,9 @@ owner: yanha
 
 ## 状态速览（2026-10-09 深夜）
 
-- main 基线：`b8d38bc`（T10 `14b3d07` + T11 `b8d38bc`，均已推送远端）
+- main 基线：`46213f2`（T10 `14b3d07` + T11 `b8d38bc` + T12/K13 `46213f2`，均已推送远端）
+- **T12 Judge 骨架 + T14/K13 repo-map 完成**：judge-prompts 模板 + calibrate-judge.cjs（一致率 85%，单测 5/5）+ gen-repomap.cjs（repo-map.md 270 行，抽查 8/8）
+- **K14 已实现（无需新代码）**：后端测试全 mock ChatClient + 无 key 502 契约测试（AiChatServiceTest/CultureSearchIntegrationTest），确定性测试不依赖真实 key
 - **T10-T11 评测体系前半完成**：评测集 50 条（6 文件，分布 60/24/16，VALID）+ 校验器 + 评测器（考点加权/veto/pass^3/program 判分/judge 钩子，单测 11/11）
 - **环境阻塞（新）**：容器外网到 DashScope 被断（宿主代理 9674 未监听 + 容器直连 TLS RST）→ T11 live 评测、T12 Judge 校准需等用户修 Docker 网络
 - **T07-T09 Agent 能力补强全完成**：Trace 四层归因（V5 + ADR-016）、运行时领域技能（V6 + ADR-017）、复杂度三档路由
@@ -29,9 +31,8 @@ owner: yanha
 
 ## B. 可直接开工（无依赖）
 
-1. **T13 迭代记录 + 简历 STAR 整理**（不依赖网络，可先行）
-2. **T12 校准脚本骨架**（--judge 已入评测器，校准脚本可写，实跑等 A5）
-3. **D 系列低优先**（见下，可穿插）
+1. **T13 迭代记录骨架**（ITERATIONS.md 建档 + 简历 STAR 模板，数字等 A5 出真数）
+2. **D 系列低优先**（见下，可穿插）
 
 ## C. 依赖卡点（备料可先行，执行要等）
 
@@ -47,6 +48,7 @@ owner: yanha
 
 ## 最近完成（防重做：先查这里，勿从零重写）
 
+- **T12 + T14/K13**（2026-10-09，46213f2）：T12 LLM-as-Judge 骨架（result-quality 单维评委模板 + calibrate-judge.cjs 一致率 85% + 单测 5/5 + demo PASS 87.5%）；K13 repo-map（gen-repomap.cjs 自动生成 docs/reference/repo-map.md 270 行，抽查 8/8 符号，缺失 exit 1）；K14 查证已实现（后端 mock ChatClient + 502 契约测试）。
 - **T10-T11 评测体系前半**（2026-10-09）：T10 评测集 50 条（advisor/taster/librarian/brewer/mentor/chat 六文件，typical 30/edge 12/adversarial 8，校验器 VALID，14b3d07）；T11 评测器（eval-core.cjs 纯函数判分 + eval-tea-ai.cjs IO + node --test 11/11 + dry-run VALID + live 探路定位环境阻塞，b8d38bc）；js-yaml 依赖（audit 0 漏洞）；切片 ai-eval-cases/ai-eval-runner 已落。
 - **T07-T09 Agent 能力补强**（2026-10-09）：T07 AI 评测 Trace（V5 `ai_eval_traces` 四层 JSONB + TraceRecorder 旁路埋点 + AiChatVo tokens 透传 + ADR-016，容器 PG 往返验证，182 tests）；T08 运行时领域技能（V6 `agent_skills` 4 领域种子 + AgentSkillRouter detect/load + LibrarianAgent 注入 + ADR-017，往返验证，201 tests）；T09 复杂度路由（SIMPLE 直答/MEDIUM 专家/COMPLEX 锚定压缩 20→5，配置化 tea.ai.complexity.*，201 tests）。
 - **S1 茶园能量账本合 main**（2026-10-09）：PR #40（feature/garden-s1，8 commits）13 job 全绿 → `--admin --merge`（f600967）。3 轮 CI 修复模式：① Biome 只跑 `npx biome check --write <file>`；② 时间敏感断言用"当天内接近 0"容错；③ vitals 写入等待 5s→30s（本地实测该测试本身 4.8s）。V4 迁移：garden_energy_events + energy 列 + status 归并；ADR-015。
@@ -58,7 +60,7 @@ owner: yanha
 
 ## 关键 ID / 命令（准确取用）
 
-- main：`b8d38bc`（远端已同步）；PR：#38（ffe807e1）、#39（7975a3f）、#40（f600967，S1 已合）；commit：T10 `14b3d07`、T11 `b8d38bc`
+- main：`46213f2`（远端已同步）；PR：#38（ffe807e1）、#39（7975a3f）、#40（f600967，S1 已合）；commit：T10 `14b3d07`、T11 `b8d38bc`、T12/K13 `46213f2`
 - 分支：feature/garden-s1（已合，worktree `C:\Users\yanha\Desktop\tea-garden-s1` 可删可留）
 - 迁移：V1 init / V2 culture_seed / V3 agent_memory / V4 garden_energy / **V5__ai_eval_traces**（T07）/ **V6__agent_skills**（T08）；V5/V6 编号已写死
 - 方案：`docs/plans/PLAN-final-convergence-2026-10-09.md`（当前唯一执行母本）；`PLAN-k13-p12-design-2026-10-09.md`（K13/P1-2 设计）
@@ -72,6 +74,8 @@ node scripts/audit-redlines.cjs     # 红线机械化审计，期望 ERRORS: []
 node scripts/audit-wiki-drift.cjs   # wiki 契约漂移审计，期望 ERRORS: []
 node scripts/validate-eval-cases.cjs  # 评测集结构校验（期望 VALID，T10 门禁）
 node scripts/eval-tea-ai.cjs --dry-run # 评测器管道自检（mock）；live 需容器网络恢复（A5）
+node scripts/calibrate-judge.cjs --demo # Judge 校准演示（期望 PASS，一致率 ≥85%）
+node scripts/gen-repomap.cjs         # 仓库地图生成（期望 OK，抽查 8/8 命中）
 cd backend && mvn -q test           # 后端全量（201 tests，含 Testcontainers，需 Docker 引擎）
 mvn test -Dtest=LayerDependencyTest # 单跑 ArchUnit（6 条规则）
 ```
