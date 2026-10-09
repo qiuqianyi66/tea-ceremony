@@ -2,7 +2,7 @@
 
 > 技能治理规范见 `.harness/rules/技能规范.md`。任务启动先读本表定位技能，再 Read 对应 SKILL.md。
 > 分组：控制协议 / 领域技能（tea 专属）/ 前端设计 / Web 基础（HTML·CSS·JS·TS）/ Vue / Three.js（基础·进阶）/ 辅助。
-> 流程族（main-dev / biz-dev / trouble-shooting，32 个）见 `.harness/skills/*/README.md`。
+> 流程族（main-dev / biz-dev / trouble-shooting，33 个）见 `.harness/skills/*/README.md`。
 > 核心技能人读审查页见 `docs/skills/`（plan-control / tea-tasting / db-migration / fastapi-endpoint / vue-component）。
 
 ## 控制协议
