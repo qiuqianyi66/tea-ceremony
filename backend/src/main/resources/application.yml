@@ -44,6 +44,17 @@ tea:
     secret: ${JWT_SECRET:tea-dev-secret-key-please-change-in-production-0123456789}
     expiration-minutes: ${JWT_EXPIRATION_MINUTES:1440}
 
+garden:
+  energy:
+    rules:
+      brew-base: 5          # 每次冲泡基础能量（D2 配置化，ADR-015）
+      note-per-100: 10      # 笔记每 100 字能量
+    phases:                 # 阶段阈值（D4 已确认），只升不降推进
+      planted: 0
+      growing: 100
+      blooming: 300
+      harvested: 600
+
 management:
   endpoints:
     web:

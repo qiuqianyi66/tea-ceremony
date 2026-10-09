@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import com.tea.common.exception.BadRequestException;
 import com.tea.common.exception.NotFoundException;
 import com.tea.common.response.PageResult;
+import com.tea.garden.service.GardenEnergyService;
 import com.tea.record.dto.RecordCreateRequest;
 import com.tea.record.entity.TastingRecord;
 import com.tea.record.repository.TastingRecordRepository;
@@ -41,11 +42,14 @@ class TastingRecordServiceTest {
     @Mock
     private TeaWareRepository teaWareRepository;
 
+    @Mock
+    private GardenEnergyService gardenEnergyService;
+
     private TastingRecordService service;
 
     @BeforeEach
     void setUp() {
-        service = new TastingRecordService(recordRepository, teaRepository, teaWareRepository);
+        service = new TastingRecordService(recordRepository, teaRepository, teaWareRepository, gardenEnergyService);
     }
 
     private RecordCreateRequest req(String clientId, Integer teaId, Integer wareId, Integer infusions) {

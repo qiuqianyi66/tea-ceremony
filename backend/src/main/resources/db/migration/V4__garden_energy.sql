@@ -20,4 +20,5 @@ ALTER TABLE garden_energy_events ADD CONSTRAINT fk_garden_energy_events_user_id
 ALTER TABLE garden_plants ADD COLUMN energy INTEGER NOT NULL DEFAULT 0;
 COMMENT ON COLUMN garden_plants.energy IS '已收集能量累计（浇灌用）';
 UPDATE garden_plants SET status = 'planted' WHERE status = 'pending';
+ALTER TABLE garden_plants ALTER COLUMN status SET DEFAULT 'planted';
 COMMENT ON COLUMN garden_plants.status IS '阶段：planted 种下 / growing 生长 / blooming 开花 / harvested 收获';
