@@ -1,0 +1,36 @@
+{
+  "date": "2026-10-09",
+  "config": {
+    "iterations": 1,
+    "judge": false,
+    "dryRun": false
+  },
+  "cases": 2,
+  "aggregate": {
+    "overall": 0,
+    "dimensions": {
+      "resultQuality": 0,
+      "processQuality": null,
+      "safetyStability": null,
+      "efficiency": null
+    },
+    "pass3": {
+      "passed": 0,
+      "total": 2
+    }
+  },
+  "failures": [
+    {
+      "id": "LIB-001",
+      "type": "typical",
+      "score": 0,
+      "input": "铁观音和武夷岩茶有什么区别？"
+    },
+    {
+      "id": "LIB-002",
+      "type": "typical",
+      "score": 0,
+      "input": "陆羽的《茶经》大概讲了什么？"
+    }
+  ]
+}
