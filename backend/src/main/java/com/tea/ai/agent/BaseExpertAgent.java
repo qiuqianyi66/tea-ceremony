@@ -9,6 +9,7 @@ import com.tea.common.exception.BadGatewayException;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.metadata.Usage;
 import org.springframework.ai.chat.model.ChatResponse;
 
 /**
@@ -73,7 +74,7 @@ public abstract class BaseExpertAgent {
         }
     }
 
-    /** 提取正文（空 → 502），并落计量（旁路：失败不影响响应）。latency 由调用处 start 计时。 */
+    /** 提取正文（空 → 502），并落计量（旁路：失败不影响响应）。latency 由调用处 start 计时；tokens/latency 透传供 T07 Trace。 */
     protected AiChatVo toVo(Integer userId, AiChatRequest req, ChatResponse response, List<String> sources, long startMillis) {
         String content = response.getResult().getOutput().getText();
         if (content == null) {
@@ -85,6 +86,9 @@ public abstract class BaseExpertAgent {
         } catch (Exception e) {
             log.warn("save usage log failed: {}", e.getMessage());
         }
-        return new AiChatVo(content, sources);
+        Usage usage = response.getMetadata().getUsage();
+        Integer tokensIn = usage == null ? null : usage.getPromptTokens();
+        Integer tokensOut = usage == null ? null : usage.getCompletionTokens();
+        return new AiChatVo(content, sources, null, tokensIn, tokensOut, latency);
     }
 }

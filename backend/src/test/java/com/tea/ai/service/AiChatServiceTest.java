@@ -56,9 +56,10 @@ class AiChatServiceTest {
     private final MentorAgent mentor = mock(MentorAgent.class);
     private final AiUsageLogger usageLogger = mock(AiUsageLogger.class);
     private final ChatMemoryService memoryService = mock(ChatMemoryService.class);
+    private final TraceRecorder traceRecorder = mock(TraceRecorder.class);
 
     private AiChatService service(String apiKey) {
-        return new AiChatService(builder, usageLogger, orchestrator, memoryService,
+        return new AiChatService(builder, usageLogger, orchestrator, memoryService, traceRecorder,
                 librarian, advisor, taster, brewer, mentor, apiKey);
     }
 

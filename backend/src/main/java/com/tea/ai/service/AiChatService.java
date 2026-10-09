@@ -11,6 +11,7 @@ import com.tea.ai.dto.AiChatRequest;
 import com.tea.ai.dto.ChatMessageDto;
 import com.tea.ai.entity.AiChatMessage;
 import com.tea.ai.entity.AiChatSession;
+import com.tea.ai.entity.AiEvalTrace;
 import com.tea.ai.vo.AiChatVo;
 import com.tea.common.exception.BadGatewayException;
 import java.util.ArrayList;
@@ -21,6 +22,7 @@ import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.metadata.Usage;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -41,6 +43,7 @@ public class AiChatService {
     private final AiUsageLogger usageLogger;
     private final AgentOrchestrator orchestrator;
     private final ChatMemoryService memoryService;
+    private final TraceRecorder traceRecorder;
     private final LibrarianAgent librarianAgent;
     private final AdvisorAgent advisorAgent;
     private final TasterAgent tasterAgent;
@@ -52,6 +55,7 @@ public class AiChatService {
                          AiUsageLogger usageLogger,
                          AgentOrchestrator orchestrator,
                          ChatMemoryService memoryService,
+                         TraceRecorder traceRecorder,
                          LibrarianAgent librarianAgent,
                          AdvisorAgent advisorAgent,
                          TasterAgent tasterAgent,
@@ -62,6 +66,7 @@ public class AiChatService {
         this.usageLogger = usageLogger;
         this.orchestrator = orchestrator;
         this.memoryService = memoryService;
+        this.traceRecorder = traceRecorder;
         this.librarianAgent = librarianAgent;
         this.advisorAgent = advisorAgent;
         this.tasterAgent = tasterAgent;
@@ -81,12 +86,20 @@ public class AiChatService {
         // F-8 降级不丢用户消息：dispatch 前先落库（LLM 失败/502 时用户消息已提交，响应仍走既有降级抛出路径）
         Integer sessionId = resolveSession(userId, req, type);
         persist(sessionId, "user", lastUserMessage(req), agentOf(type, req));
-        AiChatVo vo = dispatch(type, userId, anchored);
-        if (sessionId != null) {
-            persist(sessionId, "assistant", vo.content(), agentOf(type, req));
-            return new AiChatVo(vo.content(), vo.sources(), sessionId);
+        // T07 评测 Trace：入口埋点（input/context/plan 层），dispatch 后 complete/fail（ADR-016）
+        AiEvalTrace trace = traceRecorder.begin(sessionId, type, req, anchored);
+        try {
+            AiChatVo vo = dispatch(type, userId, anchored);
+            traceRecorder.complete(trace, vo);
+            if (sessionId != null) {
+                persist(sessionId, "assistant", vo.content(), agentOf(type, req));
+                return new AiChatVo(vo.content(), vo.sources(), sessionId, vo.tokensIn(), vo.tokensOut(), vo.latencyMs());
+            }
+            return vo;
+        } catch (BadGatewayException e) {
+            traceRecorder.fail(trace, e);
+            throw e;
         }
-        return vo;
     }
 
     /** F-6 多轮锚定：登录 + 有 sessionId → 读历史（归属已校验）转 ChatMessageDto 前插；其余原样返回。 */
@@ -222,7 +235,10 @@ public class AiChatService {
         } catch (Exception e) {
             log.warn("save usage log failed: {}", e.getMessage());
         }
-        return new AiChatVo(content, null);
+        Usage usage = response.getMetadata().getUsage();
+        Integer tokensIn = usage == null ? null : usage.getPromptTokens();
+        Integer tokensOut = usage == null ? null : usage.getCompletionTokens();
+        return new AiChatVo(content, null, null, tokensIn, tokensOut, latency);
     }
 
     private List<Message> toSpringMessages(List<ChatMessageDto> dtos) {
