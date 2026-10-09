@@ -122,7 +122,7 @@ garden:
       harvested: 600
 ```
 
-## 9. ADR-015 要点（实现时落 docs/ADR/ADR-015-garden-energy.md）
+## 9. ADR-015 要点（实现时落 docs/ADR/ADR-015.md）
 
 - 决策：事件账本（append-only + collected_at 标记）而非直接改列；幂等复用品鉴 client_id；阶段事件驱动聚合；配置化先行 application.yml。
 - 备选：直接改 plants.energy 列（无审计、难防通胀）→ 否；拆 tasting/brew 双事件（幂等键冲突）→ 否；配置表（S1 过重）→ S2 起。
