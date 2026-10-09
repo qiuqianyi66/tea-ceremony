@@ -2,6 +2,7 @@ package com.tea.auth.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tea.common.errorcode.ErrorCode;
+import com.tea.common.ratelimit.RateLimitFilter;
 import com.tea.common.response.ApiResponse;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final RateLimitFilter rateLimitFilter;
     private final ObjectMapper objectMapper;
 
     @Bean
@@ -54,6 +56,9 @@ public class SecurityConfig {
                     response.setContentType("application/json;charset=UTF-8");
                     response.getWriter().write(objectMapper.writeValueAsString(ApiResponse.error(ErrorCode.UNAUTHORIZED)));
                 }))
+                // 批 3 安全审计：AI/登录公开端点限流。先注册 rateLimit 再注册 jwt，
+                // 注册序决定执行序（rateLimit 最先拦截，防未认证面被压测）
+                .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }

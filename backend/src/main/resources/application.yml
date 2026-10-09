@@ -43,6 +43,12 @@ tea:
     # dev 默认值仅本地开发；生产必须通过环境变量 JWT_SECRET 注入 ≥32 字节密钥
     secret: ${JWT_SECRET:tea-dev-secret-key-please-change-in-production-0123456789}
     expiration-minutes: ${JWT_EXPIRATION_MINUTES:1440}
+  ratelimit:
+    # 批 3 安全审计：AI/登录公开端点限流（滑动窗口，进程内存；环境变量沿用旧栈 RATE_LIMIT_* 名称）
+    ai-max: ${RATE_LIMIT_AI_MAX:10}
+    ai-window-ms: ${RATE_LIMIT_AI_WINDOW_MS:60000}
+    login-max: ${RATE_LIMIT_LOGIN_MAX:10}
+    login-window-ms: ${RATE_LIMIT_LOGIN_WINDOW_MS:300000}
 
 garden:
   energy:

@@ -17,6 +17,7 @@ public enum ErrorCode {
     NOT_FOUND("NOT_FOUND", HttpStatus.NOT_FOUND, "资源不存在"),
     CONFLICT("CONFLICT", HttpStatus.CONFLICT, "资源状态冲突"),
     METHOD_NOT_ALLOWED("METHOD_NOT_ALLOWED", HttpStatus.METHOD_NOT_ALLOWED, "请求方法不支持"),
+    RATE_LIMITED("RATE_LIMITED", HttpStatus.TOO_MANY_REQUESTS, "请求过于频繁，请稍后重试"),
     BAD_GATEWAY("BAD_GATEWAY", HttpStatus.BAD_GATEWAY, "AI 服务暂不可用");
 
     private final String code;
