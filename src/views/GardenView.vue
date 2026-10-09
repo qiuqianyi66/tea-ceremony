@@ -4,12 +4,14 @@
  * T4.1 养成降级为纯观赏后：/garden 地区选择，/garden/:regionId 3D 茶园景观
  * 保留：3D 场景 / 天气切换 / 环境音 / 茶亭叙事；删除：种茶/浇水/修剪/采摘等养成链路。
  */
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { WeatherMode } from '@/components/three/garden-weather'
 import TeaGardenScene3D from '@/components/three/TeaGardenScene3D.vue'
 import { getRegionById } from '@/data/gardenRegions'
-import type { GardenRegion } from '@/types/garden'
+import { energyApi, gardenApi, type GardenEnergySummaryVo, type GardenPlantVo } from '@/services/api/garden'
+import { getAuthToken } from '@/services/authStorage'
+import type { GardenRegion, PlantedTea } from '@/types/garden'
 import GardenRegionPicker from './garden/GardenRegionPicker.vue'
 
 const route = useRoute()
@@ -48,6 +50,73 @@ const pavilionQuote = computed(() => (regionId.value ? PAVILION_QUOTES[regionId.
 function togglePavilion() {
   showPavilion.value = !showPavilion.value
 }
+
+/** S1 能量收集（ADR-015）：登录用户拉总览 + 一键收集；游客/异常降级纯观赏 */
+const isLoggedIn = computed(() => {
+  const token = getAuthToken()
+  return Boolean(token) && token !== 'dev-token'
+})
+
+const summary = ref<GardenEnergySummaryVo | null>(null)
+const plants3d = ref<PlantedTea[]>([])
+const collecting = ref(false)
+
+const pendingAmount = computed(() => summary.value?.pending_amount ?? 0)
+
+/** 后端阶段 → 3D 视觉档位（sprout/seedling/growing/mature/recovery），不改 3D 视觉本身（3D_SPEC） */
+function toPlantedTea(plant: GardenPlantVo, region: string): PlantedTea {
+  const daysAgo = (days: number) => new Date(Date.now() - days * 86_400_000).toISOString()
+  const base = {
+    regionId: region,
+    teaId: plant.plant_type ?? 'tea',
+    lastWateredAt: plant.updated_at,
+    waterLevel: 100,
+    pruned: true,
+    harvestCount: 0,
+  }
+  switch (plant.status) {
+    case 'harvested':
+      return { ...base, plantedAt: daysAgo(16), status: 'harvested' as const }
+    case 'blooming':
+      return { ...base, plantedAt: daysAgo(12), status: 'growing' as const }
+    case 'growing':
+      return { ...base, plantedAt: daysAgo(7), status: 'growing' as const }
+    default:
+      return { ...base, plantedAt: daysAgo(0), status: 'growing' as const }
+  }
+}
+
+async function loadGarden() {
+  if (!regionId.value || !isLoggedIn.value) {
+    summary.value = null
+    plants3d.value = []
+    return
+  }
+  try {
+    const [plants, energy] = await Promise.all([gardenApi.list(), energyApi.summary()])
+    summary.value = energy
+    plants3d.value = plants.map((plant) => toPlantedTea(plant, regionId.value as string))
+  } catch {
+    // 网络/后端不可用：降级纯观赏（plants 恒空，与 T4.1 一致）
+    summary.value = null
+    plants3d.value = []
+  }
+}
+
+async function collectEnergy() {
+  if (collecting.value) return
+  collecting.value = true
+  try {
+    await energyApi.collect()
+    await loadGarden()
+  } catch {
+    // 静默降级：保持纯观赏，下次进入再试
+  } finally {
+    collecting.value = false
+  }
+}
+
+onMounted(loadGarden)
 </script>
 
 <template>
@@ -56,7 +125,7 @@ function togglePavilion() {
 
   <!-- 3D 茶园（纯观赏：plants 恒空，3D 场景以预设景观呈现） -->
   <div v-else-if="currentRegion" class="region-garden-3d">
-    <TeaGardenScene3D ref="scene3dRef" :plants="[]" :region-id="regionId"
+    <TeaGardenScene3D ref="scene3dRef" :plants="plants3d" :region-id="regionId"
       @select-pavilion="togglePavilion" />
 
     <!-- 顶栏 -->
@@ -68,6 +137,11 @@ function togglePavilion() {
         <h1 class="garden-name-3d font-serif">{{ currentRegion.name }}</h1>
       </div>
       <div class="topbar-actions-3d">
+        <button v-if="pendingAmount > 0" class="energy-bubble-3d" :disabled="collecting"
+          @click="collectEnergy" :title="collecting ? '收集中…' : '一键收集能量'">
+          <IconLeaf :size="16" />
+          <span>{{ collecting ? '收集中…' : `待收能量 +${pendingAmount}` }}</span>
+        </button>
         <button class="ambient-btn-3d" :class="{ active: weatherMode === 'rain' }" @click="toggleWeather"
           :title="weatherMode === 'rain' ? '切换到晴天' : '切换到雨天'">
           <IconCloudRain v-if="weatherMode === 'rain'" :size="18" />
@@ -127,6 +201,18 @@ function togglePavilion() {
 }
 .ambient-btn-3d:hover { background: rgba(40,56,44,0.7); border-color: rgba(245,241,230,0.5); }
 .ambient-btn-3d.active { background: rgba(201,169,110,0.85); border-color: transparent; }
+
+/* S1 能量收集气泡：金色高亮（能量/收获语义），沿用顶栏按钮家族 */
+.energy-bubble-3d {
+  display: inline-flex; align-items: center; gap: 0.45rem;
+  background: rgba(201,169,110,0.92); border: 1px solid rgba(245,241,230,0.4);
+  color: #1f2418; padding: 0.55rem 0.9rem; min-height: 44px; border-radius: 999px;
+  font-size: 0.85rem; font-weight: 600; cursor: pointer; font-family: inherit;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.28);
+  transition: background 0.2s, opacity 0.2s;
+}
+.energy-bubble-3d:hover:not(:disabled) { background: rgba(215,185,128,0.98); }
+.energy-bubble-3d:disabled { opacity: 0.7; cursor: default; }
 
 .pavilion-panel {
   position: absolute; top: 5.5rem; right: 1.5rem; z-index: 12;
