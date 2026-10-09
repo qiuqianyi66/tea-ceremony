@@ -12,10 +12,10 @@ import com.tea.common.exception.BadRequestException;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-/** AgentOrchestrator 路由单测（F-S1-2 + F-5）：显式 agent / 关键词粗分 / 未知 agent 400 / 回落透明代理。 */
+/** AgentOrchestrator 路由单测（F-S1-2 + F-5 + T09 复杂度）：显式 agent / 关键词粗分 / 未知 agent 400 / 回落透明代理 / 三档边界。 */
 class AgentOrchestratorTest {
 
-    private final AgentOrchestrator orchestrator = new AgentOrchestrator();
+    private final AgentOrchestrator orchestrator = new AgentOrchestrator(40, 3, 200);
 
     private static AiChatRequest req(String agent, String... userMessages) {
         List<ChatMessageDto> msgs = java.util.Arrays.stream(userMessages)
@@ -97,5 +97,41 @@ class AgentOrchestratorTest {
         BadRequestException ex = assertThrows(BadRequestException.class,
                 () -> orchestrator.routeToAgent(req("robot", "你好")));
         assertEquals("未知 agent 类型: robot", ex.getMessage());
+    }
+
+    // ---- T09 复杂度路由三档边界 ----
+
+    @Test
+    void shortQuestionSingleTurnIsSimple() {
+        assertEquals(ComplexityLevel.SIMPLE, orchestrator.complexity(req(null, "你好")));
+    }
+
+    @Test
+    void boundaryFortyWordsIsSimple() {
+        String q = "这".repeat(40);
+        assertEquals(ComplexityLevel.SIMPLE, orchestrator.complexity(req(null, q)));
+    }
+
+    @Test
+    void overFortyWordsIsMedium() {
+        String q = "这".repeat(41);
+        assertEquals(ComplexityLevel.MEDIUM, orchestrator.complexity(req(null, q)));
+    }
+
+    @Test
+    void overTwoHundredWordsIsComplex() {
+        String q = "这".repeat(201);
+        assertEquals(ComplexityLevel.COMPLEX, orchestrator.complexity(req(null, q)));
+    }
+
+    @Test
+    void overThreeTurnsIsComplex() {
+        assertEquals(ComplexityLevel.COMPLEX, orchestrator.complexity(
+                req(null, "你好", "继续", "再说说", "还有吗")));
+    }
+
+    @Test
+    void emptyMessagesIsSimple() {
+        assertEquals(ComplexityLevel.SIMPLE, orchestrator.complexity(new AiChatRequest(List.of(), null)));
     }
 }

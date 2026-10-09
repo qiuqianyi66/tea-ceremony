@@ -1,8 +1,10 @@
 package com.tea.ai.agent;
 
 import com.tea.ai.dto.AiChatRequest;
+import com.tea.ai.dto.ChatMessageDto;
 import com.tea.common.exception.BadRequestException;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
@@ -11,6 +13,7 @@ import org.springframework.stereotype.Component;
  * 1. 显式 agent 参数 → 校验枚举（未知 → 400 PARAM_INVALID）；合法枚举 → 对应专家（CHAT → 透明代理）；
  * 2. 无 agent → 文化意图关键词粗分命中 LIBRARIAN；
  * 3. 其余 → 回落透明代理（T11 行为不变，承重墙保留）。
+ * T09 复杂度路由：complexity() 按字数/轮次分三档，阈值配置化 tea.ai.complexity.*。
  * S3 引入 Graph 工作流。
  */
 @Component
@@ -20,6 +23,19 @@ public class AgentOrchestrator {
     static final List<String> CULTURE_KEYWORDS = List.of(
             "茶", "茶器", "茶具", "历史", "文化", "知识", "茶圣", "陆羽", "茶经",
             "茶诗", "诗词", "产区", "山场", "茶人", "典故", "古法", "茶道");
+
+    private final int simpleMaxWords;
+    private final int simpleMaxTurns;
+    private final int complexMinWords;
+
+    public AgentOrchestrator(
+            @Value("${tea.ai.complexity.simple-max-words:40}") int simpleMaxWords,
+            @Value("${tea.ai.complexity.simple-max-turns:3}") int simpleMaxTurns,
+            @Value("${tea.ai.complexity.complex-min-words:200}") int complexMinWords) {
+        this.simpleMaxWords = simpleMaxWords;
+        this.simpleMaxTurns = simpleMaxTurns;
+        this.complexMinWords = complexMinWords;
+    }
 
     /**
      * 判定请求路由到的专家类型（F-5）。
@@ -40,6 +56,35 @@ public class AgentOrchestrator {
     /** S1 兼容：是否路由到 librarian 专家（委托 routeToAgent）。 */
     public boolean routeToLibrarian(AiChatRequest req) {
         return routeToAgent(req) == AgentType.LIBRARIAN;
+    }
+
+    /**
+     * 复杂度判定（T09 复杂度路由）：
+     * SIMPLE = 最后用户消息 ≤ simple-max-words 且用户轮次 ≤ simple-max-turns（直答）；
+     * COMPLEX = 消息超 complex-min-words 或轮次超 simple-max-turns（上下文压缩）；
+     * 其余 = MEDIUM（专家路由 + RAG，现状行为）。
+     * 纯计算，无副作用；供 AiChatService 决策直答/压缩。
+     */
+    public ComplexityLevel complexity(AiChatRequest req) {
+        if (req.messages() == null || req.messages().isEmpty()) {
+            return ComplexityLevel.SIMPLE;
+        }
+        String lastUser = "";
+        int turns = 0;
+        for (ChatMessageDto m : req.messages()) {
+            if ("user".equals(m.role())) {
+                turns++;
+                lastUser = m.content();
+            }
+        }
+        int words = lastUser == null ? 0 : lastUser.length();
+        if (words <= simpleMaxWords && turns <= simpleMaxTurns) {
+            return ComplexityLevel.SIMPLE;
+        }
+        if (words > complexMinWords || turns > simpleMaxTurns) {
+            return ComplexityLevel.COMPLEX;
+        }
+        return ComplexityLevel.MEDIUM;
     }
 
     private boolean hasCultureIntent(AiChatRequest req) {

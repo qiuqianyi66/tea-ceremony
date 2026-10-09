@@ -15,6 +15,7 @@ import com.tea.ai.agent.AdvisorAgent;
 import com.tea.ai.agent.AgentOrchestrator;
 import com.tea.ai.agent.AgentType;
 import com.tea.ai.agent.BrewerAgent;
+import com.tea.ai.agent.ComplexityLevel;
 import com.tea.ai.agent.LibrarianAgent;
 import com.tea.ai.agent.MentorAgent;
 import com.tea.ai.agent.TasterAgent;
@@ -297,6 +298,68 @@ class AiChatServiceTest {
         AiChatVo vo = service.chat(1, r);
 
         assertEquals(7, vo.sessionId());
+    }
+
+    // ---- T09 复杂度路由行为（SIMPLE 直答 / COMPLEX 截断） ----
+
+    @Test
+    void simpleImplicitRequestSkipsExpertToTransparentChat() {
+        mockTransparentReply("直答");
+        AiChatService service = service("test-key");
+        AiChatRequest r = req(null); // 无显式 agent（隐式文化意图粗分命中）
+        when(orchestrator.routeToAgent(r)).thenReturn(AgentType.LIBRARIAN);
+        when(orchestrator.complexity(r)).thenReturn(ComplexityLevel.SIMPLE);
+        when(librarian.chat(null, r)).thenReturn(new AiChatVo("不该走到", List.of()));
+
+        AiChatVo vo = service.chat(null, r);
+
+        // SIMPLE + 隐式 → 透明直答：不走 librarian 专家/RAG
+        assertEquals("直答", vo.content());
+        verify(librarian, never()).chat(any(), any());
+    }
+
+    @Test
+    void simpleExplicitAgentStillDispatchesToExpert() {
+        AiChatService service = service("test-key");
+        AiChatRequest r = req("librarian");
+        when(orchestrator.routeToAgent(r)).thenReturn(AgentType.LIBRARIAN);
+        when(orchestrator.complexity(r)).thenReturn(ComplexityLevel.SIMPLE);
+        when(librarian.chat(null, r)).thenReturn(new AiChatVo("专家答", List.of("茶·龙井")));
+
+        AiChatVo vo = service.chat(null, r);
+
+        // 显式 agent 尊重用户选择，即使 SIMPLE 也走专家
+        assertEquals("专家答", vo.content());
+        verify(librarian).chat(null, r);
+    }
+
+    @Test
+    void complexRequestTruncatesHistoryToFive() {
+        mockTransparentReply("压缩回答");
+        AiChatService service = service("test-key");
+        AiChatRequest r = new AiChatRequest(List.of(new ChatMessageDto("user", "继续")), "chat", 3);
+        when(orchestrator.routeToAgent(r)).thenReturn(AgentType.CHAT);
+        when(orchestrator.complexity(r)).thenReturn(ComplexityLevel.COMPLEX);
+        when(memoryService.requireSession(1, 3)).thenReturn(new AiChatSession());
+        List<AiChatMessage> history = new java.util.ArrayList<>();
+        for (int i = 1; i <= 8; i++) {
+            AiChatMessage m = new AiChatMessage();
+            m.setRole(i % 2 == 0 ? "assistant" : "user");
+            m.setContent("历史消息" + i);
+            history.add(m);
+        }
+        when(memoryService.anchorHistory(1, 3)).thenReturn(history);
+
+        AiChatVo vo = service.chat(1, r);
+
+        assertEquals("压缩回答", vo.content());
+        ArgumentCaptor<List<Message>> captor = ArgumentCaptor.forClass(List.class);
+        verify(reqSpec).messages(captor.capture());
+        List<Message> sent = captor.getValue();
+        // COMPLEX 压缩：只锚定最后 5 条历史 + 当前 1 条 = 6（起点 i=3 为 assistant 消息）
+        assertEquals(6, sent.size());
+        assertEquals("历史消息4", ((AssistantMessage) sent.get(0)).getText());
+        assertEquals("继续", ((UserMessage) sent.get(5)).getText());
     }
 
     private void mockTransparentReply(String text) {

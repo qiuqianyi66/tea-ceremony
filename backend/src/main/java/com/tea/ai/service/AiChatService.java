@@ -4,6 +4,7 @@ import com.tea.ai.agent.AdvisorAgent;
 import com.tea.ai.agent.AgentOrchestrator;
 import com.tea.ai.agent.AgentType;
 import com.tea.ai.agent.BrewerAgent;
+import com.tea.ai.agent.ComplexityLevel;
 import com.tea.ai.agent.LibrarianAgent;
 import com.tea.ai.agent.MentorAgent;
 import com.tea.ai.agent.TasterAgent;
@@ -81,8 +82,13 @@ public class AiChatService {
             memoryService.requireSession(userId, req.sessionId());
         }
         AgentType type = orchestrator.routeToAgent(req);
-        // F-6 多轮锚定（278 Save Plan）：有 sessionId → 历史（≤20）前插进请求 messages
-        AiChatRequest anchored = anchor(userId, req);
+        // T09 复杂度路由：SIMPLE 且隐式路由 → 跳过专家/RAG 直答；显式 agent 尊重用户选择
+        ComplexityLevel level = orchestrator.complexity(req);
+        if (level == ComplexityLevel.SIMPLE && (req.agent() == null || req.agent().isBlank())) {
+            type = null;
+        }
+        // F-6 多轮锚定（278 Save Plan）：有 sessionId → 历史前插进请求 messages（COMPLEX 收紧至 5 条=上下文压缩）
+        AiChatRequest anchored = anchor(userId, req, level);
         // F-8 降级不丢用户消息：dispatch 前先落库（LLM 失败/502 时用户消息已提交，响应仍走既有降级抛出路径）
         Integer sessionId = resolveSession(userId, req, type);
         persist(sessionId, "user", lastUserMessage(req), agentOf(type, req));
@@ -102,8 +108,8 @@ public class AiChatService {
         }
     }
 
-    /** F-6 多轮锚定：登录 + 有 sessionId → 读历史（归属已校验）转 ChatMessageDto 前插；其余原样返回。 */
-    private AiChatRequest anchor(Integer userId, AiChatRequest req) {
+    /** F-6 多轮锚定：登录 + 有 sessionId → 读历史（归属已校验）转 ChatMessageDto 前插；其余原样返回。COMPLEX → 只取最后 5 条（上下文压缩，T09）。 */
+    private AiChatRequest anchor(Integer userId, AiChatRequest req, ComplexityLevel level) {
         if (userId == null || req.sessionId() == null) {
             return req;
         }
@@ -112,7 +118,10 @@ public class AiChatService {
             return req;
         }
         List<ChatMessageDto> prefix = new ArrayList<>();
-        for (AiChatMessage m : history) {
+        int maxHistory = level == ComplexityLevel.COMPLEX ? 5 : 20;
+        int from = Math.max(0, history.size() - maxHistory);
+        for (int i = from; i < history.size(); i++) {
+            AiChatMessage m = history.get(i);
             if (m.getContent() == null || m.getContent().isBlank()) {
                 continue;
             }
