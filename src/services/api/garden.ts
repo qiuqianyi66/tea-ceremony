@@ -81,9 +81,12 @@ export const energyApi = {
 
   /** 一键收集（未收事件 → plants.energy + 阶段推进，幂等可重复调） */
   async collect(): Promise<GardenEnergySummaryVo> {
-    const result = await requestOrMock<ApiResponse<GardenEnergySummaryVo>>('/v1/garden-energy/collect', {
-      method: 'POST',
-    })
+    const result = await requestOrMock<ApiResponse<GardenEnergySummaryVo>>(
+      '/v1/garden-energy/collect',
+      {
+        method: 'POST',
+      },
+    )
     return result.data
   },
 }

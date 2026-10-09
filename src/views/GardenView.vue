@@ -9,7 +9,12 @@ import { useRoute, useRouter } from 'vue-router'
 import type { WeatherMode } from '@/components/three/garden-weather'
 import TeaGardenScene3D from '@/components/three/TeaGardenScene3D.vue'
 import { getRegionById } from '@/data/gardenRegions'
-import { energyApi, gardenApi, type GardenEnergySummaryVo, type GardenPlantVo } from '@/services/api/garden'
+import {
+  energyApi,
+  gardenApi,
+  type GardenEnergySummaryVo,
+  type GardenPlantVo,
+} from '@/services/api/garden'
 import { getAuthToken } from '@/services/authStorage'
 import type { GardenRegion, PlantedTea } from '@/types/garden'
 import GardenRegionPicker from './garden/GardenRegionPicker.vue'
