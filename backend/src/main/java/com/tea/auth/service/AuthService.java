@@ -29,7 +29,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public TokenVo register(RegisterRequest req) {
         String username = req.username().trim();
         if (userRepository.findByUsername(username).isPresent()) {

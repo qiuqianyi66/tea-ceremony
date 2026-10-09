@@ -44,6 +44,8 @@ ADR 独立文件见 `docs/ADR/`（ADR-009 起统一格式：Status / Context / D
 | [ADR-010](docs/ADR/ADR-010.md) | 后端重写 ORM 选型（Spring Data JPA） | Accepted |
 | [ADR-011](docs/ADR/ADR-011.md) | 后端重写工程决策（Maven / Flyway / 无 Redis / seeds 迁移 / AI 成本告警 / 角色命名） | Accepted |
 | [ADR-012](docs/ADR/ADR-012.md) | 引入 Redis（两级缓存 / 语义缓存 / 分布式限流 / JWT 黑名单，修订 ADR-011 无 Redis） | Accepted |
+| [ADR-013](docs/ADR/ADR-013.md) | 引入 pgvector + pg_trgm 混合检索（S2 知识检索升级） | Accepted |
+| [ADR-014](docs/ADR/ADR-014.md) | ArchUnit 事务与响应契约机械化（H18/K10） | Accepted |
 | [ADR-013](docs/ADR/ADR-013.md) | pgvector + pg_trgm 混合检索（S2 知识检索升级，同库扩展） | Accepted |
 
 新决策一律写入 `docs/ADR/ADR-0XX.md`，禁止塞进本文档。

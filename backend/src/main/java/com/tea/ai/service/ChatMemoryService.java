@@ -30,7 +30,7 @@ public class ChatMemoryService {
     private final AiChatSessionRepository sessionRepository;
     private final AiChatMessageRepository messageRepository;
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public AiChatSession createSession(Integer userId, String topic, String agent) {
         if (userId == null) {
             throw new BadRequestException("游客不落会话");
@@ -42,7 +42,7 @@ public class ChatMemoryService {
         return sessionRepository.save(session);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void appendMessage(Integer sessionId, String role, String content, String agent, Integer tokens) {
         AiChatMessage message = new AiChatMessage();
         message.setSessionId(sessionId);
@@ -93,7 +93,7 @@ public class ChatMemoryService {
         return sessionRepository.findByUserIdOrderByUpdatedAtDesc(userId);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void deleteSession(Integer userId, Integer sessionId) {
         AiChatSession session = sessionRepository.findByIdAndUserId(sessionId, userId)
                 .orElseThrow(() -> new NotFoundException("会话不存在"));
