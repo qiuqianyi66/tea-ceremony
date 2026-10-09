@@ -81,14 +81,39 @@ public class CultureSearchService {
         return new CultureSearchResult(teas, people, regions, poems, teawares, etiquettes, relations, processes);
     }
 
-    /** 中文连接词切分关键词；无连接词或切分碎片过短时回退整句（保持原行为）。
+    /** 中文连接词切分关键词 + 剥离尾部语气虚词；
+     *  无连接词且为长句时，按虚词/疑问词二次拆词（实体词典近似，防"陆羽的茶经"整句 miss）。
+     *  切分碎片过短或空时回退整句（保持原行为）。
      *  注意：? 是 regex 元字符必须转义；全角？！。无需转义。 */
     private List<String> splitKeywords(String q) {
         String trimmed = q.trim();
-        List<String> parts = Arrays.stream(trimmed.split("和|与|以及|还有|或|、|，|,|\\?|？|\\!|！|。|\\.|\\s+"))
-                .map(String::trim).filter(p -> !p.isBlank()).distinct().toList();
-        List<String> kws = parts.stream().filter(p -> p.length() >= 2).toList();
+        String[] parts = trimmed.split("和|与|以及|还有|或|、|，|,|\\?|？|\\!|！|。|\\.|\\s+");
+        List<String> tokens = new ArrayList<>();
+        for (String raw : parts) {
+            String p = raw.replaceAll("[《》\"']", "").trim();
+            if (p.isBlank()) continue;
+            if (parts.length > 1 || p.length() <= 6) {
+                String w = stripTailParticles(p);
+                if (w.length() >= 2) tokens.add(w);
+                continue;
+            }
+            // 无连接词长句：虚词→空格二次拆词（剥离问句助词/疑问词，保留实体名）
+            for (String t : p.split("的|了|吗|呢|吧|啊|呀|哦|什么|怎么|为什么|如何|哪些|大概|讲|是|有|跟")) {
+                String w = stripTailParticles(t.trim());
+                if (w.length() >= 2) tokens.add(w);
+            }
+        }
+        List<String> kws = tokens.stream().distinct().toList();
         return kws.isEmpty() ? List.of(trimmed) : kws;
+    }
+
+    /** 剥离尾部语气虚词：陆羽的→陆羽（否则 ILIKE %陆羽的% 对 name=陆羽 miss，评测 LIB-002/003 抓出）。 */
+    private String stripTailParticles(String w) {
+        String s = w;
+        while (s.length() > 1 && "的了吗呢吧啊呀哦".indexOf(s.charAt(s.length() - 1)) >= 0) {
+            s = s.substring(0, s.length() - 1);
+        }
+        return s;
     }
 
     /** fields 每列 × n 个关键词的 OR 子句（全部参数化，防注入）。 */

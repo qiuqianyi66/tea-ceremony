@@ -103,6 +103,18 @@ class CultureSearchIntegrationTest {
     }
 
     @Test
+    void longSentenceWithParticleHitsPeople() throws Exception {
+        // v2 评测 LIB-002/003 抓出：切分后"陆羽的"带尾虚词 → ILIKE %陆羽的% 对 name=陆羽 miss。
+        // 修复：splitKeywords 剥离尾部语气虚词；本用例回归：长句须命中陆羽（tea_people）。
+        ResponseEntity<String> res = rest.getForEntity("/api/v1/culture/search?q=陆羽的茶经大概讲了什么", String.class);
+        assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode body = objectMapper.readTree(res.getBody());
+        JsonNode people = body.path("data").path("people");
+        assertThat(people.size()).isGreaterThan(0);
+        assertThat(people.get(0).path("name").asText()).contains("陆羽");
+    }
+
+    @Test
     void aiChatWithoutKeyReturns502() {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
