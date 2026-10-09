@@ -1,10 +1,14 @@
 ---
-last_updated: 2026-10-08
-status: active
+last_updated: 2026-10-09
+status: deprecated
 owner: yanha
 ---
 
 # 一盏茶 待办优先级清单（2026-10-08 更新）
+
+> ⚠️ **DEPRECATED（2026-10-09）**：本文件为 2026-10-08 全景清单快照，已停止维护。
+> **活文档已迁移至 `docs/plans/TODO-PRIORITY.md`**（状态速览/阻塞项/可直接开工/最近完成/关键 ID，随状态变化当场更新）。
+> 保留原因：P0/P1/P2 全景角度与活文档互补，作历史参考；新会话一律读 `docs/plans/TODO-PRIORITY.md`。
 
 > 全景待办梳理（基于仓库/记忆/PRD 核验），按优先级 P0/P1/P2 排序。P0=主线/承重/用户点名；P1=价值/体验；P2=工程卫生/发布。
 > **harness 研究落地工程单（P1 新增项详见）→ `docs/PLAN-harness-research-2026-10.md`（2026-10-07，含执行顺序/依赖/验证级别）**

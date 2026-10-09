@@ -14,7 +14,7 @@ owner: tea-harness
 | 文件 | 内容 | 示例 |
 |---|---|---|
 | `PLAN-<主题>-<YYYY-MM>.md` | 一次迭代/工程单的执行计划（现状/下一步/验证级别/依赖） | `PLAN-harness-research-2026-10.md` |
-| `TODO-PRIORITY.md` | 全景待办优先级（P0/P1/P2） | 根级同名文件 |
+| `TODO-PRIORITY.md` | **活文档**：状态速览/阻塞项/可直接开工/最近完成/关键 ID，随状态变化当场更新 | 本目录 `TODO-PRIORITY.md`（根级 `docs/TODO-PRIORITY.md` 为 2026-10-08 全景快照，已标 deprecated） |
 | `environment-review.md` | 每周环境审查清单（30 分钟，285 固化） | 当前活跃 |
 | 其他 | 冲刺计划、里程碑清单 | — |
 
