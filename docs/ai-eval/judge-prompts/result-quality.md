@@ -1,3 +1,9 @@
+---
+last_updated: 2026-10-09
+status: active
+owner: yanha
+---
+
 # 单维评委模板 — 结果质量（result-quality）
 
 > 用途：LLM-as-Judge 判分 judge 考点（T12，F-A5）。每次只评一个维度，0/1 选择题。

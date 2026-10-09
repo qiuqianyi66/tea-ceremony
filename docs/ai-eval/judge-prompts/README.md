@@ -1,3 +1,9 @@
+---
+last_updated: 2026-10-09
+status: active
+owner: yanha
+---
+
 # LLM-as-Judge 评委家族（T12）
 
 ## 原则（PLAN-final-convergence §T12 落实）
