@@ -40,8 +40,29 @@ owner: yanha
 | # | 事项 | 解锁 |
 | --- | --- | --- |
 | — | **无硬阻塞**（A4 已证伪，见状态速览） | — |
+| **OQ-1** | **微调预算上限**（`PLAN-ai-capability` D-5 / T12） | Phase 4 SFT 全体（训练费不可退） |
 
-## A′. 本会话新发现（已修 / 待排）
+## A″. 活跃计划：AI 能力建设（2026-10-10 起）
+
+> 母本：`docs/plans/PLAN-ai-capability-2026-10-10.md`（五阶段 20 任务）｜需求：`docs/prd/REQ-ai-capability-2026-10-10.md`｜决策：`docs/ADR/ADR-020.md`
+
+| Phase | 内容 | 级别 | 状态 |
+|---|---|---|---|
+| 1 | 安全边界（`AI_SYSTEM_PROMPT` + 五专家 prompt） | L0 | **待开工（P0，真风险）** |
+| 2 | 知识注入（`culture_chunks` 0 → 覆盖 8 表；`tea_relations`） | L2 | 待开工（P0） |
+| 3 | 评测基线（pass^3 + judge 一致率 + 无记录场景） | L0/L1 | 待开工（P1） |
+| 4 | **SFT 微调**（单专家 mentor，需预算） | L3 + 付费 | **等 OQ-1 预算** |
+| 5 | 缓存（公共前缀 ≥1024 触发隐式缓存 + 语义缓存） | L2 | 待开工（P2） |
+
+**关键顺序理由**：Phase 1/2 产物**同时是 Phase 4 的语料**；Phase 3 基线是 Phase 4 的对比前提。故非串行堆叠，是同一份工作两个用途。
+
+**已实测的关键事实**（支撑上述计划）：
+- v5 失败 15 条中 **11 条是 prompt/产品逻辑问题，0 条是「模型知识不够」**
+- `culture_chunks = 0` → **RAG 永远命中不了**（这才是「知识库未命中」根因）
+- 平均输入 225 / 输出 105 token；**隐式缓存需 ≥1024 token 才命中，当前 <1024 → 吃不到 20% 折扣**（[百炼上下文缓存](https://help.aliyun.com/zh/model-studio/context-cache)）
+- ADR-012 已规划语义缓存但**未落地**（`grep cache` 在 ai 域零命中）
+
+## A′. 历史新发现（已修 / 待排）
 
 - **✅ 已修：TraceRecorder 静默丢 Trace（真 bug）**——`ai_eval_traces.tokens_in/out`、`latency_ms` 为 NOT NULL，专家走两参构造 `AiChatVo(content, sources)` 时三字段为 null，insert 失败且 catch 只 warn → Trace 永久丢失。证据：`ai_eval_traces` 中 **librarian 0 行**（其余 5 agent 均有），`ai_usage_logs` 却有 librarian 调用。修复 + 回归测试见 PR #43。
 - **✅ 已修：交接快照转抄造成的 6 处硬错**（2026-10-10，三份并行交接实测核对）：

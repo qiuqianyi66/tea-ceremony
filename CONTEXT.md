@@ -51,6 +51,7 @@ ADR 独立文件见 `docs/ADR/`（ADR-009 起统一格式：Status / Context / D
 | [ADR-017](docs/ADR/ADR-017.md) | 运行时领域技能（V6 `agent_skills`） | Accepted |
 | [ADR-018](docs/ADR/ADR-018.md) | Spring AI Alibaba Graph 引入暂缓 | Accepted |
 | [ADR-019](docs/ADR/ADR-019.md) | 任务控制协议上收至最高规范（分诊 / 拆解 / 客观执行） | Accepted |
+| [ADR-020](docs/ADR/ADR-020.md) | SFT 微调纳入执行范围（推翻「只出概念文档」） | Accepted |
 
 新决策一律写入 `docs/ADR/ADR-0XX.md`，禁止塞进本文档。
 
