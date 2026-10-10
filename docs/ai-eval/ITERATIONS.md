@@ -10,28 +10,28 @@ owner: yanha
 > 规则：每版记录 version / 改动 / 四维指标 / pass^3 / 归因 Top 失败。简历数字只取自本表，不编。
 > 数据来源：`node scripts/eval-tea-ai.cjs` 报告（docs/ai-eval/reports/run-v*.log）+ `node scripts/calibrate-judge.cjs` 校准。
 
-> ## ⚠️ 口径说明（2026-10-09 修订，F-2）
+> ## ⚠️ 口径说明（2026-10-10 修订，v3 已出全量真实分）
 >
-> **v1 / v2 的 overall 是 `judge off` 下的 program-only 口径，不是全量真实分。**
+> **v3 起 overall 为全量真实分（judgeCoverage = 1）；v1 / v2 的 overall 是 `judge off` 下的 program-only 口径，不可与 v3 直接比。**
 >
 > - 评测集 98 个考点中 **77 个是 judge 考点（78.6%）**，需 LLM 评委判分。
 > - v1/v2 跑的是 `judge off`，当时 `eval-core.cjs` 对未跑的 judge 考点**「中性计 1」**，不拉低分。
-> - 2026-10-09 修正语义为「未回填计 0」后，同批 dry-run **overall = 0.19，而 programOnly = 1**——
->   落差即水分：**0.96 只代表 21 个 program 考点几乎全对，不代表那 77 个 judge 考点达标**。
-> - 报告新增 `programOnly` 与 `judgeCoverage` 两字段（F-2），后续跑批须明示口径。
->
-> **简历引用前必须确认口径**：全量真实分见 v3（`--judge` 实跑后，T05）。
+> - 2026-10-09 修正语义为「未回填计 0」后，同批 dry-run **overall = 0.19，而 programOnly = 1**。
+> - 报告含 `programOnly` 与 `judgeCoverage` 两字段：**只看 judgeCoverage = 1 的版本**（当前只有 v3）。
+> - **v1/v2 的 0.82/0.96 不得再引用**（含简历）；引用 v3 的 0.81。program-only 口径内 v2 的 0.96 仍成立，但那是「21 个 program 考点」的口径，不是全量。
 
 ## 版本一览
 
-| version | 日期 | 改动 | 整体（口径） | 结果质量 | 过程质量 | 安全稳定 | pass^3 | 判定 |
+| version | 日期 | 改动 | 整体（口径） | 结果质量 | 过程质量 | 安全稳定 | pass^1 | 判定 |
 |---|---|---|---|---|---|---|---|---|
 | v1 基线 | 2026-10-09 | 评测集 50 条 + 评测器 v1（program 判分 + judge 钩子） | 0.82 **(program-only)** | 0.80 | 0.92 | 0.75 | 41/50 | Bad Case 归因迭代 |
-| v2 | 2026-10-09 | 修 v1 Bad Case：RAG 长句召回（连接词切分+虚词剥离，LIB-002/3/4）+ 判分器补齐（六境/投茶量/未命中/拒绝词）+ 限流节奏 --delay | 0.96 **(program-only)** | 0.93 | 1.00 | 1.00 | 48/50 | ✅ program 口径达标；**judge 口径待 v3** |
-| v3 | 待 T05 | `--judge` 全量实跑（50 条 × 2 次调用） | 待跑 | 待跑 | 待跑 | 待跑 | 待跑 | 全量真实分 |
+| v2 | 2026-10-09 | 修 v1 Bad Case：RAG 长句召回（连接词切分+虚词剥离，LIB-002/3/4）+ 判分器补齐（六境/投茶量/未命中/拒绝词）+ 限流节奏 --delay | 0.96 **(program-only)** | 0.93 | 1.00 | 1.00 | 48/50 | program 口径达标 |
+| **v3** | **2026-10-10** | **`--judge` 全量实跑（50 条 × 2 次调用，judgeCoverage = 1）** | **0.81（全量真实）** | **0.77** | **0.79** | **1.00** | **37/50** | ✅ **唯一可引用版本** |
 
-> 注：v2 首跑（run-v2.log 0.68/34）被评测器 busy-wait 修复前的 429 限流污染 + 判分器未补齐，不算数；有效数字取 run-v2c.log。v1 数字唯一来源 `run-v1.log`（<date>.json 已被 v2 覆盖）。
+> 注：v2 首跑（run-v2.log 0.68/34）被评测器 busy-wait 修复前的 429 限流污染 + 判分器未补齐，不算数；有效数字取 run-v2c.log。v1 数字唯一来源 `run-v1.log`。
 > 注 2：**v1/v2 两行均为 `judge off` 的 program-only 口径**（judgeCoverage = 0），见上方口径说明。
+> 注 3：v3 的 `programOnly = 0.86`（v2 同口径 0.96 → 0.86 有回落，主因 taster/mentor 无记录类考点，见下归因）；**效率维** avgLatency 6710ms / avgTokensIn 176 / avgTokensOut 228（41 条样本）。
+
 
 ## v1 基线（2026-10-09）
 
@@ -53,6 +53,28 @@ v2 失败 2 条（残余）：
 
 - **BRE-005**：检查器缺陷（内容"7–8克"中文单位，regex 只认 `g`）→ 已修（g|克），定向验证 2/2。
 - **MEN-001**：真失败（保留）——mentor 入门规划未引六境成长体系（识茶→知器→懂水→行茶→见性→归真）。产品打磨点：mentor 提示词补成长路径引导（下轮迭代）。
+
+## v3 全量实跑归因（2026-10-10，judgeCoverage = 1）
+
+命令：`node scripts/eval-tea-ai.cjs --judge --delay 13000`（50 条 × 2 次调用，约 20 分钟）。
+失败 13/50，按根因分三类：
+
+1. **老规则判分器未覆盖新输出形态（5 条）——评测器问题，非产品问题**
+   - `ADV-001` / `ADV-002`：回答质量达标（碧螺春有花果香 / 熟普暖胃），但 `sources = 0`（未走 RAG）触发"未命中即扣分"。判分器把「未命中」当失败，而 librarian 提示词明确允许「未命中则常识作答」——**判分口径与产品设计冲突**。
+   - `LIB-001` 0.67：青茶归属正确，扣分在第二考点（产区/工艺差异表述未完全命中关键词）。
+2. **无记录前置态被当失败（6 条：TAS-001/003/005/006、MEN-001/004/005/007）——真产品打磨点**
+   - taster / mentor 在用户无品鉴记录时返回「请先完成一次品鉴记录」，这是**正确防御行为**，但评测用例按"有记录"预设期望，得 0。
+   - 归因：评测集缺「无记录」前置态标注（评测集缺陷）+ advice 类回答未给可执行通用建议（产品打磨点）。
+3. **边缘输入（1 条）**
+   - `CHA-006` 0.5、`ADV-007` 0.5：超长/乱码输入走友好引导，考点的关键词匹配未命中（判分器问题）。
+
+**下一轮（v4）应修**：①评测集补 `precondition: no-records` 标注与对应期望；②判分器区分「RAG 未命中但有合格常识回答」；③mentor 提示词的六境引导（MEN-001 v1 起遗留）。
+
+## 附带发现的产品 bug（v3 跑批期间抓出，已修）
+
+**TraceRecorder 静默丢 Trace**：`ai_eval_traces.tokens_in/out`、`latency_ms` 是 NOT NULL，而专家走两参构造 `AiChatVo(content, sources)` 时这三个字段为 null，直塞导致 insert 失败，且 `record()` 的 catch 只落一条 `warn` → 该次 Trace 永久丢失。实测 `ai_eval_traces` 中 **librarian 0 行**（其余 5 个 agent 均有），而 `ai_usage_logs` 有 librarian 调用——数据缺口证明此 bug 已实际发生。
+修复：`TraceRecorder.complete()` 三字段 null 归零；回归测试 `TraceRecorderIntegrationTest.completeToleratesNullTokensFromExpertAgents`。
+
 
 ## 简历 STAR 模板（数字取自本表）
 

@@ -9,6 +9,8 @@ owner: yanha
 
 # HANDOFF · 2026-10-10（会话交接）
 
+> ⚠️ **本文件已被取代**：`docs/HANDOFF-2026-10-10b-execution.md`（同日稍后）实测推翻本文的「A4 是唯一阻塞」结论——截图链路与 v3 Judge 实跑均不需 cu 桌面，且已全部跑通。以 10-10b 为准。
+
 > 本文件为最新交接。上一份 HANDOFF-2026-10-09-execution.md 已过时（其"S1 未开工"表述已被推翻）。跨会话主力文档 = `docs/plans/TODO-PRIORITY.md`（活文档）+ `docs/plans/PLAN-final-convergence-2026-10-09.md`（当前唯一执行母本）。
 
 ## 一句话现状
