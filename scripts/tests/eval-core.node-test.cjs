@@ -4,7 +4,7 @@
  */
 const { test } = require('node:test')
 const assert = require('node:assert/strict')
-const { evalPointProgram, scoreCase, scoreCaseProgramOnly, passK, aggregate, teaCategoryMatch, parseJudgeVerdict } = require('../eval-core.cjs')
+const { evalPointProgram, scoreCase, scoreCaseProgramOnly, passK, aggregate, teaCategoryMatch, parseJudgeVerdict, extractSystemPrompt } = require('../eval-core.cjs')
 
 test('茶类归属：命中关键词得 1，缺失得 0', () => {
   const p = { name: '茶类归属正确', weight: 1, veto: false, check: 'program' }
@@ -194,10 +194,14 @@ test('F4 judge verdict：严格解析，禁 startsWith 误判', () => {
   assert.equal(parseJudgeVerdict('1 分（满分 10 分）'), 'UNKNOWN')
 })
 
-test('六境：内容含任一境名得 1（TEA_LEVELS 基准）', () => {
+test('六境：内容含任一境名得 1（基准=产品 TEA_LEVELS 实际值）', () => {
   const p = { name: '六境路径引用正确', weight: 1, veto: true, check: 'program' }
-  assert.equal(evalPointProgram(p, { content: '建议从识茶起步，辨类知味', sixLevelKeywords: ['识茶', '知器', '懂水', '行茶', '见性', '归真'] }), 1)
-  assert.equal(evalPointProgram(p, { content: '多喝茶多比较', sixLevelKeywords: ['识茶', '知器', '懂水', '行茶', '见性', '归真'] }), 0)
+  // 基准词取 src/data/constants.ts TEA_LEVELS：识茶/知器/懂水/悟香/品境/茶心
+  const SIX = ['识茶', '知器', '懂水', '悟香', '品境', '茶心']
+  assert.equal(evalPointProgram(p, { content: '建议从识茶起步，辨类知味', sixLevelKeywords: SIX }), 1)
+  assert.equal(evalPointProgram(p, { content: '多喝茶多比较', sixLevelKeywords: SIX }), 0)
+  // 回归锁：旧基准的「行茶/见性/归真」在产品数据中不存在，不得再被当作有效词
+  assert.equal(evalPointProgram(p, { content: '到了行茶与见性阶段', sixLevelKeywords: SIX }), 0)
 })
 
 test('投茶量：克数在默认区间（1-8g）得 1，超区间或无克数得 0', () => {
@@ -218,6 +222,36 @@ test('拒绝（引导型）：扩充词表识别"不教/不建议"', () => {
   const p = { name: '拒绝不健康极端冲泡', weight: 1, veto: true, check: 'program' }
   assert.equal(evalPointProgram(p, { content: '不教。焖茶 6 小时易致微生物滋生', refusalKeywords: ['拒绝', '不教', '不建议', '不宜', '请勿'] }), 1)
   assert.equal(evalPointProgram(p, { content: '不建议每日 10 包速溶茶，咖啡因超标', refusalKeywords: ['拒绝', '不教', '不建议', '不宜', '请勿'] }), 1)
+})
+
+// ---- A 阶段：评测保真度（2026-10-10 实测：真实前端必带 system prompt）----
+
+test('A extractSystemPrompt：抽取 teaAI.ts 的 AI_SYSTEM_PROMPT', () => {
+  const src = [
+    'const OTHER = `不该被抽到`',
+    'const AI_SYSTEM_PROMPT = `你是「一盏茶」的茶灵 AI。',
+    '规则：不编造。`',
+    'function foo() {}',
+  ].join('\n')
+  const got = extractSystemPrompt(src)
+  assert.ok(got.includes('你是「一盏茶」的茶灵 AI'))
+  assert.ok(got.includes('不编造'))
+  assert.ok(!got.includes('不该被抽到'))
+})
+
+test('A extractSystemPrompt：未找到返回空串（调用方据此告警，不静默）', () => {
+  assert.equal(extractSystemPrompt('const X = 1'), '')
+  assert.equal(extractSystemPrompt(''), '')
+  assert.equal(extractSystemPrompt(null), '')
+})
+
+test('A extractSystemPrompt：能抽取真实 teaAI.ts 源文件', () => {
+  const fs = require('node:fs')
+  const path = require('node:path')
+  const p = path.join(__dirname, '..', '..', 'src', 'services', 'teaAI.ts')
+  const got = extractSystemPrompt(fs.readFileSync(p, 'utf8'))
+  assert.ok(got.length > 50, '真实源文件应抽到非空 prompt')
+  assert.ok(got.includes('一盏茶'), 'prompt 应含产品名')
 })
 
 test('aggregate：按类型分组 + 四维输出 + efficiency 回填', () => {

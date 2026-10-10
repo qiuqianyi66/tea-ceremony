@@ -15,12 +15,36 @@
 const fs = require('node:fs')
 const path = require('node:path')
 const yaml = require('js-yaml')
-const { scoreCase, scoreCaseProgramOnly, passK, aggregate, round, parseJudgeVerdict, evalPointProgram } = require('./eval-core.cjs')
+const { scoreCase, scoreCaseProgramOnly, passK, aggregate, round, parseJudgeVerdict, evalPointProgram, extractSystemPrompt } = require('./eval-core.cjs')
 
 const ROOT = path.join(__dirname, '..')
 const CASES_DIR = path.join(ROOT, 'docs', 'ai-eval', 'cases')
 const REPORTS_DIR = path.join(ROOT, 'docs', 'ai-eval', 'reports')
 const FILES = ['advisor.yaml', 'taster.yaml', 'librarian.yaml', 'brewer.yaml', 'mentor.yaml', 'chat.yaml']
+
+// ---- A 阶段 评测保真度（2026-10-10）----
+// 真实前端 src/services/teaAI.ts 每次调用都带 {role:'system', content: AI_SYSTEM_PROMPT}（L391/L395）。
+// 评测器若不带，测的就不是真实调用方式（实测：裸调乱码输入会原样回声，带 prompt 不会）。
+// 抽取而非复制：从源文件读，杜绝两份 prompt 漂移。
+const TEA_AI_SRC = path.join(ROOT, 'src', 'services', 'teaAI.ts')
+const SYSTEM_PROMPT = (() => {
+  try {
+    const p = extractSystemPrompt(fs.readFileSync(TEA_AI_SRC, 'utf8'))
+    if (!p) console.warn('⚠️ 未能从 teaAI.ts 抽取 AI_SYSTEM_PROMPT —— 评测将退化为裸调（保真度下降）')
+    return p
+  } catch (e) {
+    console.warn(`⚠️ 读取 teaAI.ts 失败（${e.message}）—— 评测将退化为裸调`)
+    return ''
+  }
+})()
+// 路径可达性（A 阶段分账用）。两个口径都对，但含义不同，故分开算：
+//   - defaultPath：用户**不选专家**时走的路径（前端「自动」档）——
+//       AiChatService：隐式路由 → 文化意图命中 librarian，其余回落 transparentChat（L194）
+//       即 librarian.yaml + chat.yaml。这是「打开就能用」的真实体验分。
+//   - expertPath：需用户**主动选专家**才走（F-M5-7 chip）——
+//       advisor/taster/brewer/mentor。这是「主动求助专业角色」的能力分。
+// 注：两者都可达（B 阶段后）；区分目的是避免把「需点一下才有」的能力混进默认体验分。
+const DEFAULT_PATH_FILES = new Set(['librarian', 'chat'])
 
 // ---- program 判分基准（来源：src/data/teas.ts + constants.ts，2026-10-10 v4 修正）----
 const CATEGORY_EXPECT = {
@@ -87,16 +111,17 @@ async function main() {
     }).length
     // F1 逐考点明细（v4）：无观测则无法归因——旧版只存 80 字符 snippet，归因只能靠猜。
     const pointDetail = explainPoints(caseDef, last)
-    const run = { id: caseDef.id, file, type: caseDef.type, input: caseDef.input.slice(0, 60), score: round(scores[0] ?? 0), programOnlyScore: programOnlyScore === null ? null : round(programOnlyScore), judgePointCount, judgeFilledCount, passResult: pk, httpStatus: last.httpStatus, contentSnippet: (last.content || '').slice(0, 80), sources: Array.isArray(last.sources) ? last.sources.length : null, tokensIn: last.tokensIn ?? null, tokensOut: last.tokensOut ?? null, latencyMs: last.latencyMs ?? null, points: pointDetail }
+    const run = { id: caseDef.id, file, type: caseDef.type, input: caseDef.input.slice(0, 60), score: round(scores[0] ?? 0), programOnlyScore: programOnlyScore === null ? null : round(programOnlyScore), judgePointCount, judgeFilledCount, passResult: pk, httpStatus: last.httpStatus, contentSnippet: (last.content || '').slice(0, 80), sources: Array.isArray(last.sources) ? last.sources.length : null, tokensIn: last.tokensIn ?? null, tokensOut: last.tokensOut ?? null, latencyMs: last.latencyMs ?? null, points: pointDetail, defaultPath: DEFAULT_PATH_FILES.has(path.basename(file, '.yaml')) }
     runs.push(run)
     if (run.score < 1) failures.push({ id: caseDef.id, type: caseDef.type, score: run.score, input: caseDef.input, httpStatus: run.httpStatus, contentSnippet: run.contentSnippet, sources: run.sources, points: pointDetail })
   }
 
   const report = {
     date: new Date().toISOString().slice(0, 10),
-    config: { iterations: opt.iterations, judge: opt.judge, dryRun: opt.dryRun },
+    config: { iterations: opt.iterations, judge: opt.judge, dryRun: opt.dryRun, systemPrompt: SYSTEM_PROMPT ? 'teaAI.ts/AI_SYSTEM_PROMPT' : 'none' },
     cases: runs.length,
     aggregate: aggregate(runs, opt.iterations),
+    reachability: reachabilitySplit(runs),
     runs,
     failures,
   }
@@ -107,6 +132,22 @@ async function main() {
 }
 
 // ---- IO（原生 fetch，Node 18+；禁止同步 busy-wait——会饿死事件循环）----
+
+/**
+ * A 阶段路径分账：把分数拆成「默认路径」（自动档即可命中）与「专家路径」（需主动选）。
+ * 动机：v3/v4 时前端不传 agent，41/50 条测的是用户走不到的路径——
+ * 单看 overall 会误读成「用户体验分」。B 阶段（F-M5-7）后全部可达，
+ * 但「需主动点一下才有」的能力仍不应混进默认体验分，故按此二分。
+ */
+function reachabilitySplit(runs) {
+  const mean = (arr) => (arr.length === 0 ? null : round(arr.reduce((a, b) => a + b, 0) / arr.length))
+  const def = runs.filter((r) => DEFAULT_PATH_FILES.has(path.basename(r.file, '.yaml')))
+  const exp = runs.filter((r) => !DEFAULT_PATH_FILES.has(path.basename(r.file, '.yaml')))
+  return {
+    defaultPath: { cases: def.length, score: mean(def.map((r) => r.score)), files: ['librarian', 'chat'] },
+    expertPath: { cases: exp.length, score: mean(exp.map((r) => r.score)), files: ['advisor', 'taster', 'brewer', 'mentor'] },
+  }
+}
 
 /**
  * F1 逐考点判分明细（v4）：把每个考点的得分与判分依据落盘。
@@ -131,15 +172,24 @@ function explainPoints(caseDef, result) {
   return out
 }
 
-async function callChat(opt, file, input) {
+/**
+ * @param opts.withSystemPrompt 是否附茶灵 system prompt。
+ *   被评测的真调用 = true（与真实前端 teaAI.ts 一致）；
+ *   评委调用 = false（评委是独立裁判，带茶灵人设会污染判分——F-A5 单维评委原则）。
+ */
+async function callChat(opt, file, input, opts = {}) {
+  const { withSystemPrompt = true } = opts
   const agent = path.basename(file, '.yaml')
   const ctrl = new AbortController()
   const timer = setTimeout(() => ctrl.abort(), 60000)
   try {
+    const messages = []
+    if (withSystemPrompt && SYSTEM_PROMPT) messages.push({ role: 'system', content: SYSTEM_PROMPT })
+    messages.push({ role: 'user', content: input })
     const res = await fetch(`${opt.baseUrl}/api/v1/ai/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: [{ role: 'user', content: input }], agent }),
+      body: JSON.stringify({ messages, agent }),
       signal: ctrl.signal,
     })
     clearTimeout(timer)
@@ -171,7 +221,7 @@ async function judgeCase(opt, caseDef, result) {
 用户输入：${caseDef.input}
 AI 回答：${(result.content || '').slice(0, 2000)}
 若满足输出 1；不满足输出 0；信息不足无法判断输出 UNKNOWN。只输出 0、1 或 UNKNOWN。`
-    const r = await callChat(opt, 'chat.yaml', judgePrompt)
+    const r = await callChat(opt, 'chat.yaml', judgePrompt, { withSystemPrompt: false })
     if (!r.content) {
       scores[p.name] = 'UNKNOWN'
       continue
@@ -218,6 +268,12 @@ function printSummary(report) {
   } else {
     console.log(`口径: judge 覆盖率 ${cov} | programOnly=${a.programOnly} | overall=${a.overall}`)
   }
+  // A 阶段路径分账：避免把「需主动选专家才有」的能力混进默认体验分
+  const rc = report.reachability
+  if (rc) {
+    console.log(`路径分账: 默认路径（自动档即命中）${rc.defaultPath.cases} 条 → ${rc.defaultPath.score} | 专家路径（需主动选）${rc.expertPath.cases} 条 → ${rc.expertPath.score}`)
+  }
+  console.log(`system prompt: ${report.config.systemPrompt}`)
   console.log(`报告: ${path.relative(ROOT, outPath(report))}`)
   if (report.failures.length > 0) {
     console.log(`失败 ${report.failures.length} 条:`)
