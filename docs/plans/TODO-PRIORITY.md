@@ -1,4 +1,6 @@
 ---
+name: todo-priority
+description: 一盏茶跨会话状态活文档——状态速览 / 阻塞项 / 可直接开工 / 低优先 / 最近完成（防重做）/ 关键 ID 与命令。新会话先读本文件恢复上下文。
 last_updated: 2026-10-10
 status: active
 owner: yanha
@@ -41,7 +43,15 @@ owner: yanha
 
 ## A′. 本会话新发现（已修 / 待排）
 
-- **✅ 已修：TraceRecorder 静默丢 Trace（真 bug）**——`ai_eval_traces.tokens_in/out`、`latency_ms` 为 NOT NULL，专家走两参构造 `AiChatVo(content, sources)` 时三字段为 null，insert 失败且 catch 只 warn → Trace 永久丢失。证据：`ai_eval_traces` 中 **librarian 0 行**（其余 5 agent 均有），`ai_usage_logs` 却有 librarian 调用。修复 + 回归测试见 `fix/trace-tokens-null` 分支。
+- **✅ 已修：TraceRecorder 静默丢 Trace（真 bug）**——`ai_eval_traces.tokens_in/out`、`latency_ms` 为 NOT NULL，专家走两参构造 `AiChatVo(content, sources)` 时三字段为 null，insert 失败且 catch 只 warn → Trace 永久丢失。证据：`ai_eval_traces` 中 **librarian 0 行**（其余 5 agent 均有），`ai_usage_logs` 却有 librarian 调用。修复 + 回归测试见 PR #43。
+- **✅ 已修：交接快照转抄造成的 6 处硬错**（2026-10-10，三份并行交接实测核对）：
+  1. 「后端重写**已完成**」→ **假**。`backend/main.py`、`app/`、`tests/`、`alembic.ini`、`requirements*.txt` 俱在，CI 仍 pytest + Maven 双跑。以 AGENTS.md §7「重写**中**，旧 FastAPI 仅维护不新增」为准。
+  2. 后端测试数 201 → 实测 **211**。
+  3. `chore/pr-flow-rule`「未推送、别动」→ 已推送且已合并，远端已删。
+  4. `tea-testing` worktree「prunable」→ 已不存在（现只有 2 个 worktree）。
+  5. P0-3 编号一义三用 → 已在三份文档就地加消歧警示（见下）。
+  6. v2 0.96 当成果 → 是 program-only 口径；全量真实分见 v3（0.81）。
+- **✅ 已修：P0-3 编号撞车**——`docs/PLAN-harness-research-2026-10.md` = 前端返工 / `docs/TODO-PRIORITY.md` = AI key / `docs/OPTIMIZATION_PLAN.md` = PWA prompt。三处已就地标注，不做全库重编号（会毁历史引用）。**读裸编号先确认来源文档。**
 - **待排（v4 评测迭代）**：v3 失败 13 条按根因三类——①判分器与产品设计冲突（ADV-001/002「允许常识作答」却被「未命中」扣分，5 条）②评测集缺 `precondition: no-records` 标注（taster/mentor 无记录时的正确防御被当失败，6 条）③边缘输入关键词匹配（2 条）。详见 `docs/ai-eval/ITERATIONS.md` §v3 归因。
 - **待排**：`calibrate-judge.cjs --judge` 实跑（judge 一致率校准，现已不再依赖 A4）。
 
@@ -84,10 +94,10 @@ owner: yanha
 ## 关键 ID / 命令（准确取用）
 
 - main：**`fe1ec02`**（远端已同步）；PR：#38（ffe807e1）、#39（7975a3f）、#40（f600967，S1 已合）、#41（7f3e6cc，PR-only 约定）、**#42（fe1ec02，handoff 同步）**；commit：T10 `14b3d07`、T11 `b8d38bc`、T12/K13 `46213f2`、RAG fix `6b107af`、虚词 `f90692f`、评测 v2 `a4a1c05`、活文档 `684ef7b`、ADR-018/配额/迁移/口径 `1b64bdd` `29d8d31` `ec7e8f4` `b9f083a`、TODO 同步 `137b3a5`、PR-only `7f3e6cc`
-- 分支：feature/garden-s1（已合，worktree `C:\Users\yanha\Desktop\tea-garden-s1` 可删可留）；**fix/trace-tokens-null（2026-10-10 本会话，Trace null tokens bug）**
+- 分支：feature/garden-s1（已合，worktree `C:\Users\yanha\Desktop\tea-garden-s1` 可删可留）；~~fix/trace-tokens-null~~（已随 PR #43 合并并删除分支）
 - 迁移：V1 init / V2 culture_seed / V3 agent_memory / V4 garden_energy / **V5__ai_eval_traces**（T07）/ **V6__agent_skills**（T08）；V5/V6 编号已写死
 - 方案：`docs/plans/PLAN-final-convergence-2026-10-09.md`（当前唯一执行母本）；`PLAN-k13-p12-design-2026-10-09.md`（K13/P1-2 设计）
-- ADR：`docs/ADR/` 001-018（014 ArchUnit / 015 garden / 016 ai eval trace / 017 agent skills / **018 Graph 暂缓**）
+- ADR：`docs/ADR/` 001-019（014 ArchUnit / 015 garden / 016 ai eval trace / 017 agent skills / 018 Graph 暂缓 / **019 任务控制协议上收**）
 - 经验池：`docs/plans/patterns.md`（P1-P9 候选，待跨项目验证）
 
 ```
