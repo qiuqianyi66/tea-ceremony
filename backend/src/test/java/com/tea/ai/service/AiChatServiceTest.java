@@ -58,10 +58,12 @@ class AiChatServiceTest {
     private final AiUsageLogger usageLogger = mock(AiUsageLogger.class);
     private final ChatMemoryService memoryService = mock(ChatMemoryService.class);
     private final TraceRecorder traceRecorder = mock(TraceRecorder.class);
+    /** 既有用例默认不限配额（0 = 不限），保持本文件原语义；配额专项用例见 AiCallQuotaTest。 */
+    private final AiCallQuota unlimitedQuota = new AiCallQuota(0);
 
     private AiChatService service(String apiKey) {
         return new AiChatService(builder, usageLogger, orchestrator, memoryService, traceRecorder,
-                librarian, advisor, taster, brewer, mentor, apiKey);
+                librarian, advisor, taster, brewer, mentor, unlimitedQuota, apiKey);
     }
 
     private static AiChatRequest req(String agent) {

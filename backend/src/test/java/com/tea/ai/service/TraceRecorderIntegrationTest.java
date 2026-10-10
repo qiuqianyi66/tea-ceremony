@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tea.ai.agent.AgentType;
+import com.tea.ai.agent.ComplexityLevel;
 import com.tea.ai.dto.AiChatRequest;
 import com.tea.ai.dto.ChatMessageDto;
 import com.tea.ai.entity.AiEvalTrace;
@@ -60,7 +61,7 @@ class TraceRecorderIntegrationTest {
 
     @Test
     void beginCompletePersistsFourLayersWithTokens() throws Exception {
-        AiEvalTrace trace = traceRecorder.begin(null, AgentType.LIBRARIAN, request(), request());
+        AiEvalTrace trace = traceRecorder.begin(null, AgentType.LIBRARIAN, request(), request(), ComplexityLevel.MEDIUM);
         AiChatVo vo = new AiChatVo("铁观音属乌龙茶……", List.of("铁观音"), null, 120, 340, 890);
         traceRecorder.complete(trace, vo);
 
@@ -82,13 +83,14 @@ class TraceRecorderIntegrationTest {
         assertThat(input.path("agent_hint").asText()).isEmpty();
         assertThat(objectMapper.readTree(saved.getContextLayer()).path("anchor_count").asInt()).isEqualTo(0);
         assertThat(objectMapper.readTree(saved.getPlanLayer()).path("route").asText()).isEqualTo("expert");
+        assertThat(objectMapper.readTree(saved.getPlanLayer()).path("complexity").asText()).isEqualTo("MEDIUM");
         JsonNode exec = objectMapper.readTree(saved.getExecLayer());
         assertThat(exec.path("sources_count").asInt()).isEqualTo(1);
     }
 
     @Test
     void failRecordsErrorCodeForBadGateway() throws Exception {
-        AiEvalTrace trace = traceRecorder.begin(null, null, request(), request());
+        AiEvalTrace trace = traceRecorder.begin(null, null, request(), request(), ComplexityLevel.SIMPLE);
         traceRecorder.fail(trace, new BadGatewayException("AI 服务调用失败"));
 
         AiEvalTrace saved = repository.findAll().stream()

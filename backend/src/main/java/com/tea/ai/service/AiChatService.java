@@ -15,6 +15,7 @@ import com.tea.ai.entity.AiChatSession;
 import com.tea.ai.entity.AiEvalTrace;
 import com.tea.ai.vo.AiChatVo;
 import com.tea.common.exception.BadGatewayException;
+import com.tea.common.exception.QuotaExceededException;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -50,6 +51,7 @@ public class AiChatService {
     private final TasterAgent tasterAgent;
     private final BrewerAgent brewerAgent;
     private final MentorAgent mentorAgent;
+    private final AiCallQuota callQuota;
     private final String apiKey;
 
     public AiChatService(ChatClient.Builder chatClientBuilder,
@@ -62,6 +64,7 @@ public class AiChatService {
                          TasterAgent tasterAgent,
                          BrewerAgent brewerAgent,
                          MentorAgent mentorAgent,
+                         AiCallQuota callQuota,
                          @Value("${spring.ai.dashscope.api-key:}") String apiKey) {
         this.chatClient = chatClientBuilder.build();
         this.usageLogger = usageLogger;
@@ -73,6 +76,7 @@ public class AiChatService {
         this.tasterAgent = tasterAgent;
         this.brewerAgent = brewerAgent;
         this.mentorAgent = mentorAgent;
+        this.callQuota = callQuota;
         this.apiKey = apiKey;
     }
 
@@ -91,9 +95,14 @@ public class AiChatService {
         AiChatRequest anchored = anchor(userId, req, level);
         // F-8 降级不丢用户消息：dispatch 前先落库（LLM 失败/502 时用户消息已提交，响应仍走既有降级抛出路径）
         Integer sessionId = resolveSession(userId, req, type);
+        // F-6 会话配额（ADR-018）：仅对「登录 + sessionId」生效；前端匿名调用 sessionId==null 直接放行。
+        // 超限走 429（QuotaExceededException），与 BadGatewayException（502 上游不可用）语义区分。
+        if (!callQuota.tryAcquire(sessionId)) {
+            throw new QuotaExceededException("本轮对话已达上限（" + callQuota.maxCalls() + " 次），请开新会话继续");
+        }
         persist(sessionId, "user", lastUserMessage(req), agentOf(type, req));
-        // T07 评测 Trace：入口埋点（input/context/plan 层），dispatch 后 complete/fail（ADR-016）
-        AiEvalTrace trace = traceRecorder.begin(sessionId, type, req, anchored);
+        // T07 评测 Trace：入口埋点（input/context/plan 层，含复杂度档位），dispatch 后 complete/fail（ADR-016）
+        AiEvalTrace trace = traceRecorder.begin(sessionId, type, req, anchored, level);
         try {
             AiChatVo vo = dispatch(type, userId, anchored);
             traceRecorder.complete(trace, vo);

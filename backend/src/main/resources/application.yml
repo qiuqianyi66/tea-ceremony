@@ -47,14 +47,17 @@ tea:
     # 批 3 安全审计：AI/登录公开端点限流（滑动窗口，进程内存；环境变量沿用旧栈 RATE_LIMIT_* 名称）
     ai-max: ${RATE_LIMIT_AI_MAX:10}
     ai-window-ms: ${RATE_LIMIT_AI_WINDOW_MS:60000}
+    login-max: ${RATE_LIMIT_LOGIN_MAX:10}
+    login-window-ms: ${RATE_LIMIT_LOGIN_WINDOW_MS:300000}
   ai:
     complexity:
       # T09 复杂度路由阈值（SIMPLE=短问短轮直答 / COMPLEX=长问多轮压缩；MEDIUM 居中）
       simple-max-words: ${AI_COMPLEXITY_SIMPLE_MAX_WORDS:40}
       simple-max-turns: ${AI_COMPLEXITY_SIMPLE_MAX_TURNS:3}
       complex-min-words: ${AI_COMPLEXITY_COMPLEX_MIN_WORDS:200}
-    login-max: ${RATE_LIMIT_LOGIN_MAX:10}
-    login-window-ms: ${RATE_LIMIT_LOGIN_WINDOW_MS:300000}
+    # F-6 会话配额（ADR-018）：单会话内 LLM 调用上限；0/负数=不限。
+    # 与 tea.ratelimit.ai-max（10/min 瞬时速率）是两层：限流管速率，配额管会话总量。
+    max-calls-per-session: ${AI_MAX_CALLS_PER_SESSION:10}
 
 garden:
   energy:

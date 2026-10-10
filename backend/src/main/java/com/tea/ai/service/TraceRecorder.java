@@ -2,6 +2,7 @@ package com.tea.ai.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tea.ai.agent.AgentType;
+import com.tea.ai.agent.ComplexityLevel;
 import com.tea.ai.dto.AiChatRequest;
 import com.tea.ai.entity.AiEvalTrace;
 import com.tea.ai.repository.AiEvalTraceRepository;
@@ -26,8 +27,8 @@ public class TraceRecorder {
     private final AiEvalTraceRepository repository;
     private final ObjectMapper objectMapper;
 
-    /** 入口埋点：input（原始问句 + 意图提示）+ context（历史锚定条数）+ plan（路由决策）。不落库，等 complete/fail 统一保存。 */
-    public AiEvalTrace begin(Integer sessionId, AgentType type, AiChatRequest req, AiChatRequest anchored) {
+    /** 入口埋点：input（原始问句 + 意图提示）+ context（历史锚定条数）+ plan（路由决策 + 复杂度档位）。不落库，等 complete/fail 统一保存。 */
+    public AiEvalTrace begin(Integer sessionId, AgentType type, AiChatRequest req, AiChatRequest anchored, ComplexityLevel level) {
         AiEvalTrace trace = new AiEvalTrace();
         trace.setSessionId(sessionId);
         trace.setRequestId(UUID.randomUUID());
@@ -40,7 +41,8 @@ public class TraceRecorder {
                 "anchor_count", anchored.messages().size() - req.messages().size())));
         trace.setPlanLayer(json(Map.of(
                 "agent_type", agent,
-                "route", type == null ? "transparent" : "expert")));
+                "route", type == null ? "transparent" : "expert",
+                "complexity", level == null ? "" : level.name())));
         return trace;
     }
 
