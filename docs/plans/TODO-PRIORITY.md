@@ -9,9 +9,11 @@ owner: yanha
 > 用途：跨会话状态交接，替代压缩摘要的不确定性。新会话先读本文件，再开工。
 > 维护规则：状态变化当场更新 `last_updated`；完成一项划一项；过期内容移入对应 PLAN/ADR/学习记录（AGENTS.md §13），不留死行。
 
-## 状态速览（2026-10-10 凌晨）
+## 状态速览（2026-10-10 上午）
 
-- main：`b9f083a`（远端已同步；4 新 commit：ADR-018 Graph 暂缓 / 前端会话记忆迁移 / F-6 每会话 AI 配额 / 判分口径修正）
+- main：**`7f3e6cc`**（远端已同步，工作区干净）。含 4 新 commit（ADR-018 Graph 暂缓 / 前端会话记忆迁移 / F-6 每会话 AI 配额 / 判分口径修正）+ `137b3a5` TODO 同步 + `7f3e6cc` PR #41 合并。
+- **推送流程变更（2026-10-10，用户拍板）**：main 走 **PR-only**。新改动一律 `feature/xxx` / `fix/xxx` 分支 → push → 开 PR → **CI 13 job 全绿** → 合并。**禁再直推 main（bypass）**。PR #41 已按此流程走通（首次成功）。
+- **分支保护现状（⚠️ 待补）**：`required_approving_review_count: 0`（死锁已解，用户改的）+ **`required_status_checks` 段缺失**——CI 门禁在改规则时被一并取消。**建议补回 CI 状态检查**（13 个 job 名见 `gh pr checks <PR>`），否则 PR 可带着红灯合并。
 - **判分口径修正（重大，勿用旧数字）**：v1 0.82 / v2 0.96 均为 **program-only 口径**（judge off，未回填 judge 考点计中性 1）；修正为「未回填计 0」后 dry-run **overall=0.19 / programOnly=1**——98 考点中 77 个 judge（78.6%）从未被判。**简历数字引用前须跑 v3（--judge 全量实跑）**
 - **F-6 AI 会话配额完成**（ec7e8f4 + 29d8d31）：按 sessionId 计数 → 429 QuotaExceededException（与 502 语义分离）；登录用户记忆交给后端 anchor，游客保留本地 history；顺带修 login-max 缩进错位（原挂 tea.ai 下恒走默认值）
 - **ADR-018 Graph 暂缓**：四维甄别 0/4（业务无多步有状态 AI 编排；HITL 与零点击闭环冲突）；实证砍掉结构化输出/工具缓存；只保留 AI 会话配额
@@ -64,7 +66,7 @@ owner: yanha
 
 ## 关键 ID / 命令（准确取用）
 
-- main：`b9f083a`（远端已同步）；PR：#38（ffe807e1）、#39（7975a3f）、#40（f600967，S1 已合）；commit：T10 `14b3d07`、T11 `b8d38bc`、T12/K13 `46213f2`、RAG fix `6b107af`、虚词 `f90692f`、评测 v2 `a4a1c05`、活文档 `684ef7b`、ADR-018/配额/迁移/口径 `1b64bdd` `29d8d31` `ec7e8f4` `b9f083a`
+- main：**`7f3e6cc`**（远端已同步）；PR：#38（ffe807e1）、#39（7975a3f）、#40（f600967，S1 已合）、**#41（7f3e6cc，PR-only 约定，已 squash 合并）**；commit：T10 `14b3d07`、T11 `b8d38bc`、T12/K13 `46213f2`、RAG fix `6b107af`、虚词 `f90692f`、评测 v2 `a4a1c05`、活文档 `684ef7b`、ADR-018/配额/迁移/口径 `1b64bdd` `29d8d31` `ec7e8f4` `b9f083a`、TODO 同步 `137b3a5`
 - 分支：feature/garden-s1（已合，worktree `C:\Users\yanha\Desktop\tea-garden-s1` 可删可留）
 - 迁移：V1 init / V2 culture_seed / V3 agent_memory / V4 garden_energy / **V5__ai_eval_traces**（T07）/ **V6__agent_skills**（T08）；V5/V6 编号已写死
 - 方案：`docs/plans/PLAN-final-convergence-2026-10-09.md`（当前唯一执行母本）；`PLAN-k13-p12-design-2026-10-09.md`（K13/P1-2 设计）
@@ -87,4 +89,9 @@ mvn test -Dtest=LayerDependencyTest # 单跑 ArchUnit（6 条规则）
 ```
 
 - **ArchUnit 三坑**：① `getAnnotationOfType(Class)` 泛型编译冲突 → 用 `getAnnotationOfType(类型名)`；② `getReturnType().getName()` 含泛型参数 → 用 `getRawReturnType().getName()`；③ `noMethods()...should().exist()` 不存在。
-- GitHub push：走 22 端口（443 会被网络重置）；merge main 需 `--admin`（分支保护要求 review）。
+- **GitHub push**：走 22 端口（443 会被网络重置），用一次性 `$env:GIT_SSH_COMMAND="ssh -o HostName=github.com -o Port=22"`。**merge main 走 PR**（见状态速览）；`approvals=0` 已解死锁，`--admin` 不再必需。
+- **分支保护补 CI 门禁**（待办）：
+  ```
+  gh api repos/qiuqianyi66/tea-ceremony/branches/main/protection  # 确认 required_status_checks 缺失
+  gh pr checks <PR号>  # 取 13 个 job 名，再 PATCH required_status_checks 补回
+  ```
