@@ -15,7 +15,7 @@
 const fs = require('node:fs')
 const path = require('node:path')
 const yaml = require('js-yaml')
-const { scoreCase, passK, aggregate, round } = require('./eval-core.cjs')
+const { scoreCase, scoreCaseProgramOnly, passK, aggregate, round } = require('./eval-core.cjs')
 
 const ROOT = path.join(__dirname, '..')
 const CASES_DIR = path.join(ROOT, 'docs', 'ai-eval', 'cases')
@@ -66,7 +66,15 @@ async function main() {
     const scores = results.map((r) => scoreCase(caseDef, r))
     const pk = passK(scores, opt.iterations)
     const last = results[results.length - 1] ?? {}
-    const run = { id: caseDef.id, file, type: caseDef.type, input: caseDef.input.slice(0, 60), score: round(scores[0] ?? 0), passResult: pk, httpStatus: last.httpStatus, contentSnippet: (last.content || '').slice(0, 80), sources: Array.isArray(last.sources) ? last.sources.length : null }
+    // F-2 口径字段：program-only 分（judge off 时的真实可比口径）+ judge 覆盖率计数
+    const programOnlyScore = scoreCaseProgramOnly(caseDef, last)
+    const judgePointCount = (caseDef.points || []).filter((p) => p.check === 'judge').length
+    const judgeFilledCount = (caseDef.points || []).filter((p) => {
+      if (p.check !== 'judge') return false
+      const v = last.judgeScores && last.judgeScores[p.name]
+      return v === 1 || v === 0 // UNKNOWN / 未回填不算已判
+    }).length
+    const run = { id: caseDef.id, file, type: caseDef.type, input: caseDef.input.slice(0, 60), score: round(scores[0] ?? 0), programOnlyScore: programOnlyScore === null ? null : round(programOnlyScore), judgePointCount, judgeFilledCount, passResult: pk, httpStatus: last.httpStatus, contentSnippet: (last.content || '').slice(0, 80), sources: Array.isArray(last.sources) ? last.sources.length : null, tokensIn: last.tokensIn ?? null, tokensOut: last.tokensOut ?? null, latencyMs: last.latencyMs ?? null }
     runs.push(run)
     if (run.score < 1) failures.push({ id: caseDef.id, type: caseDef.type, score: run.score, input: caseDef.input, httpStatus: run.httpStatus, contentSnippet: run.contentSnippet, sources: run.sources })
   }
@@ -106,7 +114,7 @@ async function callChat(opt, file, input) {
       sources: data?.data?.sources ?? null,
       tokensIn: data?.data?.tokensIn,
       tokensOut: data?.data?.tokensOut,
-      latency: data?.data?.latency,
+      latencyMs: data?.data?.latencyMs,
       httpStatus: 200,
     }
   } catch {
@@ -116,24 +124,32 @@ async function callChat(opt, file, input) {
 }
 
 async function judgeCase(opt, caseDef, result) {
-  const judgePrompt = `你是「一盏茶」AI 评测的评委。判断 AI 助手回答是否满足指定考点。
-考点：${caseDef.points.map((p) => p.name).join('；')}
+  // 逐考点独立评委（F-A5 单维评委原则）：一个评委只评一个考点，0/1/UNKNOWN 三选一。
+  // 用 chat（通用对话）当评委，避免复用被评测的专家 agent（自评偏置）。
+  const scores = {}
+  for (const p of caseDef.points) {
+    if (p.check !== 'judge') continue
+    const judgePrompt = `你是「一盏茶」AI 评测的独立评委。只判断下面这一个考点是否满足。
+考点：${p.name}
 用户输入：${caseDef.input}
 AI 回答：${(result.content || '').slice(0, 2000)}
-若全部满足输出 1；任一不满足输出 0。只输出 0 或 1。`
-  const r = await callChat(opt, 'mentor.yaml', judgePrompt)
-  if (!r.content) return {}
-  const verdict = r.content.trim().match(/^[01]/)
-  const scores = {}
-  if (verdict) {
-    for (const p of caseDef.points) scores[p.name] = parseInt(verdict[0], 10)
+若满足输出 1；不满足输出 0；信息不足无法判断输出 UNKNOWN。只输出 0、1 或 UNKNOWN。`
+    const r = await callChat(opt, 'chat.yaml', judgePrompt)
+    if (!r.content) {
+      scores[p.name] = 'UNKNOWN'
+      continue
+    }
+    const verdict = r.content.trim().toUpperCase()
+    if (verdict.startsWith('1')) scores[p.name] = 1
+    else if (verdict.startsWith('0')) scores[p.name] = 0
+    else scores[p.name] = 'UNKNOWN'
   }
   return scores
 }
 
 function mockResult(caseDef) {
   const content = caseDef.expected.split('；')[0] || caseDef.expected
-  return { content, sources: ['茶·mock'], tokensIn: 10, tokensOut: 20, latency: 100, httpStatus: 200 }
+  return { content, sources: ['茶·mock'], tokensIn: 10, tokensOut: 20, latencyMs: 100, httpStatus: 200 }
 }
 
 function loadCases(fileFilter) {
@@ -157,7 +173,16 @@ function printSummary(report) {
   const a = report.aggregate
   console.log(`评测: ${report.cases} 条 / 迭代 ${report.config.iterations} / judge ${report.config.judge ? 'on' : 'off'} / ${report.config.dryRun ? 'dry-run' : 'live'}`)
   console.log(`整体: ${a.overall} | 结果质量 ${a.dimensions.resultQuality} | 过程质量 ${a.dimensions.processQuality} | 安全稳定 ${a.dimensions.safetyStability}`)
-  console.log(`pass^3: ${a.pass3.passed}/${a.pass3.total}`)
+  console.log(`pass^${report.config.iterations}: ${a.pass3.passed}/${a.pass3.total}`)
+  // F-2 口径提示：judge 未跑时 overall 只代表 program 考点，须明示防误读
+  const cov = a.judgeCoverage
+  if (cov === null) {
+    console.log('口径: 本批无 judge 考点，overall 即全量分')
+  } else if (cov === 0) {
+    console.log(`口径: ⚠️ judge 未跑（覆盖率 0/${report.cases} 条有 judge 考点）→ overall 仅代表 program 考点，programOnly=${a.programOnly}`)
+  } else {
+    console.log(`口径: judge 覆盖率 ${cov} | programOnly=${a.programOnly} | overall=${a.overall}`)
+  }
   console.log(`报告: ${path.relative(ROOT, outPath(report))}`)
   if (report.failures.length > 0) {
     console.log(`失败 ${report.failures.length} 条:`)

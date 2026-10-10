@@ -13,11 +13,13 @@ const path = require('node:path')
 const THRESHOLD = 0.85
 
 function evaluate(samples) {
+  // 三类样本分账，避免 UNKNOWN 被静默丢弃（缩小分母导致一致率虚高）
+  const unknown = samples.filter((s) => s.human !== 0 && s.human !== 1 || (s.machine !== 0 && s.machine !== 1))
   const valid = samples.filter((s) => (s.human === 0 || s.human === 1) && (s.machine === 0 || s.machine === 1))
   const mismatches = valid.filter((s) => s.human !== s.machine)
   const unstable = valid.filter((s) => s.unstable === true)
   const rate = valid.length === 0 ? 0 : (valid.length - mismatches.length) / valid.length
-  return { rate, mismatches, unstable }
+  return { rate, mismatches, unstable, unknown, validCount: valid.length, total: samples.length }
 }
 
 if (require.main === module) {
@@ -31,8 +33,11 @@ if (require.main === module) {
     samples = JSON.parse(fs.readFileSync(path.resolve(file), 'utf8'))
   }
 
-  const { rate, mismatches, unstable } = evaluate(samples)
-  console.log(`样本: ${samples.length} 条 | 一致率: ${(rate * 100).toFixed(1)}% | 阈值: ${THRESHOLD * 100}%`)
+  const { rate, mismatches, unstable, unknown } = evaluate(samples)
+  console.log(`样本: ${samples.length} 条（有效 ${samples.length - unknown.length}） | 一致率: ${(rate * 100).toFixed(1)}% | 阈值: ${THRESHOLD * 100}%`)
+  if (unknown.length > 0) {
+    console.log(`UNKNOWN 样本 ${unknown.length} 条（不计入一致率分母，需人工复核）: ${unknown.map((s) => s.id).join(', ')}`)
+  }
   if (mismatches.length > 0) {
     console.log(`不一致 ${mismatches.length} 条:`)
     for (const m of mismatches) console.log(`  ${m.id} human=${m.human} machine=${m.machine}`)

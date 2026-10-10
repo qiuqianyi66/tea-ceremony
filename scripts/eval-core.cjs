@@ -45,17 +45,19 @@ function evalPointProgram(point, result) {
   return 0
 }
 
-/** 考点加权评分（F-A3）。@returns 0..1 */
+/** 考点加权评分（F-A3）。@returns 0..1
+ *  judge 考点：显式判 1 才得分；未跑 judge / UNKNOWN / 判 0 一律计 0（失败响亮，禁静默满分）。
+ *  program 考点：程序化判分（evalPointProgram）。
+ *  wsum === 0（无任何可判考点）→ 0（异常用例，不再静默满分）。
+ */
 function scoreCase(caseDef, result) {
   let sum = 0
   let wsum = 0
   for (const p of caseDef.points) {
     if (p.check === 'judge') {
-      // judge 考点在评测器中走 LLM 评委（eval-tea-ai.cjs --judge）；此处保持中性 1（由外部回填）
-      if (!result.judgeScores || result.judgeScores[p.name] === undefined) {
-        continue
-      }
-      const s = result.judgeScores[p.name] === 1 ? 1 : 0
+      // 未回填 / UNKNOWN / 判 0 → 0 分；只有显式 1 才得分
+      const js = result.judgeScores && result.judgeScores[p.name]
+      const s = js === 1 ? 1 : 0
       if (p.veto && s === 0) return 0
       sum += s * p.weight
       wsum += p.weight
@@ -66,8 +68,28 @@ function scoreCase(caseDef, result) {
     sum += s * p.weight
     wsum += p.weight
   }
-  if (wsum === 0) return 1 // 无已判考点（全部 judge 且未跑 judge）→ 中性
+  if (wsum === 0) return 0 // 无任何可判考点 → 判 0（防静默放行）
   return sum / wsum
+}
+
+/**
+ * program-only 判分（F-2）：只算 check === 'program' 的考点，跳过 judge 考点。
+ * 用途：judge off 时给出「真实可比口径」——避免该口径被误读为全量真实分。
+ * 无 program 考点 → null（表示不适用，不是 0 分）。
+ * @returns 0..1 | null
+ */
+function scoreCaseProgramOnly(caseDef, result) {
+  const programPoints = (caseDef.points || []).filter((p) => p.check === 'program')
+  if (programPoints.length === 0) return null
+  let sum = 0
+  let wsum = 0
+  for (const p of programPoints) {
+    const s = evalPointProgram(p, result)
+    if (p.veto && s === 0) return 0
+    sum += s * p.weight
+    wsum += p.weight
+  }
+  return wsum === 0 ? null : sum / wsum
 }
 
 /** pass^k（F-A6）：k 次独立运行全部满分才记通过。@returns {passed, passedCount, k} */
@@ -77,7 +99,14 @@ function passK(scores, k = 3) {
 }
 
 /** 聚合：按维度（结果质量 typical / 过程质量 edge / 安全稳定 adversarial）与效率成本分组。
- *  @returns {overall, dimensions, pass3} */
+ *  @returns {overall, dimensions, pass3, programOnly, judgeCoverage}
+ *
+ *  口径说明（2026-10-09，F-2）：98 个考点中 77 个为 judge 考点（78.6%）。
+ *  judge off 跑出来的 overall 只反映 program 考点，不是全量真实分。
+ *  故增加两个字段，让「低分」成为已知事实而非突发打击：
+ *   - programOnly：只算 program 考点的分（judge off 时的真实可比口径）
+ *   - judgeCoverage：已回填 judge 考点数 / 全部 judge 考点数（0 = 完全没跑 judge）
+ */
 function aggregate(runs, k = 3) {
   const dims = { typical: [], edge: [], adversarial: [] }
   for (const r of runs) {
@@ -87,15 +116,41 @@ function aggregate(runs, k = 3) {
   const mean = (arr) => (arr.length === 0 ? null : arr.reduce((a, b) => a + b, 0) / arr.length)
   const overall = mean(runs.map((r) => r.score))
   const pass3Count = runs.filter((r) => r.passResult && r.passResult.passed).length
+
+  // ---- F-2 口径字段：program-only 分 + judge 覆盖率 ----
+  // programOnlyScore 由 eval-tea-ai.cjs 逐条计算后挂在 run 上（见该文件 run 构造处）
+  const withProgramOnly = runs.filter((r) => typeof r.programOnlyScore === 'number')
+  const programOnly = withProgramOnly.length === 0
+    ? null
+    : round(mean(withProgramOnly.map((r) => r.programOnlyScore)))
+  // judgeCoverage：已回填 judge 考点 / 全部 judge 考点；无 judge 考点时为 null（不适用）
+  const totalJudge = runs.reduce((s, r) => s + (typeof r.judgePointCount === 'number' ? r.judgePointCount : 0), 0)
+  const filledJudge = runs.reduce((s, r) => s + (typeof r.judgeFilledCount === 'number' ? r.judgeFilledCount : 0), 0)
+  const judgeCoverage = totalJudge === 0 ? null : round(filledJudge / totalJudge)
+  // ---- /F-2 ----
+
+  // 效率成本（F-A3 四类指标之一）：从每条 run 的 tokens/latency 回填，空值跳过
+  const withLatency = runs.filter((r) => typeof r.latencyMs === 'number')
+  const withTokensIn = runs.filter((r) => typeof r.tokensIn === 'number')
+  const withTokensOut = runs.filter((r) => typeof r.tokensOut === 'number')
+  const efficiency = {
+    avgLatencyMs: withLatency.length === 0 ? null : round(mean(withLatency.map((r) => r.latencyMs))),
+    avgTokensIn: withTokensIn.length === 0 ? null : round(mean(withTokensIn.map((r) => r.tokensIn))),
+    avgTokensOut: withTokensOut.length === 0 ? null : round(mean(withTokensOut.map((r) => r.tokensOut))),
+    samples: withLatency.length,
+  }
   return {
     overall: round(overall),
     dimensions: {
       resultQuality: round(mean(dims.typical)),
       processQuality: round(mean(dims.edge)),
       safetyStability: round(mean(dims.adversarial)),
-      efficiency: null, // 由 eval-tea-ai.cjs 从 usage 数据回填
+      efficiency,
     },
     pass3: { passed: pass3Count, total: runs.length },
+    // F-2 口径标注：judge off 时 overall 只代表 program 考点，全量真实分须看 judgeCoverage > 0.9 的 run
+    programOnly,
+    judgeCoverage,
   }
 }
 
@@ -136,4 +191,4 @@ function round(n) {
   return n === null ? null : Math.round(n * 100) / 100
 }
 
-module.exports = { evalPointProgram, scoreCase, passK, aggregate, round }
+module.exports = { evalPointProgram, scoreCase, scoreCaseProgramOnly, passK, aggregate, round }

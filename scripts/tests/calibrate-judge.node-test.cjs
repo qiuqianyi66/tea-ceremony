@@ -28,7 +28,7 @@ test('一致率 50%：低于阈值', () => {
   assert.ok(r.rate < THRESHOLD)
 })
 
-test('非法样本（非 0/1）被过滤不计入分母', () => {
+test('非法样本（非 0/1）被过滤不计入分母，但显式计入 unknown', () => {
   const r = evaluate([
     { id: 'A', human: 1, machine: 1 },
     { id: 'B', human: 1, machine: 2 },   // 非法
@@ -36,6 +36,9 @@ test('非法样本（非 0/1）被过滤不计入分母', () => {
   ])
   assert.equal(r.rate, 1)
   assert.equal(r.mismatches.length, 0)
+  assert.equal(r.unknown.length, 2)
+  assert.equal(r.validCount, 1)
+  assert.equal(r.total, 3)
 })
 
 test('A/B 不稳定标记独立上报，不影响一致率', () => {
