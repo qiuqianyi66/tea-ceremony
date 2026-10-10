@@ -32,6 +32,7 @@ public class AdvisorAgent extends BaseExpertAgent {
             2. 知识库未命中时用通用茶知识作答，明确说明"知识库未命中，以下为常识回答"。
             3. 不编造茶名/产区；不确定处标注"待核实"。
             4. 回答简洁（≤200 字），一次一个主题。
+            5. 涉功效（减肥/治病/养生）须说明茶是饮品而非药物、需配合饮食运动；禁引经据典暗示疗效。涉咖啡因须提示影响并给低因替代。
             """;
 
     private final CultureSearchService cultureSearchService;
