@@ -9,15 +9,21 @@ owner: yanha
 > 用途：跨会话状态交接，替代压缩摘要的不确定性。新会话先读本文件，再开工。
 > 维护规则：状态变化当场更新 `last_updated`；完成一项划一项；过期内容移入对应 PLAN/ADR/学习记录（AGENTS.md §13），不留死行。
 
-## 状态速览（2026-10-10 上午）
+## 状态速览（2026-10-10 下午 · 本会话复核后）
 
-- main：**`7f3e6cc`**（远端已同步，工作区干净）。含 4 新 commit（ADR-018 Graph 暂缓 / 前端会话记忆迁移 / F-6 每会话 AI 配额 / 判分口径修正）+ `137b3a5` TODO 同步 + `7f3e6cc` PR #41 合并。
-- **推送流程变更（2026-10-10，用户拍板）**：main 走 **PR-only**。新改动一律 `feature/xxx` / `fix/xxx` 分支 → push → 开 PR → **CI 13 job 全绿** → 合并。**禁再直推 main（bypass）**。PR #41 已按此流程走通（首次成功）。
-- **分支保护现状（⚠️ 待补）**：`required_approving_review_count: 0`（死锁已解，用户改的）+ **`required_status_checks` 段缺失**——CI 门禁在改规则时被一并取消。**建议补回 CI 状态检查**（13 个 job 名见 `gh pr checks <PR>`），否则 PR 可带着红灯合并。
-- **判分口径修正（重大，勿用旧数字）**：v1 0.82 / v2 0.96 均为 **program-only 口径**（judge off，未回填 judge 考点计中性 1）；修正为「未回填计 0」后 dry-run **overall=0.19 / programOnly=1**——98 考点中 77 个 judge（78.6%）从未被判。**简历数字引用前须跑 v3（--judge 全量实跑）**
+- main：**`fe1ec02`**（远端已同步，工作区干净）。含 4 新 commit（ADR-018 Graph 暂缓 / 前端会话记忆迁移 / F-6 每会话 AI 配额 / 判分口径修正）+ `137b3a5` TODO 同步 + PR #41/#42 合并。
+- **推送流程变更（2026-10-10，用户拍板）**：main 走 **PR-only**。新改动一律 `feature/xxx` / `fix/xxx` 分支 → push → 开 PR → **CI 13 job 全绿** → 合并。**禁再直推 main（bypass）**。PR #41/#42 已按此流程走通。
+- **✅ 分支保护 CI 门禁已补回（2026-10-10，本会话）**：`required_status_checks` 原缺失（改规则时被一并取消，PR 可带红灯合并）；用 `PUT /branches/main/protection` 补回 **13 个 context**（与 ci.yml job `name` 逐字一致），`required_approving_review_count: 0` 保持。核对命令：`gh api repos/qiuqianyi66/tea-ceremony/branches/main/protection -q '.required_status_checks.contexts[]'`。
+- **✅ A4「cu 虚拟桌面」前提已证伪（2026-10-10，本会话）**：截图链路与 Judge 实跑**不需要 cu 桌面**，均可本地 headless 完成。已实跑通过：
+  - `node scripts/verify-gardens.cjs` → **ERRORS: []**（4 园 × 晴/雨 8 张，已出图）
+  - `node scripts/verify-pavilion.cjs` → **ERRORS: []**；`verify-icons.cjs` → **ERRORS: []**
+  - `screenshot-home.cjs` / `screenshot-growth.cjs` / `screenshot-brew3d.cjs` → 全部 exit 0，产物齐（补上 research-harness-audit I3「7/10 产物缺失」的缺口）
+  - **`node scripts/eval-tea-ai.cjs --judge --delay 13000` → v3 全量真实分：overall 0.81 / judgeCoverage 1 / pass^1 37/50** ✅
+  - 结论：**A4 不再是阻塞项**；K23 / P0-3 验收 / v3 Judge 三项全部解锁。
+- **判分口径（v3 已落地）**：v1 0.82 / v2 0.96 均为 **program-only 口径**（judge off）；**只有 v3（judgeCoverage = 1）可引用**——overall **0.81**、结果质量 0.77 / 过程质量 0.79 / 安全稳定 1.00。v3 同口径 `programOnly = 0.86`。
 - **F-6 AI 会话配额完成**（ec7e8f4 + 29d8d31）：按 sessionId 计数 → 429 QuotaExceededException（与 502 语义分离）；登录用户记忆交给后端 anchor，游客保留本地 history；顺带修 login-max 缩进错位（原挂 tea.ai 下恒走默认值）
 - **ADR-018 Graph 暂缓**：四维甄别 0/4（业务无多步有状态 AI 编排；HITL 与零点击闭环冲突）；实证砍掉结构化输出/工具缓存；只保留 AI 会话配额
-- **T10-T13 评测体系完成**：评测集 50 条 + 评测器 + 判分器补齐 + RAG 长句召回真 bug 修复（连接词切分+虚词剥离+参数化，TDD 7/7，容器重建验证）+ ITERATIONS 落 v1/v2 program-only 数字与归因
+- **T10-T13 评测体系完成**：评测集 50 条 + 评测器 + 判分器补齐 + RAG 长句召回真 bug 修复（连接词切分+虚词剥离+参数化，TDD 7/7，容器重建验证）+ ITERATIONS 落 v1/v2 program-only 与 v3 全量真实分
 - **A5 已解除**：容器网络早已恢复——早前"网络阻塞"实为评测器 busy-wait bug，已改原生 async fetch
 - **T12 Judge 骨架 + T14/K13 repo-map 完成**：judge-prompts 模板 + calibrate-judge.cjs（一致率 85%，单测 5/5，UNKNOWN 分账）+ gen-repomap.cjs（repo-map.md 270 行，抽查 8/8）
 - **K14 已实现**：后端 mock ChatClient + 无 key 502 契约测试
@@ -27,11 +33,18 @@ owner: yanha
 - **最终规划已交付**：`docs/plans/PLAN-final-convergence-2026-10-09.md`（T01-T15）+ REQ-quality-backlog + REQ-ai-project
 - 本地 Docker 引擎已修复：启动 `D:\docker\Docker Desktop.exe`（引擎 29.8.2）
 
-## A. 阻塞项（需用户操作，1 项）
+## A. 阻塞项（需用户操作）
 
 | # | 事项 | 解锁 |
 | --- | --- | --- |
-| A4 | 处理 cu 虚拟桌面占用 | K23 截图打通 + P0-3 前端返工验收 + **v3 --judge 全量实跑（约 20 分钟，出全量真实分）** |
+| — | **无硬阻塞**（A4 已证伪，见状态速览） | — |
+
+## A′. 本会话新发现（已修 / 待排）
+
+- **✅ 已修：TraceRecorder 静默丢 Trace（真 bug）**——`ai_eval_traces.tokens_in/out`、`latency_ms` 为 NOT NULL，专家走两参构造 `AiChatVo(content, sources)` 时三字段为 null，insert 失败且 catch 只 warn → Trace 永久丢失。证据：`ai_eval_traces` 中 **librarian 0 行**（其余 5 agent 均有），`ai_usage_logs` 却有 librarian 调用。修复 + 回归测试见 `fix/trace-tokens-null` 分支。
+- **待排（v4 评测迭代）**：v3 失败 13 条按根因三类——①判分器与产品设计冲突（ADV-001/002「允许常识作答」却被「未命中」扣分，5 条）②评测集缺 `precondition: no-records` 标注（taster/mentor 无记录时的正确防御被当失败，6 条）③边缘输入关键词匹配（2 条）。详见 `docs/ai-eval/ITERATIONS.md` §v3 归因。
+- **待排**：`calibrate-judge.cjs --judge` 实跑（judge 一致率校准，现已不再依赖 A4）。
+
 
 ## B. 可直接开工（无依赖）
 
@@ -40,9 +53,9 @@ owner: yanha
 
 ## C. 依赖卡点（备料可先行，执行要等）
 
-- **T03（A4 cu 桌面）**：等用户处理；Judge 校准实跑（--judge）也等它
+- **T03（A4 cu 桌面）**：✅ **前提已证伪**（截图 + Judge 均本地 headless 跑通，2026-10-10）——不再是卡点。
 - **K14** LLM mocking 确定性测试：✅ 已解锁并完成（无新代码）
-- **Q1** 真实用户试用（PWA 部署发同学群）：评测体系达标（v2 0.96 ✅）后可做
+- **Q1** 真实用户试用（PWA 部署发同学群）：**v3 全量真实分已出（0.81）**，可做。
 
 ## D. 低优先（Phase 6 / 工程单遗留）
 
@@ -52,6 +65,10 @@ owner: yanha
 
 ## 最近完成（防重做：先查这里，勿从零重写）
 
+- **A4 前提证伪 + CI 门禁补回 + Trace 真 bug 修复**（2026-10-10 下午，本会话）：
+  ①**A4 证伪**——截图链路（verify-gardens/verify-pavilion/verify-icons/screenshot-home/growth/brew3d）全跑通 ERRORS: []，`eval-tea-ai.cjs --judge` **v3 全量真实分 overall 0.81 / judgeCoverage 1 / pass^1 37/50**，均不需 cu 桌面；
+  ②**分支保护 `required_status_checks` 补回 13 context**（原缺失 → PR 可带红灯合并）；
+  ③**TraceRecorder 静默丢 Trace 真 bug**——tokens/latency 的 null 直塞 NOT NULL 列 → insert 失败只 warn，实测 `ai_eval_traces` 中 librarian **0 行**（其余 5 agent 均有）；修复 + 回归测试（分支 `fix/trace-tokens-null`）。
 - **判分口径修正 + F-6 配额 + ADR-018**（2026-10-10，b9f083a 链，另一会话）：①b9f083a 判分语义「judge 未回填计 0」+ 报告 programOnly/judgeCoverage 口径 + calibrate UNKNOWN 分账（不计分母）+ ITERATIONS 标注 v1/v2 为 program-only；②ec7e8f4 F-6 每会话配额（AiCallQuota + QuotaExceededException 429）+ Trace plan 增复杂度档位 + 修 login-max 缩进；③29d8d31 前端会话记忆迁移（登录 Authorization+sessionId 后端 anchor、游客本地 history、429 清会话降级、setup.ts polyfill）；④1b64bdd ADR-018 Graph 暂缓（四维甄别 0/4）+ Graph 精读实测反驳（教材可信度低，见 research-spring-ai-alibaba-graph-2026-10.md §10）。
 - **T10-T13 评测体系完成 + RAG 真 bug 修复**（2026-10-09）：v1 0.82/41 → v2 **0.96/48**（结果 0.93/过程 1.0/安全 1.0）。归因两类：判分器缺口 8 条（六境/投茶量/未命中/拒绝词补齐）+ RAG 长句召回真 bug（LIB-002/3/4 sources=0：整句 ILIKE miss → splitKeywords 连接词切分+虚词剥离+二次拆词 + likeClause/likeArgs 参数化，TDD 先红后绿，集成测试 7/7，容器重建 curl 双验证）。v2 残余 2 条：BRE-005 检查器单位补 `克`（已修）；MEN-001 真失败保留（mentor 入门规划未引六境，下轮迭代打磨）。评测器加 `--delay`（限流 10/min 产品节奏）。A5 解除（busy-wait bug 已修）。**数字均为 program-only 口径，见状态速览**。
 - **T12 + T14/K13**（2026-10-09，46213f2）：T12 LLM-as-Judge 骨架（result-quality 单维评委模板 + calibrate-judge.cjs 一致率 85% + 单测 5/5 + demo PASS 87.5%）；K13 repo-map（gen-repomap.cjs 自动生成 docs/reference/repo-map.md 270 行，抽查 8/8 符号，缺失 exit 1）；K14 查证已实现（后端 mock ChatClient + 502 契约测试）。
@@ -66,8 +83,8 @@ owner: yanha
 
 ## 关键 ID / 命令（准确取用）
 
-- main：**`7f3e6cc`**（远端已同步）；PR：#38（ffe807e1）、#39（7975a3f）、#40（f600967，S1 已合）、**#41（7f3e6cc，PR-only 约定，已 squash 合并）**；commit：T10 `14b3d07`、T11 `b8d38bc`、T12/K13 `46213f2`、RAG fix `6b107af`、虚词 `f90692f`、评测 v2 `a4a1c05`、活文档 `684ef7b`、ADR-018/配额/迁移/口径 `1b64bdd` `29d8d31` `ec7e8f4` `b9f083a`、TODO 同步 `137b3a5`
-- 分支：feature/garden-s1（已合，worktree `C:\Users\yanha\Desktop\tea-garden-s1` 可删可留）
+- main：**`fe1ec02`**（远端已同步）；PR：#38（ffe807e1）、#39（7975a3f）、#40（f600967，S1 已合）、#41（7f3e6cc，PR-only 约定）、**#42（fe1ec02，handoff 同步）**；commit：T10 `14b3d07`、T11 `b8d38bc`、T12/K13 `46213f2`、RAG fix `6b107af`、虚词 `f90692f`、评测 v2 `a4a1c05`、活文档 `684ef7b`、ADR-018/配额/迁移/口径 `1b64bdd` `29d8d31` `ec7e8f4` `b9f083a`、TODO 同步 `137b3a5`、PR-only `7f3e6cc`
+- 分支：feature/garden-s1（已合，worktree `C:\Users\yanha\Desktop\tea-garden-s1` 可删可留）；**fix/trace-tokens-null（2026-10-10 本会话，Trace null tokens bug）**
 - 迁移：V1 init / V2 culture_seed / V3 agent_memory / V4 garden_energy / **V5__ai_eval_traces**（T07）/ **V6__agent_skills**（T08）；V5/V6 编号已写死
 - 方案：`docs/plans/PLAN-final-convergence-2026-10-09.md`（当前唯一执行母本）；`PLAN-k13-p12-design-2026-10-09.md`（K13/P1-2 设计）
 - ADR：`docs/ADR/` 001-018（014 ArchUnit / 015 garden / 016 ai eval trace / 017 agent skills / **018 Graph 暂缓**）
@@ -75,23 +92,28 @@ owner: yanha
 
 ```
 npm run quality                     # 提交前门禁（全绿要求）
-node scripts/verify-harness.cjs     # 治理一致性，期望 ERRORS: []（ADR 17 / CI 13 job / 技能 .agents 66 + .harness 33）
+node scripts/verify-harness.cjs     # 治理一致性，期望 ERRORS: []（ADR 18 / CI 13 job / 技能 .agents 66 + .harness 33）
 node scripts/audit-redlines.cjs     # 红线机械化审计，期望 ERRORS: []
 node scripts/audit-wiki-drift.cjs   # wiki 契约漂移审计，期望 ERRORS: []
 node scripts/validate-eval-cases.cjs  # 评测集结构校验（期望 VALID，T10 门禁）
 node scripts/eval-tea-ai.cjs --dry-run # 评测器管道自检（mock；注意 programOnly/judgeCoverage 口径字段）
 node scripts/eval-tea-ai.cjs          # live 评测（默认 delay 6500ms；judge off 出 program-only 分）
-node scripts/eval-tea-ai.cjs --judge --delay 13000  # v3 全量实跑（50 条 × 2 次 AI 调用，约 20 分钟；出全量真实分，简历引用前必跑）
-node scripts/calibrate-judge.cjs --demo # Judge 校准演示（期望 PASS，一致率 ≥85%）；实跑 --judge 需 A4
+node scripts/eval-tea-ai.cjs --judge --delay 13000  # 全量真实分（v3）——2026-10-10 实跑 overall 0.81 / judgeCoverage 1
+node scripts/calibrate-judge.cjs --demo # Judge 校准演示（期望 PASS，一致率 ≥85%）
 node scripts/gen-repomap.cjs         # 仓库地图生成（期望 OK，抽查 8/8 命中）
-cd backend && mvn -q test           # 后端全量（201 tests，含 Testcontainers，需 Docker 引擎）
+node scripts/verify-gardens.cjs      # 3D 茶园四园晴雨截图（4 园 × 2 = 8 张），期望 ERRORS: []
+node scripts/verify-pavilion.cjs     # 茶亭验证，期望 ERRORS: []
+node scripts/screenshot-home.cjs     # 首页截图（需 5174 dev；本会话已验证可用）
+cd backend && mvn -q test           # 后端全量（211 tests，含 Testcontainers，需 Docker 引擎）
 mvn test -Dtest=LayerDependencyTest # 单跑 ArchUnit（6 条规则）
 ```
 
 - **ArchUnit 三坑**：① `getAnnotationOfType(Class)` 泛型编译冲突 → 用 `getAnnotationOfType(类型名)`；② `getReturnType().getName()` 含泛型参数 → 用 `getRawReturnType().getName()`；③ `noMethods()...should().exist()` 不存在。
-- **GitHub push**：走 22 端口（443 会被网络重置），用一次性 `$env:GIT_SSH_COMMAND="ssh -o HostName=github.com -o Port=22"`。**merge main 走 PR**（见状态速览）；`approvals=0` 已解死锁，`--admin` 不再必需。
-- **分支保护补 CI 门禁**（待办）：
+- **截图脚本端口**：`verify-*3d*` / `verify-pavilion` / `verify-gardens` 走 **5173**（`ensure-dev-server.cjs` 自动拉起）；`screenshot-home` / `screenshot-growth` 走 **5174**（需手起 `npx vite --port 5174 --strictPort`）。产物在仓库根 `verify_garden_*.png`（已 gitignore）与 `docs/screenshots/`（tracked）。
+- **GitHub push**：走 22 端口（443 会被网络重置），用一次性 `$env:GIT_SSH_COMMAND="ssh -o HostName=github.com -o Port=22"`。**merge main 走 PR**（见状态速览）；`approvals=0` 已解死锁。
+- **分支保护 CI 门禁（已补回）**：
   ```
-  gh api repos/qiuqianyi66/tea-ceremony/branches/main/protection  # 确认 required_status_checks 缺失
-  gh pr checks <PR号>  # 取 13 个 job 名，再 PATCH required_status_checks 补回
+  gh api repos/qiuqianyi66/tea-ceremony/branches/main/protection -q '.required_status_checks.contexts[]'  # 期望 13 行
   ```
+  补回方法：`PUT /repos/{owner}/{repo}/branches/main/protection`（**PUT 整段覆盖**，不能只 PATCH 子端点——子端点不存在时 POST/PATCH 均 404）。payload 需含 `required_status_checks` + `required_pull_request_reviews` + 其余布尔开关。
+

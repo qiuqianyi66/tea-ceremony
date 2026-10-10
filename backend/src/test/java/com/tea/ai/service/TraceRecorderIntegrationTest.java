@@ -89,6 +89,24 @@ class TraceRecorderIntegrationTest {
     }
 
     @Test
+    void completeToleratesNullTokensFromExpertAgents() throws Exception {
+        // LibrarianAgent 走两参构造 AiChatVo(content, sources) → tokens/latency 为 null。
+        // 列 tokens_in/out、latency_ms 均 NOT NULL，null 直塞会 insert 失败 → 只剩 warn，Trace 静默丢失。
+        AiEvalTrace trace = traceRecorder.begin(null, AgentType.LIBRARIAN, request(), request(), ComplexityLevel.MEDIUM);
+        AiChatVo vo = new AiChatVo("两参构造：token 字段为 null 的专家回复", List.of("茶·铁观音"));
+        traceRecorder.complete(trace, vo);
+
+        AiEvalTrace saved = repository.findAll().stream()
+                .filter(t -> "两参构造：token 字段为 null 的专家回复".equals(t.getOutput()))
+                .findFirst().orElseThrow();
+
+        assertThat(saved.getTokensIn()).isZero();
+        assertThat(saved.getTokensOut()).isZero();
+        assertThat(saved.getLatencyMs()).isZero();
+        assertThat(saved.getErrorCode()).isNull();
+    }
+
+    @Test
     void failRecordsErrorCodeForBadGateway() throws Exception {
         AiEvalTrace trace = traceRecorder.begin(null, null, request(), request(), ComplexityLevel.SIMPLE);
         traceRecorder.fail(trace, new BadGatewayException("AI 服务调用失败"));
