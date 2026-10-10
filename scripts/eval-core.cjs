@@ -13,7 +13,9 @@ function evalPointProgram(point, result) {
   const name = point.name
   const text = result.content || ''
   if (name.includes('茶类归属') || name.includes('茶类正确')) {
-    return hasAny(text, result.expectedCategory)
+    // F3：先按茶类词匹配；未命中再按茶名反查茶类（回答常只写「碧螺春」不写「绿茶」）。
+    if (hasAny(text, result.expectedCategory)) return 1
+    return teaCategoryMatch(text, result.expectedCategory, result.teaNameCategory)
   }
   if (name.includes('温度区间') || name.includes('水温')) {
     return tempInRange(text, result.expectedTemp)
@@ -161,6 +163,39 @@ function hasAny(text, keywords) {
   return keywords.some((k) => text.includes(k)) ? 1 : 0
 }
 
+/**
+ * F3 茶名→茶类反查：回答写茶名（碧螺春）也算茶类归属正确。
+ * @param expected 期望茶类词（如 ['绿茶']）
+ * @param map { 茶名: 茶类 }，来自 src/data/teas.ts 的 TeaType（基准必须与产品数据一致）
+ */
+function teaCategoryMatch(text, expected, map) {
+  if (!Array.isArray(expected) || !map || typeof map !== 'object') return 0
+  for (const [name, category] of Object.entries(map)) {
+    if (text.includes(name) && expected.some((e) => category.includes(e))) return 1
+  }
+  return 0
+}
+
+/**
+ * F4 judge verdict 解析：严格取首个独立 token，禁 startsWith('1') 式误判。
+ * 「10 分里给 1」「信息不足」等不得被当成 1。
+ * @returns 1 | 0 | 'UNKNOWN'
+ */
+function parseJudgeVerdict(raw) {
+  const s = (raw || '').trim().toUpperCase()
+  if (!s) return 'UNKNOWN'
+  // 直接 1 / 0（可带标点）
+  if (/^1([。.．,，!！]|$)/.test(s)) return 1
+  if (/^0([。.．,，!！]|$)/.test(s)) return 0
+  // 明确 UNKNOWN
+  if (s.includes('UNKNOWN')) return 'UNKNOWN'
+  // 形如「答案：1」「判分：0」——取冒号后首个 token
+  const m = s.match(/^[^0-9A-Z]*[:：]\s*(1|0)(?![\d])/)
+  if (m) return m[1] === '1' ? 1 : 0
+  // 其余（含「10 分里给 1」「信息不足」等模糊表述）→ UNKNOWN，不猜
+  return 'UNKNOWN'
+}
+
 function tempInRange(text, range) {
   // range: {min, max} 摄氏度；text 含数字+°C/度/℃
   const matches = text.match(/(\d{2,3})\s*(?:°C|℃|度)/g)
@@ -191,4 +226,4 @@ function round(n) {
   return n === null ? null : Math.round(n * 100) / 100
 }
 
-module.exports = { evalPointProgram, scoreCase, scoreCaseProgramOnly, passK, aggregate, round }
+module.exports = { evalPointProgram, scoreCase, scoreCaseProgramOnly, passK, aggregate, round, teaCategoryMatch, parseJudgeVerdict }
