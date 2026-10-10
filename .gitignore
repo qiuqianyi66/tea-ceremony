@@ -89,3 +89,6 @@ verify_icons_*.png
 .agents/skills/**/*.ttf
 .agents/skills/**/*.otf
 .env.development
+
+# WorkBuddy local memory (not project state)
+.workbuddy/
