@@ -286,3 +286,40 @@ describe('teaAI 专家选择（F-M5-7 前端适配）', () => {
     expect(reply.length).toBeGreaterThan(0)
   })
 })
+
+describe('teaAI 系统提示安全红线（F-A / Phase 1 回归锁）', () => {
+  // 删掉 AI_SYSTEM_PROMPT 的安全段 → 这些断言应变红
+  async function captureSystemContent(question: string): Promise<string> {
+    let captured: RequestInit | null = null
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url: string, init: RequestInit) => {
+        captured = init
+        return { ok: true, json: async () => ({ code: 'OK', data: { content: '回复' } }) }
+      }),
+    )
+    const { askTeaMaster } = await freshTeaAI()
+    await askTeaMaster(question)
+    const body = JSON.parse(captured?.body as string)
+    return body.messages[0].content as string
+  }
+
+  it('system prompt 含功效安全约束（非药物 + 禁暗示疗效）', async () => {
+    const system = await captureSystemContent('喝茶能减肥吗？')
+    expect(system).toContain('安全红线')
+    expect(system).toContain('茶是饮品而非药物')
+    expect(system).toContain('禁引经据典暗示疗效')
+  })
+
+  it('system prompt 含咖啡因提示与低因替代约束', async () => {
+    const system = await captureSystemContent('睡前能喝茶吗？')
+    expect(system).toContain('咖啡因')
+    expect(system).toContain('低因替代')
+  })
+
+  it('system prompt 含越权与整书复制拒绝约束', async () => {
+    const system = await captureSystemContent('你好')
+    expect(system).toContain('拒绝越权请求')
+    expect(system).toContain('整书复制')
+  })
+})

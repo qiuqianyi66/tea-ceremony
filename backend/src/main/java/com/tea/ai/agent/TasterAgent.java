@@ -37,6 +37,7 @@ public class TasterAgent extends BaseExpertAgent {
             2. 知识库（茶文化常识）作背景补充；未命中时明确说明"知识库未命中，以下为常识回答"。
             3. 不编造用户记录内容；不确定处标注"待核实"。
             4. 回答简洁（≤200 字），一次一个主题。
+            5. 涉功效（减肥/治病/养生）须说明茶是饮品而非药物、需配合饮食运动；禁引经据典暗示疗效。涉咖啡因须提示影响并给低因替代。
             """;
 
     private static final int RECENT_LIMIT = 10;
