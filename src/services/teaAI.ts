@@ -7,6 +7,8 @@ import { getCurrentSolarTerm } from '@/data/solarTerms'
 import { teas } from '@/data/teas'
 import { teawares } from '@/data/teawares'
 import { track } from '@/services/tracking'
+import { getAuthToken } from '@/services/authStorage'
+import { clearAiSessionId, loadAiSessionId, saveAiSessionId } from '@/services/aiSession'
 import type { TasteDimensions, TastingRecord } from '@/types/tasting'
 import type { Tea } from '@/types/tea'
 
@@ -363,6 +365,15 @@ async function fetchRAGContext(question: string): Promise<string> {
   }
 }
 
+/**
+ * 是否真登录（非 dev-token 本地 mock 态）。
+ * 与 http.ts:63 注入判定一致：dev-token 是游客/本地降级态，不注入 Authorization。
+ */
+function isLoggedIn(): boolean {
+  const t = getAuthToken()
+  return !!t && t !== 'dev-token'
+}
+
 export async function askTeaMaster(question: string, history: ChatMessage[] = []): Promise<string> {
   // 先尝试获取 RAG 上下文
   const ragContext = await fetchRAGContext(question)
@@ -370,21 +381,44 @@ export async function askTeaMaster(question: string, history: ChatMessage[] = []
     ? `${AI_SYSTEM_PROMPT}\n\n参考以下茶文化知识库资料回答（优先采用资料中的内容，避免编造）：\n${ragContext}`
     : AI_SYSTEM_PROMPT
 
-  const messages = [
-    { role: 'system', content: systemPrompt },
-    ...history.slice(-4),
-    { role: 'user', content: question },
-  ]
+  // F-3 登录态分流（REQ-ai-session-quota）：
+  // 登录 → 不带本地 history，交给后端 anchor() 读 DB 历史前插，并带 sessionId（配额计数生效）；
+  // 游客 → 保留本地 history.slice(-4)，不带 sessionId（游客可用性承重墙不变）。
+  const loggedIn = isLoggedIn()
+  const sessionId = loggedIn ? loadAiSessionId() : null
+  const messages = loggedIn
+    ? [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: question },
+      ]
+    : [
+        { role: 'system', content: systemPrompt },
+        ...history.slice(-4),
+        { role: 'user', content: question },
+      ]
+
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (loggedIn) {
+    headers.Authorization = `Bearer ${getAuthToken()}`
+  }
+  const body: Record<string, unknown> = { messages }
+  if (sessionId != null) {
+    body.sessionId = sessionId
+  }
 
   try {
     const res = await fetch(`${API_BASE}/v1/ai/chat`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       signal: AbortSignal.timeout(8000),
-      body: JSON.stringify({ messages }),
+      body: JSON.stringify(body),
     })
 
     if (!res.ok) {
+      // F-4 配额超限（429）：清 sessionId（下次请求后端自动开新会话），静默规则降级
+      if (res.status === 429) {
+        clearAiSessionId()
+      }
       void track({ category: 'ai', event: 'ai_ask', label: 'ask', result: 'degraded' })
       return ruleBasedReply(question)
     }
@@ -392,6 +426,10 @@ export async function askTeaMaster(question: string, history: ChatMessage[] = []
     if (!data.data?.content) {
       void track({ category: 'ai', event: 'ai_ask', label: 'ask', result: 'degraded' })
       return ruleBasedReply(question)
+    }
+    // F-2 登录用户：后端返回新会话 id → 持久化，下次续用（配额按 sessionId 计数）
+    if (loggedIn && data.data?.sessionId) {
+      saveAiSessionId(data.data.sessionId)
     }
     void track({ category: 'ai', event: 'ai_ask', label: 'ask', result: 'success' })
     return data.data.content

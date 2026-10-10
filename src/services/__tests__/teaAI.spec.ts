@@ -22,8 +22,18 @@ const DIMENSIONS: TasteDimensions = {
   mind: 5,
 }
 
+// 制造登录态：authStorage.loadAuth 读 localStorage['tea-auth'].token（非 dev-token 即真登录）
+function loginAsJwt() {
+  localStorage.setItem('tea-auth', JSON.stringify({ token: 'jwt-abc', user: { id: 1 } }))
+}
+function logout() {
+  localStorage.removeItem('tea-auth')
+  localStorage.removeItem('tea-ai-session')
+}
+
 afterEach(() => {
   vi.unstubAllGlobals()
+  logout()
 })
 
 describe('teaAI 降级逻辑（后端代理不可用时）', () => {
@@ -114,5 +124,97 @@ describe('teaAI v1 成功路径（ApiResponse 解包）', () => {
     const { generateTastingNote } = await freshTeaAI()
     const note = await generateTastingNote('西湖龙井', DIMENSIONS, 8.6)
     expect(note).toBe('这是 AI 生成的品鉴评语')
+  })
+})
+
+describe('teaAI 登录态分流 + 会话配额（REQ-ai-session-quota）', () => {
+  it('登录：请求带 Authorization + sessionId，不拼本地 history', async () => {
+    loginAsJwt()
+    localStorage.setItem('tea-ai-session', '42')
+
+    let captured: RequestInit | null = null
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url: string, init: RequestInit) => {
+        captured = init
+        return {
+          ok: true,
+          json: async () => ({ code: 'OK', data: { content: '回复', sessionId: 42 } }),
+        }
+      }),
+    )
+
+    const { askTeaMaster } = await freshTeaAI()
+    await askTeaMaster('你好', [
+      { role: 'user', content: '上一句' },
+      { role: 'assistant', content: '上一答' },
+    ])
+
+    const headers = (captured?.headers as Record<string, string>) ?? {}
+    expect(headers.Authorization).toBe('Bearer jwt-abc')
+    const body = JSON.parse(captured?.body as string)
+    expect(body.sessionId).toBe(42)
+    // 登录态不拼本地 history：messages 只有 system + user 两条
+    expect(body.messages.length).toBe(2)
+  })
+
+  it('登录：首次无 sessionId → 响应返回新 id 后持久化', async () => {
+    loginAsJwt()
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({ code: 'OK', data: { content: '回复', sessionId: 99 } }),
+      })),
+    )
+
+    const { askTeaMaster } = await freshTeaAI()
+    await askTeaMaster('你好')
+
+    expect(localStorage.getItem('tea-ai-session')).toBe('99')
+  })
+
+  it('游客：不注入 Authorization，仍拼本地 history', async () => {
+    logout()
+
+    let captured: RequestInit | null = null
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url: string, init: RequestInit) => {
+        captured = init
+        return {
+          ok: true,
+          json: async () => ({ code: 'OK', data: { content: '回复' } }),
+        }
+      }),
+    )
+
+    const { askTeaMaster } = await freshTeaAI()
+    await askTeaMaster('你好', [{ role: 'user', content: '上一句' }])
+
+    const headers = (captured?.headers as Record<string, string>) ?? {}
+    expect(headers.Authorization).toBeUndefined()
+    const body = JSON.parse(captured?.body as string)
+    expect(body.sessionId).toBeUndefined()
+    // 游客拼本地 history：system + history(1) + user = 3 条
+    expect(body.messages.length).toBe(3)
+  })
+
+  it('配额超限（429）：清 sessionId + 规则降级', async () => {
+    loginAsJwt()
+    localStorage.setItem('tea-ai-session', '42')
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: false, status: 429 })),
+    )
+
+    const { askTeaMaster } = await freshTeaAI()
+    const reply = await askTeaMaster('西湖龙井怎么泡？')
+
+    expect(localStorage.getItem('tea-ai-session')).toBeNull()
+    // 规则降级：茶名问题返回该茶冲泡参数
+    expect(reply).toContain('西湖龙井')
   })
 })
