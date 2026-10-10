@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { nextTick, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { askTeaMaster } from '@/services/teaAI'
+import { askTeaMaster, TEA_AGENTS, type TeaAgent } from '@/services/teaAI'
 import { track } from '@/services/tracking'
 
 const router = useRouter()
@@ -19,6 +19,8 @@ const messages = ref<ChatMsg[]>([])
 const input = ref('')
 const loading = ref(false)
 const scrollRef = ref<HTMLElement | null>(null)
+/** F-M5-7 专家选择：默认「自动」= 不传 agent（隐式路由，零回归） */
+const agent = ref<TeaAgent>('auto')
 
 const suggestions = [
   '今天适合喝什么茶？',
@@ -47,7 +49,7 @@ async function sendMessage(text?: string) {
     content: m.content,
   }))
 
-  const reply = await askTeaMaster(msg, history)
+  const reply = await askTeaMaster(msg, history, agent.value)
   messages.value.push({ role: 'ai', content: reply })
   loading.value = false
   await scrollToBottom()
@@ -105,6 +107,14 @@ async function sendMessage(text?: string) {
 
     <!-- 输入框 -->
     <footer class="ai-input-bar">
+      <!-- 专家选择（F-M5-7）：默认「自动」不传 agent，选专家才走对应专家 -->
+      <div class="ai-agents" role="radiogroup" aria-label="选择茶灵身份">
+        <button v-for="a in TEA_AGENTS" :key="a.value" type="button" role="radio"
+          :aria-checked="agent === a.value" :class="['ai-agent', { 'is-on': agent === a.value }]"
+          @click="agent = a.value">
+          <component :is="`Icon${a.icon}`" class="ai-agent-icon" />{{ a.label }}
+        </button>
+      </div>
       <form @submit.prevent="sendMessage()" class="ai-form">
         <input v-model="input" maxlength="500" autocomplete="off"
           placeholder="问茶灵一个问题..."
@@ -217,6 +227,37 @@ async function sendMessage(text?: string) {
   background: rgba(13, 20, 16, 0.7);
   backdrop-filter: blur(14px);
   border-top: 1px solid rgba(245, 241, 230, 0.08);
+}
+
+/* 专家选择（F-M5-7）：横滑 chip 行；选中态点亮茶汤金，未选中沉入墨色 */
+.ai-agents {
+  display: flex; gap: 0.4rem;
+  max-width: 48rem; margin: 0 auto 0.7rem;
+  padding: 0 0.05rem;
+  overflow-x: auto; scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.ai-agents::-webkit-scrollbar { display: none; }
+.ai-agent {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  padding: 0.5rem 0.8rem; border-radius: 999px;
+  font-size: 0.75rem; font-family: inherit; white-space: nowrap;
+  cursor: pointer; transition: all 0.2s ease;
+  background: transparent;
+  border: 1px solid rgba(201, 169, 110, 0.2);
+  color: var(--color-wood-light-dark);
+  min-height: 2.75rem;
+}
+.ai-agent-icon { width: 0.85rem; height: 0.85rem; }
+.ai-agent:hover { border-color: rgba(201, 169, 110, 0.45); }
+.ai-agent.is-on {
+  background: rgba(201, 169, 110, 0.16);
+  border-color: var(--color-tea-gold-dark);
+  color: var(--color-tea-gold-dark);
+}
+.ai-agent:focus-visible {
+  outline: 2px solid var(--color-tea-gold-dark);
+  outline-offset: 2px;
 }
 .ai-form { display: flex; gap: 0.6rem; max-width: 48rem; margin: 0 auto; }
 .ai-input {

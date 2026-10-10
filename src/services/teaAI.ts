@@ -269,6 +269,19 @@ interface ChatMessage {
   content: string
 }
 
+/** 专家选择档（F-M5-7 前端适配）。auto = 不传 agent，保持隐式路由（免回归）。 */
+export type TeaAgent = 'auto' | 'advisor' | 'taster' | 'librarian' | 'brewer' | 'mentor'
+
+/** 专家选择项（UI 用）：label 与后端 SYSTEM_PROMPT 自称一致。 */
+export const TEA_AGENTS: ReadonlyArray<{ value: TeaAgent; label: string; icon: string }> = [
+  { value: 'auto', label: '自动', icon: 'Sparkles' },
+  { value: 'advisor', label: '荐茶', icon: 'Leaf' },
+  { value: 'taster', label: '品鉴', icon: 'Scale' },
+  { value: 'brewer', label: '冲泡', icon: 'Thermometer' },
+  { value: 'librarian', label: '文化', icon: 'BookOpen' },
+  { value: 'mentor', label: '成长', icon: 'Sprout' },
+]
+
 const FALLBACK_REPLIES = [
   '品茶之道，存乎一心。水温、时间、器皿皆外物，静心品味方得真味。',
   '茶有千味，适口者珍。不妨多尝试不同茶类，慢慢找到属于自己的那杯茶。',
@@ -374,7 +387,16 @@ function isLoggedIn(): boolean {
   return !!t && t !== 'dev-token'
 }
 
-export async function askTeaMaster(question: string, history: ChatMessage[] = []): Promise<string> {
+/**
+ * 茶灵问答（F-A1）。agent 缺省/'auto' → 不传 agent 字段，后端按隐式路由（文化意图→librarian，其余透明代理）；
+ * 显式传专家 → 后端路由到该专家（F-M5-7 前端适配）。
+ * 承重墙不变：网络不可用/502/无内容 → 规则降级（ruleBasedReply）。
+ */
+export async function askTeaMaster(
+  question: string,
+  history: ChatMessage[] = [],
+  agent: TeaAgent = 'auto',
+): Promise<string> {
   // 先尝试获取 RAG 上下文
   const ragContext = await fetchRAGContext(question)
   const systemPrompt = ragContext
@@ -404,6 +426,10 @@ export async function askTeaMaster(question: string, history: ChatMessage[] = []
   const body: Record<string, unknown> = { messages }
   if (sessionId != null) {
     body.sessionId = sessionId
+  }
+  // F-M5-7：仅显式选专家时带 agent；'auto' 不带 → 现有隐式路由行为完全不变（免回归）
+  if (agent !== 'auto') {
+    body.agent = agent
   }
 
   try {
