@@ -157,7 +157,7 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量�
 - `.harness/rules/技能规范.md` — 技能治理唯一权威（模板/触发式描述/路由表维护，§5 增删改流程）
 - `docs/skills/` — 核心技能人读审查页（plan-control / tea-tasting / db-migration / fastapi-endpoint / vue-component / caveman-review / quality-audit，面向人核对）
 - `CONTEXT.md` — 术语 + ADR 索引 + 架构关键词（必读）
-- `docs/ADR/` — 架构决策记录（ADR-001~017；新决策写 ADR-0XX.md，禁止塞进 CONTEXT.md）
+- `docs/ADR/` — 架构决策记录（ADR-001~018；新决策写 ADR-0XX.md，禁止塞进 CONTEXT.md）
 - `docs/plans/` — 迭代计划层（PLAN-* / TODO-PRIORITY / 环境审查清单）
 - `docs/reference/` — 稳定参考（error-codes.md 错误码表）
 - `docs/architecture/system-overview.md` — 架构分层、数据流、目录速查
@@ -215,6 +215,10 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量�
 - 编码：路由回落路径禁对可能为 null 的枚举直接 `.name()`——AgentOrchestrator 返回 null（透明代理）时 agent 归类须 fallback "chat"，否则集成测试 500（2026-10-08 沉淀）。
 - 技能准入 O-11（2026-10-08）：frontmatter 加 `type: executable|knowledge|flow` 三值；executable 必填 `verification` 验证命令（三条约束由 verify-harness.cjs §4f 机械化强制）；已标 6 个可执行类技能（db-migration/fastapi-endpoint/vue-component/agent-eval/unit-test-ci/3d-scene）。
 - ArchUnit 泛型返回类型（2026-10-08）：`getReturnType().getName()` 含泛型参数（如 `ApiResponse<X>`），比较原始类型用 `method.getRawReturnType().getName()`；事务注解属性用 `getAnnotationOfType(类型名)`（类对象版有泛型推断冲突）。ADR-014。
+- Spring AI Alibaba Graph 精读 + 实测反驳（2026-10-09）：见 docs/research-spring-ai-alibaba-graph-2026-10.md。**教材可信度低，须先读该文 §10**。实证成立：graph-core 由 agent-framework 传递依赖（引入零新增依赖）、HITL 三步曲（javap 核对签名）、条件边读写分离。**实测推翻文档三条**：①`experience_scorer`/`culture_scorer` 无入边永不执行（图能编译、Mermaid 好看但节点不跑）②不配 Executor **照样并行**（框架自带 `parallel-node-action-thread-N`，`addParallelNodeExecutor` 只是换池不是开关）③`PASS_THRESHOLD = 0` 与文档"≥80分"矛盾。铁律：**Mermaid 图对 ≠ 行为对**，Graph 验收必须断言「实际执行的节点集合」；框架"必须配 X"类警告要用时间戳/线程名实测，不能信文档（2026-10-09 沉淀）。
 - 技能新增（2026-10-09）：quality-audit（main-dev 8→9，四性审计门禁：规范性/维护性/安全性/可扩展性四批检查 + 修复清单 + 分批提交；type: executable，verification 挂 audit-redlines + verify-harness）。对应 REQ-quality-backlog 质量四性验收重头。
+- Graph 决策（2026-10-09）：ADR-018 判定 **Graph 编排暂缓**（四维甄别 0/4：业务闭环无「多步有状态 AI 编排」环节；HITL 与 §13「冲泡页零点击闭环」硬冲突）。实证砍掉两个候选件：结构化输出（tea 无「文本解析 LLM 输出」代码，无落点）、工具缓存（实测命中率 0-1%）。只保留 AI 会话配额（F-6，ADR-018）。需求/方案见 docs/prd/REQ-graph-introduce-2026-10-09.md + docs/plans/PLAN-graph-decision-2026-10-09.md。
+- **评测判分「中性计分」是最危险的口径陷阱**（2026-10-09）：`eval-core.cjs` 原对未跑的 judge 考点计「中性 1」，导致 v2 报 0.96；改为「未回填计 0」后同批 dry-run 仅 **0.19**——98 考点中 77 个是 judge，**78.6% 从未被判**。铁律：**判分器对「未判」必须计 0 而非中性**（失败要响亮）；报告须显式输出 `programOnly` 与 `judgeCoverage` 两个口径字段（F-1/F-2 已落地，单测 23/23 锁死）。
+- 容器出网 TLS 被拦排查法（2026-10-09）：症状「AI 调用超时 + `SSLHandshakeException: Remote host terminated the handshake`」按序验证：①`nc -zv host 443`（TCP）②`getent hosts`（DNS）③容器内 `openssl s_client -servername`（TLS 是否被掐）④宿主机 `New-Object SslStream` 对比。本次结论：TCP/DNS 均通但容器内 TLS `unexpected eof`，宿主同目标握手成功 → **环境级中间设备拦截**，非配置/代码问题。**清空 compose 代理变量无效**（已完整回滚），勿重复尝试。
 
 **2026-10-01 V4 重构**：ADR 拆 `docs/ADR/` 独立文件（ADR-001~009，统一格式）、CONTEXT.md 精简为术语+ADR 索引+架构关键词、新增 `npm run quality` 统一门禁、commit 改英文 conventional、新增 AI Change Protocol + Modification Level。详见 ADR-009。
