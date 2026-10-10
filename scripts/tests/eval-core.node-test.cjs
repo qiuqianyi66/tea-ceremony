@@ -4,7 +4,7 @@
  */
 const { test } = require('node:test')
 const assert = require('node:assert/strict')
-const { evalPointProgram, scoreCase, scoreCaseProgramOnly, passK, aggregate } = require('../eval-core.cjs')
+const { evalPointProgram, scoreCase, scoreCaseProgramOnly, passK, aggregate, teaCategoryMatch, parseJudgeVerdict } = require('../eval-core.cjs')
 
 test('茶类归属：命中关键词得 1，缺失得 0', () => {
   const p = { name: '茶类归属正确', weight: 1, veto: false, check: 'program' }
@@ -155,6 +155,43 @@ test('passK：k 次全 1 才通过', () => {
   assert.equal(passK([1, 1, 1], 3).passed, true)
   assert.equal(passK([1, 0.5, 1], 3).passed, false)
   assert.equal(passK([1], 1).passed, true)
+})
+
+// ---- v4 归因修复（2026-10-10 实测：13 条失败逐考点证据）----
+
+test('F3 茶类归属：回答只写茶名（碧螺春）也算对', () => {
+  const p = { name: '茶类归属正确', weight: 1, veto: true, check: 'program' }
+  const teaNameCategory = { 碧螺春: '绿茶', 铁观音: '青茶', 正山小种: '红茶' }
+  // 只写茶名、不写「绿茶」二字 → 旧逻辑判 0（ADV-001 实测即此）
+  assert.equal(evalPointProgram(p, { content: '推荐洞庭碧螺春，清鲜幽雅。', expectedCategory: ['绿茶'], teaNameCategory }), 1)
+  // 对照：无映射表时保持旧行为（判 0，不静默放行）
+  assert.equal(evalPointProgram(p, { content: '推荐洞庭碧螺春。', expectedCategory: ['绿茶'] }), 0)
+  // 写了茶类词仍直接命中
+  assert.equal(evalPointProgram(p, { content: '推荐绿茶类。', expectedCategory: ['绿茶'], teaNameCategory }), 1)
+  // 茶名对但茶类不符 → 不得误判
+  assert.equal(evalPointProgram(p, { content: '推荐正山小种，暖胃。', expectedCategory: ['绿茶'], teaNameCategory }), 0)
+})
+
+test('F3 teaCategoryMatch：映射缺失/参数非法一律 0', () => {
+  assert.equal(teaCategoryMatch('碧螺春', ['绿茶'], null), 0)
+  assert.equal(teaCategoryMatch('碧螺春', null, { 碧螺春: '绿茶' }), 0)
+  assert.equal(teaCategoryMatch('碧螺春', ['绿茶'], { 碧螺春: '绿茶' }), 1)
+})
+
+test('F4 judge verdict：严格解析，禁 startsWith 误判', () => {
+  assert.equal(parseJudgeVerdict('1'), 1)
+  assert.equal(parseJudgeVerdict('0'), 0)
+  assert.equal(parseJudgeVerdict('1。'), 1)
+  assert.equal(parseJudgeVerdict('UNKNOWN'), 'UNKNOWN')
+  assert.equal(parseJudgeVerdict('判分：1'), 1)
+  assert.equal(parseJudgeVerdict('答案：0'), 0)
+  // 关键：这些旧逻辑会误判成 1
+  assert.equal(parseJudgeVerdict('10 分里给 1'), 'UNKNOWN')
+  assert.equal(parseJudgeVerdict('信息不足，无法判断'), 'UNKNOWN')
+  assert.equal(parseJudgeVerdict(''), 'UNKNOWN')
+  assert.equal(parseJudgeVerdict(null), 'UNKNOWN')
+  // judge 被要求「只输出 0、1 或 UNKNOWN」——带解释的输出不合规，判 UNKNOWN 不猜（0/1/UNKNOWN 三选一原则）
+  assert.equal(parseJudgeVerdict('1 分（满分 10 分）'), 'UNKNOWN')
 })
 
 test('六境：内容含任一境名得 1（TEA_LEVELS 基准）', () => {

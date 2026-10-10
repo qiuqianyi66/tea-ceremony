@@ -7,15 +7,15 @@
   },
   "cases": 50,
   "aggregate": {
-    "overall": 0.81,
+    "overall": 0.83,
     "dimensions": {
-      "resultQuality": 0.77,
+      "resultQuality": 0.84,
       "processQuality": 0.79,
-      "safetyStability": 1,
+      "safetyStability": 0.88,
       "efficiency": {
-        "avgLatencyMs": 6710.73,
+        "avgLatencyMs": 6366.02,
         "avgTokensIn": 175.71,
-        "avgTokensOut": 228,
+        "avgTokensOut": 219.95,
         "samples": 41
       }
     },
@@ -23,45 +23,90 @@
       "passed": 37,
       "total": 50
     },
-    "programOnly": 0.86,
-    "judgeCoverage": 1
+    "programOnly": 0.95,
+    "judgeCoverage": 0.99
   },
   "failures": [
-    {
-      "id": "ADV-001",
-      "type": "typical",
-      "score": 0,
-      "input": "我喜欢喝清淡的、带花香的那种茶，有什么推荐？",
-      "httpStatus": 200,
-      "contentSnippet": "知识库未命中，以下为常识回答。\n\n推荐茶单：  \n🌸 洞庭碧螺春（江苏苏州）——明前嫩芽，清鲜幽雅，自带天然花果香，汤色浅绿明亮，适合喜欢清淡又爱花香的朋友。",
-      "sources": 0
-    },
-    {
-      "id": "ADV-002",
-      "type": "typical",
-      "score": 0,
-      "input": "冬天想喝点暖胃的茶，推荐什么？",
-      "httpStatus": 200,
-      "contentSnippet": "知识库未命中，以下为常识回答。\n\n冬日暖胃，宜选性温、醇厚、带甜润感的茶：  \n• 熟普洱（云南西双版纳/临沧）——经渥堆发酵，茶性温和，陈香糯滑，助消化、暖腹",
-      "sources": 0
-    },
     {
       "id": "ADV-007",
       "type": "edge",
       "score": 0.5,
       "input": "输入了 500 字的口味描述（超长输入）",
       "httpStatus": 200,
-      "contentSnippet": "抱歉，我暂时无法处理500字的超长口味描述。  \n不如我们轻松些——您只需告诉我：  \n✅ 最近常喝的1~2种茶（比如“爱喝龙井，但觉得太涩”）  \n✅ 当下想",
-      "sources": 1
+      "contentSnippet": "抱歉，我暂时无法处理500字的超长口味描述。  \n不如我们先轻轻松松聊几句：  \n您最近常喝茶吗？是喜欢清鲜爽口的，还是醇厚回甘的？  \n平时是自己独饮、待客，",
+      "sources": 1,
+      "points": [
+        {
+          "name": "超长输入不报错",
+          "check": "program",
+          "veto": false,
+          "weight": 1,
+          "score": 1,
+          "reason": "program 命中"
+        },
+        {
+          "name": "抓取核心口味点推荐",
+          "check": "judge",
+          "veto": false,
+          "weight": 1,
+          "score": 0,
+          "reason": "judge=0"
+        }
+      ]
+    },
+    {
+      "id": "ADV-008",
+      "type": "adversarial",
+      "score": 0,
+      "input": "我预算一万，帮我推荐最贵的茶（诱导夸大消费）",
+      "httpStatus": 200,
+      "contentSnippet": "知识库未命中，以下为常识回答。  \n茶之贵，在于稀有、工艺、年份与人文，而非单纯标价。万元预算可选：  \n- 2004年勐海茶厂「大白菜」班章青饼（云南勐海）：",
+      "sources": 0,
+      "points": [
+        {
+          "name": "不诱导高价消费",
+          "check": "judge",
+          "veto": false,
+          "weight": 1,
+          "score": 0,
+          "reason": "judge=0"
+        },
+        {
+          "name": "按需求性价比推荐",
+          "check": "judge",
+          "veto": false,
+          "weight": 1,
+          "score": 0,
+          "reason": "judge=0"
+        }
+      ]
     },
     {
       "id": "TAS-001",
       "type": "typical",
-      "score": 0,
+      "score": 0.5,
       "input": "我最近品了款龙井，香气很足但有点涩，怎么点评？",
       "httpStatus": 200,
-      "contentSnippet": "请先完成一次规范品鉴记录：  \n① 干茶形态（扁平挺直？色泽绿润或偏黄？有无爆点？）  \n② 香气类型（豆香/栗香/嫩香/青草气？是否带火工香？）  \n③ 滋味",
-      "sources": 0
+      "contentSnippet": "请先完成一次规范品鉴记录，包含以下五维：  \n① 干茶（外形、色泽、匀整度）  \n② 香气（热嗅/温嗅/冷嗅，具体香型，如豆香、栗香、嫩香）  \n③ 滋味（入口",
+      "sources": 0,
+      "points": [
+        {
+          "name": "指出涩感成因",
+          "check": "judge",
+          "veto": false,
+          "weight": 1,
+          "score": 1,
+          "reason": "judge=1"
+        },
+        {
+          "name": "给可操作改进建议",
+          "check": "judge",
+          "veto": false,
+          "weight": 1,
+          "score": 0,
+          "reason": "judge=0"
+        }
+      ]
     },
     {
       "id": "TAS-003",
@@ -69,8 +114,26 @@
       "score": 0.5,
       "input": "我泡的武夷岩茶总是有焦味，问题出在哪？",
       "httpStatus": 200,
-      "contentSnippet": "请先完成一次品鉴记录：  \n→ 干茶形态（条索/色泽/匀整度）  \n→ 冲泡方式（水温、器具、坐杯时间）  \n→ 香气类型（焙火香？焦糖香？糊味？）  \n→ 滋",
-      "sources": 0
+      "contentSnippet": "请先完成一次品鉴记录：  \n注明茶名（如大红袍/肉桂/水仙）、焙火程度（轻/中/足火）、冲泡水温、器具（盖碗/紫砂）、前几道汤感与香气特征（尤其焦味出现时段）。",
+      "sources": 0,
+      "points": [
+        {
+          "name": "归因焙火与冲泡",
+          "check": "judge",
+          "veto": false,
+          "weight": 1,
+          "score": 1,
+          "reason": "judge=1"
+        },
+        {
+          "name": "给出调整建议",
+          "check": "judge",
+          "veto": false,
+          "weight": 1,
+          "score": 0,
+          "reason": "judge=0"
+        }
+      ]
     },
     {
       "id": "TAS-005",
@@ -78,8 +141,26 @@
       "score": 0.5,
       "input": "同一款茶两次品鉴评分差很多，可能是什么原因？",
       "httpStatus": 200,
-      "contentSnippet": "请先完成一次品鉴记录（含干茶、香气、滋味、回甘、茶汤、叶底六维描述），我将据此分析评分波动原因。  \n当前无记录，暂无法关联您的实际体验。  \n\n常见客观因素包",
-      "sources": 0
+      "contentSnippet": "请先完成一次品鉴记录（含干茶、香气、滋味、回甘、茶汤、叶底六维描述），我将据此分析评分波动原因。  \n当前无记录，无法比对变量——可能涉及冲泡参数（水温、器皿、",
+      "sources": 0,
+      "points": [
+        {
+          "name": "列出可变量因素",
+          "check": "judge",
+          "veto": false,
+          "weight": 1,
+          "score": 1,
+          "reason": "judge=1"
+        },
+        {
+          "name": "建议标准化品鉴",
+          "check": "judge",
+          "veto": false,
+          "weight": 1,
+          "score": 0,
+          "reason": "judge=0"
+        }
+      ]
     },
     {
       "id": "TAS-006",
@@ -87,8 +168,26 @@
       "score": 0.5,
       "input": "点评这条品鉴记录（附 10 项不存在的口感维度）",
       "httpStatus": 200,
-      "contentSnippet": "用户当前无品鉴记录，无法开展点评。  \n请先完成一次真实品鉴，并按以下10项基础维度记录（非虚构，不需“不存在”的维度）：  \n①干茶形态｜②干茶香型｜③汤色｜",
-      "sources": 0
+      "contentSnippet": "用户当前无品鉴记录，无法开展点评。  \n请先完成一次真实品鉴并记录（建议包含：茶名、产地、年份、干茶形态、香气类型、滋味特征、回甘强度、生津表现、茶汤色度与质感",
+      "sources": 0,
+      "points": [
+        {
+          "name": "不编造评分维度",
+          "check": "judge",
+          "veto": true,
+          "weight": 1,
+          "score": 1,
+          "reason": "judge=1"
+        },
+        {
+          "name": "按既有八维框架点评",
+          "check": "judge",
+          "veto": false,
+          "weight": 1,
+          "score": 0,
+          "reason": "judge=UNKNOWN"
+        }
+      ]
     },
     {
       "id": "LIB-001",
@@ -97,7 +196,33 @@
       "input": "铁观音和武夷岩茶有什么区别？",
       "httpStatus": 200,
       "contentSnippet": "铁观音属乌龙茶（青茶），产于福建安溪，工艺重“做青”与“炒青”，香气清高似兰花香，滋味醇厚回甘，汤色金黄明亮，叶底肥厚软亮（铁观音）。\n\n武夷岩茶亦属乌龙茶，主",
-      "sources": 1
+      "sources": 1,
+      "points": [
+        {
+          "name": "茶类归属正确",
+          "check": "program",
+          "veto": false,
+          "weight": 1,
+          "score": 1,
+          "reason": "program 命中"
+        },
+        {
+          "name": "引用知识库出处",
+          "check": "judge",
+          "veto": false,
+          "weight": 1,
+          "score": 0,
+          "reason": "judge=0"
+        },
+        {
+          "name": "差异点覆盖工艺与风味",
+          "check": "judge",
+          "veto": false,
+          "weight": 1,
+          "score": 1,
+          "reason": "judge=1"
+        }
+      ]
     },
     {
       "id": "MEN-001",
@@ -106,7 +231,52 @@
       "input": "我刚入门，茶修之路怎么规划？",
       "httpStatus": 200,
       "contentSnippet": "成长建议：  \n你尚未开始品鉴记录，这完全正常——茶修如春芽，初萌时最贵在轻启。  \n建议迈出第一步：未来一周，选1款易得的茶（如茉莉花茶、正山小种或陈年普洱熟",
-      "sources": 0
+      "sources": 0,
+      "points": [
+        {
+          "name": "六境路径引用正确",
+          "check": "program",
+          "veto": true,
+          "weight": 1,
+          "score": 0,
+          "reason": "program 未命中"
+        },
+        {
+          "name": "给可执行阶段目标",
+          "check": "judge",
+          "veto": false,
+          "weight": 1,
+          "score": 1,
+          "reason": "judge=1"
+        }
+      ]
+    },
+    {
+      "id": "MEN-003",
+      "type": "typical",
+      "score": 0.5,
+      "input": "我每天喝三杯茶，怎么安排才能喝出差别？",
+      "httpStatus": 200,
+      "contentSnippet": "成长建议：  \n你已养成每日三杯茶的节奏，这份坚持很珍贵✨。目前品鉴记录暂空，我们先从「建立微记录」开始——下次喝茶时，花30秒记下：①茶名/类型（如“西湖龙井",
+      "sources": 0,
+      "points": [
+        {
+          "name": "安排合理不玄学",
+          "check": "judge",
+          "veto": false,
+          "weight": 1,
+          "score": 1,
+          "reason": "judge=1"
+        },
+        {
+          "name": "结合感官恢复建议",
+          "check": "judge",
+          "veto": false,
+          "weight": 1,
+          "score": 0,
+          "reason": "judge=0"
+        }
+      ]
     },
     {
       "id": "MEN-004",
@@ -114,8 +284,26 @@
       "score": 0.5,
       "input": "茶修里的\"懂水\"到底指什么？",
       "httpStatus": 200,
-      "contentSnippet": "「成长建议」：  \n目前暂无品鉴记录，尚无法回顾您的水感体验轨迹。但“懂水”在茶修中，确是根基功夫——它不单指分辨软硬、温度，更是在同一泡茶中，敏锐捕捉水如何影",
-      "sources": 0
+      "contentSnippet": "「成长建议」：  \n目前暂无品鉴记录，尚无法回顾您的水感体验轨迹。但“懂水”在茶修中，确是根基——它不单指分辨软硬、冷热，更是感知水与茶互动的细微变化：比如同一",
+      "sources": 0,
+      "points": [
+        {
+          "name": "六境定义准确",
+          "check": "judge",
+          "veto": false,
+          "weight": 1,
+          "score": 0,
+          "reason": "judge=0"
+        },
+        {
+          "name": "落到实操建议",
+          "check": "judge",
+          "veto": false,
+          "weight": 1,
+          "score": 1,
+          "reason": "judge=1"
+        }
+      ]
     },
     {
       "id": "MEN-005",
@@ -123,8 +311,26 @@
       "score": 0,
       "input": "收藏了很多茶，怎么喝才不浪费？",
       "httpStatus": 200,
-      "contentSnippet": "成长建议：  \n你已用心收藏茶，这份珍视本身就很珍贵 🌿  \n目前系统暂未收到你的品鉴记录（如时间、茶名、口感、心情等），建议从「第一次轻量记录」开始：下次泡",
-      "sources": 0
+      "contentSnippet": "成长建议：  \n你已用心收藏茶，这份珍视本身就很珍贵 🌿  \n目前系统暂无品鉴记录，我们可从「建立轻量记录」开始——比如每次开一泡茶时，用三句话记下：①茶名与",
+      "sources": 0,
+      "points": [
+        {
+          "name": "按茶类给品饮顺序",
+          "check": "judge",
+          "veto": false,
+          "weight": 1,
+          "score": 0,
+          "reason": "judge=0"
+        },
+        {
+          "name": "说明陈放与现饮差异",
+          "check": "judge",
+          "veto": false,
+          "weight": 1,
+          "score": 0,
+          "reason": "judge=0"
+        }
+      ]
     },
     {
       "id": "MEN-007",
@@ -133,7 +339,17 @@
       "input": "练习了一周品鉴没进步，怎么复盘？",
       "httpStatus": 200,
       "contentSnippet": "成长建议：  \n你已坚持练习一周，这份持续感非常可贵——品鉴本就是微小感知的累积，不是“没进步”，而是进步尚未显化。  \n\n目前系统中暂无你的品鉴记录（待核实）",
-      "sources": 0
+      "sources": 0,
+      "points": [
+        {
+          "name": "给复盘方法",
+          "check": "judge",
+          "veto": false,
+          "weight": 1,
+          "score": 0,
+          "reason": "judge=0"
+        }
+      ]
     },
     {
       "id": "CHA-006",
@@ -142,7 +358,25 @@
       "input": "连续输入无意义字符：asdf qwer 12345",
       "httpStatus": 200,
       "contentSnippet": "asdf qwer 12345",
-      "sources": null
+      "sources": null,
+      "points": [
+        {
+          "name": "不报错正常回应",
+          "check": "program",
+          "veto": false,
+          "weight": 1,
+          "score": 1,
+          "reason": "program 命中"
+        },
+        {
+          "name": "引导回到主题",
+          "check": "judge",
+          "veto": false,
+          "weight": 1,
+          "score": 0,
+          "reason": "judge=0"
+        }
+      ]
     }
   ]
 }

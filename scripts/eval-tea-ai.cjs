@@ -15,25 +15,36 @@
 const fs = require('node:fs')
 const path = require('node:path')
 const yaml = require('js-yaml')
-const { scoreCase, scoreCaseProgramOnly, passK, aggregate, round } = require('./eval-core.cjs')
+const { scoreCase, scoreCaseProgramOnly, passK, aggregate, round, parseJudgeVerdict, evalPointProgram } = require('./eval-core.cjs')
 
 const ROOT = path.join(__dirname, '..')
 const CASES_DIR = path.join(ROOT, 'docs', 'ai-eval', 'cases')
 const REPORTS_DIR = path.join(ROOT, 'docs', 'ai-eval', 'reports')
 const FILES = ['advisor.yaml', 'taster.yaml', 'librarian.yaml', 'brewer.yaml', 'mentor.yaml', 'chat.yaml']
 
-// ---- program 判分基准（来源：src/data/teas.ts + teaProcesses.ts + constants.ts，2026-10-09 核验）----
+// ---- program 判分基准（来源：src/data/teas.ts + constants.ts，2026-10-10 v4 修正）----
 const CATEGORY_EXPECT = {
   'LIB-001': ['乌龙茶'], 'LIB-005': ['黄茶'], 'ADV-001': ['乌龙茶', '绿茶', '白茶'],
   'ADV-002': ['红茶', '黑茶'], 'ADV-004': ['岩茶', '普洱', '滇红'],
   'BRE-001': ['乌龙茶'], 'BRE-003': ['黑茶'], 'BRE-004': ['白茶'],
+}
+// F3 茶名→茶类映射（基准 = src/data/teas.ts 的 TeaType 实际值，禁止凭记忆写）
+const TEA_NAME_CATEGORY = {
+  碧螺春: '绿茶', 龙井: '绿茶', 西湖龙井: '绿茶', 毛峰: '绿茶', 莫干黄芽: '黄茶',
+  铁观音: '青茶', 凤凰单丛: '青茶', 武夷岩茶: '青茶', 大红袍: '青茶', 水仙: '青茶', 肉桂: '青茶',
+  正山小种: '红茶', 金骏眉: '红茶', 滇红: '红茶',
+  白毫银针: '白茶', 寿眉: '白茶', 贡眉: '白茶',
+  熟普洱: '黑茶', 普洱: '黑茶', 六堡: '黑茶',
+  君山银针: '黄茶',
 }
 const TEMP_EXPECT = {
   'BRE-001': { min: 90, max: 100 }, 'BRE-002': { min: 80, max: 85 },
   'BRE-003': { min: 95, max: 100 }, 'BRE-004': { min: 85, max: 90 },
 }
 const REFUSAL_KEYWORDS = ['拒绝', '不能', '无法', '不支持', '抱歉', '无法提供', '不教', '不建议', '不宜', '请勿', '安全']
-const SIX_LEVEL_KEYWORDS = ['识茶', '知器', '懂水', '行茶', '见性', '归真']
+// F2 六境基准必须对齐产品实际值（src/data/constants.ts TEA_LEVELS）：识茶/知器/懂水/悟香/品境/茶心
+// 原文案「行茶/见性/归真」在产品数据中不存在，属判分基准错误（2026-10-10 实测）。
+const SIX_LEVEL_KEYWORDS = ['识茶', '知器', '懂水', '悟香', '品境', '茶心']
 
 const args = process.argv.slice(2)
 const opt = {
@@ -59,7 +70,7 @@ async function main() {
     const results = []
     for (let i = 0; i < opt.iterations; i++) {
       const result = opt.dryRun ? mockResult(caseDef) : await callChat(opt, file, caseDef.input)
-      const meta = { ...result, expectedCategory: CATEGORY_EXPECT[caseDef.id], expectedTemp: TEMP_EXPECT[caseDef.id], refusalKeywords: REFUSAL_KEYWORDS, sixLevelKeywords: SIX_LEVEL_KEYWORDS }
+      const meta = { ...result, expectedCategory: CATEGORY_EXPECT[caseDef.id], expectedTemp: TEMP_EXPECT[caseDef.id], refusalKeywords: REFUSAL_KEYWORDS, sixLevelKeywords: SIX_LEVEL_KEYWORDS, teaNameCategory: TEA_NAME_CATEGORY }
       if (opt.judge) meta.judgeScores = await judgeCase(opt, caseDef, result)
       results.push(meta)
     }
@@ -74,9 +85,11 @@ async function main() {
       const v = last.judgeScores && last.judgeScores[p.name]
       return v === 1 || v === 0 // UNKNOWN / 未回填不算已判
     }).length
-    const run = { id: caseDef.id, file, type: caseDef.type, input: caseDef.input.slice(0, 60), score: round(scores[0] ?? 0), programOnlyScore: programOnlyScore === null ? null : round(programOnlyScore), judgePointCount, judgeFilledCount, passResult: pk, httpStatus: last.httpStatus, contentSnippet: (last.content || '').slice(0, 80), sources: Array.isArray(last.sources) ? last.sources.length : null, tokensIn: last.tokensIn ?? null, tokensOut: last.tokensOut ?? null, latencyMs: last.latencyMs ?? null }
+    // F1 逐考点明细（v4）：无观测则无法归因——旧版只存 80 字符 snippet，归因只能靠猜。
+    const pointDetail = explainPoints(caseDef, last)
+    const run = { id: caseDef.id, file, type: caseDef.type, input: caseDef.input.slice(0, 60), score: round(scores[0] ?? 0), programOnlyScore: programOnlyScore === null ? null : round(programOnlyScore), judgePointCount, judgeFilledCount, passResult: pk, httpStatus: last.httpStatus, contentSnippet: (last.content || '').slice(0, 80), sources: Array.isArray(last.sources) ? last.sources.length : null, tokensIn: last.tokensIn ?? null, tokensOut: last.tokensOut ?? null, latencyMs: last.latencyMs ?? null, points: pointDetail }
     runs.push(run)
-    if (run.score < 1) failures.push({ id: caseDef.id, type: caseDef.type, score: run.score, input: caseDef.input, httpStatus: run.httpStatus, contentSnippet: run.contentSnippet, sources: run.sources })
+    if (run.score < 1) failures.push({ id: caseDef.id, type: caseDef.type, score: run.score, input: caseDef.input, httpStatus: run.httpStatus, contentSnippet: run.contentSnippet, sources: run.sources, points: pointDetail })
   }
 
   const report = {
@@ -84,6 +97,7 @@ async function main() {
     config: { iterations: opt.iterations, judge: opt.judge, dryRun: opt.dryRun },
     cases: runs.length,
     aggregate: aggregate(runs, opt.iterations),
+    runs,
     failures,
   }
   fs.mkdirSync(REPORTS_DIR, { recursive: true })
@@ -93,6 +107,29 @@ async function main() {
 }
 
 // ---- IO（原生 fetch，Node 18+；禁止同步 busy-wait——会饿死事件循环）----
+
+/**
+ * F1 逐考点判分明细（v4）：把每个考点的得分与判分依据落盘。
+ * 旧版只存 80 字符 snippet，导致归因只能靠猜（且猜错过三次）。
+ * @returns [{name, check, veto, weight, score, reason}]
+ */
+function explainPoints(caseDef, result) {
+  const out = []
+  for (const p of caseDef.points || []) {
+    let score
+    let reason
+    if (p.check === 'judge') {
+      const v = result.judgeScores && result.judgeScores[p.name]
+      score = v === 1 ? 1 : 0
+      reason = v === undefined ? '未跑 judge' : `judge=${v}`
+    } else {
+      score = evalPointProgram(p, result)
+      reason = score === 1 ? 'program 命中' : 'program 未命中'
+    }
+    out.push({ name: p.name, check: p.check, veto: !!p.veto, weight: p.weight, score, reason })
+  }
+  return out
+}
 
 async function callChat(opt, file, input) {
   const agent = path.basename(file, '.yaml')
@@ -139,10 +176,8 @@ AI 回答：${(result.content || '').slice(0, 2000)}
       scores[p.name] = 'UNKNOWN'
       continue
     }
-    const verdict = r.content.trim().toUpperCase()
-    if (verdict.startsWith('1')) scores[p.name] = 1
-    else if (verdict.startsWith('0')) scores[p.name] = 0
-    else scores[p.name] = 'UNKNOWN'
+    // F4：严格解析（0/1/UNKNOWN 三选一）；旧版 startsWith('1') 会把「10 分里给 1」误判为 1
+    scores[p.name] = parseJudgeVerdict(r.content)
   }
   return scores
 }
