@@ -226,4 +226,15 @@ function round(n) {
   return n === null ? null : Math.round(n * 100) / 100
 }
 
-module.exports = { evalPointProgram, scoreCase, scoreCaseProgramOnly, passK, aggregate, round, teaCategoryMatch, parseJudgeVerdict }
+/**
+ * A 阶段：从 `src/services/teaAI.ts` 源码抽取 `AI_SYSTEM_PROMPT` 模板字面量。
+ * 目的：评测器要发与真实前端**同一个** system prompt——抽取而非复制，杜绝两份漂移。
+ * 真实前端（teaAI.ts）每次调用都带该 prompt；评测器若不带，测的就不是真实调用方式。
+ * @returns string；未找到返回 ''（调用方据此告警，不静默发空 prompt）
+ */
+function extractSystemPrompt(source) {
+  const m = (source || '').match(/const\s+AI_SYSTEM_PROMPT\s*=\s*`([\s\S]*?)`/)
+  return m ? m[1] : ''
+}
+
+module.exports = { evalPointProgram, scoreCase, scoreCaseProgramOnly, passK, aggregate, round, teaCategoryMatch, parseJudgeVerdict, extractSystemPrompt }
