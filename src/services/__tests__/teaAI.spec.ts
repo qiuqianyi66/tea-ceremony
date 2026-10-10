@@ -218,3 +218,71 @@ describe('teaAI 登录态分流 + 会话配额（REQ-ai-session-quota）', () =>
     expect(reply).toContain('西湖龙井')
   })
 })
+
+describe('teaAI 专家选择（F-M5-7 前端适配）', () => {
+  it('不传 agent：body 不含 agent 字段（保持隐式路由，零回归）', async () => {
+    let captured: RequestInit | null = null
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url: string, init: RequestInit) => {
+        captured = init
+        return { ok: true, json: async () => ({ code: 'OK', data: { content: '回复' } }) }
+      }),
+    )
+
+    const { askTeaMaster } = await freshTeaAI()
+    await askTeaMaster('你好')
+
+    const body = JSON.parse(captured?.body as string)
+    expect(body.agent).toBeUndefined()
+  })
+
+  it('传 agent：body 带该 agent，且 system prompt 仍在', async () => {
+    let captured: RequestInit | null = null
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url: string, init: RequestInit) => {
+        captured = init
+        return { ok: true, json: async () => ({ code: 'OK', data: { content: '回复' } }) }
+      }),
+    )
+
+    const { askTeaMaster } = await freshTeaAI()
+    await askTeaMaster('我泡的岩茶有焦味', [], 'taster')
+
+    const body = JSON.parse(captured?.body as string)
+    expect(body.agent).toBe('taster')
+    // 承重墙：system prompt 必须仍在（首条 role=system）
+    expect(body.messages[0].role).toBe('system')
+  })
+
+  it('agent=auto 视为不传（UI 默认档不改变路由语义）', async () => {
+    let captured: RequestInit | null = null
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url: string, init: RequestInit) => {
+        captured = init
+        return { ok: true, json: async () => ({ code: 'OK', data: { content: '回复' } }) }
+      }),
+    )
+
+    const { askTeaMaster } = await freshTeaAI()
+    await askTeaMaster('你好', [], 'auto')
+
+    const body = JSON.parse(captured?.body as string)
+    expect(body.agent).toBeUndefined()
+  })
+
+  it('传 agent 但降级：仍走规则回复（承重墙不受影响）', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: false, status: 502 })),
+    )
+
+    const { askTeaMaster } = await freshTeaAI()
+    const reply = await askTeaMaster('西湖龙井怎么泡？', [], 'brewer')
+
+    expect(typeof reply).toBe('string')
+    expect(reply.length).toBeGreaterThan(0)
+  })
+})
