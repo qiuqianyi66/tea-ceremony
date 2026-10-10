@@ -51,9 +51,11 @@ public class TraceRecorder {
         trace.setOutput(vo.content());
         trace.setExecLayer(json(Map.of(
                 "sources_count", vo.sources() == null ? 0 : vo.sources().size())));
-        trace.setTokensIn(vo.tokensIn());
-        trace.setTokensOut(vo.tokensOut());
-        trace.setLatencyMs(vo.latencyMs());
+        // tokens_in/out、latency_ms 是 NOT NULL：专家走两参构造 AiChatVo(content, sources) 时
+        // 这三个字段为 null，直塞会 insert 失败且只落一条 warn（record 内 catch）→ Trace 静默丢失。null 归零。
+        trace.setTokensIn(vo.tokensIn() == null ? 0 : vo.tokensIn());
+        trace.setTokensOut(vo.tokensOut() == null ? 0 : vo.tokensOut());
+        trace.setLatencyMs(vo.latencyMs() == null ? 0 : vo.latencyMs());
         record(trace);
     }
 
