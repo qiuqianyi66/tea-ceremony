@@ -6,12 +6,13 @@
 ## 0. 不可妥协
 
 1. **不奉承，不废话。** 禁止 "好的问题""你说得对""我很乐意" 这类开场白。直接给答案或行动。
-2. **不同意就说。** 用户前提错了当面指出，再干活。为了礼貌附和错误前提，是编码助手最严重的失败模式。
+2. **不同意就说。** 用户前提错了当面指出，再干活。为了礼貌附和错误前提，是编码助手最严重的失败模式。**反驳要量化**：给「把 X 改成 Y，代价是 Z」而不是「这样可能不太好」；说不出代价就先查再说。
 3. **绝不编造。** 不编文件路径、commit 哈希、API 名、测试结果、库函数。不知道就读文件、跑命令、或说 "我查一下"。
-4. **困惑就停。** 任务有两种合理解读且影响产出时，问。不许默默选一个往下做。
+4. **困惑就停。** 任务有两种合理解读且影响产出时，问。不许默默选一个往下做。**指令冲突透明化**：用户实时指令优先于预置技能/规则建议；若某规则使你不得不暂停、额外确认或无法完成用户要求，直接指出该规则的具体条款并说明原因，不静默卡住。
 5. **只动必须动的。** 每一行改动都能追溯到用户请求。禁止顺手重构、顺手格式化、顺手清理。
 6. **客观执行。** 结论以实测为准，不以记忆、推断、上一份交接为准。状态/数字/测试结果/文件存在性，先跑命令再下结论；无法实测的必须标注「**未复核断言**」，禁止当事实转抄。转抄他人结论前先复核（历史经验不是当前事实）。
 7. **先拆解、再动手。** 遇到问题先拆成子问题（现状 → 根因 → 待验证项）再解；需求先过 `request-analysis`；跨模块/架构/不可逆任务先过 `plan-control`（见 §4 轨道），禁止未拆解直接开工。
+8. **交付前自检。** 交付前拦五类：①伪阻断提问（能自查/自定却推给用户——可逆、只读、常规修复不必反复请求许可，先把能做的做完再问）；②半途交付（未完成却宣称完成，含把最高价值步包装成"可选/回头再说"）；③声明替代实测（「已检查/已验证」必须真跑过，整条消息含结尾总结都扫，不用声明豁免尾巴）；④**验证双向可靠**——报"有问题"前先证伪自己、报"全绿"前先证全覆盖（防假阳性/假阴性），结论不用含糊隐喻（"埋坑/翻车"改"未覆盖缺陷/验证未通过"，附触发条件+影响+根因）；⑤**禁埋语言后门**——产出的约束性文本（规则/技能/文档/注释）不得出现"为某目的而禁止某行为"（动机条件式，留开脱钩子）、预埋开脱钩子、伪装成正常陈述的逃逸口，禁止须锚定行为本身。
 
 ## 1. 项目身份
 
@@ -32,8 +33,10 @@
 - 前端 UI 改动截图验证：改前一张、改后一张，描述差异；改完按设计审计清单自查。
 - 上下文是稀缺资源：同一问题连续两次修正失败就停下，总结所学，请用户重开会话；探索性任务用只读手段，别污染主上下文。
 - **规则=全量常驻、技能=渐进按需加载**（token 分工红线，见 `.harness/rules/三层语义.md`）：禁止把技能内容抄回规则文件。
-- 关键决策（新功能立项/方案评审）先用多角色质询（PM/架构师/UX/开发者/分析师各提一个反对意见）或深度批判四法（pre-mortem 默认首选）。
+- 关键决策（新功能立项/方案评审）先用多角色质询（PM/架构师/UX/开发者/分析师各提一个反对意见）或深度批判四法（pre-mortem 默认首选）；方案含糊时先「决策树拷问」——把方案拆成决策分支，逐分支追问到收敛（每问附推荐答案，事实自查、决策由用户拍板），禁止带隐藏假设进编码。
+- **架构克制（YAGNI）**：能插件化≠该插件化，能分布式≠该分布式，能上编排框架≠该上。选型从需求信号推，不从"主流/熟悉/现成"推；架构级选型必须写「选 A 理由 + 否 B 理由 + 反转条件」（双向论证，见 plan-control §9.1，症状对照表 §9.2）。本地实证：Graph 编排经四维甄别 0/4 被砍（ADR-018）。
 - **写作风格（80% ASD-STE100，2026-10-06 融入）**：①每句一事实或一条指令，指令 ≤20 词、描述 ≤25 词；②主动语态，说清谁做什么；③同物同词——术语（契约字段/领域概念）定义一次后精确复用，禁换着叫；④先答案后细节（§0 已有，写解释时严格执行）；⑤步骤放编号列表，每段一个主题最多 6 句；⑥用用户的语言回答，句子简短；⑦流程/结构/架构超过 3 个部分时加 ASCII 图或引用架构图；⑧用户说"用 HTML 解释/做成网页"时，交付单文件交互式 HTML 页。评估与抽样流程见 `docs/agent-eval-baseline.md`。
+- **面向用户可见文本**（`docs/promotion/` 传播文案 / README / 官网 / UI 文案）：写前读 `.harness/skills/main-dev/tea-voice`（`docs/promotion/posts.md` 是 tea 声音的唯一范本，其正反对照定义法与短句成段即标准）。
 
 ## 3. 架构边界
 
@@ -52,7 +55,7 @@
 
 0. **开工自查**：先 `git log --oneline -10` 查目标功能是否已实现；已实现 → 补缺验证，禁止从零重写。
 1. **分诊 + 拆解**（§0 第 7 条）：先判定轨道（下 §4.1），再把问题拆成子问题。复杂需求拆解格式固定为：**现状（实测）→ 根因 → 子问题清单 → 待验证项**。拆解未产出，禁止进入编码。
-2. **理解上下文**——读相关文件 + 匹配技能 `SKILL.md` 后再动手。
+2. **理解上下文**——读相关文件 + 匹配技能 `SKILL.md` 后再动手。**技能匹配两类（先判哪类，再加载）**：①**流程驱动**——按当前阶段查 `.harness/skills/main-dev/README.md` 路由表（走到阶段 4 → coding-skill，阶段 5 → unit-test-write）；②**任务驱动**——按产出物性质触发，不看阶段（产出对外文字 → `tea-voice`；用户点名 caveman → `caveman-review`；要求架构体检 → `arch-deepen`）。两份总表：`.agents/skills/README.md`（66 个，通用+领域）+ 三族 README（流程族 39 个）。**README 不列 = 技能不存在**。
 3. **需求分析**——新功能 / 需求变更 / 行为改动先过 `request-analysis`（F 编号 + Given-When-Then + 范围边界 + 影响分析）。轻量路径按 §4.1 合并。
 4. **方案设计**——Controlled 轨道先过 `plan-control`（风险评分 + 方案 + 取舍 + 回滚 + Not Doing）；Guided 轨道出 Mini Plan。
 5. **修改**——按 §5 纪律，只动必须动的。
@@ -101,7 +104,7 @@
 - 触控目标 ≥ 44px；状态五态齐全（hover/disabled/loading/error/empty）；正文对比度 ≥ 4.5:1；浏览器表面定制（选区/滚动条/焦点环/光标）。
 - 字体自托管（@font-face + swap），生产禁 Google Fonts link；全屏 Hero 用 `min-h-[100dvh]` 禁 `h-screen`；图标一个库一个家族，禁手绘 SVG 路径；引入第三方库前先查 package.json。
 - **设计令牌与组件规则**：色值/间距/圆角/阴影/动效令牌、组件规则、Three.js 规则（禁直接创建 renderer，统一 TresJS）见 `DESIGN_SPEC.md`；3D 详细约束见 `3D_SPEC.md`。
-- **设计门禁（强制 6 步）**：① Design Read（页面类型/受众/vibe/倾向体系 + 三拨盘 8/6/4，未输出禁止写码）→ ② 视觉方向（一句话 + 4-6 色令牌 + 字体角色）→ ③ 对照简报评审 → ④ 实现（调用 taste-skill / ui-ux-pro-max / frontend-design / impeccable，禁模板手感）→ ⑤ critique（层级/清晰/情感）→ ⑥ audit + 设计审计 9 条，未过审计不得提交。完整规范见全局技能 `frontend-design-spec`。
+- **设计门禁（强制 6 步）**：⓪**先定轨道**（品牌物料轨：应用 UI / 图标 / 海报，全禁衬线；编辑出版轨：传播长文 / 文档 / 画册，长文允许衬线）——轨道定了才选风格，顺序不可颠倒（2026-10-10 融入，源自 design-aesthetics-book 轨道层）→ ① Design Read（页面类型/受众/vibe/倾向体系 + 三拨盘 8/6/4，未输出禁止写码）→ ② 视觉方向（一句话 + 4-6 色令牌 + 字体角色）→ ③ 对照简报评审 → ④ 实现（调用 taste-skill / ui-ux-pro-max / frontend-design / impeccable，禁模板手感）→ ⑤ critique（层级/清晰/情感）→ ⑥ audit + 设计审计 9 条，未过审计不得提交。完整规范见全局技能 `frontend-design-spec`。
 - 设计禁令速查：AI 紫渐变 / 暖米白+陶土 / 纯黑灰（要 tint）/ Tailwind 默认色板 / Inter 与衬线体默认 / Fraunces·Instrument_Serif / eyebrow 眉题 / Hero+三卡片 / Emoji 当图标 / 玻璃拟态装饰 / 渐变文字 / bounce·elastic 动效 / 每节同款入场 / 「提交」式按钮文案，一律禁止。
 
 ## 7. 后端规范
@@ -124,6 +127,7 @@
 ## 9. 测试规范
 
 - 新功能/修 bug 必须带测试；TDD 优先（先写失败测试 → 最小实现 → 重构）。
+- **按需测试（不过度工程）**：可逆、影响小的改动不写仅复刻实现逻辑的无意义测试；只跑与改动相称的验证，通过后不无休止扩大/重复测试范围，直接推进交付（除非出现新变更或失败）。
 - **垂直切片（tracer bullet）**：一个测试 → 最小实现 → 下一个测试；禁止先写完所有测试再写实现（水平切片产出想象行为的垃圾测试）。单片必须端到端可验证。
 - **行为测试三规则**：只走公共接口；不 mock 内部协作者（mock 只用于跨进程/外部边界：网络、时钟、DB 驱动）；重构不改测试。
 - 宽重构走 expand-contract：先 expand（新旧并存、CI 保持绿）→ 按包分批迁移（每批独立 commit）→ contract（旧形式无引用后删除）。
@@ -173,7 +177,7 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量�
 - `.agents/skills/*/SKILL.md` — 匹配到的技能必须先 Read 再执行
 - `.agents/skills/README.md` — 技能路由总表（66 个，按族分组，任务启动先读）
 - `.harness/rules/技能规范.md` — 技能治理唯一权威（模板/触发式描述/路由表维护，§5 增删改流程）
-- `docs/skills/` — 核心技能人读审查页（plan-control / tea-tasting / db-migration / fastapi-endpoint / vue-component / caveman-review / quality-audit，面向人核对）
+- `docs/skills/` — 核心技能人读审查页（plan-control / tea-tasting / db-migration / fastapi-endpoint / vue-component / caveman-review / quality-audit / arch-deepen / session-handoff / tea-voice，面向人核对）
 - `CONTEXT.md` — 术语 + ADR 索引 + 架构关键词（必读）
 - `docs/ADR/` — 架构决策记录（ADR-001~020；新决策写 ADR-0XX.md，禁止塞进 CONTEXT.md）
 - `docs/plans/` — 迭代计划层（PLAN-* / TODO-PRIORITY / 环境审查清单）
@@ -193,7 +197,7 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量�
 - `.harness/wiki/` — AI 编码上下文四件套（业务模型 / 接口协议 / 数据模型 / 领域术语），编码前按需读 ≤3 份
 - `.harness/changes/_template/` — 变更追踪模板（summary + db-migrations + rollback），与 git 分支同名
 - `.claude/agents/` — 三子代理（code-reviewer / consistency-verifier / red-line-auditor；Claude Code 专用。豆包环境等效：expert-reviewer / audit-wiki-drift.cjs + verify-harness.cjs / audit-redlines.cjs，见开发流程规范 §子代理）
-- `.harness/skills/` — 技能全套 33 个（main-dev 9 / biz-dev 19 / trouble-shooting 5），每族带 README 路由表，按需渐进式加载（request-analysis 规则 + Wiki ≤3、coding-skill ≤4）
+- `.harness/skills/` — 技能全套 39 个（main-dev 14 / biz-dev 19 / trouble-shooting 6），每族带 README 路由表，按需渐进式加载（request-analysis 规则 + Wiki ≤3、coding-skill ≤4）
 - `.github/workflows/ci.yml` — CI 合并门禁（含 compose-validate / harness 一致性）
 - `docs/agent-eval-baseline.md` — AI 协作评估基线（通用+专项维度、抽样会话评分流程、评估证据沉淀）
 
@@ -201,7 +205,7 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量�
 
 ## 13. 更新记录
 
-**维护规则**：保持短（超 500 行就是在跟自己打架，200-350 行最舒服）；只留救过命的规则（问 "删掉这行会让 AI 犯错吗？" 不会就删）；命令必须真实（从 package.json/scripts 抄）；写规则不写建议（给 "禁止 X" 不给 "建议用 X"）；AI 每次犯错在此加一行，已有规则覆盖就收紧，不重复。**经验三级进化（2026-10-07）**：踩坑先写 lesson（单次记录）→ 跨项目复现归纳 pattern → 验证后晋升 instinct 自动生效；每级晋升需人工确认，防错误经验扩散。**修剪（执行路径）**：稳定经验迁入 `docs/plans/patterns.md`（pattern 池，见开发流程规范 §八），AGENTS 留一行索引；学习记录可压缩为一行，不删除。
+**维护规则**：保持短（超 500 行就是在跟自己打架，200-350 行最舒服）；只留救过命的规则（问 "删掉这行会让 AI 犯错吗？" 不会就删）；命令必须真实（从 package.json/scripts 抄）；写规则不写建议（给 "禁止 X" 不给 "建议用 X"）；AI 每次犯错在此加一行，已有规则覆盖就收紧，不重复。**经验三级进化（2026-10-07）**：踩坑先写 lesson（单次记录）→ 跨项目复现归纳 pattern → 验证后晋升 instinct 自动生效；每级晋升需人工确认，防错误经验扩散。**晋升门槛（2026-10-10 收紧）**：晋升须附 **≥3 条真实可查证据**（真实日志/commit/文件，日期真实存在），证据不足只标「候选·证据不足」，禁止写成规则；**改技能/规则名或路径前先 grep 记忆层+技能层+任务层+文档层四处引用并同步**，防断链。**静默失效警觉（2026-10-10）**：治理类问题（规则漂移/技能断链/文档过期/引用失效）**当场不报错，几周后才显形**——所以「本次没发现问题」≠「没问题」，须靠确定性脚本（verify-harness 等）定期体检而非凭印象；指标取不到时报「未测」，禁按 0 计（把「没测到」读成「正常」是本机制最致命的失败模式）。**写入五问（写新条目/规则前自问，防膨胀）**：①与已有条目同主题？→合并更新不新增；②新说法覆盖旧说法？→替换不并存；③操作细节/命令/路径？→进技能不进规则；④临时状态/进行中？→不写（用会话/任务清单）；⑤核心偏好/身份？→画像层，环境事实→记忆层。**防膨胀护栏**：压缩稿须 <95% 原文（否则是"压缩后变大"），备份先行保留 14 天，单次降幅 ≤40%，**达标即停**（降到目标即止，不做超额治理）。**修剪（执行路径）**：稳定经验迁入 `docs/plans/patterns.md`（pattern 池，见开发流程规范 §八），AGENTS 留一行索引；学习记录可压缩为一行，不删除。
 
 **学习记录（近况沉淀）**：
 - 删除/覆盖文件前先 Read 确认无独立价值；恢复成本高于删除成本。
@@ -245,5 +249,10 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量�
 - **交接快照不可叠加，必须逐条实测**（2026-10-10）：三份交接同时交来，分别自称 main = `b9f083a` / `137b3a5` / `b9f083a`——**是三张不同时刻的快照，不是同一状态的三个视角**，叠加会得到"更全"的错觉。实测抓出 6 处硬错：A4 阻塞（假）、"后端重写已完成"（假，`backend/main.py` + `tests/` + `alembic.ini` 俱在，CI 仍 pytest/Maven 双跑）、测试数 201（实为 211）、`chore/pr-flow-rule` "未推送"（已合且远端已删）、`tea-testing` worktree "prunable"（已不存在）、v2 0.96 当成果（program-only 口径）。**commit 哈希全部真实**（14 个逐个 `git cat-file` 验证）——说明问题不在"编 ID"，而在**结论层不加复核地转抄**。铁律：接手交接先跑 `git log` / `git status` / 数字复算，逐条标「已复核 / 未复核断言」（2026-10-10 沉淀）。
 - **裸编号跨文档复用会造成实质误工**（2026-10-10）：`P0-3` 在三份文档指三个事项——`docs/PLAN-harness-research-2026-10.md` = 前端返工、`docs/TODO-PRIORITY.md`（deprecated）= AI key、`docs/OPTIMIZATION_PLAN.md` = PWA prompt。交接转述的「P0-3 前端返工验收」若被按 AI key 理解，会去做已完成的事。铁律：**编号不跨文档裸用**，引用时带文档前缀；消歧只在各文档就地加警示，**不做全库重编号**（会毁掉历史引用）。已在本会话修（2026-10-10 沉淀）。
 - **最高规范落点：任务控制四项已固化**（2026-10-10，用户要求）：§0 加第 6 条「客观执行」（结论以实测为准，未复核断言必须标注）、第 7 条「先拆解再动手」（现状→根因→子问题→待验证项，需求过 request-analysis、跨模块/架构/不可逆过 plan-control）；§4 工序加「1 分诊+拆解 / 3 需求分析 / 4 方案设计」并新增 §4.1 三轨道（Fast / Guided / Controlled）。**接线不抄正文**：正文留在 `.agents/skills/plan-control/SKILL.md` 与 `.harness/skills/main-dev/request-analysis/SKILL.md`，细节对照 `.harness/rules/开发流程规范.md` §一；禁把技能内容抄回 AGENTS.md（§2 token 红线 + plan-control §18 禁平行规则体系）（2026-10-10 沉淀）。
+- **全局技能融入（2026-10-10，各取所长非照搬）**：从 WorkBuddy 53 个全局技能**逐个读正文**后提炼增量（禁止凭 description 猜），分三批落地。**批次一（接线式）**：delivery-no-pseudoblock→§0 第 8 条「交付前自检」；grill-me-pro→§2「决策树拷问」+ request-analysis「frontier 提问」；prd-review→request-analysis「就绪度审查 8 维」；code-review-analyzer/assistant→expert-reviewer「OWASP 安全清单」。**批次二（新技能）**：agent-harness-architect→新增 `arch-deepen`（浅模块深化扫描）；task-handoff-summary + §13 交接教训→新增 `session-handoff`（交接已复核/未复核分栏）；using-agent-skills→§0 第 2 条「反驳要量化」；smart-memory-agent + knowledge-governance→§13「晋升门槛 ≥3 条真实证据」+「改名前 grep 四层引用」。**批次三（深读补漏）**：prd-assistant→request-analysis「Step 0 模式/复杂度判定（A/B/C + 只审校）」+「未知项并行推进」；task-handoff-summary 深读→session-handoff「长度硬限（行数+字符数非字节）」+「/compact 机制」+「负面清单」；knowledge-distiller→§13「静默失效警觉」。落点遵循三层语义（常驻约束进规则、按需能力进技能），禁照搬原文，用 tea 术语重写。
+- **skills.sh 下载榜吸收（2026-10-10，mattpocock/skills 三机制落地）**：调研 top10 + chatcut/anysearch/仓颉，判定 6 个已重合（find-skills/tdd/agent-browser/frontend-design/setup-matt-pocock-skills/triage）、3 个用不上（chatcut 视频剪辑、anysearch 被内置 general_search 覆盖、仓颉无公开出处）、3 个吸收并本地化——①grill-me 的 frontier 提问 → request-analysis「澄清规则」节升级为一轮带推荐答案的编号清单（≤5 条，不问能自己查的）；②improve-codebase-architecture 的浅模块深化 → 新建 `main-dev/arch-deepen`（Ousterhout 深模块视角，只出报告不改代码，dry-run 真命中 `ApiResponse<T>` 在 3 个 api 文件重复定义）；③handoff 标准化 → 新建 `main-dev/session-handoff`（五段强制结构：一句话现状/仓库状态带复核命令/已复核-vs-未复核分栏/下次第一步具体到命令/关键决策，把 §13 四条交接血泪教训固化为硬门）。main-dev 9→11，verify-harness ERRORS:[]。**铁律：外来 skill 不照搬原文，先对 tea 真实代码 dry-run 找信号，教科书信号（如"一行 Service return repository"）在本项目 0 命中必须删掉**。
+- **agent-harness-architect 融入（2026-10-10，只取不绑定 agent 运行时的通用部分）**：该 skill 服务对象是「设计 agent 运行时产品」，与 tea 定位不符——**tea 的 harness 是 AI 编码治理层**（`.harness/` + verify-harness.cjs + eval-harness.cjs，被测对象是协作流程本身），**没有** E 执行循环/T 工具注册/S 状态存储这些可设计层。故**只取三块通用方法论**：①**双向论证**（选 A 理由 + 否 B 理由 + 反转条件）→ `plan-control` §9.1，PLAN.md Trade-offs 与 §16 完成契约同步加项；②**症状→处方矩阵 + 反过度设计警示**（12 行对照表）→ `plan-control` §9.2；③**架构克制 YAGNI**（"能插件化≠该插件化"，附 ADR-018 Graph 四维甄别 0/4 被砍的本地实证）→ §2 + §0 第 7 条。**明确不取**：H 六层框架本体、六种静态执行模式、7 个框架案例库（tea 无对应对象，取了即术语堆砌）。docs/skills/plan-control.md 审查要点同步加 3 条核对项。verify-harness ERRORS:[]（2026-10-10 沉淀）。
+- **全量技能逐个比对（2026-10-10 第六轮，用户要求重过一遍）**：把 54 个用户级技能**逐个读正文对着 tea 真实文件核**，又找出 2 处真漏（此前只凭印象判"用不上"）：①**humanizer** 的 16 条去 AI 味模式；②**design-aesthetics-book** 的**轨道层**（先定轨道再选风格，顺序不可颠倒；品牌物料轨禁衬线 / 编辑出版轨允许衬线）→ §6 设计门禁从"6 步"改"6 步+⓪轨道判定"，补上 tea 之前直接进 Design Read 缺的一步。**同时诚实判定 fullstack-dev 无增量不融入**：其 Twelve-Factor（配置外置/环境隔离/健康检查）与契约测试，tea 已由编码规范 §96-97/§225-226 + `audit-wiki-drift.cjs`（端点 vs 代码双向核对，比契约测试更贴单仓现状）覆盖，逐条核实后端到 0 缺口。**铁律再确认：比对必须查 tea 真实文件，不能凭技能 description 或"看着差不多"下结论**（2026-10-10 沉淀）。
+- **迭代校准：融入必须从项目本身出发，不是从技能出发（2026-10-10 第七轮，用户点破）**：humanizer 第一版融入是把 8 条通用去 AI 味**堆进 §2 常驻规则（28 行）**——两处偏离项目：①违反 tea 自己的三层语义（操作细节进技能不进规则）；②通用清单对人类语感帮助有限。**重做为项目专属技能 `main-dev/tea-voice`**：读 tea 自己的 `docs/promotion/posts.md`（9 个平台文案）**反推 tea 声音四特征**——短句成段 / **正反对照定义法**（"不是百科，不是计时器，是能坐下来泡一杯茶的小茶室"）/ 动词主导 / 低音调不吆喝；AI 味清单按 tea 语料频次重排。§2 从 28 行压回**一行指针**。**方法论沉淀**：融入外来技能的正确顺序是「先读项目真实产物找声音/缺口 → 再定写成什么 → 最后才对技能取料」；反过来（先看技能有什么再找地方放）必然产出"正确但不像 tea"的东西。main-dev 13→14，verify-harness ERRORS:[]（2026-10-10 沉淀）。
 
 **2026-10-01 V4 重构**：ADR 拆 `docs/ADR/` 独立文件（ADR-001~009，统一格式）、CONTEXT.md 精简为术语+ADR 索引+架构关键词、新增 `npm run quality` 统一门禁、commit 改英文 conventional、新增 AI Change Protocol + Modification Level。详见 ADR-009。
