@@ -10,6 +10,8 @@
 3. **绝不编造。** 不编文件路径、commit 哈希、API 名、测试结果、库函数。不知道就读文件、跑命令、或说 "我查一下"。
 4. **困惑就停。** 任务有两种合理解读且影响产出时，问。不许默默选一个往下做。
 5. **只动必须动的。** 每一行改动都能追溯到用户请求。禁止顺手重构、顺手格式化、顺手清理。
+6. **客观执行。** 结论以实测为准，不以记忆、推断、上一份交接为准。状态/数字/测试结果/文件存在性，先跑命令再下结论；无法实测的必须标注「**未复核断言**」，禁止当事实转抄。转抄他人结论前先复核（历史经验不是当前事实）。
+7. **先拆解、再动手。** 遇到问题先拆成子问题（现状 → 根因 → 待验证项）再解；需求先过 `request-analysis`；跨模块/架构/不可逆任务先过 `plan-control`（见 §4 轨道），禁止未拆解直接开工。
 
 ## 1. 项目身份
 
@@ -49,13 +51,29 @@
 所有 AI 修改必须按序走完，缺一步不算完成：
 
 0. **开工自查**：先 `git log --oneline -10` 查目标功能是否已实现；已实现 → 补缺验证，禁止从零重写。
-1. **理解上下文**——读相关文件 + 匹配技能 `SKILL.md` 后再动手。
-2. **确认影响范围**——涉及承重 / 有版本 / 有迁移路径的改动，先问再做。
-3. **修改**——按 §5 纪律，只动必须动的。
-4. **运行验证**——按 §11 命令入口，验证级别匹配改动级别（§5 Modification Level）。
-5. **报告证据**——做了什么、跑了什么、结果如何，凭证据报完成。
+1. **分诊 + 拆解**（§0 第 7 条）：先判定轨道（下 §4.1），再把问题拆成子问题。复杂需求拆解格式固定为：**现状（实测）→ 根因 → 子问题清单 → 待验证项**。拆解未产出，禁止进入编码。
+2. **理解上下文**——读相关文件 + 匹配技能 `SKILL.md` 后再动手。
+3. **需求分析**——新功能 / 需求变更 / 行为改动先过 `request-analysis`（F 编号 + Given-When-Then + 范围边界 + 影响分析）。轻量路径按 §4.1 合并。
+4. **方案设计**——Controlled 轨道先过 `plan-control`（风险评分 + 方案 + 取舍 + 回滚 + Not Doing）；Guided 轨道出 Mini Plan。
+5. **修改**——按 §5 纪律，只动必须动的。
+6. **运行验证**——按 §11 命令入口，验证级别匹配改动级别（§5 Modification Level）。
+7. **报告证据**——做了什么、跑了什么、结果如何，凭证据报完成。
 
-禁止：不读文件直接改代码；直接新增依赖；直接改变架构；跳过验证宣称完成。
+禁止：不读文件直接改代码；直接新增依赖；直接改变架构；跳过验证宣称完成；未拆解直接开工。
+
+### 4.1 任务轨道（分诊结果决定流程深度）
+
+> 分诊规则与十阶段流水线的完整对照见 `.harness/rules/开发流程规范.md` §一（含 L0-L3 路径分级与小改动判据）。此处只定入口：
+
+| 轨道 | 触发 | 流程 |
+|---|---|---|
+| **Fast** | 纯问答 / 明确步骤执行 / 单文件低风险可逆改动 | 理解 → 执行 → 验证 → 交付（跳过方案与需求文档） |
+| **Guided** | 多文件 / 部分假设 / 影响可估 | Mini Plan（目标/步骤/影响/验证）→ 执行 → 验证 |
+| **Controlled** | 架构选择 / 数据模型 / 不可逆 / 高风险 / 需求含糊 | 拆解 → 需求分析 → 完整方案（plan-control §9）→ 确认 → 执行 → 证据 → 评审 |
+
+- 轨道由 **风险 + 置信度 + 复杂度** 决定，不由「感觉难不难」决定；打分带依据（plan-control §6）。
+- 调研后发现评分不准 → **重新分诊并说明**，禁止硬走原轨道。
+- 用户显式指令优先：说「直接做」就走 Fast；说「先出方案」就上 Controlled。
 
 ## 5. 修改纪律
 
@@ -157,7 +175,7 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量�
 - `.harness/rules/技能规范.md` — 技能治理唯一权威（模板/触发式描述/路由表维护，§5 增删改流程）
 - `docs/skills/` — 核心技能人读审查页（plan-control / tea-tasting / db-migration / fastapi-endpoint / vue-component / caveman-review / quality-audit，面向人核对）
 - `CONTEXT.md` — 术语 + ADR 索引 + 架构关键词（必读）
-- `docs/ADR/` — 架构决策记录（ADR-001~018；新决策写 ADR-0XX.md，禁止塞进 CONTEXT.md）
+- `docs/ADR/` — 架构决策记录（ADR-001~019；新决策写 ADR-0XX.md，禁止塞进 CONTEXT.md）
 - `docs/plans/` — 迭代计划层（PLAN-* / TODO-PRIORITY / 环境审查清单）
 - `docs/reference/` — 稳定参考（error-codes.md 错误码表）
 - `docs/architecture/system-overview.md` — 架构分层、数据流、目录速查
@@ -224,5 +242,8 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量�
 - **「已知阻塞项」要定期实测复核，不能继承**（2026-10-10）：A4「cu 虚拟桌面占用」被连续多份交接记为唯一阻塞项（卡 K23 截图 / P0-3 验收 / v3 Judge 实跑），实测**全部不成立**——截图脚本自带 `ensure-dev-server.cjs`，`verify-*3d*`/`verify-pavilion`/`verify-gardens` 直接能跑（5173 自动拉起），`screenshot-home`/`-growth` 只需手起 5174，Judge 实跑更与桌面无关。`verify-gardens.cjs` ERRORS: []、`verify-pavilion.cjs` ERRORS: []、`verify-icons.cjs` ERRORS: []、三个截图脚本 exit 0、`eval-tea-ai.cjs --judge` 出全量分。铁律：**阻塞项是一句断言，不是事实**——每份交接必须先实测再转抄；「脚本跑不起来」多数是「没人试着跑」。截图/评测脚本调用方式与端口已写入 TODO-PRIORITY 命令表（2026-10-10 沉淀）。
 - **旁路埋点的 catch 会把「数据没落库」静默降级成一条 warn**（2026-10-10）：`TraceRecorder.complete()` 把 `AiChatVo` 的 `tokensIn/Out`、`latencyMs` 直塞 `NOT NULL` 列，而专家走两参构造 `AiChatVo(content, sources)` 时三字段为 null → insert 违反非空约束 → `record()` 的 catch 只落 warn → **Trace 永久丢失**。证据是数据缺口：`ai_eval_traces` 中 librarian **0 行**（其余 5 个 agent 均有），`ai_usage_logs` 却有 librarian 调用。铁律：**旁路（埋点/计量）必须对「落库成功率」有观测**，否则静默丢数据；实体有默认值为 `0` 的 NOT NULL 字段，赋值处必须 null 归零（2026-10-10 沉淀）。
 - **分支保护子端点不存在时只能整段 PUT**（2026-10-10）：`required_status_checks` 段缺失时，`POST`/`PATCH /branches/main/protection/required_status_checks` **均 404**；须用 `PUT /branches/main/protection` 整段覆盖，payload 同时带 `required_status_checks` + `required_pull_request_reviews` + 其余布尔开关（漏字段会被重置）。context 名必须与 `ci.yml` 各 job 的 `name` 逐字一致（13 个）。核对：`gh api repos/qiuqianyi66/tea-ceremony/branches/main/protection -q '.required_status_checks.contexts[]'`（2026-10-10 沉淀）。
+- **交接快照不可叠加，必须逐条实测**（2026-10-10）：三份交接同时交来，分别自称 main = `b9f083a` / `137b3a5` / `b9f083a`——**是三张不同时刻的快照，不是同一状态的三个视角**，叠加会得到"更全"的错觉。实测抓出 6 处硬错：A4 阻塞（假）、"后端重写已完成"（假，`backend/main.py` + `tests/` + `alembic.ini` 俱在，CI 仍 pytest/Maven 双跑）、测试数 201（实为 211）、`chore/pr-flow-rule` "未推送"（已合且远端已删）、`tea-testing` worktree "prunable"（已不存在）、v2 0.96 当成果（program-only 口径）。**commit 哈希全部真实**（14 个逐个 `git cat-file` 验证）——说明问题不在"编 ID"，而在**结论层不加复核地转抄**。铁律：接手交接先跑 `git log` / `git status` / 数字复算，逐条标「已复核 / 未复核断言」（2026-10-10 沉淀）。
+- **裸编号跨文档复用会造成实质误工**（2026-10-10）：`P0-3` 在三份文档指三个事项——`docs/PLAN-harness-research-2026-10.md` = 前端返工、`docs/TODO-PRIORITY.md`（deprecated）= AI key、`docs/OPTIMIZATION_PLAN.md` = PWA prompt。交接转述的「P0-3 前端返工验收」若被按 AI key 理解，会去做已完成的事。铁律：**编号不跨文档裸用**，引用时带文档前缀；消歧只在各文档就地加警示，**不做全库重编号**（会毁掉历史引用）。已在本会话修（2026-10-10 沉淀）。
+- **最高规范落点：任务控制四项已固化**（2026-10-10，用户要求）：§0 加第 6 条「客观执行」（结论以实测为准，未复核断言必须标注）、第 7 条「先拆解再动手」（现状→根因→子问题→待验证项，需求过 request-analysis、跨模块/架构/不可逆过 plan-control）；§4 工序加「1 分诊+拆解 / 3 需求分析 / 4 方案设计」并新增 §4.1 三轨道（Fast / Guided / Controlled）。**接线不抄正文**：正文留在 `.agents/skills/plan-control/SKILL.md` 与 `.harness/skills/main-dev/request-analysis/SKILL.md`，细节对照 `.harness/rules/开发流程规范.md` §一；禁把技能内容抄回 AGENTS.md（§2 token 红线 + plan-control §18 禁平行规则体系）（2026-10-10 沉淀）。
 
 **2026-10-01 V4 重构**：ADR 拆 `docs/ADR/` 独立文件（ADR-001~009，统一格式）、CONTEXT.md 精简为术语+ADR 索引+架构关键词、新增 `npm run quality` 统一门禁、commit 改英文 conventional、新增 AI Change Protocol + Modification Level。详见 ADR-009。

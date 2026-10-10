@@ -47,6 +47,10 @@ ADR 独立文件见 `docs/ADR/`（ADR-009 起统一格式：Status / Context / D
 | [ADR-013](docs/ADR/ADR-013.md) | 引入 pgvector + pg_trgm 混合检索（S2 知识检索升级） | Accepted |
 | [ADR-014](docs/ADR/ADR-014.md) | ArchUnit 事务与响应契约机械化（H18/K10） | Accepted |
 | [ADR-015](docs/ADR/ADR-015.md) | 茶园能量账本（S1，garden 域 + V4 迁移） | Accepted |
+| [ADR-016](docs/ADR/ADR-016.md) | AI 评测 Trace 四层归因（V5 `ai_eval_traces`） | Accepted |
+| [ADR-017](docs/ADR/ADR-017.md) | 运行时领域技能（V6 `agent_skills`） | Accepted |
+| [ADR-018](docs/ADR/ADR-018.md) | Spring AI Alibaba Graph 引入暂缓 | Accepted |
+| [ADR-019](docs/ADR/ADR-019.md) | 任务控制协议上收至最高规范（分诊 / 拆解 / 客观执行） | Accepted |
 
 新决策一律写入 `docs/ADR/ADR-0XX.md`，禁止塞进本文档。
 
