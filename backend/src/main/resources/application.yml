@@ -9,6 +9,11 @@ spring:
       api-key: ${AI_DASHSCOPE_API_KEY:disabled}
       # 百炼工作空间专属 endpoint（sk-ws- key 必须配专属 base-url；根地址即可，completionsPath 自带 /api/v1）
       base-url: ${AI_DASHSCOPE_BASE_URL:https://dashscope.aliyuncs.com}
+      # Phase 2 知识注入（T05）：embedding 模型对齐 V3 culture_chunks.embedding vector(1024)
+      # （text-embedding-v3 默认 1024 维；无 key 时 starter 不提供 EmbeddingModel bean，回填自动降级 pending）
+      embedding:
+        options:
+          model: ${AI_EMBEDDING_MODEL:text-embedding-v3}
     # P1-1 MCP server：ToolCallbackProvider 注册的 @Tool（culture-search）经 SSE WebMVC transport 暴露，
     # 外部 agent（Claude Code/Codex/Goose 等）可经标准 MCP 协议调用（SSE 端点 /mcp，消息端点 /mcp/messages）
     mcp:
