@@ -133,6 +133,8 @@ Phase 1 安全边界 ──→ Phase 2 知识注入 ──→ Phase 3 评测基�
 
 ### Phase 2 知识注入（P0，L2）
 
+> **状态：✅ 已完成（2026-10-11，PR #53 / main 4215bab）**。T04-T07 全部落地：回填管线（ChunkBackfillService + admin backfill 端点）+ 向量检索分支 + tea_relations V7（170 条）+ ragHitRate 观测；本地真实链路跑通（Flyway V1-V7、backfill 降级 pending 327、检索降级）。**遗留**：真嵌入（backfill?embed=true）需 AI key 环境手动触发（费用计 D-5）。
+
 **T04 `culture_chunks` 回填管线（骨架）**
 - Action：新建 `backend/.../culture/service/ChunkBackfillService.java` + 端点（或 CLI）
 - 依据：`V2__culture_seed.sql` 的 `culture_chunks` 表结构（已存在）
