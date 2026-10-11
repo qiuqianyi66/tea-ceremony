@@ -291,14 +291,23 @@ if (!fs.existsSync(claudeDir)) {
   }
 }
 
-// 10. docs/skills 审查页存在性（AGENTS.md §12 声明 6 页）
-const SKILL_PAGES = ['plan-control.md', 'tea-tasting.md', 'db-migration.md', 'fastapi-endpoint.md', 'vue-component.md', 'caveman-review.md'];
+// 10. docs/skills 审查页存在性（声明驱动：AGENTS.md §12 声明哪些就校验哪些，双向核对）
 const docsSkillsDir = path.join(ROOT, 'docs/skills');
-if (!fs.existsSync(docsSkillsDir)) {
+const docsSkillsClaim = agents.match(/`docs\/skills\/`[^\n]*（([^）]*)）/);
+if (!docsSkillsClaim) {
+  errors.push('AGENTS.md §12 未声明 docs/skills 审查页清单');
+} else if (!fs.existsSync(docsSkillsDir)) {
   errors.push('docs/skills/ 不存在（核心技能人读审查页）');
 } else {
-  for (const sp of SKILL_PAGES) {
-    if (!fs.existsSync(path.join(docsSkillsDir, sp))) errors.push(`docs/skills/${sp} 缺失（审查页声明）`);
+  const declared = (docsSkillsClaim[1].match(/[A-Za-z0-9][A-Za-z0-9-]*/g) || []);
+  if (declared.length === 0) errors.push('AGENTS.md §12 docs/skills 声明清单为空');
+  for (const sp of declared) {
+    if (!fs.existsSync(path.join(docsSkillsDir, `${sp}.md`))) errors.push(`docs/skills/${sp}.md 缺失（审查页声明）`);
+  }
+  // 反向核对：磁盘上多出未声明的页 → 警告（防补了页却忘在 AGENTS.md §12 登记）
+  const onDisk = fs.readdirSync(docsSkillsDir).filter(f => f.endsWith('.md')).map(f => f.slice(0, -3));
+  for (const f of onDisk) {
+    if (!declared.includes(f)) warnings.push(`docs/skills/${f}.md 存在但 AGENTS.md §12 未声明`);
   }
 }
 
