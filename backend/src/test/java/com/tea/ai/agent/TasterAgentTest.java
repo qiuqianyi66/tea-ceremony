@@ -125,4 +125,9 @@ class TasterAgentTest {
 
         verify(usageLogger).save(eq(7), eq(question("点评")), eq(response), anyInt());
     }
+
+    @Test
+    void systemPromptGuidesGenericAdviceWhenNoRecords() {
+        assertTrue(TasterAgent.SYSTEM_PROMPT.contains("无记录时给通用的品鉴入门建议"));
+    }
 }

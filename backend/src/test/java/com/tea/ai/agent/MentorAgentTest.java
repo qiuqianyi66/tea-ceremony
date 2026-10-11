@@ -122,4 +122,9 @@ class MentorAgentTest {
 
         verify(usageLogger).save(eq(7), eq(question("成长建议")), eq(response), anyInt());
     }
+
+    @Test
+    void systemPromptGuidesGenericAdviceWhenNoRecords() {
+        assertTrue(MentorAgent.SYSTEM_PROMPT.contains("无记录时给通用的茶路入门建议"));
+    }
 }
