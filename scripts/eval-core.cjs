@@ -131,6 +131,20 @@ function aggregate(runs, k = 3) {
   const judgeCoverage = totalJudge === 0 ? null : round(filledJudge / totalJudge)
   // ---- /F-2 ----
 
+  // ---- T07 RAG 命中率（PLAN-ai-capability T07）：sources 非空（有知识来源）的 run 占比 ----
+  // 口径：run.sources 为 number（来源数）且 > 0 计命中；null（透明代理/未命中）计未命中。
+  // 分路径：defaultPath=librarian+chat（默认体验路径），expertPath=专家路径——
+  // 避免 chat 透明代理 sources=null 拉低真实 RAG 路径的口径（与 F-2 programOnly 同哲学：口径分开算）。
+  const ragHit = (list) => {
+    const hit = list.filter((r) => typeof r.sources === 'number' && r.sources > 0).length
+    return list.length === 0 ? null : round(hit / list.length)
+  }
+  const ragHitRate = ragHit(runs)
+  const defRuns = runs.filter((r) => r.defaultPath)
+  const expRuns = runs.filter((r) => !r.defaultPath)
+  const ragHitRateByPath = { defaultPath: ragHit(defRuns), expertPath: ragHit(expRuns) }
+  // ---- /T07 ----
+
   // 效率成本（F-A3 四类指标之一）：从每条 run 的 tokens/latency 回填，空值跳过
   const withLatency = runs.filter((r) => typeof r.latencyMs === 'number')
   const withTokensIn = runs.filter((r) => typeof r.tokensIn === 'number')
@@ -153,6 +167,9 @@ function aggregate(runs, k = 3) {
     // F-2 口径标注：judge off 时 overall 只代表 program 考点，全量真实分须看 judgeCoverage > 0.9 的 run
     programOnly,
     judgeCoverage,
+    // T07 RAG 命中率（sources 非空占比；null=无观测计未命中）
+    ragHitRate,
+    ragHitRateByPath,
   }
 }
 

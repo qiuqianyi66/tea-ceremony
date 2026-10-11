@@ -273,6 +273,11 @@ function printSummary(report) {
   if (rc) {
     console.log(`路径分账: 默认路径（自动档即命中）${rc.defaultPath.cases} 条 → ${rc.defaultPath.score} | 专家路径（需主动选）${rc.expertPath.cases} 条 → ${rc.expertPath.score}`)
   }
+  // T07 RAG 命中率（PLAN-ai-capability）：sources 非空占比；分路径防 chat 透明代理拉低口径
+  if (typeof a.ragHitRate === 'number') {
+    const bp = a.ragHitRateByPath
+    console.log(`RAG 命中率: 全量 ${a.ragHitRate} | 默认路径 ${bp.defaultPath} | 专家路径 ${bp.expertPath}`)
+  }
   console.log(`system prompt: ${report.config.systemPrompt}`)
   console.log(`报告: ${path.relative(ROOT, outPath(report))}`)
   if (report.failures.length > 0) {

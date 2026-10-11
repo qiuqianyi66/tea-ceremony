@@ -12,20 +12,34 @@ import com.tea.culture.vo.TeawareItem;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 /**
  * 文化搜索服务（跨 8 表 ILIKE，各 limit 5；ADR-013：M5-S2 由 4 表扩至 8 表，知识面 +75%）。
  * 用 JdbcTemplate 只读检索（避免为单搜索建 8 个实体）；参数化查询防注入。
+ * Phase 2（T05b）：叠加 culture_chunks 向量分支（pgvector 余弦 top-k，HNSW 索引）——
+ * 语义结果只补足 ILIKE 未命中的空位（各类型仍 ≤5，契约不变）；
+ * EmbeddingModel 不可用/调用失败 → 自动降级纯 ILIKE（检索不中断，data-layer-product-prd 硬要求）。
  */
+@Slf4j
 @Service
 public class CultureSearchService {
 
-    private final JdbcTemplate jdbcTemplate;
+    /** 向量命中最小余弦相似度（同域茶文化，0.55 经验值；低于阈值视为噪声不注入）。 */
+    private static final double VECTOR_MIN_SIM = 0.55;
+    /** 向量分支每类型补缺上限（ILIKE 未命中时补位；各类型总量仍 ≤5）。 */
+    private static final int VECTOR_TOP_N = 3;
 
-    public CultureSearchService(JdbcTemplate jdbcTemplate) {
+    private final JdbcTemplate jdbcTemplate;
+    private final ObjectProvider<EmbeddingModel> embeddingModelProvider;
+
+    public CultureSearchService(JdbcTemplate jdbcTemplate, ObjectProvider<EmbeddingModel> embeddingModelProvider) {
         this.jdbcTemplate = jdbcTemplate;
+        this.embeddingModelProvider = embeddingModelProvider;
     }
 
     public CultureSearchResult search(String q) {
@@ -78,7 +92,96 @@ public class CultureSearchService {
                 (rs, n) -> new ProcessItem(rs.getInt("id"), rs.getString("name"), rs.getString("tea_category"), "process"),
                 likeArgs(List.of("name", "summary"), patterns));
 
+        // Phase 2（T05b）：向量分支补缺——语义结果只补 ILIKE 未命中的空位，各类型仍 ≤5
+        List<VectorHit> vec = vectorHits(q);
+        teas = mergeLists(teas, vec, "tea", h -> new TeaItem(h.id(), h.name(), "tea"), TeaItem::name);
+        people = mergeLists(people, vec, "person", h -> new PersonItem(h.id(), h.name(), h.extra1(), "person"), PersonItem::name);
+        regions = mergeLists(regions, vec, "region", h -> new RegionItem(h.id(), h.name(), h.extra1(), "region"), RegionItem::name);
+        poems = mergeLists(poems, vec, "poem", h -> new PoemItem(h.id(), h.name(), h.extra1(), "poem"), PoemItem::title);
+        teawares = mergeLists(teawares, vec, "teaware", h -> new TeawareItem(h.id(), h.name(), "teaware"), TeawareItem::name);
+        etiquettes = mergeLists(etiquettes, vec, "etiquette", h -> new EtiquetteItem(h.id(), h.name(), "etiquette"), EtiquetteItem::name);
+        processes = mergeLists(processes, vec, "process", h -> new ProcessItem(h.id(), h.name(), h.extra1(), "process"), ProcessItem::name);
+        // relation 不进向量分支（数据量小、语义价值低，ILIKE relation 字段已覆盖；RelationItem 多字段元数据不足）
+
         return new CultureSearchResult(teas, people, regions, poems, teawares, etiquettes, relations, processes);
+    }
+
+    // ---- Phase 2 向量检索分支（T05b）----
+
+    /** 向量命中（extra1 按类型解释：person→dynasty / region→province / poem→author / process→tea_category）。 */
+    private record VectorHit(String sourceType, int id, String name, String extra1) {
+    }
+
+    /**
+     * culture_chunks 语义检索（HNSW 余弦距离，< 阈值丢弃）。EmbeddingModel 不可用（无 key）或调用失败 →
+     * 返回空列表（调用方自然降级为纯 ILIKE，检索不中断）。relation 类型不在向量结果内。
+     */
+    private List<VectorHit> vectorHits(String q) {
+        EmbeddingModel model = embeddingModelProvider.getIfAvailable();
+        if (model == null) {
+            return List.of();
+        }
+        float[] qv;
+        try {
+            qv = model.embed(q);
+        } catch (Exception e) {
+            log.warn("vector search degraded to keyword-only: {}", e.getMessage());
+            return List.of();
+        }
+        try {
+            // pgvector 参数绑定：vector 类型须显式 ?::vector cast（float[] 无法直接绑定），与 upsert 同理
+            return jdbcTemplate.query("""
+                            SELECT c.source_type, c.source_id, c.metadata->>'sourceName' AS name,
+                                   p.dynasty AS extra1
+                            FROM culture_chunks c
+                            LEFT JOIN tea_people p ON c.source_type = 'person' AND p.id = c.source_id
+                            WHERE c.status = 'ready' AND (c.embedding <=> ?::vector) <= ?
+                            ORDER BY (c.embedding <=> ?::vector) ASC
+                            LIMIT ?
+                            """,
+                    (rs, n) -> new VectorHit(rs.getString("source_type"), rs.getInt("source_id"),
+                            rs.getString("name"), rs.getString("extra1")),
+                    vectorToPg(qv), 1 - VECTOR_MIN_SIM, vectorToPg(qv), VECTOR_TOP_N * 6);
+        } catch (Exception e) {
+            log.warn("vector search degraded to keyword-only: {}", e.getMessage());
+            return List.of();
+        }
+    }
+
+    /** float[] → pgvector 字面量 '[0.1,0.2,...]'（1024 维对齐 text-embedding-v3）。 */
+    private String vectorToPg(float[] v) {
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < v.length; i++) {
+            if (i > 0) {
+                sb.append(',');
+            }
+            sb.append(v[i]);
+        }
+        return sb.append(']').toString();
+    }
+
+    /** 向量结果补缺合并：ILIKE 结果优先，向量按 sim 序补空位（按 name 去重，总量保持 ≤5）。 */
+    private <T> List<T> mergeLists(List<T> ilike, List<VectorHit> vec, String type,
+                                   java.util.function.Function<VectorHit, T> mapper,
+                                   java.util.function.Function<T, String> nameOf) {
+        List<T> out = new ArrayList<>(ilike);
+        if (vec.isEmpty() || out.size() >= 5) {
+            return out;
+        }
+        for (VectorHit h : vec) {
+            if (!type.equals(h.sourceType())) {
+                continue;
+            }
+            if (out.size() >= 5) {
+                break;
+            }
+            T item = mapper.apply(h);
+            String n = nameOf.apply(item);
+            if (out.stream().noneMatch(x -> n.equals(nameOf.apply(x)))) {
+                out.add(item);
+            }
+        }
+        return out;
     }
 
     /** 中文连接词切分关键词 + 剥离尾部语气虚词；

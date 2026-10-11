@@ -273,3 +273,33 @@ test('aggregate：按类型分组 + 四维输出 + efficiency 回填', () => {
   assert.equal(a.dimensions.efficiency.avgTokensOut, 40)
   assert.equal(a.dimensions.efficiency.samples, 5)
 })
+
+test('T07 aggregate：ragHitRate 统计 sources 非空占比 + 分路径口径', () => {
+  const runs = [
+    { sources: 3, defaultPath: true, score: 1 },
+    { sources: null, defaultPath: true, score: 0.5 },
+    { sources: 1, defaultPath: false, score: 0.8 },
+    { sources: 0, defaultPath: false, score: 0.9 },
+  ]
+  const a = aggregate(runs)
+  assert.equal(a.ragHitRate, 0.5) // 2/4 sources 非空
+  assert.equal(a.ragHitRateByPath.defaultPath, 0.5) // 1/2（null 透明代理计未命中）
+  assert.equal(a.ragHitRateByPath.expertPath, 0.5) // 1/2（sources=0 计未命中）
+})
+
+test('T07 aggregate：无 sources 观测（全 null）时 ragHitRate=0 而非 null', () => {
+  const runs = [
+    { sources: null, defaultPath: true, score: 1 },
+    { sources: null, defaultPath: false, score: 1 },
+  ]
+  const a = aggregate(runs)
+  assert.equal(a.ragHitRate, 0)
+  assert.equal(a.ragHitRateByPath.defaultPath, 0)
+  assert.equal(a.ragHitRateByPath.expertPath, 0)
+})
+
+test('T07 aggregate：空 runs 时 ragHitRate=null（不适用）', () => {
+  const a = aggregate([])
+  assert.equal(a.ragHitRate, null)
+  assert.equal(a.ragHitRateByPath.defaultPath, null)
+})
