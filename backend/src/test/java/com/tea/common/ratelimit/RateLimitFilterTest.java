@@ -133,6 +133,26 @@ class RateLimitFilterTest {
         assertThat(resp2.getStatus()).isEqualTo(200);
     }
 
+    @Test
+    void staleWindowsAreEvictedAfterTwoWindowPeriods() throws Exception {
+        // 窗口 50ms；陈旧条目（队列空 + 空闲 > 2×窗口）在 key 再次访问时摘除
+        RateLimitFilter shortWindow = new RateLimitFilter(new ObjectMapper(), 2, 50, 1, 300_000);
+        shortWindow.doFilter(request("/api/v1/ai/chat", "1.1.1.1"), newResp(), new MockFilterChain());
+        shortWindow.doFilter(request("/api/v1/ai/chat", "2.2.2.2"), newResp(), new MockFilterChain());
+        assertThat(shortWindow.store).hasSize(2);
+
+        Thread.sleep(120); // > 2×50ms 窗口
+        // 两个 IP 再次访问：各自陈旧窗口被摘除并按全新窗口重建
+        shortWindow.doFilter(request("/api/v1/ai/chat", "1.1.1.1"), newResp(), new MockFilterChain());
+        shortWindow.doFilter(request("/api/v1/ai/chat", "2.2.2.2"), newResp(), new MockFilterChain());
+
+        // 仍只有 2 个活跃条目（无无界增长），且新窗口接受请求
+        assertThat(shortWindow.store).hasSize(2);
+        MockHttpServletResponse third = newResp();
+        shortWindow.doFilter(request("/api/v1/ai/chat", "1.1.1.1"), third, new MockFilterChain());
+        assertThat(third.getStatus()).isEqualTo(200); // 新窗口第 2 次仍放行
+    }
+
     private MockHttpServletRequest request(String uri, String ip) {
         MockHttpServletRequest req = new MockHttpServletRequest("POST", uri);
         req.setRemoteAddr(ip);

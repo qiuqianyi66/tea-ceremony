@@ -36,7 +36,14 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private final int loginMax;
     private final long loginWindowMs;
 
-    private final ConcurrentHashMap<String, ArrayDeque<Long>> store = new ConcurrentHashMap<>();
+    /** 窗口条目：时间戳队列 + 最后活跃时间（陈旧条目清理依据）。 */
+    static final class Window {
+        final ArrayDeque<Long> stamps = new ArrayDeque<>();
+        long lastActiveAt;
+    }
+
+    /** 包级可见供测试观测；陈旧窗口在 key 再次访问时顺带清理（防 store 无界增长）。 */
+    final ConcurrentHashMap<String, Window> store = new ConcurrentHashMap<>();
 
     public RateLimitFilter(
             ObjectMapper objectMapper,
@@ -61,15 +68,31 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
         long now = System.currentTimeMillis();
         String key = rule.name + ":" + clientIp(request);
-        ArrayDeque<Long> window = store.computeIfAbsent(key, k -> new ArrayDeque<>());
+        Window window = store.computeIfAbsent(key, k -> new Window());
+        // 第一步：在拿到的窗口上修剪过期时间戳；队列空且距最后活跃超过 2 倍窗口 → 陈旧条目摘除，
+        // 否则换 IP / 匿名访问会让 store 无界增长（原实现永不清理）。
+        synchronized (window) {
+            while (!window.stamps.isEmpty() && now - window.stamps.peekFirst() > rule.windowMs) {
+                window.stamps.pollFirst();
+            }
+            if (window.stamps.isEmpty() && window.lastActiveAt > 0
+                    && now - window.lastActiveAt > rule.windowMs * 2) {
+                store.remove(key, window);
+            }
+        }
+        // 第二步：空窗口（全新 key 或刚摘除的陈旧条目）→ 放全新窗口占槽（putIfAbsent 防并发竞态；
+        // 不能放旧窗口本身——它刚被摘除，放回去等于没清理）。
+        if (window.stamps.isEmpty()) {
+            Window fresh = new Window();
+            Window winner = store.putIfAbsent(key, fresh);
+            window = winner != null ? winner : fresh;
+        }
         boolean allowed;
         synchronized (window) {
-            while (!window.isEmpty() && now - window.peekFirst() > rule.windowMs) {
-                window.pollFirst();
-            }
-            allowed = window.size() < rule.max;
+            allowed = window.stamps.size() < rule.max;
             if (allowed) {
-                window.addLast(now);
+                window.stamps.addLast(now);
+                window.lastActiveAt = now;
             }
         }
         if (!allowed) {
