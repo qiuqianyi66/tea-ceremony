@@ -1,0 +1,20 @@
+# 评测/测试专用 profile：经 OpenAI 兼容网关（yg-gateway）调用模型，不触碰生产 DashScope 主路径。
+# 激活方式：SPRING_PROFILES_ACTIVE=gateway + 环境变量（见 docker-compose.eval.yml）。
+# 设计要点：
+#  - spring.ai.model.chat=openai：openai 成为默认 ChatModel（dashscope 在无 key 时不装配，天然无 bean 冲突）；
+#  - 生产不激活本 profile，openai api-key 未配置即不装配，dashscope 承重墙不变；
+#  - 网关为 passthrough 模式：tea 的 system prompt 原样透传（不被网关 persona 替换）。
+spring:
+  ai:
+    model:
+      chat: openai
+    openai:
+      # 根地址即可：Spring AI OpenAiApi 自动追加 /v1/chat/completions（带 /v1 会拼成 /v1/v1/ 404/连接失败）
+      base-url: ${AI_GATEWAY_BASE_URL:http://127.0.0.1:7864}
+      api-key: ${AI_GATEWAY_API_KEY:}
+      chat:
+        options:
+          model: ${AI_GATEWAY_MODEL:cn:deepseek-v4.1-flash}
+          # DeepSeek 系推理模型默认思考：thinking tokens 计入 max_tokens，过小会吞掉 content（实测 512 起完整输出）
+          max-tokens: 1024
+          temperature: 0.7
