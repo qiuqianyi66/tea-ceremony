@@ -9,3 +9,8 @@ spring:
 logging:
   level:
     com.tea: DEBUG
+
+# 2026-10-12 安全审计 H2：本地开发 JWT 密钥兜底（仅 dev profile；主配置 fail-closed 无兜底）
+tea:
+  jwt:
+    secret: ${JWT_SECRET:tea-dev-secret-key-please-change-in-production-0123456789}

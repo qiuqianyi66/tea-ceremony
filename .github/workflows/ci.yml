@@ -210,6 +210,9 @@ jobs:
       - name: Run Maven tests
         working-directory: backend
         # 全量测试（单测 + 集成），Testcontainers 用 runner 自带 Docker 起 postgres:16
+        # 2026-10-12 安全审计 H2：主配置 JWT_SECRET 已 fail-closed（无兜底默认），CI 显式注入测试密钥
+        env:
+          JWT_SECRET: ci-test-secret-0123456789-0123456789-0123456789
         run: mvn -q test
 
   migration-test:
