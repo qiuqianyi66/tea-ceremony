@@ -26,6 +26,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class RateLimitFilter extends OncePerRequestFilter {
 
     private static final String AI_PREFIX = "/api/v1/ai/";
+    /** 2026-10-12 安全审计 H4：文化搜索公开可调且触发付费 embedding（CultureSearchService.vectorHits），纳入同档限流。 */
+    private static final String CULTURE_PREFIX = "/api/v1/culture/";
     private static final String LOGIN_PATH = "/api/v1/auth/login";
 
     private final ObjectMapper objectMapper;
@@ -78,7 +80,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
     }
 
     private LimitRule match(String uri) {
-        if (uri.startsWith(AI_PREFIX)) {
+        if (uri.startsWith(AI_PREFIX) || uri.startsWith(CULTURE_PREFIX)) {
             return new LimitRule("ai", aiMax, aiWindowMs);
         }
         if (LOGIN_PATH.equals(uri)) {
@@ -87,10 +89,15 @@ public class RateLimitFilter extends OncePerRequestFilter {
         return null;
     }
 
+    /**
+     * 客户端 IP。2026-10-12 安全审计 H3：nginx 用 $proxy_add_x_forwarded_for 追加真实 remote_addr，
+     * 故取 XFF 末段为真实客户端；取首段会被客户端自带 X-Forwarded-For: 任意值 逐请求轮换，直接绕过限流。
+     */
     private String clientIp(HttpServletRequest request) {
         String forwarded = request.getHeader("X-Forwarded-For");
         if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim();
+            String[] parts = forwarded.split(",");
+            return parts[parts.length - 1].trim();
         }
         return request.getRemoteAddr();
     }

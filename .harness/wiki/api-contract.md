@@ -129,6 +129,15 @@ description: tea 接口协议——现有端点、统一约定（前缀/鉴权/�
 
 > item 字段：tea `{id,name,type}`；person `{id,name,dynasty,type}`；region `{id,name,province,type}`；poem `{id,title,author,type}`；teaware `{id,name,type}`；etiquette `{id,name,type}`；relation `{id,relation,source,target,type}`；process `{id,name,teaCategory,type}`。culture 其余详情端点留后续 culture 切片。
 
+### 文化回填管理 `/api/v1/admin/culture`（管理端，仅运维；2026-10-12 安全审计 H1 收紧）
+
+| 方法 | 路径 | 参数 | 成功响应 | 错误 |
+|---|---|---|---|---|
+| POST | `/api/v1/admin/culture/chunks/backfill` | `embed=true/false`（query） | `ApiResponse<BackfillResult>`：`{perType,total,embedded,pending,embedStatus}` | 401（无/错 `X-Admin-Token` 头；未配置 `ADMIN_API_TOKEN` 时 fail-closed） |
+
+- 鉴权：**不接受用户 JWT**。仅认独立令牌头 `X-Admin-Token: <ADMIN_API_TOKEN>`（环境变量注入，常量时间比较）；未配置令牌时所有请求 401。
+- 用途：一次性把八张文化表回填为 `culture_chunks` chunk；`embed=true` 会调用 DashScope 付费 embedding，仅运维手动触发。
+
 ### 茶灵 AI `/api/ai`（公开，旧 FastAPI，仅维护；LLM 不可用时 502，前端降级规则回复）
 
 | 方法 | 路径 | 请求体 | 成功响应 | 错误 |

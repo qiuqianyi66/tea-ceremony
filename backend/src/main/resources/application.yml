@@ -45,9 +45,14 @@ server:
 
 tea:
   jwt:
-    # dev 默认值仅本地开发；生产必须通过环境变量 JWT_SECRET 注入 ≥32 字节密钥
-    secret: ${JWT_SECRET:tea-dev-secret-key-please-change-in-production-0123456789}
+    # 2026-10-12 安全审计 H2：主配置不再带公开兜底密钥——未注入 JWT_SECRET 时启动即失败
+    # （JwtService 校验 <32 字节抛异常），防止裸 java -jar 部署误用公开已知密钥导致 JWT 可伪造。
+    # dev  profile 的本地开发兜底见 application-dev.yml；docker-compose 已用 ${JWT_SECRET:?} 强制注入。
+    secret: ${JWT_SECRET:}
     expiration-minutes: ${JWT_EXPIRATION_MINUTES:1440}
+  # 2026-10-12 安全审计 H1：管理端点（/api/v1/admin/**）独立访问令牌；未配置时管理端点 fail-closed（401）
+  admin:
+    token: ${ADMIN_API_TOKEN:}
   ratelimit:
     # 批 3 安全审计：AI/登录公开端点限流（滑动窗口，进程内存；环境变量沿用旧栈 RATE_LIMIT_* 名称）
     ai-max: ${RATE_LIMIT_AI_MAX:10}

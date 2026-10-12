@@ -29,6 +29,7 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final RateLimitFilter rateLimitFilter;
+    private final AdminTokenFilter adminTokenFilter;
     private final ObjectMapper objectMapper;
 
     @Bean
@@ -59,6 +60,9 @@ public class SecurityConfig {
                 // 批 3 安全审计：AI/登录公开端点限流。先注册 rateLimit 再注册 jwt，
                 // 注册序决定执行序（rateLimit 最先拦截，防未认证面被压测）
                 .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
+                // 2026-10-12 安全审计 H1：/api/v1/admin/** 不再接受用户 JWT，仅认独立管理令牌；
+                // 执行序 rateLimit → adminToken → jwt（同锚点逐次插入，后插紧贴锚点）
+                .addFilterBefore(adminTokenFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }

@@ -47,6 +47,8 @@ class AdminCultureBackfillIntegrationTest {
         registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
         registry.add("spring.datasource.username", POSTGRES::getUsername);
         registry.add("spring.datasource.password", POSTGRES::getPassword);
+        // 2026-10-12 安全审计 H1：管理端点改认独立访问令牌
+        registry.add("tea.admin.token", () -> "test-admin-token-123456");
     }
 
     @Autowired
@@ -81,9 +83,17 @@ class AdminCultureBackfillIntegrationTest {
     }
 
     private ResponseEntity<String> backfill(String token, boolean embed) {
+        return backfill(token, embed, "test-admin-token-123456");
+    }
+
+    /** @param adminToken 传 null 则不发管理令牌头 */
+    private ResponseEntity<String> backfill(String token, boolean embed, String adminToken) {
         HttpHeaders headers = new HttpHeaders();
         if (token != null) {
             headers.setBearerAuth(token);
+        }
+        if (adminToken != null) {
+            headers.set("X-Admin-Token", adminToken);
         }
         headers.setContentType(MediaType.APPLICATION_JSON);
         return rest.exchange("/api/v1/admin/culture/chunks/backfill?embed=" + embed,
@@ -92,9 +102,24 @@ class AdminCultureBackfillIntegrationTest {
 
     @Test
     void backfillRequiresAuth() {
-        // 管理端点不在 permitAll 白名单：匿名 401（SecurityConfig anyRequest().authenticated()）
+        // 2026-10-12 安全审计 H1：管理端点不接受匿名请求 → 401（AdminTokenFilter fail-closed）
         ResponseEntity<String> res = backfill(null, false);
         assertThat(res.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    /**
+     * 2026-10-12 安全审计 H1 回归：开放注册下，普通登录用户的 JWT 不再能调用管理端点——
+     * 修复前此用例注册普通用户后调用返回 200（任意人可触发付费 embedding），修复后 401。
+     */
+    @Test
+    void backfillRejectsNormalUserJwtWithoutAdminToken() {
+        String token = registerAndGetToken();
+        ResponseEntity<String> res = backfill(token, false, null);
+        assertThat(res.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+
+        // 错误管理令牌同样拒绝
+        ResponseEntity<String> wrong = backfill(token, false, "wrong-token");
+        assertThat(wrong.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
 
     @Test
