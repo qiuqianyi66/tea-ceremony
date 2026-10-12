@@ -216,6 +216,9 @@ async function judgeCase(opt, caseDef, result) {
   const scores = {}
   for (const p of caseDef.points) {
     if (p.check !== 'judge') continue
+    // 限流对齐（2026-10-11 实测）：后端 RateLimitFilter 按 IP 10/min，评委调用也必须间隔，
+    // 否则 chat + 多个评委连续发出 → 429 整条 0 分（T08 首跑 50 条全 429/502）。
+    if (!opt.dryRun) await new Promise((r) => setTimeout(r, opt.delayMs))
     const judgePrompt = `你是「一盏茶」AI 评测的独立评委。只判断下面这一个考点是否满足。
 考点：${p.name}
 用户输入：${caseDef.input}
