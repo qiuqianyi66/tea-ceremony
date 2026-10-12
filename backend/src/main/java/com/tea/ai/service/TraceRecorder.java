@@ -8,6 +8,7 @@ import com.tea.ai.entity.AiEvalTrace;
 import com.tea.ai.repository.AiEvalTraceRepository;
 import com.tea.ai.vo.AiChatVo;
 import com.tea.common.exception.BadGatewayException;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ public class TraceRecorder {
 
     private final AiEvalTraceRepository repository;
     private final ObjectMapper objectMapper;
+    private final MeterRegistry meterRegistry;
 
     /** 入口埋点：input（原始问句 + 意图提示）+ context（历史锚定条数）+ plan（路由决策 + 复杂度档位）。不落库，等 complete/fail 统一保存。 */
     public AiEvalTrace begin(Integer sessionId, AgentType type, AiChatRequest req, AiChatRequest anchored, ComplexityLevel level) {
@@ -67,12 +69,13 @@ public class TraceRecorder {
         record(trace);
     }
 
-    /** 旁路保存：失败仅 warn。 */
+    /** 旁路保存：失败仅 warn + 计数（PR #43 教训：旁路埋点必须对落库成功率有观测，防静默丢数据）。 */
     public void record(AiEvalTrace trace) {
         try {
             repository.save(trace);
         } catch (Exception e) {
             log.warn("save eval trace failed: {}", e.getMessage());
+            meterRegistry.counter("tea.ai.trace.save.failed").increment();
         }
     }
 

@@ -3,6 +3,7 @@ package com.tea.ai.service;
 import com.tea.ai.dto.AiChatRequest;
 import com.tea.ai.entity.AiUsageLog;
 import com.tea.ai.repository.AiUsageLogRepository;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.metadata.Usage;
 import org.springframework.ai.chat.model.ChatResponse;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Component;
 public class AiUsageLogger {
 
     private final AiUsageLogRepository usageLogRepository;
+    private final MeterRegistry meterRegistry;
 
     public void save(Integer userId, AiChatRequest req, ChatResponse response, int latency) {
         AiUsageLog entry = new AiUsageLog();
@@ -29,6 +31,12 @@ public class AiUsageLogger {
             entry.setTokensIn(usage.getPromptTokens());
             entry.setTokensOut(usage.getCompletionTokens());
         }
-        usageLogRepository.save(entry);
+        try {
+            usageLogRepository.save(entry);
+        } catch (Exception e) {
+            // 落库失败计数后原样抛出：调用方（AiChatService/BaseExpertAgent）已有 try/catch 降级语义，行为不变
+            meterRegistry.counter("tea.ai.usage.save.failed").increment();
+            throw e;
+        }
     }
 }

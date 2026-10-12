@@ -6,6 +6,7 @@ import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.embedding.EmbeddingModel;
@@ -55,6 +56,9 @@ class CultureSearchVectorBranchIntegrationTest {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private MeterRegistry meterRegistry;
 
     @MockBean
     private EmbeddingModel embeddingModel;
@@ -130,6 +134,9 @@ class CultureSearchVectorBranchIntegrationTest {
         ResponseEntity<String> keyword = rest.getForEntity("/api/v1/culture/search?q=龙井", String.class);
         assertThat(keyword.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(objectMapper.readTree(keyword.getBody()).path("data").path("teas").size()).isGreaterThan(0);
+        // ragHitRate 观测：embedding 失败必须计入降级计数
+        assertThat(meterRegistry.counter("tea.culture.search.vector.degraded", "reason", "embed_failed").count())
+                .isPositive();
     }
 
     @Test
