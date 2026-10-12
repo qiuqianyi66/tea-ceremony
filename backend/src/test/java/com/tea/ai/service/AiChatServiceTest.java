@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -251,12 +252,15 @@ class AiChatServiceTest {
         AiChatMessage oldAssistant = new AiChatMessage();
         oldAssistant.setRole("assistant");
         oldAssistant.setContent("上次答的");
-        when(memoryService.anchorHistory(1, 3)).thenReturn(List.of(oldUser, oldAssistant));
+        when(memoryService.history(eq(3), eq(20))).thenReturn(List.of(oldUser, oldAssistant));
 
         AiChatVo vo = service.chat(1, r);
 
         assertEquals("锚定回答", vo.content());
         assertEquals(3, vo.sessionId());
+        // 归属校验只跑一次（anchor 直接读消息，不再二次 requireSession）
+        verify(memoryService, times(1)).requireSession(1, 3);
+        verify(memoryService, never()).anchorHistory(any(), any());
         verify(memoryService).appendMessage(3, "user", "继续", "chat", null);
         verify(memoryService).appendMessage(3, "assistant", "锚定回答", "chat", null);
         ArgumentCaptor<List<Message>> captor = ArgumentCaptor.forClass(List.class);
@@ -274,7 +278,7 @@ class AiChatServiceTest {
         AiChatRequest r = new AiChatRequest(List.of(new ChatMessageDto("user", "问")), "chat", 3);
         when(orchestrator.routeToAgent(r)).thenReturn(AgentType.CHAT);
         when(memoryService.requireSession(1, 3)).thenReturn(new AiChatSession());
-        when(memoryService.anchorHistory(1, 3)).thenReturn(List.of());
+        when(memoryService.history(eq(3), eq(20))).thenReturn(List.of());
 
         assertThrows(BadGatewayException.class, () -> service.chat(1, r));
 
@@ -350,7 +354,7 @@ class AiChatServiceTest {
             m.setContent("历史消息" + i);
             history.add(m);
         }
-        when(memoryService.anchorHistory(1, 3)).thenReturn(history);
+        when(memoryService.history(eq(3), eq(20))).thenReturn(history);
 
         AiChatVo vo = service.chat(1, r);
 
