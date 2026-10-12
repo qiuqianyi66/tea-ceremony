@@ -14,7 +14,7 @@ public record RegisterRequest(
         String displayName,
 
         @NotBlank(message = "密码不能为空")
-        @Size(min = 6, max = 72, message = "密码长度 6-72")
+        @Size(min = 8, max = 72, message = "密码长度 8-72")
         String password
 ) {
 }

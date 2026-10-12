@@ -25,6 +25,9 @@ cd C:\tea
 Copy-Item .env.example .env
 #    POSTGRES_PASSWORD / DB_PASSWORD / JWT_SECRET 必须改成强随机值
 #    （JWT_SECRET 生成：python -c "import secrets;print(secrets.token_hex(32))"）
+#    ADMIN_API_TOKEN 可选：填后启用管理端点（/chunks/backfill 等）令牌鉴权；未填 fail-closed 401。
+#    L7 运行手册：ADMIN_API_TOKEN 建议每 90 天轮换一次（改 .env 后 docker compose up -d backend 重启生效，
+#    旧 token 立即失效；轮换期间无管理操作窗口即可，无需停机）。
 #    AI_DASHSCOPE_API_KEY 可选：填 DashScope key 启用 AI 品鉴对话；不填默认 disabled，
 #    后端 /api/ai/* 返回 502 → 前端自动降级规则引擎（T11 降级链，production 可无 key 部署）
 

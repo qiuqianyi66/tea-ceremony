@@ -1,0 +1,17 @@
+{
+  "total": 1568,
+  "filtered": {
+    "judge": 897,
+    "short": 203,
+    "no_question": 0
+  },
+  "by_agent": {
+    "advisor": 8,
+    "taster": 9,
+    "brewer": 9,
+    "mentor": 8,
+    "chat": 11,
+    "librarian": 9
+  },
+  "corpus": 54
+}
