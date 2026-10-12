@@ -112,11 +112,13 @@ class GardenEnergyServiceTest {
     @Test
     void collectAccumulatesPendingAndAdvancesPhase() {
         when(eventRepository.findByUserIdAndCollectedAtIsNull(1))
-                .thenReturn(List.of(event(80, false), event(50, false)), List.of());
-        when(eventRepository.findByUserIdAndCollectedAtIsNotNull(1))
-                .thenReturn(List.of(event(80, true), event(50, true)));
+                .thenReturn(List.of(event(80, false), event(50, false)));
         when(plantRepository.findByUserIdOrderByIdAsc(1))
-                .thenReturn(List.of(plant(0, "planted")), List.of(plant(130, "growing")));
+                .thenReturn(List.of(plant(0, "planted")));
+        // summary() 走 DB 侧聚合：收集后未收 0、已收 130、总能量 130
+        when(eventRepository.sumPendingAmount(1)).thenReturn(0);
+        when(eventRepository.sumCollectedAmount(1)).thenReturn(130);
+        when(plantRepository.sumEnergy(1)).thenReturn(130);
 
         GardenEnergySummaryVo vo = service.collect(1);
 
@@ -137,7 +139,9 @@ class GardenEnergyServiceTest {
     void collectNeverDowngradesPhase() {
         when(eventRepository.findByUserIdAndCollectedAtIsNull(1)).thenReturn(List.of(event(50, false)));
         when(plantRepository.findByUserIdOrderByIdAsc(1)).thenReturn(List.of(plant(350, "blooming")));
-        when(eventRepository.findByUserIdAndCollectedAtIsNotNull(1)).thenReturn(List.of());
+        when(eventRepository.sumPendingAmount(1)).thenReturn(0);
+        when(eventRepository.sumCollectedAmount(1)).thenReturn(0);
+        when(plantRepository.sumEnergy(1)).thenReturn(400);
 
         service.collect(1);
 
@@ -149,10 +153,12 @@ class GardenEnergyServiceTest {
 
     @Test
     void collectCreatesDefaultCarrierPlantWhenNone() {
-        when(eventRepository.findByUserIdAndCollectedAtIsNull(1)).thenReturn(List.of(event(30, false)), List.of());
-        when(eventRepository.findByUserIdAndCollectedAtIsNotNull(1)).thenReturn(List.of(event(30, true)));
+        when(eventRepository.findByUserIdAndCollectedAtIsNull(1)).thenReturn(List.of(event(30, false)));
         when(plantRepository.findByUserIdOrderByIdAsc(1)).thenReturn(List.of(), List.of(plant(30, "planted")));
         when(plantRepository.save(any(GardenPlant.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(eventRepository.sumPendingAmount(1)).thenReturn(0);
+        when(eventRepository.sumCollectedAmount(1)).thenReturn(30);
+        when(plantRepository.sumEnergy(1)).thenReturn(30);
 
         service.collect(1);
 
@@ -167,8 +173,9 @@ class GardenEnergyServiceTest {
     @Test
     void collectWithNothingPendingKeepsState() {
         when(eventRepository.findByUserIdAndCollectedAtIsNull(1)).thenReturn(List.of());
-        when(plantRepository.findByUserIdOrderByIdAsc(1)).thenReturn(List.of(plant(100, "growing")));
-        when(eventRepository.findByUserIdAndCollectedAtIsNotNull(1)).thenReturn(List.of(event(100, true)));
+        when(eventRepository.sumPendingAmount(1)).thenReturn(0);
+        when(eventRepository.sumCollectedAmount(1)).thenReturn(0);
+        when(plantRepository.sumEnergy(1)).thenReturn(100);
 
         GardenEnergySummaryVo vo = service.collect(1);
 
@@ -178,14 +185,13 @@ class GardenEnergyServiceTest {
         assertThat(vo.phase()).isEqualTo("growing");
     }
 
-    // ---- summary：聚合 ----
+    // ---- summary：DB 侧聚合 ----
 
     @Test
     void summaryAggregatesPendingCollectedAndPhase() {
-        when(eventRepository.findByUserIdAndCollectedAtIsNull(1))
-                .thenReturn(List.of(event(30, false), event(20, false)));
-        when(eventRepository.findByUserIdAndCollectedAtIsNotNull(1)).thenReturn(List.of(event(10, true)));
-        when(plantRepository.findByUserIdOrderByIdAsc(1)).thenReturn(List.of(plant(100, "growing")));
+        when(eventRepository.sumPendingAmount(1)).thenReturn(50);
+        when(eventRepository.sumCollectedAmount(1)).thenReturn(10);
+        when(plantRepository.sumEnergy(1)).thenReturn(100);
 
         GardenEnergySummaryVo vo = service.summary(1);
 
@@ -197,5 +203,9 @@ class GardenEnergyServiceTest {
                 .containsEntry("growing", 100)
                 .containsEntry("blooming", 300)
                 .containsEntry("harvested", 600);
+        // summary 不再拉全表行：列表加载方法零调用
+        verify(eventRepository, never()).findByUserIdAndCollectedAtIsNull(any());
+        verify(eventRepository, never()).findByUserIdAndCollectedAtIsNotNull(any());
+        verify(plantRepository, never()).findByUserIdOrderByIdAsc(any());
     }
 }

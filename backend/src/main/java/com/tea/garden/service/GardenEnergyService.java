@@ -56,12 +56,10 @@ public class GardenEnergyService {
 
     @Transactional(readOnly = true)
     public GardenEnergySummaryVo summary(Integer userId) {
-        int pendingAmount = eventRepository.findByUserIdAndCollectedAtIsNull(userId).stream()
-                .mapToInt(GardenEnergyEvent::getAmount).sum();
-        int collectedAmount = eventRepository.findByUserIdAndCollectedAtIsNotNull(userId).stream()
-                .mapToInt(GardenEnergyEvent::getAmount).sum();
-        int totalEnergy = plantRepository.findByUserIdOrderByIdAsc(userId).stream()
-                .mapToInt(GardenPlant::getEnergy).sum();
+        // DB 侧 SUM：不拉全量事件/植物行到 JVM 再求和（事件账本随品鉴次数单调增长）
+        int pendingAmount = eventRepository.sumPendingAmount(userId);
+        int collectedAmount = eventRepository.sumCollectedAmount(userId);
+        int totalEnergy = plantRepository.sumEnergy(userId);
         return new GardenEnergySummaryVo(
                 pendingAmount, collectedAmount, totalEnergy,
                 props.phaseFor(totalEnergy), props.getPhases());

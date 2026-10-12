@@ -12,6 +12,7 @@ import com.tea.culture.vo.TeawareItem;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.beans.factory.ObjectProvider;
@@ -36,10 +37,14 @@ public class CultureSearchService {
 
     private final JdbcTemplate jdbcTemplate;
     private final ObjectProvider<EmbeddingModel> embeddingModelProvider;
+    private final MeterRegistry meterRegistry;
 
-    public CultureSearchService(JdbcTemplate jdbcTemplate, ObjectProvider<EmbeddingModel> embeddingModelProvider) {
+    public CultureSearchService(JdbcTemplate jdbcTemplate,
+                                ObjectProvider<EmbeddingModel> embeddingModelProvider,
+                                MeterRegistry meterRegistry) {
         this.jdbcTemplate = jdbcTemplate;
         this.embeddingModelProvider = embeddingModelProvider;
+        this.meterRegistry = meterRegistry;
     }
 
     public CultureSearchResult search(String q) {
@@ -119,6 +124,8 @@ public class CultureSearchService {
     private List<VectorHit> vectorHits(String q) {
         EmbeddingModel model = embeddingModelProvider.getIfAvailable();
         if (model == null) {
+            // ragHitRate 观测：无 EmbeddingModel bean（无 key）→ 向量通道整体不可用
+            meterRegistry.counter("tea.culture.search.vector.degraded", "reason", "no_model").increment();
             return List.of();
         }
         float[] qv;
@@ -126,11 +133,13 @@ public class CultureSearchService {
             qv = model.embed(q);
         } catch (Exception e) {
             log.warn("vector search degraded to keyword-only: {}", e.getMessage());
+            meterRegistry.counter("tea.culture.search.vector.degraded", "reason", "embed_failed").increment();
             return List.of();
         }
+        meterRegistry.counter("tea.culture.search.vector.attempted").increment();
         try {
             // pgvector 参数绑定：vector 类型须显式 ?::vector cast（float[] 无法直接绑定），与 upsert 同理
-            return jdbcTemplate.query("""
+            List<VectorHit> hits = jdbcTemplate.query("""
                             SELECT c.source_type, c.source_id, c.metadata->>'sourceName' AS name,
                                    p.dynasty AS extra1
                             FROM culture_chunks c
@@ -142,8 +151,11 @@ public class CultureSearchService {
                     (rs, n) -> new VectorHit(rs.getString("source_type"), rs.getInt("source_id"),
                             rs.getString("name"), rs.getString("extra1")),
                     vectorToPg(qv), 1 - VECTOR_MIN_SIM, vectorToPg(qv), VECTOR_TOP_N * 6);
+            meterRegistry.counter("tea.culture.search.vector.rows").increment(hits.size());
+            return hits;
         } catch (Exception e) {
             log.warn("vector search degraded to keyword-only: {}", e.getMessage());
+            meterRegistry.counter("tea.culture.search.vector.degraded", "reason", "query_failed").increment();
             return List.of();
         }
     }

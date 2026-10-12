@@ -41,6 +41,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class AiChatService {
 
+    /** 多轮锚定上限（与 ChatMemoryService.ANCHOR_LIMIT 一致）。 */
+    private static final int ANCHOR_LIMIT = 20;
+
     private final ChatClient chatClient;
     private final AiUsageLogger usageLogger;
     private final AgentOrchestrator orchestrator;
@@ -117,12 +120,12 @@ public class AiChatService {
         }
     }
 
-    /** F-6 多轮锚定：登录 + 有 sessionId → 读历史（归属已校验）转 ChatMessageDto 前插；其余原样返回。COMPLEX → 只取最后 5 条（上下文压缩，T09）。 */
+    /** F-6 多轮锚定：登录 + 有 sessionId → 读历史（归属已在 chat() 入口 requireSession 校验，这里直接取消息，免二次查库）转 ChatMessageDto 前插；其余原样返回。COMPLEX → 只取最后 5 条（上下文压缩，T09）。 */
     private AiChatRequest anchor(Integer userId, AiChatRequest req, ComplexityLevel level) {
         if (userId == null || req.sessionId() == null) {
             return req;
         }
-        List<AiChatMessage> history = memoryService.anchorHistory(userId, req.sessionId());
+        List<AiChatMessage> history = memoryService.history(req.sessionId(), ANCHOR_LIMIT);
         if (history == null || history.isEmpty()) {
             return req;
         }
