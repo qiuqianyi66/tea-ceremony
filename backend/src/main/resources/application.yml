@@ -1,10 +1,25 @@
 spring:
   application:
     name: tea-backend
+  # 排除 openai starter 的 embedding/音频/图像/审核自动配置（2026-10-12 评测通道引入 openai starter 后实测）：
+  # ①openAiEmbeddingModel 与 dashscope 双装配 → @MockBean/ObjectProvider 歧义；
+  # ②audio/image/moderation 工厂方法无 key 即启动失败（测试环境无 openai key 全炸）。
+  # 评测只需 openai chat（网关仅 /v1/chat/completions），其余模态一律排除，零损失。
+  autoconfigure:
+    exclude:
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiEmbeddingAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiAudioSpeechAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiAudioTranscriptionAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiImageAutoConfiguration
+      - org.springframework.ai.model.openai.autoconfigure.OpenAiModerationAutoConfiguration
   # T11 AI（DashScope）：默认占位 disabled，防 starter 无 key 自动配置启动失败
   # （DashScopeAgentAutoConfiguration 强制 key）；AiChatService 检测 disabled/空 → 502 触发前端降级；
   # 生产经环境变量 AI_DASHSCOPE_API_KEY 注入真实 key（官方约定变量名）
   ai:
+    model:
+      # 默认 ChatModel 固定 dashscope（@Primary），消除 openai starter 引入后的双 ChatModel 歧义：
+      # 生产/测试语义不变；评测经 gateway profile 覆盖为 openai（application-gateway.yml）
+      chat: dashscope
     dashscope:
       api-key: ${AI_DASHSCOPE_API_KEY:disabled}
       # 百炼工作空间专属 endpoint（sk-ws- key 必须配专属 base-url；根地址即可，completionsPath 自带 /api/v1）

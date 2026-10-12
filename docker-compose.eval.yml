@@ -1,0 +1,11 @@
+# 评测专用 compose override（2026-10-12）：仅覆盖 backend 环境变量激活 gateway profile，指向本机 yg-gateway 评测实例。
+# 用法：docker compose -f docker-compose.yml -f docker-compose.eval.yml up -d --build backend
+# 生产不使用本文件；评估结束可停掉：docker compose -f docker-compose.yml -f docker-compose.eval.yml down backend
+services:
+  backend:
+    environment:
+      SPRING_PROFILES_ACTIVE: gateway
+      # 容器内访问宿主评测网关：Docker Desktop 的 host.docker.internal 解析到宿主 127.0.0.1
+      AI_GATEWAY_BASE_URL: ${AI_GATEWAY_BASE_URL:-http://host.docker.internal:7864}
+      AI_GATEWAY_API_KEY: ${AI_GATEWAY_API_KEY:?AI_GATEWAY_API_KEY must be set}
+      AI_GATEWAY_MODEL: ${AI_GATEWAY_MODEL:-cn:deepseek-v4.1-flash}

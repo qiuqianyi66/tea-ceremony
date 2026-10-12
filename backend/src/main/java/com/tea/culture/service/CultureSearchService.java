@@ -122,7 +122,10 @@ public class CultureSearchService {
      * 返回空列表（调用方自然降级为纯 ILIKE，检索不中断）。relation 类型不在向量结果内。
      */
     private List<VectorHit> vectorHits(String q) {
-        EmbeddingModel model = embeddingModelProvider.getIfAvailable();
+        // getIfUnique 而非 getIfAvailable：唯一时取（生产单 EmbeddingModel 行为不变），
+        // 多候选（评测 gateway profile 下 dashscope+openai 双装配）时返回 null → no_model 降级纯 ILIKE，
+        // 避免 NoUniqueBeanDefinitionException 把检索打成 500（2026-10-12 评测通道实测）。
+        EmbeddingModel model = embeddingModelProvider.getIfUnique();
         if (model == null) {
             // ragHitRate 观测：无 EmbeddingModel bean（无 key）→ 向量通道整体不可用
             meterRegistry.counter("tea.culture.search.vector.degraded", "reason", "no_model").increment();

@@ -108,6 +108,14 @@
             <artifactId>spring-ai-starter-mcp-server-webmvc</artifactId>
             <version>1.1.2</version>
         </dependency>
+        <!-- OpenAI 兼容接入（2026-10-12 评测通道）：yg-gateway（用户自建 CodeBuddy 账号池网关）暴露 OpenAI 协议端点，
+            评测/测试时以 gateway profile 激活（spring.ai.openai.* + spring.ai.model.chat=openai），
+            生产默认不配置 openai api-key 即不装配，dashscope 主路径零影响（承重墙不变）。 -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-model-openai</artifactId>
+            <version>1.1.2</version>
+        </dependency>
 
         <!-- 测试：单元 + 集成（Testcontainers Postgres） -->
         <dependency>
