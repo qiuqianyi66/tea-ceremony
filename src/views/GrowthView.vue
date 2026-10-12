@@ -8,7 +8,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import TasteRadarChart from '@/components/tasting/TasteRadarChart.vue'
 import TasteTrendChart from '@/components/tasting/TasteTrendChart.vue'
-import { EmptyState } from '@/components/ui'
+import { BaseSpinner, EmptyState } from '@/components/ui'
 import { teas } from '@/data/teas'
 import {
   averageDimensions,
@@ -66,12 +66,12 @@ const hasRecords = computed(() => recordStore.history.length > 0)
     </div>
 
     <!-- 加载态 -->
-    <div v-if="!recordStore.loaded && !loadError" class="py-16 text-center text-sm text-[var(--color-wood-light)]">
-      正在展开账册…
+    <div v-if="!recordStore.loaded && !loadError" class="flex min-h-[55vh] items-center justify-center">
+      <BaseSpinner size="lg" label="正在展开账册…" />
     </div>
 
     <!-- 错误态 -->
-    <div v-else-if="loadError" class="glass-panel rounded-xl p-6 text-center">
+    <div v-else-if="loadError" class="glass-panel mx-auto max-w-md rounded-xl p-6 text-center">
       <p class="text-sm text-[var(--color-wood)]">记录加载失败：{{ loadError }}</p>
       <button
         class="mt-4 inline-flex min-h-11 items-center text-xs px-3 rounded-full border border-[var(--color-wood-light)]/30 text-[var(--color-wood-light)] hover:bg-white/60"
@@ -80,16 +80,17 @@ const hasRecords = computed(() => recordStore.history.length > 0)
     </div>
 
     <!-- 空态 -->
-    <EmptyState
-      v-else-if="!hasRecords"
-      title="暂无品鉴记录"
-      description="完成一次冲泡品鉴后，这里会亮起你的茶路"
-    >
-      <button
-        class="inline-flex min-h-11 items-center text-xs px-4 rounded-full bg-[var(--color-wood)] text-[var(--color-paper)] hover:opacity-90"
-        @click="router.push('/select')"
-      >去选一壶茶</button>
-    </EmptyState>
+    <div v-else-if="!hasRecords" class="flex min-h-[55vh] items-center justify-center">
+      <EmptyState
+        title="暂无品鉴记录"
+        description="完成一次冲泡品鉴后，这里会亮起你的茶路"
+      >
+        <button
+          class="inline-flex min-h-11 items-center text-xs px-4 rounded-full bg-[var(--color-wood)] text-[var(--color-paper)] hover:opacity-90"
+          @click="router.push('/select')"
+        >去选一壶茶</button>
+      </EmptyState>
+    </div>
 
     <!-- 数据态 -->
     <div v-else>
