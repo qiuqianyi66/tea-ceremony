@@ -228,6 +228,11 @@ LLM-as-Judge 全量实跑：overall 0.80（judgeCoverage 0.96，非抽查）；
   含义：T08 0.87 高于历史 0.80 的部分差异来自评委模型漂移，非能力提升；judge 非确定性新增一个来源维度（评委模型选择）。
 - **T09 人工复核样本已生成**（`docs/ai-eval/samples-judge-t09.json`，77 条 machine 判分自动填入，
   human 字段 null 待人工独立复核）——复核后跑 `node scripts/calibrate-judge.cjs docs/ai-eval/samples-judge-t09.json` 出正式一致率。
+- **T09 校准完成（2026-10-12，人工复核 77 条全标）**：**一致率 95.0%（60 条有效对照，57 一致 / 3 不一致）≥ 85% 阈值 → PASS**。
+  17 条 UNKNOWN 不计入分母。3 处不一致均为**机器宽松人工严格**：ADV-008 按需求性价比推荐（片段无价格比较依据）、
+  BRE-006 方法可靠不玄学（仅靠壶声气泡判水温可靠性不足）、CHA-005 给低因替代建议（老白茶尾水/焙火乌龙不能稳定保证低咖啡因）。
+  含义：deepseek 评委整体判分与人工一致率高，仅上述三类判定偏宽——评委 Prompt 可针对「性价比依据/方法可靠性/低因替代稳定性」收紧，
+  属可选项非阻塞（T09 已达标）。
 - **评测通道稳定性修复（复用必读）**：评测网关（yg-gateway 7864）进程两次在启动后 ~5 分钟无日志退出，
   根因 = `schedule.balance_refresh_enabled: true`（每 5 分钟余额刷新）；评测实例禁该开关后稳定存活跨 5 分钟窗口。
 - **生产后端已恢复**（评测后 `docker compose -f docker-compose.yml up -d backend`，去掉 gateway profile）。

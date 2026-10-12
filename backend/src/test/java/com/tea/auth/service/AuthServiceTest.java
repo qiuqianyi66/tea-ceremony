@@ -12,6 +12,7 @@ import com.tea.auth.entity.User;
 import com.tea.auth.repository.UserRepository;
 import com.tea.auth.security.JwtService;
 import com.tea.auth.vo.TokenVo;
+import com.tea.common.exception.BadRequestException;
 import com.tea.common.exception.ConflictException;
 import com.tea.common.exception.UnauthorizedException;
 import java.time.Clock;
@@ -89,6 +90,14 @@ class AuthServiceTest {
 
         assertThatThrownBy(() -> authService.register(new RegisterRequest("dup", "", "secret123")))
                 .isInstanceOf(ConflictException.class);
+    }
+
+    @Test
+    void registerWeakPasswordThrowsBadRequest() {
+        assertThatThrownBy(() -> authService.register(new RegisterRequest("weak_user", "", "password123")))
+                .isInstanceOf(BadRequestException.class);
+        assertThatThrownBy(() -> authService.register(new RegisterRequest("weak_user2", "", "12345678")))
+                .isInstanceOf(BadRequestException.class);
     }
 
     @Test

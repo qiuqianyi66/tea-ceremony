@@ -8,6 +8,7 @@ import com.tea.auth.security.AuthenticatedUser;
 import com.tea.auth.security.JwtService;
 import com.tea.auth.vo.TokenVo;
 import com.tea.auth.vo.UserVo;
+import com.tea.common.exception.BadRequestException;
 import com.tea.common.exception.ConflictException;
 import com.tea.common.exception.UnauthorizedException;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,12 @@ public class AuthService {
 
     private static final String LOGIN_FAILED = "用户名或密码错误";
 
+    /** 常见弱密码黑名单（L2，安全审计 2026-10-12）：防弱密码爆破面 */
+    private static final java.util.Set<String> WEAK_PASSWORDS = java.util.Set.of(
+            "12345678", "123456789", "1234567890", "password", "password123",
+            "qwerty", "qwerty123", "admin123", "letmein", "11111111",
+            "88888888", "abcd1234", "iloveyou", "welcome1", "monkey123", "abc12345");
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
@@ -34,6 +41,10 @@ public class AuthService {
         String username = req.username().trim();
         if (userRepository.findByUsername(username).isPresent()) {
             throw new ConflictException("用户名已存在");
+        }
+        String password = req.password();
+        if (WEAK_PASSWORDS.contains(password.toLowerCase())) {
+            throw new BadRequestException("密码过于常见，请更换");
         }
         User user = new User();
         user.setUsername(username);
