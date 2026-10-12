@@ -210,11 +210,12 @@ onUnmounted(() => window.removeEventListener('pointermove', onPointerMove))
 .break-btn:hover { background: #c9a96e; border-color: #c9a96e; color: #1a1408; box-shadow: 0 10px 32px rgba(201, 169, 110, 0.5); }
 .enter-link {
   display: inline-flex; align-items: center; min-height: 2.75rem;
-  background: none; border: none; color: rgba(245, 241, 230, 0.55);
+  background: none; border: none; color: rgba(245, 241, 230, 0.82);
   font-size: 0.82rem; letter-spacing: 0.15em; cursor: pointer; padding: 0.3rem 0.6rem;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.55);
   transition: color 0.25s; font-family: inherit;
 }
-.enter-link:hover { color: rgba(245, 241, 230, 0.9); }
+.enter-link:hover { color: rgba(201, 169, 110, 0.95); }
 .scroll-hint {
   margin-top: 2.2rem; font-size: 0.72rem; letter-spacing: 0.3em;
   color: rgba(245, 241, 230, 0.55); text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);

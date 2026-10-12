@@ -148,11 +148,11 @@ async function sendMessage(text?: string) {
   font-family: var(--font-serif);
   font-size: 1.15rem; letter-spacing: 0.15em; margin: 0; color: #f3efe4;
 }
-.ai-sub { font-size: 0.72rem; color: rgba(245, 241, 230, 0.5); margin: 0.1rem 0 0; }
+.ai-sub { font-size: 0.72rem; color: rgba(245, 241, 230, 0.75); margin: 0.1rem 0 0; }
 .ai-close {
-  width: 2.4rem; height: 2.4rem; border-radius: 8px;
+  width: 2.75rem; height: 2.75rem; border-radius: 8px;
   display: grid; place-items: center;
-  color: rgba(245, 241, 230, 0.6);
+  color: rgba(245, 241, 230, 0.75);
   background: none; border: 1px solid rgba(245, 241, 230, 0.12);
   cursor: pointer; transition: all 0.25s;
 }
@@ -169,7 +169,7 @@ async function sendMessage(text?: string) {
   padding: 3rem 1rem;
 }
 .ai-empty-text {
-  font-size: 0.95rem; color: rgba(245, 241, 230, 0.6);
+  font-size: 0.95rem; color: rgba(245, 241, 230, 0.82);
   margin: 0 0 1.5rem; letter-spacing: 0.08em;
 }
 .ai-suggestions {
@@ -177,6 +177,7 @@ async function sendMessage(text?: string) {
   justify-content: center; max-width: 28rem;
 }
 .ai-suggestion-btn {
+  min-height: 2.75rem;
   padding: 0.5rem 1rem; border-radius: 999px;
   font-size: 0.82rem; cursor: pointer;
   background: rgba(245, 241, 230, 0.06);
@@ -268,7 +269,7 @@ async function sendMessage(text?: string) {
   outline: none; transition: border-color 0.25s;
   font-family: inherit;
 }
-.ai-input::placeholder { color: rgba(232, 213, 176, 0.35); }
+.ai-input::placeholder { color: rgba(232, 213, 176, 0.7); }
 .ai-input:focus { border-color: rgba(201, 169, 110, 0.6); }
 .ai-send-btn {
   padding: 0.75rem 1.4rem; border-radius: 0.8rem;
