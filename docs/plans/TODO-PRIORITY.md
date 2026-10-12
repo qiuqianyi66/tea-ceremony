@@ -74,7 +74,7 @@ owner: yanha
   5. P0-3 编号一义三用 → 已在三份文档就地加消歧警示（见下）。
   6. v2 0.96 当成果 → 是 program-only 口径；全量真实分见 v3（0.81）。
 - **✅ 已修：P0-3 编号撞车**——`docs/PLAN-harness-research-2026-10.md` = 前端返工 / `docs/TODO-PRIORITY.md` = AI key / `docs/OPTIMIZATION_PLAN.md` = PWA prompt。三处已就地标注，不做全库重编号（会毁历史引用）。**读裸编号先确认来源文档。**
-- **待排（v4 评测迭代）**：v3 失败 13 条按根因三类——①判分器与产品设计冲突（ADV-001/002「允许常识作答」却被「未命中」扣分，5 条）②评测集缺 `precondition: no-records` 标注（taster/mentor 无记录时的正确防御被当失败，6 条）③边缘输入关键词匹配（2 条）。详见 `docs/ai-eval/ITERATIONS.md` §v3 归因。
+- **待排（v4 评测迭代）**：v3 失败 13 条按根因三类——①判分器与产品设计冲突（ADV-001/002「允许常识作答」却被「未命中」扣分，5 条）②评测集缺 `precondition: no-records` 标注（taster/mentor 无记录时的正确防御被当失败，6 条）③边缘输入关键词匹配（2 条）。详见 `docs/ai-eval/ITERATIONS.md` §v3 归因。**已立需求：`docs/prd/REQ-ai-eval-v6-2026-10-12.md`（F-V1~F-V5；离线批可开工，live 批等 DashScope 充值）。**
 - **待排**：`calibrate-judge.cjs --judge` 实跑（judge 一致率校准，现已不再依赖 A4）。
 
 
