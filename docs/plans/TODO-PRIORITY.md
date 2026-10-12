@@ -11,9 +11,9 @@ owner: yanha
 > 用途：跨会话状态交接，替代压缩摘要的不确定性。新会话先读本文件，再开工。
 > 维护规则：状态变化当场更新 `last_updated`；完成一项划一项；过期内容移入对应 PLAN/ADR/学习记录（AGENTS.md §13），不留死行。
 
-## 状态速览（2026-10-11 · 本会话复核后）
+## 状态速览（2026-10-12 · 本会话复核后）
 
-- main：**`757c552`**（2026-10-12 复核；含 PR #55 HANDOFF 91a0f4c、#56 T10 757c552）。自上版 `4215bab` 起新增：**PR #55（HANDOFF-2026-10-11）**、**PR #56（T10 无记录修复，757c552）**；**PR #57（评测器 judge 限流修复，OPEN 待合）**。
+- main：**`3dfb30f`**（2026-10-12；含 PR #59-#63 五包深度优化、#64 yg-gateway 通道、#65 T08 结果、#66 SFT 语料 + L2/L7）。自上版 `757c552` 起新增：**PR #59（需求分析）**、**#60（规范清单）**、**#61（前端体验）**、**#62（安全 4 高危）**、**#63（后端优化）**、**#64（yg-gateway 评测通道，a1ae68b）**、**#65（T08 pass³ 结果 + T09 评委发现，5949449）**、**#66（SFT 语料 241 条 + L2 密码强度 + L7 令牌轮换，3dfb30f）**。
 - **推送流程变更（2026-10-10，用户拍板）**：main 走 **PR-only**。新改动一律 `feature/xxx` / `fix/xxx` 分支 → push → 开 PR → **CI 13 job 全绿** → 合并。**禁再直推 main（bypass）**。PR #41/#42 已按此流程走通。
 - **✅ 分支保护 CI 门禁已补回（2026-10-10，本会话）**：`required_status_checks` 原缺失（改规则时被一并取消，PR 可带红灯合并）；用 `PUT /branches/main/protection` 补回 **13 个 context**（与 ci.yml job `name` 逐字一致），`required_approving_review_count: 0` 保持。核对命令：`gh api repos/qiuqianyi66/tea-ceremony/branches/main/protection -q '.required_status_checks.contexts[]'`。
 - **✅ A4「cu 虚拟桌面」前提已证伪（2026-10-10，本会话）**：截图链路与 Judge 实跑**不需要 cu 桌面**，均可本地 headless 完成。已实跑通过：
@@ -40,8 +40,8 @@ owner: yanha
 | # | 事项 | 解锁 |
 | --- | --- | --- |
 | — | **无硬阻塞**（A4 已证伪，见状态速览） | — |
-| **OQ-1** | **微调预算上限**（`PLAN-ai-capability` D-5 / T12；方案已备 `PLAN-sft-budget-2026-10-11.md`，推荐 ¥1,000） | Phase 4 SFT 全体（训练费不可退） |
-| **OQ-2** | **DashScope 账户欠费**（2026-10-12 后端日志实测 `Arrearage / overdue-payment`，HTTP 400） | T08 pass³ / T09 校准 / Phase 2 真嵌入——AI 调用全被拒，需充值账户 |
+| **OQ-1** | **SFT 训练量级拍板**（`PLAN-sft-corpus-2026-10-12.md`：241 条直接练 or 扩 500+；训练费 ¥300-500 起，**用户已批示不急**） | Phase 4 T13 训练 |
+| **OQ-2** | **DashScope 账户欠费**（2026-10-12 后端日志实测 `Arrearage / overdue-payment`，HTTP 400） | 正式生产模型基线（通义 judge pass³）；评测已用 yg-gateway 免费通道闭环，不阻塞 |
 
 ## A″. 活跃计划：AI 能力建设（2026-10-10 起）
 
@@ -80,8 +80,8 @@ owner: yanha
 
 ## B. 可直接开工（无依赖）
 
-1. **T15 C6 低优先甄别**（可穿插）；**Q1 真实用户试用**（PWA 部署发同学群，建议评测达标后做）
-2. **D 系列低优先**（见下，可穿插）
+1. **Q1 真实用户试用**（PWA 部署发同学群；评测已达标——T08 pass³ 32/50 / T09 95.0% / T10 ✅，2026-10-12 确认可做）
+2. **T15 C6 低优先甄别**（可穿插）；**D 系列低优先**（见下，可穿插）
 
 ## C. 依赖卡点（备料可先行，执行要等）
 
@@ -97,6 +97,8 @@ owner: yanha
 
 ## 最近完成（防重做：先查这里，勿从零重写）
 
+- **Phase 3 评测基线全闭环 + Phase 4 语料 + 安全穿插**（2026-10-12，本会话）：
+  ①**五包深度优化**（PR #59-#63）：需求分析 / 规范清单 15 红线 / 安全 4 高危修复（AdminTokenFilter、JWT fail-closed、XFF 末段、文化搜索限流）/ 前端 3 项体验 / 后端 5 项优化（DB 聚合、去重校验、RAG 指标、埋点计数、限流有界摘除）；②**yg-gateway 评测通道**（PR #64，a1ae68b）：openai starter 接入 + 双装配/五大模态排除 + gateway profile；评测实例禁 `balance_refresh_enabled`（5 分钟崩溃根因）；③**T08 pass³**（PR #65，5949449）：overall 0.87 / pass³ 32/50（deepseek 经 gateway，**非生产模型口径，不写简历**）；④**T09 校准 PASS**（PR #66，3dfb30f）：人工复核 77 条 → 一致率 95.0% ≥ 85%（3 处机器偏宽：性价比依据/水温方法可靠性/低因替代稳定性）；⑤**T11 语料 241 条**（PR #66）：真实 54 + 合成 267（gateway 免费生成）去重，90/10 + 抽检 21，管道脚本可复用；⑥**L2 密码 6→8 位 + 弱密码黑名单**、**L7 ADMIN_API_TOKEN 轮换文档**（PR #66）；⑦生产后端已恢复（非 gateway 模式），health 200。
 - **A4 前提证伪 + CI 门禁补回 + Trace 真 bug 修复**（2026-10-10 下午，本会话）：
   ①**A4 证伪**——截图链路（verify-gardens/verify-pavilion/verify-icons/screenshot-home/growth/brew3d）全跑通 ERRORS: []，`eval-tea-ai.cjs --judge` **v3 全量真实分 overall 0.81 / judgeCoverage 1 / pass^1 37/50**，均不需 cu 桌面；
   ②**分支保护 `required_status_checks` 补回 13 context**（原缺失 → PR 可带红灯合并）；
@@ -115,7 +117,7 @@ owner: yanha
 
 ## 关键 ID / 命令（准确取用）
 
-- main：**`757c552`**（2026-10-12）；PR：#38（ffe807e1）、#39（7975a3f）、#40（f600967，S1 已合）、#41（7f3e6cc，PR-only 约定）、#42（fe1ec02，handoff 同步）、#50（d6dddec，Phase 1 安全边界）、#51（867ef71，6 技能本地化）、#52（7f2ab76，harness 门禁）、#53（4215bab，Phase 2 知识注入）、#54（591a505，TODO 同步）、**#55（91a0f4c，HANDOFF）**、**#56（757c552，T10 无记录修复）**、**#57（评测器 judge 限流修复，OPEN）**；commit：T10 `14b3d07`、T11 `b8d38bc`、T12/K13 `46213f2`、RAG fix `6b107af`、虚词 `f90692f`、评测 v2 `a4a1c05`、活文档 `684ef7b`、ADR-018/配额/迁移/口径 `1b64bdd` `29d8d31` `ec7e8f4` `b9f083a`、TODO 同步 `137b3a5`、PR-only `7f3e6cc`
+- main：**`3dfb30f`**（2026-10-12）；PR：#38-#56（历史）、**#59-#66**（2026-10-12 五包 + 评测通道 + 语料，见状态速览）；commit：T10 `14b3d07`、T11 `b8d38bc`、T12/K13 `46213f2`、RAG fix `6b107af`、虚词 `f90692f`、评测 v2 `a4a1c05`、活文档 `684ef7b`、ADR-018/配额/迁移/口径 `1b64bdd` `29d8d31` `ec7e8f4` `b9f083a`、TODO 同步 `137b3a5`、PR-only `7f3e6cc`
 - 分支：feature/garden-s1（已合，worktree `C:\Users\yanha\Desktop\tea-garden-s1` 可删可留）；~~fix/trace-tokens-null~~（已随 PR #43 合并并删除分支）
 - 迁移：V1 init / V2 culture_seed / V3 agent_memory / V4 garden_energy / **V5__ai_eval_traces**（T07）/ **V6__agent_skills**（T08）；V5/V6 编号已写死
 - 方案：`docs/plans/PLAN-final-convergence-2026-10-09.md`（当前唯一执行母本）；`PLAN-k13-p12-design-2026-10-09.md`（K13/P1-2 设计）
