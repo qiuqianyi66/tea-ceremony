@@ -204,3 +204,11 @@ LLM-as-Judge 全量实跑：overall 0.80（judgeCoverage 0.96，非抽查）；
   ②「41 条不可达」→ 分账口径写错（`chat.yaml` 属可达，是「自动」档回落）。
   记录在案而非掩掉，是「客观执行」规则的直接产物。
 - 一致率 `calibrate-judge.cjs --judge` 实跑仍待做（不依赖 A4）。
+
+## 2026-10-11/12：Phase 3 评测基线推进（T10 ✅ / T08 阻塞）
+
+- **T10 无记录修复完成（已合 main #56，757c552）**：taster/mentor 无记录时从「只索要记录」改为「给通用建议 + 引导记录」；加 prompt 行为回归锁（TasterAgentTest 6 / MentorAgentTest 5 全过）。
+- **T10 本地验证（2026-10-11，live，`reports/2026-10-11-t10-verify.json`）**：taster 0.88（6/8）/ mentor 0.81（5/8），judge 覆盖率 1；无记录回复均已含实质建议。残留失败归因 judge 判分口径（如「六境定义准确」判定偏严），入 v4 迭代。
+- **T08 pass³ 两次失败（2026-10-11，报告已删避免误读）**：全 0 分，mass 429/502。**根因（后端日志实测）：DashScope 账户欠费**——HTTP 400 `Arrearage / overdue-payment`，AI 调用全被拒，非代码问题。待账户充值后重跑 `--judge --iterations 3 --delay 7000`。
+- **评测器限流修复（PR #57，fix/eval-judge-ratelimit）**：judge 各考点评委调用原先在 case 级 delay 后连续发出，超后端 10/min IP 滑动窗口（60s 内 >10 次即 429）；现每次评委调用前等待 delayMs（dry-run 跳过）。dry-run 管道自检通过。
+- **T09 judge 校准**：脚本就绪（`--demo` PASS 87.5%）；真实校准样本依赖 T08 报告，随 T08 一起阻塞。
