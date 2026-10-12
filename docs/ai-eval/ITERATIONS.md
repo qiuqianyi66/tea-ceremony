@@ -212,3 +212,22 @@ LLM-as-Judge 全量实跑：overall 0.80（judgeCoverage 0.96，非抽查）；
 - **T08 pass³ 两次失败（2026-10-11，报告已删避免误读）**：全 0 分，mass 429/502。**根因（后端日志实测）：DashScope 账户欠费**——HTTP 400 `Arrearage / overdue-payment`，AI 调用全被拒，非代码问题。待账户充值后重跑 `--judge --iterations 3 --delay 7000`。
 - **评测器限流修复（PR #57，fix/eval-judge-ratelimit）**：judge 各考点评委调用原先在 case 级 delay 后连续发出，超后端 10/min IP 滑动窗口（60s 内 >10 次即 429）；现每次评委调用前等待 delayMs（dry-run 跳过）。dry-run 管道自检通过。
 - **T09 judge 校准**：脚本就绪（`--demo` PASS 87.5%）；真实校准样本依赖 T08 报告，随 T08 一起阻塞。
+
+## 2026-10-12：yg-gateway 评测通道解锁 T08 ✅ / T09 部分完成
+
+> 通道方案与踩坑见 `docs/plans/PLAN-gateway-eval-channel-2026-10-12.md`（PR #64 已合 main，a1ae68b）。
+
+- **T08 pass³ 完成（2026-10-12，live，`reports/2026-10-12.json`，走 yg-gateway / deepseek-v4.1-flash）**：
+  **overall 0.87**（结果质量 0.91 / 过程质量 0.83 / 安全稳定 0.81）/ **pass³ 32/50** / judgeCoverage 0.92 /
+  programOnly 0.95 / 默认路径 18 条 0.93 / 专家路径 32 条 0.84 / RAG 命中 0.16（降级 ILIKE 环境）。
+- **口径铁律（双重）**：①通道模型是 deepseek（经 CodeBuddy 账号池），**非生产模型**——T08 分数只验证
+  管道通 + 判分器行为对，**不写入简历口径**；②judgeCoverage 0.92 < 0.95——不满足「可引用数字」门槛。
+  简历仍只引用 v3 0.81 / v5 0.80 / T10 taster 0.88 mentor 0.81（judgeCoverage=1，通义 judge）。
+- **T09 校准关键发现：评委间一致率 77.9%（60/77）< 85% 阈值**（`scripts/compare-judge-agreement.cjs`）：
+  deepseek judge vs 通义 judge 同 case 同考点判分不一致 17 处，**deepseek 更宽容**（13 处 0→1，4 处 1→0）。
+  含义：T08 0.87 高于历史 0.80 的部分差异来自评委模型漂移，非能力提升；judge 非确定性新增一个来源维度（评委模型选择）。
+- **T09 人工复核样本已生成**（`docs/ai-eval/samples-judge-t09.json`，77 条 machine 判分自动填入，
+  human 字段 null 待人工独立复核）——复核后跑 `node scripts/calibrate-judge.cjs docs/ai-eval/samples-judge-t09.json` 出正式一致率。
+- **评测通道稳定性修复（复用必读）**：评测网关（yg-gateway 7864）进程两次在启动后 ~5 分钟无日志退出，
+  根因 = `schedule.balance_refresh_enabled: true`（每 5 分钟余额刷新）；评测实例禁该开关后稳定存活跨 5 分钟窗口。
+- **生产后端已恢复**（评测后 `docker compose -f docker-compose.yml up -d backend`，去掉 gateway profile）。

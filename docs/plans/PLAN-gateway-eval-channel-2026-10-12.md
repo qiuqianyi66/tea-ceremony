@@ -47,9 +47,10 @@ OpenAI 兼容网关）可分 API key 给 tea 做评测。本方案把 yg-gateway
 2. **openai starter 五大模态自动配置**：embedding（双装配歧义）+ audio/speech/transcription/image/moderation
    （无 key 工厂方法启动失败）。全排除，只留 chat。类名前缀 `org.springframework.ai.model.openai.autoconfigure.`（1.1.2 新包名）。
 3. **JWT fail-closed**（PR #62 起）：本地 `mvn test` 必须注入 `JWT_SECRET`（≥32 字节），否则 JwtService 构造抛异常。
-4. **评测网关进程会挂**：yg-gateway 非守护进程，Windows 下可能被系统/意外终止；
+4. **评测网关进程会挂（已修）**：根因 = `schedule.balance_refresh_enabled: true`（每 5 分钟余额刷新）
+   触发进程无日志退出（两次实测：启动后 ~5 分钟挂）。评测不需要余额刷新 → 置 false。
    重启：`Start-Process D:\yg-gateway-eval\yg-gateway.exe -WorkingDirectory D:\yg-gateway-eval`，
-   验证 `http://127.0.0.1:7864/healthz` = 200。主网关 7863 与评测实例 7864 是独立进程。
+   验证 `http://127.0.0.1:7864/healthz` = 200，并确认存活超过 5 分钟。主网关 7863 与评测实例 7864 独立进程。
 5. **config.json 无 BOM**（先前会话）：PowerShell 写 JSON 用 `[IO.File]::WriteAllText` + UTF8Encoding($false)，
    `Set-Content -Encoding UTF8` 带 BOM 使 Go 解析失败。
 6. **限流节奏**：后端 AI 限流 10/min/IP，评测 `--delay 7000`（实测 3 条 judge 无 429）；
@@ -93,6 +94,8 @@ docker compose -f docker-compose.yml up -d backend
 - [x] 后端 gateway profile 接入（bean 冲突全解：embedding 排除 + chat 默认 + getIfUnique）
 - [x] 小规模链路验证（advisor 3 条 judge on：overall 0.83，judge 覆盖率 1，无 429）
 - [x] 全量后端测试通过（含 Testcontainers，无回归）
-- [ ] T08 pass³ 全量跑（进行中，后台）
+- [x] 代码改动 PR #64 合入 main（a1ae68b，CI 13/13 全绿）
+- [x] 评测网关稳定性修复：**禁用 balance_refresh**（每 5 分钟刷新是两次进程退出元凶，禁用后跨 5 分钟窗口验证存活）
+- [ ] T08 pass³ 全量跑（重跑中，约 2-3 小时——deepseek-v4.1-flash 推理慢，实际 ~19s/调用）
 - [ ] T09 judge 校准
-- [ ] 代码改动 PR 合入 main（pom / application.yml / gateway yml / compose.eval / CultureSearchService）
+- [ ] 评测报告 commit + ITERATIONS/TODO-PRIORITY 更新
