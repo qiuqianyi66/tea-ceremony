@@ -1,7 +1,7 @@
 ---
 name: todo-priority
 description: 一盏茶跨会话状态活文档——状态速览 / 阻塞项 / 可直接开工 / 低优先 / 最近完成（防重做）/ 关键 ID 与命令。新会话先读本文件恢复上下文。
-last_updated: 2026-10-12
+last_updated: 2026-10-13
 status: active
 owner: yanha
 ---
@@ -13,7 +13,7 @@ owner: yanha
 
 ## 状态速览（2026-10-12 · 本会话复核后）
 
-- main：**`3dfb30f`**（2026-10-12；含 PR #59-#63 五包深度优化、#64 yg-gateway 通道、#65 T08 结果、#66 SFT 语料 + L2/L7）。自上版 `757c552` 起新增：**PR #59（需求分析）**、**#60（规范清单）**、**#61（前端体验）**、**#62（安全 4 高危）**、**#63（后端优化）**、**#64（yg-gateway 评测通道，a1ae68b）**、**#65（T08 pass³ 结果 + T09 评委发现，5949449）**、**#66（SFT 语料 241 条 + L2 密码强度 + L7 令牌轮换，3dfb30f）**。
+- main：**`c4f5acc`**（2026-10-13；含 PR #59-#63 五包深度优化、#64 yg-gateway 通道、#65 T08 结果、#66 SFT 语料 + L2/L7、#67 TODO 同步、#69/#70 网关部署收尾）。自上版 `757c552` 起新增：**PR #59（需求分析）**、**#60（规范清单）**、**#61（前端体验）**、**#62（安全 4 高危）**、**#63（后端优化）**、**#64（yg-gateway 评测通道，a1ae68b）**、**#65（T08 pass³ 结果 + T09 评委发现，5949449）**、**#66（SFT 语料 241 条 + L2 密码强度 + L7 令牌轮换，3dfb30f）**、**#67（TODO-PRIORITY sync，519f8c3）**、**#69（key check 跟随激活 chat model，a317454）**、**#70（compose 加 yg-gateway service，c4f5acc）**。
 - **推送流程变更（2026-10-10，用户拍板）**：main 走 **PR-only**。新改动一律 `feature/xxx` / `fix/xxx` 分支 → push → 开 PR → **CI 13 job 全绿** → 合并。**禁再直推 main（bypass）**。PR #41/#42 已按此流程走通。
 - **✅ 分支保护 CI 门禁已补回（2026-10-10，本会话）**：`required_status_checks` 原缺失（改规则时被一并取消，PR 可带红灯合并）；用 `PUT /branches/main/protection` 补回 **13 个 context**（与 ci.yml job `name` 逐字一致），`required_approving_review_count: 0` 保持。核对命令：`gh api repos/qiuqianyi66/tea-ceremony/branches/main/protection -q '.required_status_checks.contexts[]'`。
 - **✅ A4「cu 虚拟桌面」前提已证伪（2026-10-10，本会话）**：截图链路与 Judge 实跑**不需要 cu 桌面**，均可本地 headless 完成。已实跑通过：
@@ -97,6 +97,7 @@ owner: yanha
 
 ## 最近完成（防重做：先查这里，勿从零重写）
 
+- **网关部署配套收尾**（2026-10-13）：PR #69（key check 跟随激活 chat model，gateway profile，a317454）、#70（compose 加 yg-gateway service + backend gateway profile env，c4f5acc）已合 main；本地工作区清理（`build-corpus.cjs` 死代码删除、`raw-traces.json` 入 ignore）。
 - **Q1 后端公网部署完成**（2026-10-13，本会话）：阿里云 ECS 免费试用实例（42.121.125.4，2C2G 经济型 e，Alibaba Cloud Linux 3，3 个月 300 元额度 ¥0.123/时）——公网 SSH 被拦（banner 超时，仅 Workbench 通道可用）→ 走 Workbench 部署：codeload 下载代码（GitHub 直连超时，改用 codeload 200）→ Docker Hub 拉镜像超时（配 daocloud 无效→ 开 VPN 直连通）→ Maven/npm 换阿里云镜像加速（VPN 下 go-offline 21 分钟不动 → 中断配 aliyun settings.xml + npmmirror，CACHED 重构建 5 分钟）→ 三容器 Healthy/Running；**验证：首页 200（SPA）、注册接口 200 + JWT、`/api/actuator/health` 401 为 Security 前缀保护（容器内 `/actuator/health` 直连健康，属预期）**；前端同学直接访问 `http://42.121.125.4`（nginx 同源反代，GitHub Pages 因 Mixed Content 不能跨 http 后端）；AI 未配 key → 茶灵规则引擎降级（Q1 试用可接受）；注意：VPN 关后 rebuild 需重开，3 个月到期需释放/续购轻量 68 元/年。
 - **Phase 3 评测基线全闭环 + Phase 4 语料 + 安全穿插**（2026-10-12，本会话）：
   ①**五包深度优化**（PR #59-#63）：需求分析 / 规范清单 15 红线 / 安全 4 高危修复（AdminTokenFilter、JWT fail-closed、XFF 末段、文化搜索限流）/ 前端 3 项体验 / 后端 5 项优化（DB 聚合、去重校验、RAG 指标、埋点计数、限流有界摘除）；②**yg-gateway 评测通道**（PR #64，a1ae68b）：openai starter 接入 + 双装配/五大模态排除 + gateway profile；评测实例禁 `balance_refresh_enabled`（5 分钟崩溃根因）；③**T08 pass³**（PR #65，5949449）：overall 0.87 / pass³ 32/50（deepseek 经 gateway，**非生产模型口径，不写简历**）；④**T09 校准 PASS**（PR #66，3dfb30f）：人工复核 77 条 → 一致率 95.0% ≥ 85%（3 处机器偏宽：性价比依据/水温方法可靠性/低因替代稳定性）；⑤**T11 语料 241 条**（PR #66）：真实 54 + 合成 267（gateway 免费生成）去重，90/10 + 抽检 21，管道脚本可复用；⑥**L2 密码 6→8 位 + 弱密码黑名单**、**L7 ADMIN_API_TOKEN 轮换文档**（PR #66）；⑦生产后端已恢复（非 gateway 模式），health 200。
@@ -118,7 +119,7 @@ owner: yanha
 
 ## 关键 ID / 命令（准确取用）
 
-- main：**`3dfb30f`**（2026-10-12）；PR：#38-#56（历史）、**#59-#66**（2026-10-12 五包 + 评测通道 + 语料，见状态速览）；commit：T10 `14b3d07`、T11 `b8d38bc`、T12/K13 `46213f2`、RAG fix `6b107af`、虚词 `f90692f`、评测 v2 `a4a1c05`、活文档 `684ef7b`、ADR-018/配额/迁移/口径 `1b64bdd` `29d8d31` `ec7e8f4` `b9f083a`、TODO 同步 `137b3a5`、PR-only `7f3e6cc`
+- main：**`c4f5acc`**（2026-10-13）；PR：#38-#56（历史）、**#59-#67**（2026-10-12 五包 + 评测通道 + 语料 + sync）、**#69/#70**（2026-10-13 网关部署收尾，见状态速览）；commit：T10 `14b3d07`、T11 `b8d38bc`、T12/K13 `46213f2`、RAG fix `6b107af`、虚词 `f90692f`、评测 v2 `a4a1c05`、活文档 `684ef7b`、ADR-018/配额/迁移/口径 `1b64bdd` `29d8d31` `ec7e8f4` `b9f083a`、TODO 同步 `137b3a5`、PR-only `7f3e6cc`
 - 分支：feature/garden-s1（已合，worktree `C:\Users\yanha\Desktop\tea-garden-s1` 可删可留）；~~fix/trace-tokens-null~~（已随 PR #43 合并并删除分支）
 - 迁移：V1 init / V2 culture_seed / V3 agent_memory / V4 garden_energy / **V5__ai_eval_traces**（T07）/ **V6__agent_skills**（T08）；V5/V6 编号已写死
 - 方案：`docs/plans/PLAN-final-convergence-2026-10-09.md`（当前唯一执行母本）；`PLAN-k13-p12-design-2026-10-09.md`（K13/P1-2 设计）
