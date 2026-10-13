@@ -97,6 +97,8 @@ class LibrarianAgentTest {
         AiChatVo vo = agent.chat(null, question("完全冷门的问题"));
 
         assertTrue(vo.sources().isEmpty());
+        // P1-5 审计员风险标记：无来源输出必须带 ⚠ 警示前缀
+        assertTrue(vo.content().startsWith("⚠ 无来源（知识库未命中，以下为常识回答）"));
     }
 
     @Test

@@ -101,6 +101,10 @@ public class LibrarianAgent {
         } catch (Exception e) {
             log.warn("save usage log failed: {}", e.getMessage());
         }
+        // P1-5 审计员风险标记：知识库未命中（无来源）时加确定性警示，不依赖 LLM 自觉声明
+        if (sources.isEmpty()) {
+            content = "⚠ 无来源（知识库未命中，以下为常识回答）\n\n" + content;
+        }
         return new AiChatVo(content, sources);
     }
 
