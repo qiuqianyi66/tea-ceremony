@@ -62,9 +62,18 @@ class AiChatServiceTest {
     /** 既有用例默认不限配额（0 = 不限），保持本文件原语义；配额专项用例见 AiCallQuotaTest。 */
     private final AiCallQuota unlimitedQuota = new AiCallQuota(0);
 
+    /** 既有用例默认 dashscope 模式（生产承重墙语义），保持原行为。 */
     private AiChatService service(String apiKey) {
         return new AiChatService(builder, usageLogger, orchestrator, memoryService, traceRecorder,
-                librarian, advisor, taster, brewer, mentor, unlimitedQuota, apiKey);
+                librarian, advisor, taster, brewer, mentor, unlimitedQuota,
+                "dashscope", apiKey, "sk-openai-test");
+    }
+
+    /** gateway profile（openai 模式）：key 检查走 openai key。 */
+    private AiChatService gatewayService(String openaiKey) {
+        return new AiChatService(builder, usageLogger, orchestrator, memoryService, traceRecorder,
+                librarian, advisor, taster, brewer, mentor, unlimitedQuota,
+                "openai", "disabled", openaiKey);
     }
 
     private static AiChatRequest req(String agent) {
@@ -155,6 +164,28 @@ class AiChatServiceTest {
     @Test
     void transparentMissingKeyThrowsBadGateway() {
         AiChatService service = service("disabled");
+        when(orchestrator.routeToAgent(req("chat"))).thenReturn(null);
+
+        assertThrows(BadGatewayException.class, () -> service.chat(null, req("chat")));
+    }
+
+    @Test
+    void gatewayProfileUsesOpenaiKeyNotDashscope() {
+        // gateway 模式：dashscope key=disabled 不拦，openai key 有效 → 走真实 ChatClient
+        // 先 stub 再构造（构造时 builder.build() 立即执行）
+        mockTransparentReply("透明回答");
+        AiChatService service = gatewayService("sk-openai-valid");
+        when(orchestrator.routeToAgent(req("chat"))).thenReturn(null);
+
+        AiChatVo vo = service.chat(null, req("chat"));
+
+        assertEquals("透明回答", vo.content());
+        verify(builder).build();
+    }
+
+    @Test
+    void gatewayProfileMissingOpenaiKeyThrowsBadGateway() {
+        AiChatService service = gatewayService("disabled");
         when(orchestrator.routeToAgent(req("chat"))).thenReturn(null);
 
         assertThrows(BadGatewayException.class, () -> service.chat(null, req("chat")));

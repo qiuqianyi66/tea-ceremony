@@ -55,7 +55,10 @@ public class AiChatService {
     private final BrewerAgent brewerAgent;
     private final MentorAgent mentorAgent;
     private final AiCallQuota callQuota;
-    private final String apiKey;
+    /** 激活的 ChatModel 提供商（spring.ai.model.chat）：openai（gateway profile）或 dashscope（生产）。 */
+    private final String modelChat;
+    private final String dashscopeApiKey;
+    private final String openaiApiKey;
 
     public AiChatService(ChatClient.Builder chatClientBuilder,
                          AiUsageLogger usageLogger,
@@ -68,7 +71,9 @@ public class AiChatService {
                          BrewerAgent brewerAgent,
                          MentorAgent mentorAgent,
                          AiCallQuota callQuota,
-                         @Value("${spring.ai.dashscope.api-key:}") String apiKey) {
+                         @Value("${spring.ai.model.chat:}") String modelChat,
+                         @Value("${spring.ai.dashscope.api-key:}") String dashscopeApiKey,
+                         @Value("${spring.ai.openai.api-key:}") String openaiApiKey) {
         this.chatClient = chatClientBuilder.build();
         this.usageLogger = usageLogger;
         this.orchestrator = orchestrator;
@@ -80,7 +85,9 @@ public class AiChatService {
         this.brewerAgent = brewerAgent;
         this.mentorAgent = mentorAgent;
         this.callQuota = callQuota;
-        this.apiKey = apiKey;
+        this.modelChat = modelChat;
+        this.dashscopeApiKey = dashscopeApiKey;
+        this.openaiApiKey = openaiApiKey;
     }
 
     public AiChatVo chat(Integer userId, AiChatRequest req) {
@@ -228,9 +235,10 @@ public class AiChatService {
         return "";
     }
 
-    /** 透明代理（type == null 或 CHAT；T11 行为不变）。 */
+    /** 透明代理（type == null 或 CHAT；T11 行为不变）。承重墙按激活 model 校验对应 key：openai → 网关 key，否则 DashScope key。 */
     private AiChatVo transparentChat(Integer userId, AiChatRequest req) {
-        if (apiKey == null || apiKey.isBlank() || "disabled".equals(apiKey)) {
+        String key = "openai".equals(modelChat) ? openaiApiKey : dashscopeApiKey;
+        if (key == null || key.isBlank() || "disabled".equals(key)) {
             throw new BadGatewayException("AI 服务未配置（缺少 API key）");
         }
 

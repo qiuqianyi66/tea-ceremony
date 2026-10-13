@@ -98,7 +98,7 @@ class AiCallQuotaTest {
     private AiChatService serviceWith(AiCallQuota quota, String apiKey) {
         when(builder.build()).thenReturn(mock(ChatClient.class));
         return new AiChatService(builder, usageLogger, orchestrator, memoryService, traceRecorder,
-                librarian, advisor, taster, brewer, mentor, quota, apiKey);
+                librarian, advisor, taster, brewer, mentor, quota, "dashscope", apiKey, "sk-openai-test");
     }
 
     private static AiChatRequest req(Integer sessionId) {
