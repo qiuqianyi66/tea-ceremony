@@ -142,6 +142,19 @@
         </dependency>
     </dependencies>
 
+    <!-- MCP SDK 版本对齐（2026-10-13 技术债清理，用户拍板升级）：starter-mcp-server-webmvc 需 io.modelcontextprotocol.sdk 0.17.x，
+         alibaba graph-core 传递锁定 0.14.0 → 双版本共存（启动 WARN 来源）；dependencyManagement 强制 0.17.0 单一版本（与 mcp-spring-webmvc 一致）。
+         回归风险已由全量测试（含 9 个 Testcontainers 集成测试）+ 启动日志核查验证。 -->
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.modelcontextprotocol.sdk</groupId>
+                <artifactId>mcp</artifactId>
+                <version>0.17.0</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <build>
         <plugins>
             <plugin>
