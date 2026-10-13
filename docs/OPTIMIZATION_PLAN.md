@@ -168,8 +168,8 @@ owner: yanha
 | P0-6 限流 | ✅ 已做 | #62：登录 10/5min/IP + AI 限流 |
 | P0-8 SECRET_KEY | ✅ 已做 | #62：JWT_SECRET fail-closed（≥32 字节） |
 | P0-9 TrustedHost | ✅ 已消解 | nginx server_name 限定 + Spring Security 等价处理 |
-| P1-1 request_id + JSON 日志 | ❌ 未做 | 后端无 X-Request-ID / JSON 日志配置（trace 表 requestId 仅评测链路） |
-| P1-2 Prometheus /metrics | ❌ 未做 | actuator 未暴露 metrics 到 nginx |
+| P1-1 request_id + JSON 日志 | ✅ 已做 | `RequestIdFilter`（com.tea.common.requestid，@Order 最高）+ logback-spring.xml pattern 带 [%X{requestId:-}] + nginx `proxy_set_header X-Request-ID $request_id`；单测 4/4。JSON 编码器需 logstash 依赖（红线不擅加），仅结构化字段未 JSON 化 |
+| P1-2 Prometheus /metrics | ❌ 未做 | actuator 仅暴露 health,info；Prometheus 格式需新依赖 micrometer-registry-prometheus，无消费端，维持不做 |
 | P1-3 Dependabot + audit | ✅ 已做 | CI dependency-audit + dependabot PR |
 | P1-4 ruff + bandit | ✅ 已做 | CI backend-lint |
 | P1-5 Biome | ✅ 已做 | CI frontend-lint |
@@ -180,7 +180,7 @@ owner: yanha
 | P1-10 PG 备份 | ✅ 已做 | `scripts/backup-postgres.ps1/.sh` 存在；DEPLOY 含用法 |
 | P1-11 gunicorn | ✅ 已过时 | 新栈 Spring Boot 容器，无 uvicorn/gunicorn |
 | P1-12 健康分离 | ⚠ 部分 | actuator /actuator/health + compose healthcheck；/live /ready 未分离 |
-| P1-13 熔断 | ❌ 未做 | 无 circuit breaker（限流有，熔断无） |
+| P1-13 熔断 | ✅ 已做 | `AiCircuitBreaker`（tea.circuit-breaker 可配：阈值 5 / 30s 窗）+ 接入 AiChatService（OPEN 快速 502 走前端降级链）；单测 5/5 + AiChatService 3 个熔断用例 |
 | P2-1 refresh token | ❌ 未做 | 登录/云同步暂缓方向，维持 |
 | P2-2 manualChunks | ✅ 已消解 | vite 注释：单一依赖不可再拆 + 路由懒加载 |
 | P2-3 严格 tsconfig | ✅ 已做 | `tsconfig.app.json` exactOptionalPropertyTypes + noUncheckedIndexedAccess |
@@ -189,11 +189,11 @@ owner: yanha
 | P2-6 焦点管理 + ARIA | ⚠ 部分 | #61 体验（对比度/触控/loading）+ e2e-a11y；live region 未确认 |
 | P2-7 WebP/AVIF | ⚠ 部分 | `compress-assets.cjs` 压缩 jpeg/png/webp；无 AVIF 转换 |
 | P2-8 KTX2 | ✅ 已做 | `vite.config.ts` 3d-textures runtimeCaching（ktx2/wasm/js） |
-| P2-9 前端错误缓冲 | ❌ 未做 | src 无 window.onerror 落 IndexedDB |
+| P2-9 前端错误缓冲 | ✅ 已做 | `src/services/errorBuffer.ts`（window.onerror + unhandledrejection → IndexedDB errorBuffer 表，容量 200 裁剪）+ `main.ts` installErrorBuffer()；P1-10 原核对漏扫，实测已实现 |
 | P2-10 brotli | ✅ 已做 | `nginx.conf` brotli on（HTTP2/HTTPS 注释待域名） |
 | P2-12 导出 JSON | ✅ 已做 | `CollectionView.vue` 一键导出 .json |
 
-**残留未做（4 项）**：P1-1 request_id/JSON 日志、P1-2 Prometheus、P1-13 熔断、P2-9 前端错误缓冲——均非阻塞，排低优先或随后端深化处理。
+**残留未做（1 项）**：P1-2 Prometheus（需新依赖 micrometer-registry-prometheus + 无消费端，维持不做）。其余 P1/P2 全部落地或已消解。P2-1 refresh token 维持原方向暂缓。
 **过时/已消解（4 项）**：P0-1、P0-2、P0-9、P1-11（新栈已等价或不再适用）。
 **部分（4 项）**：P1-12、P2-5、P2-6、P2-7（有基础，缺增强）。
 **维持不做（对应原 🚫 清单）**：Argon2id、IndexedDB 加密、SRI、K8s、Celery、读写分离、Redis Cluster、OTel、付费 APM、Traefik、WAL/PITR、邮件找回、过度分包——理由不变。
