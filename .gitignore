@@ -95,3 +95,16 @@ verify_icons_*.png
 
 # SFT 原始导出（可复现，不入库）
 scripts/sft/raw-traces.csv
+
+# ===== yg-gateway 部署产物（含 WorkBuddy 账号 auths / API key / 私有配置，严禁入库）=====
+# 本地组装部署包（yg-gateway 源码 + config + auths + compose + deploy.sh）
+/deploy-gateway/
+# 敏感配置仓库本地副本（已推私有仓库 yg-gateway-secrets）
+/yg-gateway-secrets/
+# 部署打包 tarball / base64 配置块
+/*.tar.gz
+/gateway-config.b64.txt
+# yg-gateway 源码本地副本（源码已在公开仓库 yg-gateway-deploy）
+/yg-gateway/
+# PR/CI 临时诊断输出
+/pr69-*.txt

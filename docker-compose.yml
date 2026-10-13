@@ -20,6 +20,20 @@ services:
       timeout: 5s
       retries: 5
 
+  # yg-gateway（WorkBuddy 积分 AI 网关，2026-10-13 Q1 部署接入）
+  # 源码/config/auths 见 ./yg-gateway/（本地目录，不入 GitHub）；构建自 Dockerfile。
+  # 仅 compose 网络内部访问（backend → http://yg-gateway:7864），不映射宿主端口。
+  yg-gateway:
+    build: ./yg-gateway
+    restart: unless-stopped
+    # 容器以 root 运行以便写入挂载的 auths/data（源码 Dockerfile 默认 app 用户）；
+    # auths 属主不一致会拒绝写入（permission denied）。试用期容器，逃逸面可接受。
+    user: "0:0"
+    volumes:
+      - ./yg-gateway/auths:/app/auths
+      - ./yg-gateway/data:/app/data
+      - ./yg-gateway/config.json:/app/config.json
+
   # Spring Boot 后端（Flyway 自动迁移 + Actuator 健康探针）
   backend:
     build: ./backend
@@ -31,8 +45,13 @@ services:
       DB_USER: ${DB_USER:-tea_user}
       DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
-      # T11 AI（DashScope）：默认 disabled（无 key 时 AiChatService 502 → 前端降级规则引擎）；
-      # 生产填真实 key（官方变量名 AI_DASHSCOPE_API_KEY）启用 AI 功能，见 DEPLOY.md 0.2
+      # AI 走 yg-gateway（gateway profile，openai 兼容）；DashScope 主路径保留（切回：
+      # 移除 SPRING_PROFILES_ACTIVE 与 AI_GATEWAY_* 即可）。网关不可用时后端 502 →
+      # 前端降级规则引擎（teaAI.ts 承重墙）。
+      SPRING_PROFILES_ACTIVE: gateway
+      AI_GATEWAY_BASE_URL: http://yg-gateway:7864
+      AI_GATEWAY_API_KEY: ${AI_GATEWAY_API_KEY:-}
+      AI_GATEWAY_MODEL: ${AI_GATEWAY_MODEL:-cn:deepseek-v4.1-flash}
       AI_DASHSCOPE_API_KEY: ${AI_DASHSCOPE_API_KEY:-disabled}
     depends_on:
       db:
