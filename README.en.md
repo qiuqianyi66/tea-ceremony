@@ -61,6 +61,18 @@ No ads, no paywall, self-hostable, offline-capable.
 | Tests | Vitest + fake-indexeddb, Playwright E2E + axe, Maven (211 tests + Testcontainers + ArchUnit), pytest (legacy) |
 | CI | GitHub Actions, 13 jobs: type-check+build+smoke / Vitest / Biome / dependency audit / E2E / a11y / pytest / Spring Boot Maven / migration round-trip / compose validation / harness consistency |
 
+## Engineering quality & governance
+
+Process, rules and verification are written as code. Machines check them, not willpower.
+
+- **AI collaboration rules**: `AGENTS.md` defines red lines, the dev process and a three-track triage (Fast / Guided / Controlled) — decompose first, then act, then verify
+- **Architecture decision records**: ADR-001~020, every choice documented with "why A, why not B, when to reverse"; rejected options stay on record too (e.g. Graph orchestration, 0/4 after four-dimension screening)
+- **Skill system**: 66 generic + 39 domain skills, loaded on demand, governed by README routing tables
+- **CI merge gate**: all 13 jobs green before merge — type-check / unit / lint / dependency audit / E2E / a11y / backend dual-stack tests / migration round-trip / compose validation / harness consistency
+- **Deterministic health checks**: `verify-harness.cjs` (ADR/CI/skills/paths consistency, expects ERRORS: []), `audit-redlines.cjs` (red-line mechanization), `audit-wiki-drift.cjs` (API contract cross-check)
+- **AI eval loop**: 50-case eval set + LLM-as-Judge (95% agreement with human review) + full real score v3 0.81, scoring methodology traceable
+- **Branch protection**: main is PR-only, merge requires a green CI
+
 ## Quick start
 
 Frontend only (start here):

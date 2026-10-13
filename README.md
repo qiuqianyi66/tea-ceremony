@@ -63,6 +63,18 @@
 | 测试 | Vitest + fake-indexeddb、Playwright E2E + axe、Maven（211 tests + Testcontainers + ArchUnit）、pytest（旧栈） |
 | CI | GitHub Actions 13 job：类型检查+build+smoke / Vitest / Biome / 依赖审计 / E2E / a11y / pytest / Spring Boot Maven / 迁移往返 / Compose 校验 / harness 一致性 |
 
+## 工程质量与治理
+
+流程、规范、验证都写成代码，机器可查，不靠自觉。
+
+- **AI 协作规则**：`AGENTS.md` 定义红线、开发流程与三轨道分诊（Fast / Guided / Controlled），先拆解、再动手、后验证
+- **架构决策记录**：ADR-001~020，每个架构选择写「选 A 理由 + 否 B 理由 + 反转条件」；被砍的方案也留档（如 Graph 编排，四维甄别 0/4）
+- **技能体系**：66 个通用 + 39 个领域技能，按需加载，README 路由表治理
+- **CI 合并门禁**：13 job 全绿才合并——类型检查 / 单测 / lint / 依赖审计 / E2E / a11y / 后端双栈测试 / 迁移往返 / Compose 校验 / harness 一致性
+- **确定性体检**：`verify-harness.cjs`（ADR/CI/技能/路径一致性，期望 ERRORS: []）、`audit-redlines.cjs`（红线机械化）、`audit-wiki-drift.cjs`（API 契约双向核对）
+- **AI 评测闭环**：50 条评测集 + LLM-as-Judge（人工复核一致率 95%）+ 全量真实分 v3 0.81，判分口径可追溯
+- **分支保护**：main 只走 PR，CI 全绿才合并
+
 ## 快速开始
 
 只玩前端（推荐先跑这个）：
