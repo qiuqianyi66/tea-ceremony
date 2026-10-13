@@ -14,6 +14,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.ArrayDeque;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -21,6 +22,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * 维度 IP+面；超阈值 → 429 统一 ApiResponse(RATE_LIMITED)。
  * 配置经 @Value 注入（跟随 garden.energy 模式）；环境变量沿用旧栈 RATE_LIMIT_* 名称。
  * 单实例实现（旧栈同级别）；多实例需 Redis 计票（ADR-012 方向，非本审计范围）。
+ *
+ * 2026-10-13 线上加固：匿名/登录分级 + 每日总额——AI 面匿名 3 次/分 + 100 次/日，
+ * 登录 30 次/分（防脚本慢速白嫖付费模型；游客正常聊天 3 次/分足够）。每个请求可命中多条规则
+ * （如匿名 AI 同时吃分钟窗 + 日窗），任一条超限即 429。
  */
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {
@@ -29,10 +34,14 @@ public class RateLimitFilter extends OncePerRequestFilter {
     /** 2026-10-12 安全审计 H4：文化搜索公开可调且触发付费 embedding（CultureSearchService.vectorHits），纳入同档限流。 */
     private static final String CULTURE_PREFIX = "/api/v1/culture/";
     private static final String LOGIN_PATH = "/api/v1/auth/login";
+    private static final String BEARER_PREFIX = "Bearer ";
+    private static final long DAY_MS = 86_400_000L;
 
     private final ObjectMapper objectMapper;
-    private final int aiMax;
+    private final int aiAnonMax;
     private final long aiWindowMs;
+    private final int aiAnonDailyMax;
+    private final int aiAuthMax;
     private final int loginMax;
     private final long loginWindowMs;
 
@@ -47,13 +56,17 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     public RateLimitFilter(
             ObjectMapper objectMapper,
-            @Value("${tea.ratelimit.ai-max:10}") int aiMax,
+            @Value("${tea.ratelimit.ai-anon-max:3}") int aiAnonMax,
             @Value("${tea.ratelimit.ai-window-ms:60000}") long aiWindowMs,
+            @Value("${tea.ratelimit.ai-anon-daily-max:100}") int aiAnonDailyMax,
+            @Value("${tea.ratelimit.ai-auth-max:30}") int aiAuthMax,
             @Value("${tea.ratelimit.login-max:10}") int loginMax,
             @Value("${tea.ratelimit.login-window-ms:300000}") long loginWindowMs) {
         this.objectMapper = objectMapper;
-        this.aiMax = aiMax;
+        this.aiAnonMax = aiAnonMax;
         this.aiWindowMs = aiWindowMs;
+        this.aiAnonDailyMax = aiAnonDailyMax;
+        this.aiAuthMax = aiAuthMax;
         this.loginMax = loginMax;
         this.loginWindowMs = loginWindowMs;
     }
@@ -61,55 +74,69 @@ public class RateLimitFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
-        LimitRule rule = match(request.getRequestURI());
-        if (rule == null) {
+        List<LimitRule> rules = match(request.getRequestURI(), isAuthenticated(request));
+        if (rules.isEmpty()) {
             chain.doFilter(request, response);
             return;
         }
         long now = System.currentTimeMillis();
-        String key = rule.name + ":" + clientIp(request);
-        Window window = store.computeIfAbsent(key, k -> new Window());
-        // 第一步：在拿到的窗口上修剪过期时间戳；队列空且距最后活跃超过 2 倍窗口 → 陈旧条目摘除，
-        // 否则换 IP / 匿名访问会让 store 无界增长（原实现永不清理）。
-        synchronized (window) {
-            while (!window.stamps.isEmpty() && now - window.stamps.peekFirst() > rule.windowMs) {
-                window.stamps.pollFirst();
+        String ip = clientIp(request);
+        for (LimitRule rule : rules) {
+            String key = rule.name + ":" + ip;
+            Window window = store.computeIfAbsent(key, k -> new Window());
+            // 第一步：在拿到的窗口上修剪过期时间戳；队列空且距最后活跃超过 2 倍窗口 → 陈旧条目摘除，
+            // 否则换 IP / 匿名访问会让 store 无界增长（原实现永不清理）。
+            synchronized (window) {
+                while (!window.stamps.isEmpty() && now - window.stamps.peekFirst() > rule.windowMs) {
+                    window.stamps.pollFirst();
+                }
+                if (window.stamps.isEmpty() && window.lastActiveAt > 0
+                        && now - window.lastActiveAt > rule.windowMs * 2) {
+                    store.remove(key, window);
+                }
             }
-            if (window.stamps.isEmpty() && window.lastActiveAt > 0
-                    && now - window.lastActiveAt > rule.windowMs * 2) {
-                store.remove(key, window);
+            // 第二步：空窗口（全新 key 或刚摘除的陈旧条目）→ 放全新窗口占槽（putIfAbsent 防并发竞态；
+            // 不能放旧窗口本身——它刚被摘除，放回去等于没清理）。
+            if (window.stamps.isEmpty()) {
+                Window fresh = new Window();
+                Window winner = store.putIfAbsent(key, fresh);
+                window = winner != null ? winner : fresh;
             }
-        }
-        // 第二步：空窗口（全新 key 或刚摘除的陈旧条目）→ 放全新窗口占槽（putIfAbsent 防并发竞态；
-        // 不能放旧窗口本身——它刚被摘除，放回去等于没清理）。
-        if (window.stamps.isEmpty()) {
-            Window fresh = new Window();
-            Window winner = store.putIfAbsent(key, fresh);
-            window = winner != null ? winner : fresh;
-        }
-        boolean allowed;
-        synchronized (window) {
-            allowed = window.stamps.size() < rule.max;
-            if (allowed) {
-                window.stamps.addLast(now);
-                window.lastActiveAt = now;
+            boolean allowed;
+            synchronized (window) {
+                allowed = window.stamps.size() < rule.max;
+                if (allowed) {
+                    window.stamps.addLast(now);
+                    window.lastActiveAt = now;
+                }
             }
-        }
-        if (!allowed) {
-            writeRateLimited(response);
-            return;
+            if (!allowed) {
+                writeRateLimited(response);
+                return;
+            }
         }
         chain.doFilter(request, response);
     }
 
-    private LimitRule match(String uri) {
+    /** 匿名（无 Bearer）→ 更严档；登录 → 放宽档。AI 匿名命中 分钟窗 + 日窗 双规则。 */
+    private List<LimitRule> match(String uri, boolean authenticated) {
         if (uri.startsWith(AI_PREFIX) || uri.startsWith(CULTURE_PREFIX)) {
-            return new LimitRule("ai", aiMax, aiWindowMs);
+            if (authenticated) {
+                return List.of(new LimitRule("ai-auth", aiAuthMax, aiWindowMs));
+            }
+            return List.of(
+                    new LimitRule("ai-anon", aiAnonMax, aiWindowMs),
+                    new LimitRule("ai-anon-daily", aiAnonDailyMax, DAY_MS));
         }
         if (LOGIN_PATH.equals(uri)) {
-            return new LimitRule("login", loginMax, loginWindowMs);
+            return List.of(new LimitRule("login", loginMax, loginWindowMs));
         }
-        return null;
+        return List.of();
+    }
+
+    private boolean isAuthenticated(HttpServletRequest request) {
+        String header = request.getHeader("Authorization");
+        return header != null && header.startsWith(BEARER_PREFIX);
     }
 
     /**
