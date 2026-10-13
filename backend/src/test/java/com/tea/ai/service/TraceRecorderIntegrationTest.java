@@ -26,7 +26,10 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * Trace 集成测试（T07，ADR-016）：真实 Postgres（Testcontainers）+ Flyway V5 + JPA validate。
  * 覆盖：begin→complete 四层 JSONB 落库与字段透传；fail 降级留痕；旁路（保存失败不影响调用方）。
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        // 集成测试共享单例限流器（RANDOM_PORT 同 IP），放宽防止多次调用被 429（生产限流见 application.yml）
+        properties = {"tea.ratelimit.ai-anon-max=1000000", "tea.ratelimit.ai-anon-daily-max=10000000",
+                "tea.ratelimit.ai-auth-max=1000000", "tea.ratelimit.login-max=1000000"})
 @Testcontainers
 class TraceRecorderIntegrationTest {
 

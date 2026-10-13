@@ -20,7 +20,8 @@ const API_BASE = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
 async function callLLM(systemPrompt: string, userPrompt: string): Promise<string | null> {
   try {
     const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 8000)
+    // DeepSeek 推理模型响应 10-30s（thinking 计入生成时间）；8s 太短会被中止 → 规则降级
+    const timeout = setTimeout(() => controller.abort(), 30000)
     const res = await fetch(`${API_BASE}/v1/ai/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -441,7 +442,7 @@ export async function askTeaMaster(
     const res = await fetch(`${API_BASE}/v1/ai/chat`, {
       method: 'POST',
       headers,
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(30000),
       body: JSON.stringify(body),
     })
 

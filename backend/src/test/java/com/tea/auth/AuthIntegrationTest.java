@@ -27,7 +27,10 @@ import java.util.Map;
  * T6 认证集成测试：真实 HTTP + 真实 Postgres（Testcontainers）+ Flyway 迁移 + JPA validate。
  * 覆盖：注册/登录真实走通、Security 放行、401 契约、User JSONB（preferredAroma）映射往返。
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        // 集成测试共享单例限流器（RANDOM_PORT 同 IP），放宽防止多次调用被 429（生产限流见 application.yml）
+        properties = {"tea.ratelimit.ai-anon-max=1000000", "tea.ratelimit.ai-anon-daily-max=10000000",
+                "tea.ratelimit.ai-auth-max=1000000", "tea.ratelimit.login-max=1000000"})
 @Testcontainers
 class AuthIntegrationTest {
 

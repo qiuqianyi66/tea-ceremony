@@ -29,7 +29,10 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * 验证语义查询在 ILIKE 全 miss 时经向量命中补位、关键词查询 ILIKE 优先契约不变、
  * embedding 调用失败自动降级纯 ILIKE（检索不中断，data-layer-product-prd 硬要求）。
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        // 集成测试共享单例限流器（RANDOM_PORT 同 IP），放宽防止多次调用被 429（生产限流见 application.yml）
+        properties = {"tea.ratelimit.ai-anon-max=1000000", "tea.ratelimit.ai-anon-daily-max=10000000",
+                "tea.ratelimit.ai-auth-max=1000000", "tea.ratelimit.login-max=1000000"})
 @Testcontainers
 class CultureSearchVectorBranchIntegrationTest {
 

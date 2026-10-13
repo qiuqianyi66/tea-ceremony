@@ -15,6 +15,7 @@ spring:
       chat:
         options:
           model: ${AI_GATEWAY_MODEL:cn:deepseek-v4.1-flash}
-          # DeepSeek 系推理模型默认思考：thinking tokens 计入 max_tokens，过小会吞掉 content（实测 512 起完整输出）
-          max-tokens: 1024
+          # DeepSeek 系推理模型默认思考：thinking tokens 计入 max_tokens，过小会吞掉 content
+          # （实测 1024 被推理吃光 → content 空 → 前端降级规则引擎；4096 起完整输出）
+          max-tokens: 4096
           temperature: 0.7

@@ -80,7 +80,7 @@ owner: yanha
 
 ## B. 可直接开工（无依赖）
 
-1. **Q1 真实用户试用**（PWA 部署发同学群；评测已达标——T08 pass³ 32/50 / T09 95.0% / T10 ✅，2026-10-12 确认可做）
+1. **Q1 真实用户试用**：✅ **已部署上线**（2026-10-13，`http://42.121.125.4`，ECS 免费试用 3 个月），见「最近完成」。待办只剩：发同学群收集反馈。
 2. **T15 C6 低优先甄别**（可穿插）；**D 系列低优先**（见下，可穿插）
 
 ## C. 依赖卡点（备料可先行，执行要等）
@@ -97,6 +97,7 @@ owner: yanha
 
 ## 最近完成（防重做：先查这里，勿从零重写）
 
+- **Q1 后端公网部署完成**（2026-10-13，本会话）：阿里云 ECS 免费试用实例（42.121.125.4，2C2G 经济型 e，Alibaba Cloud Linux 3，3 个月 300 元额度 ¥0.123/时）——公网 SSH 被拦（banner 超时，仅 Workbench 通道可用）→ 走 Workbench 部署：codeload 下载代码（GitHub 直连超时，改用 codeload 200）→ Docker Hub 拉镜像超时（配 daocloud 无效→ 开 VPN 直连通）→ Maven/npm 换阿里云镜像加速（VPN 下 go-offline 21 分钟不动 → 中断配 aliyun settings.xml + npmmirror，CACHED 重构建 5 分钟）→ 三容器 Healthy/Running；**验证：首页 200（SPA）、注册接口 200 + JWT、`/api/actuator/health` 401 为 Security 前缀保护（容器内 `/actuator/health` 直连健康，属预期）**；前端同学直接访问 `http://42.121.125.4`（nginx 同源反代，GitHub Pages 因 Mixed Content 不能跨 http 后端）；AI 未配 key → 茶灵规则引擎降级（Q1 试用可接受）；注意：VPN 关后 rebuild 需重开，3 个月到期需释放/续购轻量 68 元/年。
 - **Phase 3 评测基线全闭环 + Phase 4 语料 + 安全穿插**（2026-10-12，本会话）：
   ①**五包深度优化**（PR #59-#63）：需求分析 / 规范清单 15 红线 / 安全 4 高危修复（AdminTokenFilter、JWT fail-closed、XFF 末段、文化搜索限流）/ 前端 3 项体验 / 后端 5 项优化（DB 聚合、去重校验、RAG 指标、埋点计数、限流有界摘除）；②**yg-gateway 评测通道**（PR #64，a1ae68b）：openai starter 接入 + 双装配/五大模态排除 + gateway profile；评测实例禁 `balance_refresh_enabled`（5 分钟崩溃根因）；③**T08 pass³**（PR #65，5949449）：overall 0.87 / pass³ 32/50（deepseek 经 gateway，**非生产模型口径，不写简历**）；④**T09 校准 PASS**（PR #66，3dfb30f）：人工复核 77 条 → 一致率 95.0% ≥ 85%（3 处机器偏宽：性价比依据/水温方法可靠性/低因替代稳定性）；⑤**T11 语料 241 条**（PR #66）：真实 54 + 合成 267（gateway 免费生成）去重，90/10 + 抽检 21，管道脚本可复用；⑥**L2 密码 6→8 位 + 弱密码黑名单**、**L7 ADMIN_API_TOKEN 轮换文档**（PR #66）；⑦生产后端已恢复（非 gateway 模式），health 200。
 - **A4 前提证伪 + CI 门禁补回 + Trace 真 bug 修复**（2026-10-10 下午，本会话）：

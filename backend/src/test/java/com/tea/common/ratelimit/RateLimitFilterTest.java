@@ -11,7 +11,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * RateLimitFilter 行为测试（批 3 安全审计）：AI/登录公开端点滑动窗口限流。
- * 规则：aiMax=2 / aiWindowMs=60s；loginMax=1；窗口小值（50ms）用于过期恢复用例。
+ * 规则（2026-10-13 分级加固）：aiAnonMax=2 / aiWindowMs=60s / aiAnonDailyMax=100 / aiAuthMax=30；
+ * loginMax=1；窗口小值（50ms）用于过期恢复用例。
  */
 class RateLimitFilterTest {
 
@@ -19,7 +20,7 @@ class RateLimitFilterTest {
 
     @BeforeEach
     void setUp() {
-        filter = new RateLimitFilter(new ObjectMapper(), 2, 60_000, 1, 300_000);
+        filter = new RateLimitFilter(new ObjectMapper(), 2, 60_000, 100, 30, 1, 300_000);
     }
 
     @Test
@@ -63,7 +64,7 @@ class RateLimitFilterTest {
 
     @Test
     void windowExpiryAllowsRequestsAgain() throws Exception {
-        RateLimitFilter shortWindow = new RateLimitFilter(new ObjectMapper(), 2, 50, 1, 300_000);
+        RateLimitFilter shortWindow = new RateLimitFilter(new ObjectMapper(), 2, 50, 100, 30, 1, 300_000);
         for (int i = 0; i < 2; i++) {
             shortWindow.doFilter(request("/api/v1/ai/chat", "1.1.1.1"), newResp(), new MockFilterChain());
         }
@@ -136,18 +137,19 @@ class RateLimitFilterTest {
     @Test
     void staleWindowsAreEvictedAfterTwoWindowPeriods() throws Exception {
         // 窗口 50ms；陈旧条目（队列空 + 空闲 > 2×窗口）在 key 再次访问时摘除
-        RateLimitFilter shortWindow = new RateLimitFilter(new ObjectMapper(), 2, 50, 1, 300_000);
+        RateLimitFilter shortWindow = new RateLimitFilter(new ObjectMapper(), 2, 50, 100, 30, 1, 300_000);
         shortWindow.doFilter(request("/api/v1/ai/chat", "1.1.1.1"), newResp(), new MockFilterChain());
         shortWindow.doFilter(request("/api/v1/ai/chat", "2.2.2.2"), newResp(), new MockFilterChain());
-        assertThat(shortWindow.store).hasSize(2);
+        // 2 个 IP × 2 规则（ai-anon + ai-anon-daily）→ 4 个活跃条目
+        assertThat(shortWindow.store).hasSize(4);
 
         Thread.sleep(120); // > 2×50ms 窗口
         // 两个 IP 再次访问：各自陈旧窗口被摘除并按全新窗口重建
         shortWindow.doFilter(request("/api/v1/ai/chat", "1.1.1.1"), newResp(), new MockFilterChain());
         shortWindow.doFilter(request("/api/v1/ai/chat", "2.2.2.2"), newResp(), new MockFilterChain());
 
-        // 仍只有 2 个活跃条目（无无界增长），且新窗口接受请求
-        assertThat(shortWindow.store).hasSize(2);
+        // 仍只有 4 个活跃条目（无无界增长），且新窗口接受请求
+        assertThat(shortWindow.store).hasSize(4);
         MockHttpServletResponse third = newResp();
         shortWindow.doFilter(request("/api/v1/ai/chat", "1.1.1.1"), third, new MockFilterChain());
         assertThat(third.getStatus()).isEqualTo(200); // 新窗口第 2 次仍放行
@@ -159,7 +161,66 @@ class RateLimitFilterTest {
         return req;
     }
 
+    private MockHttpServletRequest request(String uri, String ip, String bearerToken) {
+        MockHttpServletRequest req = request(uri, ip);
+        req.addHeader("Authorization", "Bearer " + bearerToken);
+        return req;
+    }
+
     private MockHttpServletResponse newResp() {
         return new MockHttpServletResponse();
+    }
+
+    // ============ 2026-10-13 匿名/登录分级 + 每日总额 ============
+
+    /** 登录用户（带 Bearer）走 ai-auth 档（30/min），同 IP 匿名已超时仍放行。 */
+    @Test
+    void authenticatedAiGetsHigherLimitThanAnonymous() throws Exception {
+        // 匿名 3 次 → 第 3 次 429（ai-anon 2/min）
+        for (int i = 0; i < 2; i++) {
+            filter.doFilter(request("/api/v1/ai/chat", "1.1.1.1"), newResp(), new MockFilterChain());
+        }
+        MockHttpServletResponse anonBlocked = newResp();
+        filter.doFilter(request("/api/v1/ai/chat", "1.1.1.1"), anonBlocked, new MockFilterChain());
+        assertThat(anonBlocked.getStatus()).isEqualTo(429);
+
+        // 同 IP 带登录 token：ai-auth 独立计数，放行
+        for (int i = 0; i < 30; i++) {
+            filter.doFilter(request("/api/v1/ai/chat", "1.1.1.1", "jwt-token"), newResp(), new MockFilterChain());
+        }
+        MockHttpServletResponse authBlocked = newResp();
+        filter.doFilter(request("/api/v1/ai/chat", "1.1.1.1", "jwt-token"), authBlocked, new MockFilterChain());
+        assertThat(authBlocked.getStatus()).isEqualTo(429); // 第 31 次登录档超限
+    }
+
+    /** 匿名每日总额：分钟窗不超但日窗满 → 429（防慢速脚本 24h 白嫖）。 */
+    @Test
+    void anonymousAiDailyCapTriggers429EvenUnderMinuteLimit() throws Exception {
+        // 预填日窗 100 条（当前时间戳，模拟今天 100 次额度已用尽）
+        RateLimitFilter.Window daily = new RateLimitFilter.Window();
+        long now = System.currentTimeMillis();
+        for (int i = 0; i < 100; i++) {
+            daily.stamps.addLast(now);
+        }
+        daily.lastActiveAt = now;
+        filter.store.put("ai-anon-daily:1.1.1.1", daily);
+
+        // 匿名第 1 次：分钟窗（2 内放行）但日窗 100 满 → 429
+        MockHttpServletResponse resp = newResp();
+        filter.doFilter(request("/api/v1/ai/chat", "1.1.1.1"), resp, new MockFilterChain());
+        assertThat(resp.getStatus()).isEqualTo(429);
+    }
+
+    /** 带登录 token 不消耗匿名日窗（档位独立，避免登录用户被匿名日窗误伤）。 */
+    @Test
+    void authenticatedAiDoesNotConsumeAnonymousDailyCap() throws Exception {
+        for (int i = 0; i < 5; i++) {
+            filter.doFilter(request("/api/v1/ai/chat", "1.1.1.1", "jwt-token"), newResp(), new MockFilterChain());
+        }
+        // 匿名日窗无此 IP 条目（未预填），且匿名分钟窗独立
+        assertThat(filter.store.containsKey("ai-anon-daily:1.1.1.1")).isFalse();
+        MockHttpServletResponse anon = newResp();
+        filter.doFilter(request("/api/v1/ai/chat", "1.1.1.1"), anon, new MockFilterChain());
+        assertThat(anon.getStatus()).isEqualTo(200);
     }
 }
