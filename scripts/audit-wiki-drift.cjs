@@ -52,7 +52,13 @@ for (const m of wiki.matchAll(/\|\s*(POST|GET|PUT|DELETE|PATCH)\s*\|\s*`(\/api\/
   const blockStart = headIdx >= 0 ? headIdx : 0;
   const blockText = wiki.slice(blockStart, m.index);
   if (/未实现|待实现/.test(blockText)) continue;
-  wikiEndpoints.push({ method: m[1], path: p, line: wiki.slice(0, m.index).split('\n').length });
+  // 成功响应列 = 所在表格行第 4 个 `|` 段（方法|路径|请求体/参数|成功响应|错误）
+  const rowStart = wiki.lastIndexOf('\n', m.index) + 1;
+  const rowEnd = wiki.indexOf('\n', m.index);
+  const rowLine = wiki.slice(rowStart, rowEnd >= 0 ? rowEnd : undefined);
+  const rowParts = rowLine.split('|').map((s) => s.trim());
+  const responseCol = rowParts[4] ?? '';
+  wikiEndpoints.push({ method: m[1], path: p, line: wiki.slice(0, m.index).split('\n').length, response: responseCol });
 }
 
 // ---------- 2. 收集代码端点 ----------
@@ -82,7 +88,11 @@ for (const f of javaFiles) {
       else if (mpRaw.startsWith('/')) full = norm(clsPrefix + mpRaw);  // 相对类前缀
       else full = norm(clsPrefix + '/' + mpRaw);
     } else continue;
-    if (full.startsWith('/api')) codeEndpoints.push({ path: full, source: path.relative(ROOT, f).replace(/\\/g, '/') });
+    if (!full.startsWith('/api')) continue;
+    // 二期（G24 ⑦）：提取方法返回类型（含泛型与内部空格，如 ApiResponse<Map<String, String>>），用于 ApiResponse 包装形态核对
+    const afterMapping = text.slice(m.index + m[0].length, Math.min(text.length, m.index + m[0].length + 500));
+    const retMatch = afterMapping.match(/public\s+([\w<>,.?\[\] ]+?)\s+\w+\s*\(/);
+    codeEndpoints.push({ method: m[1].toUpperCase(), path: full, source: path.relative(ROOT, f).replace(/\\/g, '/'), returnType: retMatch ? retMatch[1] : '' });
   }
 }
 
@@ -120,6 +130,25 @@ for (const u of unregistered.slice(0, 5)) {
   warnings.push(`代码端点未登记契约：${u}（新增端点需先在 api-contract.md 登记）`);
 }
 if (unregistered.length > 5) warnings.push(`代码端点未登记契约：另有 ${unregistered.length - 5} 个（同上，需登记）`);
+
+// ---------- 3b. 二期（G24 ⑦）：响应包装形态核对（新栈 /api/v1 端点） ----------
+// 契约：新栈端点成功响应必须写 `ApiResponse<...>`；代码：对应 Controller 方法返回类型必须含 ApiResponse。
+// 旧栈（非 /api/v1）响应为裸 `{...}`/`list[...]`，无类型化契约，跳过。
+const respErrors = [];
+for (const w of wikiEndpoints) {
+  if (!w.path.startsWith('/api/v1')) continue;   // 二期只核新栈
+  if (!/ApiResponse/.test(w.response)) {
+    respErrors.push(`新栈契约响应未用 ApiResponse 包装：${w.path}（api-contract.md 第 ${w.line} 行，写 ${w.response}；新栈统一 ApiResponse{data:...}）`);
+    continue;
+  }
+  const ws = segments(w.path);
+  const matched = codeEndpoints.find((c) => c.method === w.method && matches(ws, segments(c.path)));
+  if (!matched) continue;                        // 路径缺失已由一期报 ERROR
+  if (!/ApiResponse/.test(matched.returnType)) {
+    respErrors.push(`契约响应 ApiResponse 但代码返回裸类型：${w.path}（${matched.source} 返回 ${matched.returnType || '（未提取到）'}，应包装 ApiResponse）`);
+  }
+}
+for (const r of respErrors) errors.push(r);
 
 // ---------- 输出 ----------
 console.log('=== wiki 契约漂移审计（替代 consistency-verifier） ===');
