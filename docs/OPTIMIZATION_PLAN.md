@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-09-20
+last_updated: 2026-10-13
 status: active
 owner: yanha
 ---
@@ -153,5 +153,49 @@ owner: yanha
 | 全部 | 不新增页面/重型依赖 | P0/P1 全是轻量库，不加路由/页面 |
 
 ---
+
+## 五、落地核对结论（2026-10-13，T15 P1-10）
+
+> 对照新栈（Spring Boot 3.5 + Compose 部署）逐项实测核验。状态：✅ 已做/已消解 ｜ ⚠ 部分 ｜ ❌ 未做。证据均为文件/配置实测，非转抄。
+
+| 项 | 状态 | 证据（实测） |
+|---|---|---|
+| P0-1 proxy-headers | ✅ 已消解 | 新栈无 uvicorn；nginx 传 XFF，Spring Security 处理（#62） |
+| P0-2 连接池 | ✅ 已消解 | HikariCP 默认 pre-ping/回收 + Flyway 管理 |
+| P0-3 PWA prompt | ✅ 已做 | `vite.config.ts` registerType: 'prompt' + PwaUpdateToast |
+| P0-4 CSP | ✅ 已做 | `nginx.conf` 完整 CSP（object-src/base-uri/frame-ancestors/worker-src，无外部域名） |
+| P0-5 多阶段 + non-root | ✅ 已做 | `backend/Dockerfile` builder/runtime + USER appuser |
+| P0-6 限流 | ✅ 已做 | #62：登录 10/5min/IP + AI 限流 |
+| P0-8 SECRET_KEY | ✅ 已做 | #62：JWT_SECRET fail-closed（≥32 字节） |
+| P0-9 TrustedHost | ✅ 已消解 | nginx server_name 限定 + Spring Security 等价处理 |
+| P1-1 request_id + JSON 日志 | ❌ 未做 | 后端无 X-Request-ID / JSON 日志配置（trace 表 requestId 仅评测链路） |
+| P1-2 Prometheus /metrics | ❌ 未做 | actuator 未暴露 metrics 到 nginx |
+| P1-3 Dependabot + audit | ✅ 已做 | CI dependency-audit + dependabot PR |
+| P1-4 ruff + bandit | ✅ 已做 | CI backend-lint |
+| P1-5 Biome | ✅ 已做 | CI frontend-lint |
+| P1-6 Playwright trace | ✅ 已做 | `playwright.config.ts` trace: 'on-first-retry' |
+| P1-7 axe | ✅ 已做 | CI e2e-a11y |
+| P1-8 navigateFallback | ✅ 已做 | `vite.config.ts` navigateFallback + denylist |
+| P1-9 web-vitals 落本地 | ✅ 已做 | `src/services/vitals.ts` + IndexedDB webVitals 表 + 测试 |
+| P1-10 PG 备份 | ✅ 已做 | `scripts/backup-postgres.ps1/.sh` 存在；DEPLOY 含用法 |
+| P1-11 gunicorn | ✅ 已过时 | 新栈 Spring Boot 容器，无 uvicorn/gunicorn |
+| P1-12 健康分离 | ⚠ 部分 | actuator /actuator/health + compose healthcheck；/live /ready 未分离 |
+| P1-13 熔断 | ❌ 未做 | 无 circuit breaker（限流有，熔断无） |
+| P2-1 refresh token | ❌ 未做 | 登录/云同步暂缓方向，维持 |
+| P2-2 manualChunks | ✅ 已消解 | vite 注释：单一依赖不可再拆 + 路由懒加载 |
+| P2-3 严格 tsconfig | ✅ 已做 | `tsconfig.app.json` exactOptionalPropertyTypes + noUncheckedIndexedAccess |
+| P2-4 visualizer | ✅ 已做 | `vite.config.ts` VISUALIZE=1 条件启用 |
+| P2-5 视觉回归 | ⚠ 部分 | verify-gardens/pavilion 3D 截图脚本；无 toHaveScreenshot 像素阈值 |
+| P2-6 焦点管理 + ARIA | ⚠ 部分 | #61 体验（对比度/触控/loading）+ e2e-a11y；live region 未确认 |
+| P2-7 WebP/AVIF | ⚠ 部分 | `compress-assets.cjs` 压缩 jpeg/png/webp；无 AVIF 转换 |
+| P2-8 KTX2 | ✅ 已做 | `vite.config.ts` 3d-textures runtimeCaching（ktx2/wasm/js） |
+| P2-9 前端错误缓冲 | ❌ 未做 | src 无 window.onerror 落 IndexedDB |
+| P2-10 brotli | ✅ 已做 | `nginx.conf` brotli on（HTTP2/HTTPS 注释待域名） |
+| P2-12 导出 JSON | ✅ 已做 | `CollectionView.vue` 一键导出 .json |
+
+**残留未做（4 项）**：P1-1 request_id/JSON 日志、P1-2 Prometheus、P1-13 熔断、P2-9 前端错误缓冲——均非阻塞，排低优先或随后端深化处理。
+**过时/已消解（4 项）**：P0-1、P0-2、P0-9、P1-11（新栈已等价或不再适用）。
+**部分（4 项）**：P1-12、P2-5、P2-6、P2-7（有基础，缺增强）。
+**维持不做（对应原 🚫 清单）**：Argon2id、IndexedDB 加密、SRI、K8s、Celery、读写分离、Redis Cluster、OTel、付费 APM、Traefik、WAL/PITR、邮件找回、过度分包——理由不变。
 
 *本方案为决策版，落地时每项按 AGENTS.md 门禁链 + 功能/性能/安全三面验证执行。来源见 docs/ENTERPRISE_GAP.md 第六节。*
