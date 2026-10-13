@@ -15,7 +15,10 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * 运行时技能集成测试（T08，ADR-017）：真实 Postgres（Testcontainers）+ Flyway V6 种子。
  * 覆盖：四领域种子可加载；未知领域/agent 空回退；ddl-auto validate 与 V6 对齐。
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        // 集成测试共享单例限流器（RANDOM_PORT 同 IP），放宽防止多次调用被 429（生产限流见 application.yml）
+        properties = {"tea.ratelimit.ai-anon-max=1000000", "tea.ratelimit.ai-anon-daily-max=10000000",
+                "tea.ratelimit.ai-auth-max=1000000", "tea.ratelimit.login-max=1000000"})
 @Testcontainers
 class AgentSkillRouterIntegrationTest {
 

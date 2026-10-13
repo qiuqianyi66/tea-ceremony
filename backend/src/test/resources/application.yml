@@ -1,8 +1,0 @@
-# 测试专用配置：放宽限流（集成测试同 JVM 共享单例 RateLimitFilter，连续多次调用会累计计数；
-# 匿名 3/min 会把 CultureSearchIntegrationTest 等多次调用拦成 429）。单元测试直接构造 Filter，不受影响。
-tea:
-  ratelimit:
-    ai-anon-max: 100000
-    ai-anon-daily-max: 1000000
-    ai-auth-max: 100000
-    login-max: 100000

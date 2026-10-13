@@ -21,7 +21,10 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * MCP server 装配集成测试（P1-1）：真实 Postgres（Testcontainers）+ 真实 MCP auto-config。
  * 验证：McpSyncServer bean 生成；@Tool cultureSearch 被扫描注册为 MCP 工具（协议层"专家=工具"试点）；/mcp SSE 端点匿名可达。
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        // 集成测试共享单例限流器（RANDOM_PORT 同 IP），放宽防止多次调用被 429（生产限流见 application.yml）
+        properties = {"tea.ratelimit.ai-anon-max=1000000", "tea.ratelimit.ai-anon-daily-max=10000000",
+                "tea.ratelimit.ai-auth-max=1000000", "tea.ratelimit.login-max=1000000"})
 @Testcontainers
 class McpServerIntegrationTest {
 
