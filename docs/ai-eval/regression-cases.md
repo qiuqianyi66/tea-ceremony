@@ -1,3 +1,9 @@
+---
+last_updated: 2026-10-13
+status: active
+owner: yanha
+---
+
 # AI 评测回归样本（K17）
 
 > 规则：每次评测后运行本脚本，bad case 自动入表；归因修复并验证通过后删除对应行。
