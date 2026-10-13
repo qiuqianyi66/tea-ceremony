@@ -122,6 +122,18 @@ type: flow
 - [ ] 无密钥/token/用户数据
 - [ ] 旧交接已在 frontmatter 标注被取代
 
+## AI onboard 草稿 prompt（G24 ⑧，2026-10-13）
+
+新 AI 会话接手任务前，把下面这段原样发给它，产 HANDOFF 草稿：
+
+> 开工前先产 HANDOFF 草稿，文件名 docs/HANDOFF-YYYY-MM-DD-<suffix>-execution.md，按 session-handoff 技能（.harness/skills/main-dev/session-handoff/SKILL.md）五段结构写：
+> 1. 先跑三行复核命令：`git log -1 --format=%h`、`git status --short`、`node scripts/verify-harness.cjs`（读输出 ERRORS 数）。
+> 2. 写：一句话现状 → 仓库状态（带复核时间）→ 已复核/未复核分栏 → 下次第一步（具体到命令+文件）→ 关键决策。
+> 3. 已复核断言必须带复核命令证据；未复核断言标"待验"并写下次验证方法；禁写"据上一份交接"。
+> 4. 草稿 ≤120 行 ≤4000 字符；写完贴文件路径，等 owner 审查后再开工。
+
+草稿用途：新 agent 开工前把任务承接状态钉在磁盘上，owner 可审可改；审查通过即转为正式交接。
+
 ## 下一步
 
 - 把 HANDOFF 文件路径贴给用户，提醒"新会话第一句：读这份 + TODO-PRIORITY + 对应 PLAN"。
