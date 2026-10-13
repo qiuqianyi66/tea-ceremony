@@ -93,7 +93,7 @@ owner: yanha
 
 - K17-K22：**K17 ✅ K18 ✅ K19 ✅（每周一 10:30 质量巡检 cron）K20 ✅ K21 ✅ K22 ✅（G24 ①无需补（E2E 规则自带边界）②③④⑤⑥ ✅ ⑦wiki-drift 二期响应契约 ✅ ⑧Debug 无明文 + AI onboard prompt ✅）**（2026-10-13）
 - **P1-1 ✅（request_id：RequestIdFilter + logback MDC + nginx $request_id，单测 4/4）P1-5 ✅ P1-6 ✅ P1-7 ✅（P-O2 不适用/P-O3 已落地/P-O4 来源卡片 ✅）P1-8 ✅（OPTIMIZATION_PLAN：navigateFallback 离线深链已配，vite.config.ts L103）P1-10 ✅ P1-13 ✅（AiCircuitBreaker 熔断：阈值 5/30s 窗，单测 5/5）P2-9 ✅（errorBuffer.ts 已实现，P1-10 原核对漏扫）**（2026-10-13）；**两个 P1-9 需带文档前缀区分**：OPTIMIZATION_PLAN P1-9（web-vitals 落 IndexedDB）✅ 已实现（src/services/vitals.ts）；T15 决定表 P1-9（HTTPS 443 证书）❌ 待域名解锁。茶园 S1 ✅（PR #40 已合 main，garden 端点 + 能量账本 ADR-015）。P1-2 Prometheus 维持不做（需新依赖 micrometer-registry-prometheus + 无消费端）
-- 技术债：mcp 双版本共存、启动 WARN（随 agent-framework 升级）；Q2 C6 低优先甄别未做
+- 技术债：~~mcp 双版本共存~~（✅ 2026-10-13 锁 io.modelcontextprotocol.sdk 0.17.0，集成测试 252 全绿）；启动 WARN 核查完成（无害：mcp BeanPostProcessor 顺序提示 + UserDetails 提示 + SyncMcpToolProvider 空工具提示）；Q2 C6 低优先甄别 = T15 C6 决定表（✅ 已完成）；集成测试首次真跑暴露三重欠账已修（test yml 重建 / 生产 compose gateway 污染修复）
 
 ## 最近完成（防重做：先查这里，勿从零重写）
 
