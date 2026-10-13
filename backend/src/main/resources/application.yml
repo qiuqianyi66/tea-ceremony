@@ -83,6 +83,10 @@ tea:
     # F-6 会话配额（ADR-018）：单会话内 LLM 调用上限；0/负数=不限。
     # 与 tea.ratelimit.ai-max（10/min 瞬时速率）是两层：限流管速率，配额管会话总量。
     max-calls-per-session: ${AI_MAX_CALLS_PER_SESSION:10}
+  # P1-13 熔断（AiCircuitBreaker）：连续失败达阈值 → 时间窗内快速 502（防上游故障时全量等待超时）
+  circuit-breaker:
+    failure-threshold: ${AI_CIRCUIT_BREAKER_FAILURE_THRESHOLD:5}
+    open-window-ms: ${AI_CIRCUIT_BREAKER_OPEN_WINDOW_MS:30000}
 
 garden:
   energy:

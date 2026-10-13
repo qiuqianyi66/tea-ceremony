@@ -55,6 +55,8 @@ public class AiChatService {
     private final BrewerAgent brewerAgent;
     private final MentorAgent mentorAgent;
     private final AiCallQuota callQuota;
+    /** P1-13 熔断：上游连续失败达阈值后快速 502（前端降级链不变）。 */
+    private final AiCircuitBreaker circuitBreaker;
     /** 激活的 ChatModel 提供商（spring.ai.model.chat）：openai（gateway profile）或 dashscope（生产）。 */
     private final String modelChat;
     private final String dashscopeApiKey;
@@ -71,6 +73,7 @@ public class AiChatService {
                          BrewerAgent brewerAgent,
                          MentorAgent mentorAgent,
                          AiCallQuota callQuota,
+                         AiCircuitBreaker circuitBreaker,
                          @Value("${spring.ai.model.chat:}") String modelChat,
                          @Value("${spring.ai.dashscope.api-key:}") String dashscopeApiKey,
                          @Value("${spring.ai.openai.api-key:}") String openaiApiKey) {
@@ -85,6 +88,7 @@ public class AiChatService {
         this.brewerAgent = brewerAgent;
         this.mentorAgent = mentorAgent;
         this.callQuota = callQuota;
+        this.circuitBreaker = circuitBreaker;
         this.modelChat = modelChat;
         this.dashscopeApiKey = dashscopeApiKey;
         this.openaiApiKey = openaiApiKey;
@@ -113,8 +117,13 @@ public class AiChatService {
         persist(sessionId, "user", lastUserMessage(req), agentOf(type, req));
         // T07 评测 Trace：入口埋点（input/context/plan 层，含复杂度档位），dispatch 后 complete/fail（ADR-016）
         AiEvalTrace trace = traceRecorder.begin(sessionId, type, req, anchored, level);
+        // P1-13 熔断：OPEN 窗口内快速失败（不调 LLM），前端照常走 502 规则降级
+        if (!circuitBreaker.allowCall()) {
+            throw new BadGatewayException("AI 服务暂时不可用（熔断保护中）");
+        }
         try {
             AiChatVo vo = dispatch(type, userId, anchored);
+            circuitBreaker.onSuccess();
             traceRecorder.complete(trace, vo);
             if (sessionId != null) {
                 persist(sessionId, "assistant", vo.content(), agentOf(type, req));
@@ -122,6 +131,7 @@ public class AiChatService {
             }
             return vo;
         } catch (BadGatewayException e) {
+            circuitBreaker.onFailure();
             traceRecorder.fail(trace, e);
             throw e;
         }

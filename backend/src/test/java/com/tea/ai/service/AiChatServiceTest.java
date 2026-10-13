@@ -3,6 +3,7 @@ package com.tea.ai.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
@@ -61,18 +62,20 @@ class AiChatServiceTest {
     private final TraceRecorder traceRecorder = mock(TraceRecorder.class);
     /** 既有用例默认不限配额（0 = 不限），保持本文件原语义；配额专项用例见 AiCallQuotaTest。 */
     private final AiCallQuota unlimitedQuota = new AiCallQuota(0);
+    /** P1-13 熔断：既有用例用未熔断实例（阈值 5，正常放行），保持原行为；熔断专项用例单独构造。 */
+    private final AiCircuitBreaker closedBreaker = new AiCircuitBreaker(5, 30_000);
 
     /** 既有用例默认 dashscope 模式（生产承重墙语义），保持原行为。 */
     private AiChatService service(String apiKey) {
         return new AiChatService(builder, usageLogger, orchestrator, memoryService, traceRecorder,
-                librarian, advisor, taster, brewer, mentor, unlimitedQuota,
+                librarian, advisor, taster, brewer, mentor, unlimitedQuota, closedBreaker,
                 "dashscope", apiKey, "sk-openai-test");
     }
 
     /** gateway profile（openai 模式）：key 检查走 openai key。 */
     private AiChatService gatewayService(String openaiKey) {
         return new AiChatService(builder, usageLogger, orchestrator, memoryService, traceRecorder,
-                librarian, advisor, taster, brewer, mentor, unlimitedQuota,
+                librarian, advisor, taster, brewer, mentor, unlimitedQuota, closedBreaker,
                 "openai", "disabled", openaiKey);
     }
 
@@ -132,9 +135,7 @@ class AiChatServiceTest {
         when(orchestrator.routeToAgent(req("mentor"))).thenReturn(AgentType.MENTOR);
         when(mentor.chat(null, req("mentor"))).thenReturn(new AiChatVo("建议", List.of()));
 
-        service.chat(null, req("mentor"));
-
-        verify(mentor).chat(null, req("mentor"));
+        service.chat(null, req("mentor"));        verify(mentor).chat(null, req("mentor"));
     }
 
     @Test
@@ -413,5 +414,44 @@ class AiChatServiceTest {
         when(response.getResult()).thenReturn(generation);
         when(generation.getOutput()).thenReturn(output);
         when(output.getText()).thenReturn(text);
+    }
+
+    @Test
+    void openBreakerShortCircuitsTo502WithoutDispatch() {
+        // 熔断 OPEN（已连续失败 5 次）：chat 快速抛 BadGatewayException，且不再派发任何专家
+        AiCircuitBreaker openBreaker = new AiCircuitBreaker(5, 30_000);
+        for (int i = 0; i < 5; i++) {
+            openBreaker.onFailure();
+        }
+        AiChatService service = new AiChatService(builder, usageLogger, orchestrator, memoryService, traceRecorder,
+                librarian, advisor, taster, brewer, mentor, unlimitedQuota, openBreaker,
+                "dashscope", "test-key", "sk-openai-test");
+
+        assertThrows(BadGatewayException.class, () -> service.chat(null, req("librarian")));
+        verify(librarian, never()).chat(any(), any());
+        verify(advisor, never()).chat(any(), any());
+    }
+
+    @Test
+    void failedDispatchRecordsBreakerFailure() {
+        AiChatService service = service("test-key");
+        when(orchestrator.routeToAgent(req("librarian"))).thenReturn(AgentType.LIBRARIAN);
+        when(librarian.chat(null, req("librarian"))).thenThrow(new BadGatewayException("AI 服务调用失败"));
+
+        assertThrows(BadGatewayException.class, () -> service.chat(null, req("librarian")));
+
+        assertThat(closedBreaker.currentFailures()).isEqualTo(1);
+    }
+
+    @Test
+    void successfulDispatchRecordsBreakerSuccess() {
+        AiChatService service = service("test-key");
+        when(orchestrator.routeToAgent(req("librarian"))).thenReturn(AgentType.LIBRARIAN);
+        when(librarian.chat(null, req("librarian"))).thenReturn(new AiChatVo("答", List.of("茶·龙井")));
+
+        service.chat(null, req("librarian"));
+
+        assertThat(closedBreaker.currentFailures()).isZero();
+        assertThat(closedBreaker.isOpen()).isFalse();
     }
 }
