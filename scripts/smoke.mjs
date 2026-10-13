@@ -1,4 +1,5 @@
-const baseUrl = (process.argv[2] || 'http://127.0.0.1:4173').replace(/\/$/, '')
+// G24 ③：默认 localhost（vite preview 可能绑定 IPv6 ::1，127.0.0.1 会全部 fetch failed，AGENTS.md §13）
+const baseUrl = (process.argv[2] || 'http://localhost:4173').replace(/\/$/, '')
 const routes = [
   '/',
   '/select',

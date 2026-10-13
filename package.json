@@ -19,7 +19,8 @@
     "verify": "npm run verify:static",
     "verify:static": "node scripts/scan-emoji.cjs",
     "verify:ui": "node scripts/verify-gardens.cjs && node scripts/verify-pavilion.cjs && node scripts/verify-icons.cjs",
-    "quality": "npm run lint && npm run type-check && npm run test && npm run build && npm run verify"
+    "quality": "npm run lint && npm run type-check && npm run test && npm run build && npm run verify",
+    "quality:full": "npm run quality && npm audit --registry=https://registry.npmjs.org"
   },
   "dependencies": {
     "@tresjs/cientos": "^5.8.1",
