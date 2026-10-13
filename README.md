@@ -16,6 +16,7 @@
 ## 立即体验
 
 👉 **在线 Demo（无需注册，离线可用）**：[qiuqianyi66.github.io/tea-ceremony](https://qiuqianyi66.github.io/tea-ceremony/)
+👉 **完整版（含后端，公网部署）**：[http://42.121.125.4](http://42.121.125.4/)
 
 ![一盏茶 · 社交封面](docs/screenshots/og-cover.png)
 
@@ -27,7 +28,7 @@
 - **完整流程闭环**：备器 → 煮水 → 温杯 → 醒茶 → 冲泡 → 观色 → 闻香 → 品味，八维口感评分 × 冲泡工艺系数
 - **离线优先**：Dexie.js + IndexedDB，品鉴记录先落本地，断网也能泡，联网后自动同步
 - **可分享**：一键生成带二维码的品鉴卡 PNG / 只读分享链接，把这席茶送给朋友
-- **AI 茶灵**：茶文化 RAG 检索 + LLM，网络不可用时自动降级到规则回复
+- **AI 茶灵**：五角色专家（选茶 / 冲泡 / 品鉴 / 茶文化 / 成长导师）+ RAG 向量检索，断网自动降级到规则回复
 
 ## 核心界面
 
@@ -55,12 +56,12 @@
 | --- | --- |
 | 前端 | Vue 3 + TypeScript（strict）+ Pinia + Vue Router + Tailwind CSS + Vite |
 | 3D | Three.js / TresJS（KTX2 压缩贴图 + basis transcode） |
-| 数据 | Dexie.js + IndexedDB（离线优先，`sync_status` 重试队列） |
-| 后端 | FastAPI + SQLAlchemy 2.0（异步）+ PostgreSQL + Pydantic v2 + Alembic |
-| AI | 后端代理转发（浏览器禁止直连第三方），DeepSeek，失败降级到规则引擎 |
-| 部署 | Windows Server 原生（NSSM + uvicorn + nginx for Windows），GitHub Pages 静态 Demo |
-| 测试 | Vitest + fake-indexeddb、Playwright E2E、pytest + Alembic 迁移往返 |
-| CI | GitHub Actions：类型检查 / 单测 / E2E / 构建 / 后端测试 / 迁移测试 / Compose 校验 |
+| 数据 | Dexie.js + IndexedDB（离线优先，`sync_status` 重试队列）；PostgreSQL + pgvector（RAG 向量检索） |
+| 后端 | Spring Boot 3.5 + Spring Data JPA + Spring AI Alibaba + Flyway（旧 FastAPI 仅维护） |
+| AI | 后端代理 `/api/ai/*`（浏览器禁止直连第三方），RAG 向量检索 + 五角色专家，DashScope，失败降级到规则引擎 |
+| 部署 | Docker Compose（frontend / backend / postgres / nginx），公网 ECS 在线，GitHub Pages 静态 Demo |
+| 测试 | Vitest + fake-indexeddb、Playwright E2E + axe、Maven（211 tests + Testcontainers + ArchUnit）、pytest（旧栈） |
+| CI | GitHub Actions 13 job：类型检查+build+smoke / Vitest / Biome / 依赖审计 / E2E / a11y / pytest / Spring Boot Maven / 迁移往返 / Compose 校验 / harness 一致性 |
 
 ## 快速开始
 
@@ -71,20 +72,16 @@ npm install
 npm run dev
 ```
 
-完整全栈（需要本地 PostgreSQL + Python 3.12）：
+完整全栈（Docker Compose：PostgreSQL + Spring Boot 后端）：
 
-```powershell
-Copy-Item .env.example .env   # 编辑 SECRET_KEY、DATABASE_URL
-cd backend
-python -m venv .venv
-.\.venv\Scripts\pip install -r requirements.txt
-.\.venv\Scripts\alembic upgrade head
-.\.venv\Scripts\python -m seeds.run
-.\.venv\Scripts\uvicorn main:app --reload --port 8000
+```bash
+Copy-Item .env.example .env   # 编辑 POSTGRES_PASSWORD、JWT_SECRET、DB_PASSWORD
+docker compose up -d --build
+# 前端 http://localhost:5173，后端 http://localhost:18080
 ```
 
 常用命令：`npm run type-check` · `npm run test` · `npm run build` · `npm run test:e2e`
-后端测试：`cd backend && .\.venv\Scripts\python -m pytest tests -q`
+后端测试：`cd backend && mvn -q test`（旧 FastAPI 栈：`python -m pytest tests -q`）
 
 完整部署、架构说明、设计规范见：[DEPLOY.md](DEPLOY.md) · [CONTEXT.md](CONTEXT.md) · [DESIGN_SPEC.md](DESIGN_SPEC.md) · [3D_SPEC.md](3D_SPEC.md)
 

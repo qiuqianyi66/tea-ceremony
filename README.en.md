@@ -16,6 +16,7 @@ Not an encyclopedia, not a timer. A digital tea room you can actually walk into.
 ## Try it now
 
 👉 **Live demo (no signup, works offline)**：[qiuqianyi66.github.io/tea-ceremony](https://qiuqianyi66.github.io/tea-ceremony/)
+👉 **Full version (with backend, public deployment)**：[http://42.121.125.4](http://42.121.125.4/)
 
 ![Tea Ceremony · cover](docs/screenshots/og-cover.png)
 
@@ -27,7 +28,7 @@ Most "tea culture" apps stop at articles and photos. Tea Ceremony turns culture 
 - **Full loop**: prepare → boil → warm → awaken → brew → observe color → smell → taste, scored by an 8-dimension mouthfeel model × brewing-craft coefficient
 - **Offline-first**: Dexie.js + IndexedDB, records land locally first, sync when back online
 - **Shareable**: one-tap tasting card with QR code / read-only share link / PNG — send this session to a friend
-- **AI tea spirit**: tea-culture RAG + LLM through a backend proxy, gracefully falling back to rule-based replies when offline
+- **AI tea spirit**: five specialist roles (tea selection / brewing / tasting / tea culture / growth mentor) + RAG vector retrieval, gracefully falling back to rule-based replies when offline
 
 ## Screens
 
@@ -53,12 +54,12 @@ No ads, no paywall, self-hostable, offline-capable.
 | --- | --- |
 | Frontend | Vue 3 + TypeScript (strict) + Pinia + Vue Router + Tailwind CSS + Vite |
 | 3D | Three.js / TresJS (KTX2 compressed textures, basis transcoder) |
-| Data | Dexie.js + IndexedDB (offline-first, `sync_status` retry queue) |
-| Backend | FastAPI + SQLAlchemy 2.0 (async) + PostgreSQL + Pydantic v2 + Alembic |
-| AI | Backend proxy only (browser never calls third-party AI directly), DeepSeek, rule-based fallback |
-| Deploy | Native Windows Server (NSSM + uvicorn + nginx for Windows), GitHub Pages static demo |
-| Tests | Vitest + fake-indexeddb, Playwright E2E, pytest + Alembic migration round-trip |
-| CI | GitHub Actions: type-check / unit / E2E / build / backend / migration / compose |
+| Data | Dexie.js + IndexedDB (offline-first, `sync_status` retry queue); PostgreSQL + pgvector (RAG vector retrieval) |
+| Backend | Spring Boot 3.5 + Spring Data JPA + Spring AI Alibaba + Flyway (legacy FastAPI maintenance-only) |
+| AI | Backend proxy only (`/api/ai/*`, browser never calls third-party AI directly), RAG vector retrieval + five specialist roles, DashScope, rule-based fallback |
+| Deploy | Docker Compose (frontend / backend / postgres / nginx), public ECS online, GitHub Pages static demo |
+| Tests | Vitest + fake-indexeddb, Playwright E2E + axe, Maven (211 tests + Testcontainers + ArchUnit), pytest (legacy) |
+| CI | GitHub Actions, 13 jobs: type-check+build+smoke / Vitest / Biome / dependency audit / E2E / a11y / pytest / Spring Boot Maven / migration round-trip / compose validation / harness consistency |
 
 ## Quick start
 
@@ -69,20 +70,16 @@ npm install
 npm run dev
 ```
 
-Full stack (requires local PostgreSQL + Python 3.12):
+Full stack (Docker Compose: PostgreSQL + Spring Boot backend):
 
-```powershell
-Copy-Item .env.example .env   # edit SECRET_KEY, DATABASE_URL
-cd backend
-python -m venv .venv
-.\.venv\Scripts\pip install -r requirements.txt
-.\.venv\Scripts\alembic upgrade head
-.\.venv\Scripts\python -m seeds.run
-.\.venv\Scripts\uvicorn main:app --reload --port 8000
+```bash
+Copy-Item .env.example .env   # edit POSTGRES_PASSWORD, JWT_SECRET, DB_PASSWORD
+docker compose up -d --build
+# frontend http://localhost:5173, backend http://localhost:18080
 ```
 
 Common: `npm run type-check` · `npm run test` · `npm run build` · `npm run test:e2e`
-Backend tests: `cd backend && .\.venv\Scripts\python -m pytest tests -q`
+Backend tests: `cd backend && mvn -q test` (legacy FastAPI stack: `python -m pytest tests -q`)
 
 Docs: [DEPLOY.md](DEPLOY.md) · [CONTEXT.md](CONTEXT.md) · [DESIGN_SPEC.md](DESIGN_SPEC.md) · [3D_SPEC.md](3D_SPEC.md)
 
