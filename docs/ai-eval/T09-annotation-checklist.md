@@ -1,3 +1,12 @@
+---
+name: t09-annotation-checklist
+description: T09 LLM-as-Judge 人工复核清单（2026-10-12），逐条比对 AI 回答与考点，复核已 PASS（一致率 95.0%）。
+status: deprecated
+owner: yanha
+date: 2026-10-12
+last_updated: 2026-10-13
+---
+
 # T09 judge 人工复核清单（2026-10-12，T08 报告）
 
 > 规则：逐条看「AI 回答片段」是否真正满足「考点」。满足填 

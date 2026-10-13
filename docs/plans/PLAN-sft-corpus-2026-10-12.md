@@ -1,7 +1,7 @@
 ---
 name: plan-sft-corpus-2026-10-12
 description: T11 SFT 语料构建完成——真实数据实测与合成补齐、241 条语料、抽检与拆分。训练量级待拍板。
-status: done
+status: active
 owner: yanha
 date: 2026-10-12
 last_updated: 2026-10-12

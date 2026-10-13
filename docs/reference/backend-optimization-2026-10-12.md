@@ -3,6 +3,9 @@ title: 后端优化报告（性能/正确性/可观测性/健壮性）
 date: 2026-10-12
 scope: backend（Spring Boot 3.5 + Spring Data JPA + Spring AI Alibaba）
 worktree: perf/backend-opt（从 main=fdba8db 检出）
+status: deprecated
+owner: yanha
+last_updated: 2026-10-13
 ---
 
 # 后端优化报告 2026-10-12

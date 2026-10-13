@@ -1,7 +1,9 @@
 ---
 type: plan
 status: active
+owner: yanha
 date: 2026-10-12
+last_updated: 2026-10-13
 related: REQ-ai-eval-v6-2026-10-12.md, ITERATIONS.md
 ---
 

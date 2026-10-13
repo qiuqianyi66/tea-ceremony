@@ -3,6 +3,9 @@ title: 安全审计报告（OWASP Top 10）2026-10-12
 date: 2026-10-12
 scope: 前端 Vue3 / 后端 Spring Boot 3.5 / 配置与部署
 branch: fix/security-hardening
+status: deprecated
+owner: yanha
+last_updated: 2026-10-13
 ---
 
 # 安全审计报告（2026-10-12）

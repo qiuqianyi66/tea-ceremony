@@ -1,3 +1,12 @@
+---
+name: ux-gap-analysis-2026-10-12
+description: UX 差距分析报告——五主页面逐条勘察（对照 DESIGN_SPEC 与设计门禁），修复见 PR #61。
+status: deprecated
+owner: yanha
+date: 2026-10-12
+last_updated: 2026-10-13
+---
+
 # UX 差距分析 — 2026-10-12
 
 > 触发：用户反馈「前端效果感觉不是很好」。
