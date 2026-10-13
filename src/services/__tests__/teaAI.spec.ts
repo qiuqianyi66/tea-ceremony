@@ -49,40 +49,42 @@ describe('teaAI 降级逻辑（后端代理不可用时）', () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('network down')))
     const { askTeaMaster } = await freshTeaAI()
     const reply = await askTeaMaster('今天适合喝什么茶？')
-    expect(reply).toBeTruthy()
-    expect(reply.length).toBeGreaterThan(0)
+    expect(reply.content).toBeTruthy()
+    expect(reply.content.length).toBeGreaterThan(0)
+    // P-O4：降级路径 sources 为空
+    expect(reply.sources).toEqual([])
   })
 
   it('askTeaMaster：代理返回 502 时返回兜底回复', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 502 }))
     const { askTeaMaster } = await freshTeaAI()
     const reply = await askTeaMaster('茶道是什么？')
-    expect(reply).toBeTruthy()
-    expect(reply.length).toBeGreaterThan(0)
+    expect(reply.content).toBeTruthy()
+    expect(reply.content.length).toBeGreaterThan(0)
   })
 
   it('askTeaMaster：离线时含茶名问题返回该茶冲泡参数（数据驱动，非通用格言）', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('network down')))
     const { askTeaMaster } = await freshTeaAI()
     const reply = await askTeaMaster('西湖龙井怎么泡？')
-    expect(reply).toContain('西湖龙井')
-    expect(reply).toContain('80')
-    expect(reply).toContain('秒')
+    expect(reply.content).toContain('西湖龙井')
+    expect(reply.content).toContain('80')
+    expect(reply.content).toContain('秒')
   })
 
   it('askTeaMaster：离线时含茶类问题返回该类基准参数', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('network down')))
     const { askTeaMaster } = await freshTeaAI()
     const reply = await askTeaMaster('红茶用什么水温？')
-    expect(reply).toContain('红茶')
-    expect(reply).toContain('90')
+    expect(reply.content).toContain('红茶')
+    expect(reply.content).toContain('90')
   })
 
   it('askTeaMaster：离线时含茶器问题返回茶器信息', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('network down')))
     const { askTeaMaster } = await freshTeaAI()
     const reply = await askTeaMaster('盖碗有什么好处？')
-    expect(reply).toContain('盖碗')
+    expect(reply.content).toContain('盖碗')
   })
 })
 
@@ -106,11 +108,39 @@ describe('teaAI v1 成功路径（ApiResponse 解包）', () => {
     vi.stubGlobal('fetch', mockFetch)
     const { askTeaMaster } = await freshTeaAI()
     const reply = await askTeaMaster('你好')
-    expect(reply).toBe('这是 AI 茶博士回复')
+    expect(reply.content).toBe('这是 AI 茶博士回复')
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining('/v1/ai/chat'),
       expect.any(Object),
     )
+  })
+
+  it('askTeaMaster：成功响应解包 sources（P-O4），缺省为 null 时为空数组', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({
+          code: 'OK',
+          data: { content: '回复', sources: ['茶·龙井', '诗·《茶经》'] },
+        }),
+      })),
+    )
+    const { askTeaMaster } = await freshTeaAI()
+    const reply = await askTeaMaster('讲讲龙井')
+    expect(reply.content).toBe('回复')
+    expect(reply.sources).toEqual(['茶·龙井', '诗·《茶经》'])
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({ code: 'OK', data: { content: '回复' } }),
+      })),
+    )
+    const { askTeaMaster: askAgain } = await freshTeaAI()
+    const noSources = await askAgain('你好')
+    expect(noSources.sources).toEqual([])
   })
 
   it('generateTastingNote：v1 成功返回 LLM 文风评语', async () => {
@@ -215,7 +245,7 @@ describe('teaAI 登录态分流 + 会话配额（REQ-ai-session-quota）', () =>
 
     expect(localStorage.getItem('tea-ai-session')).toBeNull()
     // 规则降级：茶名问题返回该茶冲泡参数
-    expect(reply).toContain('西湖龙井')
+    expect(reply.content).toContain('西湖龙井')
   })
 })
 
@@ -282,8 +312,9 @@ describe('teaAI 专家选择（F-M5-7 前端适配）', () => {
     const { askTeaMaster } = await freshTeaAI()
     const reply = await askTeaMaster('西湖龙井怎么泡？', [], 'brewer')
 
-    expect(typeof reply).toBe('string')
-    expect(reply.length).toBeGreaterThan(0)
+    expect(typeof reply.content).toBe('string')
+    expect(reply.content.length).toBeGreaterThan(0)
+    expect(reply.sources).toEqual([])
   })
 })
 

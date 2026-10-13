@@ -278,6 +278,12 @@ interface ChatMessage {
 /** 专家选择档（F-M5-7 前端适配）。auto = 不传 agent，保持隐式路由（免回归）。 */
 export type TeaAgent = 'auto' | 'advisor' | 'taster' | 'librarian' | 'brewer' | 'mentor'
 
+/** 茶灵回复（P-O4）：content 正文 + sources 知识来源数组（降级/透明代理为空）。 */
+export interface TeaReply {
+  content: string
+  sources: string[]
+}
+
 /** 专家选择项（UI 用）：label 与后端 SYSTEM_PROMPT 自称一致。 */
 export const TEA_AGENTS: ReadonlyArray<{ value: TeaAgent; label: string; icon: string }> = [
   { value: 'auto', label: '自动', icon: 'Sparkles' },
@@ -396,13 +402,14 @@ function isLoggedIn(): boolean {
 /**
  * 茶灵问答（F-A1）。agent 缺省/'auto' → 不传 agent 字段，后端按隐式路由（文化意图→librarian，其余透明代理）；
  * 显式传专家 → 后端路由到该专家（F-M5-7 前端适配）。
- * 承重墙不变：网络不可用/502/无内容 → 规则降级（ruleBasedReply）。
+ * 承重墙不变：网络不可用/502/无内容 → 规则降级（ruleBasedReply，sources 空）。
+ * P-O4：返回 {content, sources}——sources=知识来源数组（RAG 命中时后端返回，降级为空）。
  */
 export async function askTeaMaster(
   question: string,
   history: ChatMessage[] = [],
   agent: TeaAgent = 'auto',
-): Promise<string> {
+): Promise<TeaReply> {
   // 先尝试获取 RAG 上下文
   const ragContext = await fetchRAGContext(question)
   const systemPrompt = ragContext
@@ -452,22 +459,23 @@ export async function askTeaMaster(
         clearAiSessionId()
       }
       void track({ category: 'ai', event: 'ai_ask', label: 'ask', result: 'degraded' })
-      return ruleBasedReply(question)
+      return { content: ruleBasedReply(question), sources: [] }
     }
     const data = await res.json()
     if (!data.data?.content) {
       void track({ category: 'ai', event: 'ai_ask', label: 'ask', result: 'degraded' })
-      return ruleBasedReply(question)
+      return { content: ruleBasedReply(question), sources: [] }
     }
     // F-2 登录用户：后端返回新会话 id → 持久化，下次续用（配额按 sessionId 计数）
     if (loggedIn && data.data?.sessionId) {
       saveAiSessionId(data.data.sessionId)
     }
     void track({ category: 'ai', event: 'ai_ask', label: 'ask', result: 'success' })
-    return data.data.content
+    // P-O4：解包 sources（透明代理/无命中为 null → 空数组）
+    return { content: data.data.content, sources: data.data.sources ?? [] }
   } catch {
     void track({ category: 'ai', event: 'ai_ask', label: 'ask', result: 'degraded' })
-    return ruleBasedReply(question)
+    return { content: ruleBasedReply(question), sources: [] }
   }
 }
 

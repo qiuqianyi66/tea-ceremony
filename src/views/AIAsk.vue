@@ -14,6 +14,8 @@ onMounted(() => {
 interface ChatMsg {
   role: 'user' | 'ai'
   content: string
+  /** P-O4：AI 回复的知识来源数组（茶·/诗·等前缀），降级或用户消息为空 */
+  sources: string[]
 }
 const messages = ref<ChatMsg[]>([])
 const input = ref('')
@@ -39,7 +41,7 @@ async function sendMessage(text?: string) {
   const msg = (text || input.value).trim()
   if (!msg || loading.value) return
 
-  messages.value.push({ role: 'user', content: msg })
+  messages.value.push({ role: 'user', content: msg, sources: [] })
   input.value = ''
   loading.value = true
   await scrollToBottom()
@@ -50,7 +52,7 @@ async function sendMessage(text?: string) {
   }))
 
   const reply = await askTeaMaster(msg, history, agent.value)
-  messages.value.push({ role: 'ai', content: reply })
+  messages.value.push({ role: 'ai', content: reply.content, sources: reply.sources })
   loading.value = false
   await scrollToBottom()
 }
@@ -91,7 +93,13 @@ async function sendMessage(text?: string) {
         class="ai-row" :class="msg.role === 'user' ? 'justify-end' : 'justify-start'">
         <div v-if="msg.role === 'ai'" class="ai-ai-wrap">
           <IconBot class="ai-avatar" />
-          <div class="ai-ai-bubble">{{ msg.content }}</div>
+          <div class="ai-ai-body">
+            <div class="ai-ai-bubble">{{ msg.content }}</div>
+            <!-- P-O4：检索命中的知识来源卡片 -->
+            <div v-if="msg.sources.length" class="ai-sources" role="note" aria-label="知识来源">
+              <span v-for="s in msg.sources" :key="s" class="ai-source-chip">{{ s }}</span>
+            </div>
+          </div>
         </div>
         <div v-else class="ai-user-bubble">{{ msg.content }}</div>
       </div>
@@ -201,6 +209,17 @@ async function sendMessage(text?: string) {
   background: rgba(16, 26, 22, 0.75);
   border: 1px solid rgba(201, 169, 110, 0.2);
   font-size: 0.88rem; line-height: 1.7; color: var(--color-wood-dark);
+}
+/* P-O4：来源卡片——AI 气泡下的知识来源 chip 行 */
+.ai-ai-body { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; }
+.ai-sources { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+.ai-source-chip {
+  display: inline-flex; align-items: center;
+  padding: 0.15rem 0.55rem; border-radius: 999px;
+  font-size: 0.7rem; line-height: 1.5;
+  background: rgba(201, 169, 110, 0.08);
+  border: 1px solid rgba(201, 169, 110, 0.3);
+  color: rgba(201, 169, 110, 0.92);
 }
 .ai-user-bubble {
   max-width: 75%;
