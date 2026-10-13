@@ -91,8 +91,8 @@ owner: yanha
 
 ## D. 低优先（Phase 6 / 工程单遗留）
 
-- K17-K22：Trace→回归、eval 基线 diff、每周 cron 追加、结果度量、HANDOFF 分级、润化包 8 子项
-- P1-5 审计员风险标记（⚠ 无来源）、P1-6 ai_usage_logs 消费端、P1-7 前端优化、P1-8 茶园 S1、P1-9 HTTPS、P1-10 OPTIMIZATION 核对
+- K17-K22：**K17 Trace→回归 ✅（脚本 + 初始 18 样本，2026-10-13）**、K21 HANDOFF 分级 ✅（2026-10-13）；剩余 K18 eval 基线 diff、K19 每周 cron、K20 结果度量、K22 润化包（见 T15 决定表，降级）
+- P1-5 审计员风险标记 ✅（2026-10-13）、P1-6 ai_usage_logs 消费端、P1-7 前端优化、P1-8 茶园 S1、P1-9 HTTPS、**P1-10 OPTIMIZATION 核对 ✅（2026-10-13，4 未做/4 已消解/4 部分）**
 - 技术债：mcp 双版本共存、启动 WARN（随 agent-framework 升级）；Q2 C6 低优先甄别未做
 
 ## 最近完成（防重做：先查这里，勿从零重写）
