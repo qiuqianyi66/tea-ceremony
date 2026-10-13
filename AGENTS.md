@@ -144,7 +144,7 @@
 - 删除/覆盖任何文件（含 git rm）前，先 Read 该文件并确认无独立价值。
 - 技能返回 "不支持某能力" 时，先判断通用工具能否补齐（yt-dlp/PyAV/自写脚本），只有真实失败（403/风控/需登录/付费墙）才回报限制。
 - 上线前自查三项：健壮性（友好错误+输入校验）、安全性（防越权）、稳定性（失败重试/容错）；尽量周二~周四上线；上线后跑完整回归重点测权限，观察至少一周。
-- **Git commit**：英文 conventional commits `type(scope): desc`（feat/fix/refactor/perf/test/docs/chore/style），subject ≤ 72 字符，body 讲 why；缺陷修复与功能/测试分开提交；`main` 稳定，新功能 `feature/xxx`，修 bug `fix/xxx`。
+- **Git commit**：英文 conventional commits `type(scope): desc`（feat/fix/refactor/perf/test/docs/chore/style），subject ≤ 72 字符，body 讲 why；缺陷修复与功能/测试分开提交；`main` 稳定，新功能 `feature/xxx`，修 bug `fix/xxx`。**AI 提交标记（K20，2026-10-13 起）**：AI 代理提交 subject 前加 `[ai]` 前缀（如 `[ai] docs(plans): ...`），供 `scripts/measure-ai-commits.cjs` 度量占比。
 
 ## 11. 命令入口
 
