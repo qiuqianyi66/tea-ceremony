@@ -45,13 +45,10 @@ services:
       DB_USER: ${DB_USER:-tea_user}
       DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
-      # AI 走 yg-gateway（gateway profile，openai 兼容）；DashScope 主路径保留（切回：
-      # 移除 SPRING_PROFILES_ACTIVE 与 AI_GATEWAY_* 即可）。网关不可用时后端 502 →
-      # 前端降级规则引擎（teaAI.ts 承重墙）。
-      SPRING_PROFILES_ACTIVE: gateway
-      AI_GATEWAY_BASE_URL: http://yg-gateway:7864
-      AI_GATEWAY_API_KEY: ${AI_GATEWAY_API_KEY:-}
-      AI_GATEWAY_MODEL: ${AI_GATEWAY_MODEL:-cn:deepseek-v4.1-flash}
+      # AI 主路径 = DashScope（spring.ai.model.chat=dashscope，默认装配）。
+      # 评测通道 = docker-compose.eval.yml override 激活 gateway profile（2026-10-13 修正：
+      # 生产 compose 误带 gateway+空 key 会导致 OpenAiApi 装配失败、backend 起不来）。
+      # 网关不可用时后端 502 → 前端降级规则引擎（teaAI.ts 承重墙）。
       AI_DASHSCOPE_API_KEY: ${AI_DASHSCOPE_API_KEY:-disabled}
     depends_on:
       db:
