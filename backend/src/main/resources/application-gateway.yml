@@ -8,6 +8,10 @@ spring:
   ai:
     model:
       chat: openai
+      # embedding 显式禁用：DeepSeek/yg-gateway 无 embedding 端点；DashScope key 未配置/占位 disabled
+      # 时 DashScopeEmbeddingModel 仍装配并以字面 key 调百炼 → 401（2026-10-14 实测）。
+      # 禁用后 CultureSearchService 检索自动降级纯 ILIKE（检索不中断，对话 LLM 走网关不受影响）。
+      embedding: none
     openai:
       # 根地址即可：Spring AI OpenAiApi 自动追加 /v1/chat/completions（带 /v1 会拼成 /v1/v1/ 404/连接失败）
       base-url: ${AI_GATEWAY_BASE_URL:http://127.0.0.1:7864}
