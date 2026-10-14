@@ -27,11 +27,12 @@ cd /opt
 #    注意：目标目录 .env / yg-gateway-secrets-main 等 zip/clone 之外的文件不会被覆盖）
 git clone https://github.com/qiuqianyi66/tea-ceremony.git tea-ceremony-main
 
-# 2. 准备 .env（从 .env.example 复制；必填三键）
+# 2. 准备 .env（从 .env.example 复制；必填四键）
 cp .env.example .env
 #    DB_PASSWORD / JWT_SECRET 必须改成强随机值（JWT_SECRET 生成：python3 -c "import secrets;print(secrets.token_hex(32))"）
-#    AI_DASHSCOPE_API_KEY 必填（生产 backend 走 DashScope 主路径，缺失时 502 → 前端降级规则引擎）
-#    注意：compose 用 ${DB_PASSWORD:?} / ${JWT_SECRET:?} 强制，缺失直接启动失败（预期安全行为）
+#    AI_GATEWAY_API_KEY 必填（2026-10-14 用户拍板：生产 AI 走 yg-gateway 网关通道，缺失时 backend 启动失败）
+#    AI_DASHSCOPE_API_KEY 可留（DashScope 备用通道，移除 gateway 配置即可切回）
+#    注意：compose 用 ${DB_PASSWORD:?} / ${JWT_SECRET:?} / ${AI_GATEWAY_API_KEY:?} 强制，缺失直接启动失败（预期安全行为）
 
 # 3. 起全套（db 就绪 → backend Flyway 迁移 → frontend 依赖 backend 健康）
 docker compose up -d --build
@@ -44,11 +45,11 @@ curl -s http://localhost/api/v1/teas                     # 匿名可读：200 + 
 
 ### 0.3 架构与数据
 
-- 服务：`db`（pgvector/pgvector:pg16，**不暴露宿主端口**，仅容器网络）/ `backend`（Spring Boot 8080，宿主映射 **18080**，Flyway 自动迁移）/ `frontend`（nginx 80，多阶段镜像内含 vite 构建产物 + brotli，`/api/` 反代 backend:8080）/ `yg-gateway`（评测网关，unhealthy 不影响生产主路径）。
+- 服务：`db`（pgvector/pgvector:pg16，**不暴露宿主端口**，仅容器网络）/ `backend`（Spring Boot 8080，宿主映射 **18080**，Flyway 自动迁移）/ `frontend`（nginx 80，多阶段镜像内含 vite 构建产物 + brotli，`/api/` 反代 backend:8080）/ `yg-gateway`（AI 网关，DeepSeek 账号池，仅 compose 网络内部访问，不映射宿主端口）。
 - schema 完全由 Flyway 管理；**旧 `database/init.sql` 已从编排移除**（预建表与 Flyway 冲突）。
 - 数据持久化：`pgdata` 卷；`docker compose down` 不丢数据；备份 `docker compose exec -T db pg_dump -U tea_user tea_ceremony > backup.sql`。
 - 健康检查：backend 用 Actuator `/actuator/health`（JRE-alpine busybox wget）。
-- **AI 通道**：生产 compose 走 DashScope 主路径（`AI_DASHSCOPE_API_KEY`）；评测通道 `docker-compose.eval.yml` override 激活 gateway profile，**生产 compose 禁带 gateway**（2026-10-13 教训：空 key → OpenAiApi 装配失败 → backend 起不来）。
+- **AI 通道（2026-10-14 用户拍板）**：生产 backend 走 **yg-gateway**（`SPRING_PROFILES_ACTIVE: gateway` + `AI_GATEWAY_*`，openai 兼容 → DeepSeek）；DashScope 备用（保留 `AI_DASHSCOPE_API_KEY`，移除 gateway 配置即切回）。**`AI_GATEWAY_API_KEY` 用 `:?` 强制**（2026-10-13 教训：空 key → OpenAiApi 装配失败 → backend 起不来）。网关不可用时后端 502 → 前端降级规则引擎（teaAI.ts 承重墙）。yg-gateway 源码/config/auths 在 `./yg-gateway/`（本地目录，不入 GitHub；服务器单独部署）。
 
 ### 0.4 日常维护（Linux）
 
