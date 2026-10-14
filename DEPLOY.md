@@ -1,10 +1,10 @@
 # 「一盏茶」生产部署
 
-> 服务器：阿里云 ECS，Windows Server 2022，2 核 2G，40GB
+> **生产服务器（当前）**：阿里云 ECS **Linux**，部署目录 **`/opt/tea-ceremony-main`**（git clone 或 GitHub zip 解压，非 git 仓库时无法 `git pull`），Docker Compose 编排（db/backend/frontend + yg-gateway 评测实例）。
 >
 > **两套部署方式并存（按后端栈选择）**：
-> - **Spring Boot 新栈（推荐，后端重写完成）**：Docker Compose 编排（db/backend/frontend 三服务 + nginx 反代），见下节「〇、Spring Boot 新栈：Docker Compose 部署（推荐）」。
-> - **旧 FastAPI 栈（仅历史参考）**：PostgreSQL Windows 服务 + Python venv + NSSM + uvicorn + nginx for Windows，见「一~九」节（旧脚本 `scripts/deploy-backend.ps1` 等保留，不再新增功能）。
+> - **Spring Boot 新栈（当前生产，唯一推荐）**：Docker Compose 编排（db/backend/frontend 三服务 + nginx 反代），见下节「〇、Spring Boot 新栈：Docker Compose 部署」。
+> - **旧 FastAPI 栈（仅历史参考，已不部署）**：PostgreSQL Windows 服务 + Python venv + NSSM + uvicorn + nginx for Windows，见「一~九」节（旧脚本 `scripts/deploy-backend.ps1` 等保留，不再新增功能）。**2026-10-14 起生产实际为 Linux Compose 栈，以下 Windows 章节不再适用**。
 >
 > 历史背景：旧栈时代 Docker 方案曾被弃用（`docker-compose.yml`、`backend/Dockerfile`、`nginx/Dockerfile` 保留作参考）；后端重写为 Spring Boot 后恢复 Compose 编排为主路径（AGENTS.md §11）。
 
@@ -14,47 +14,52 @@
 
 ### 0.1 前置
 
-- Docker + Docker Compose v2（Windows：Docker Desktop 或 WSL2 后端）。
+- Docker + Docker Compose v2（Linux 服务器：dnf 装 docker-ce + compose 插件）。
 - 服务器放行 80（前端）、8080（可选直连后端）。
 
-### 0.2 首次部署
+### 0.2 首次部署（Linux）
 
-```powershell
-cd C:\tea
-# 1. 准备 .env（从 .env.example 复制；必填三键）
-Copy-Item .env.example .env
-#    POSTGRES_PASSWORD / DB_PASSWORD / JWT_SECRET 必须改成强随机值
-#    （JWT_SECRET 生成：python -c "import secrets;print(secrets.token_hex(32))"）
-#    ADMIN_API_TOKEN 可选：填后启用管理端点（/chunks/backfill 等）令牌鉴权；未填 fail-closed 401。
-#    L7 运行手册：ADMIN_API_TOKEN 建议每 90 天轮换一次（改 .env 后 docker compose up -d backend 重启生效，
-#    旧 token 立即失效；轮换期间无管理操作窗口即可，无需停机）。
-#    AI_DASHSCOPE_API_KEY 可选：填 DashScope key 启用 AI 品鉴对话；不填默认 disabled，
-#    后端 /api/ai/* 返回 502 → 前端自动降级规则引擎（T11 降级链，production 可无 key 部署）
+```bash
+cd /opt
+# 1. 拉代码（zip 解压版目录非 git 仓库时，用 git clone 同步：
+#    git clone --depth 1 https://github.com/qiuqianyi66/tea-ceremony.git tea-sync
+#    \cp -af /tmp/tea-sync/. /opt/tea-ceremony-main/    # \cp 绕过 alias cp -i 的逐个询问
+#    注意：目标目录 .env / yg-gateway-secrets-main 等 zip/clone 之外的文件不会被覆盖）
+git clone https://github.com/qiuqianyi66/tea-ceremony.git tea-ceremony-main
 
-# 2. 起全套（db 就绪 → backend Flyway 迁移 → frontend 依赖 backend 健康）
+# 2. 准备 .env（从 .env.example 复制；必填三键）
+cp .env.example .env
+#    DB_PASSWORD / JWT_SECRET 必须改成强随机值（JWT_SECRET 生成：python3 -c "import secrets;print(secrets.token_hex(32))"）
+#    AI_DASHSCOPE_API_KEY 必填（生产 backend 走 DashScope 主路径，缺失时 502 → 前端降级规则引擎）
+#    注意：compose 用 ${DB_PASSWORD:?} / ${JWT_SECRET:?} 强制，缺失直接启动失败（预期安全行为）
+
+# 3. 起全套（db 就绪 → backend Flyway 迁移 → frontend 依赖 backend 健康）
 docker compose up -d --build
 
-# 3. 验证
+# 4. 验证
 docker compose ps          # 三服务均 healthy
-Invoke-RestMethod http://localhost/actuator/health          # 后端存活（经 nginx 反代 /api 外，8080 直连亦可）
-Invoke-RestMethod http://localhost/api/v1/teas              # 匿名可读：200 + V2 文化种子
+curl -s http://localhost:18080/actuator/health          # 后端存活（宿主映射 18080）
+curl -s http://localhost/api/v1/teas                     # 匿名可读：200 + V2 文化种子
 ```
 
 ### 0.3 架构与数据
 
-- 服务：`db`（postgres:16-alpine，**不暴露宿主端口**，仅容器网络）/ `backend`（Spring Boot 8080，Flyway 自动迁移 V1+V2）/ `frontend`（nginx 80，多阶段镜像内含 vite 构建产物 + brotli，`/api/` 反代 backend:8080）。
+- 服务：`db`（pgvector/pgvector:pg16，**不暴露宿主端口**，仅容器网络）/ `backend`（Spring Boot 8080，宿主映射 **18080**，Flyway 自动迁移）/ `frontend`（nginx 80，多阶段镜像内含 vite 构建产物 + brotli，`/api/` 反代 backend:8080）/ `yg-gateway`（评测网关，unhealthy 不影响生产主路径）。
 - schema 完全由 Flyway 管理；**旧 `database/init.sql` 已从编排移除**（预建表与 Flyway 冲突）。
 - 数据持久化：`pgdata` 卷；`docker compose down` 不丢数据；备份 `docker compose exec -T db pg_dump -U tea_user tea_ceremony > backup.sql`。
 - 健康检查：backend 用 Actuator `/actuator/health`（JRE-alpine busybox wget）。
+- **AI 通道**：生产 compose 走 DashScope 主路径（`AI_DASHSCOPE_API_KEY`）；评测通道 `docker-compose.eval.yml` override 激活 gateway profile，**生产 compose 禁带 gateway**（2026-10-13 教训：空 key → OpenAiApi 装配失败 → backend 起不来）。
 
-### 0.4 日常维护
+### 0.4 日常维护（Linux）
 
-```powershell
+```bash
 docker compose logs -f backend        # 后端日志（Flyway/启动错误看这里）
-docker compose pull && docker compose up -d   # 升级镜像
+docker compose build backend && docker compose up -d backend   # 代码更新：重建 + 重启
 docker compose down                   # 停（保留数据卷）
 docker compose down -v                # 停并删数据卷（谨慎：清空数据库）
 ```
+
+> 代码更新同步：目录非 git 仓库时按 0.2 第 1 步 git clone 覆盖；Maven Central 偶发 500（`dependency:go-offline` 失败）时重试 build，仍失败则改 pom 加阿里云 Maven 镜像。
 
 ### 0.5 HTTPS
 
