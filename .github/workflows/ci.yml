@@ -263,6 +263,7 @@ jobs:
           POSTGRES_PASSWORD: ci-test
           DB_PASSWORD: ci-test
           JWT_SECRET: ci-test-secret
+          AI_GATEWAY_API_KEY: ci-test
 
   harness-consistency:
     name: Harness consistency（docs 漂移门禁）
