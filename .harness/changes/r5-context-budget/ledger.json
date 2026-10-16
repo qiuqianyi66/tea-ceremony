@@ -1,0 +1,253 @@
+{
+    "round":  "R5（常驻层第三批：编码规范 / 开发流程规范 / CONTEXT）",
+    "date":  "2026-10-16",
+    "baselineRetentionUntil":  "2026-10-30",
+    "backupDir":  "C:\\Users\\yanha\\AppData\\Local\\tea-context-backups\\2026-10-16\\r5",
+    "baseline":  [
+                     {
+                         "file":  ".harness/rules/编码规范.md",
+                         "backup":  "C:\\Users\\yanha\\AppData\\Local\\tea-context-backups\\2026-10-16\\r5\\编码规范.md",
+                         "sha256":  "4f2142b8e9162a0748b3b45d3c2c18663dc73f123ff91a616414f12c4bd8dbb4",
+                         "chars":  10578
+                     },
+                     {
+                         "file":  ".harness/rules/开发流程规范.md",
+                         "backup":  "C:\\Users\\yanha\\AppData\\Local\\tea-context-backups\\2026-10-16\\r5\\开发流程规范.md",
+                         "sha256":  "ead5f1bbb882ec46511de87df97428a8794a00526cd782c064d4fcc175934cb3",
+                         "chars":  7961
+                     },
+                     {
+                         "file":  "CONTEXT.md",
+                         "backup":  "C:\\Users\\yanha\\AppData\\Local\\tea-context-backups\\2026-10-16\\r5\\CONTEXT.md",
+                         "sha256":  "bce2b360d470fb9896c250e5abc1d0f6f6ee71eaca71f42737e95c0cf0e5bbc9",
+                         "chars":  4244
+                     }
+                 ],
+    "entries":  [
+                    {
+                        "class":  "moved",
+                        "from":  ".harness/rules/编码规范.md",
+                        "desc":  "§六 自检清单 26 项（原文逐行外置到按需技能）",
+                        "dest":  ".harness/skills/main-dev/coding-skill/SKILL.md",
+                        "anchors":  [
+                                        "- [ ] 分层无跨层调用，Controller 无业务逻辑？",
+                                        "- [ ] Entity 未直接出参 / 入参，DTO/VO/Model 职责分离？",
+                                        "- [ ] 事务边界正确，无事务内远程调用 / 异步？",
+                                        "- [ ] 写接口幂等（client_id + 唯一索引）？",
+                                        "- [ ] 无 N+1，大列表已分页，软删统一？",
+                                        "- [ ] 数据库变更走 Flyway，迁移 + 回滚成对，往返测试通过？",
+                                        "- [ ] 线程池有界，无 Executors 快捷工厂？",
+                                        "- [ ] 无 SQL 拼接 / XSS 风险 / 敏感信息入日志？",
+                                        "- [ ] AI 请求走后端代理，降级链未动？",
+                                        "- [ ] 日志含 traceId、级别正确、无敏感字段？",
+                                        "- [ ] 配置外置、密钥未入库、profile 正确？",
+                                        "- [ ] 缓存有 TTL / 容量 / 一致性策略，无无界缓存？",
+                                        "- [ ] 定时任务幂等 + 有锁 + 有告警？",
+                                        "- [ ] 上传有大小 / 类型 / 文件名校验？",
+                                        "- [ ] API 版本化 + 错误码可查 + 分页契约统一？",
+                                        "- [ ] Vue 为 script setup + TS strict，无 any？",
+                                        "- [ ] 数据流单向，状态在 Pinia？",
+                                        "- [ ] 路由懒加载 + 守卫正确，权限以后端为准？",
+                                        "- [ ] 表单校验与后端一致，提交有 loading / 失败保护？",
+                                        "- [ ] 前端改动先有 Design Read，无 AI 默认痕迹？",
+                                        "- [ ] 3D 只动视觉层？",
+                                        "- [ ] 构建分包合理，体积在预算内？",
+                                        "- [ ] 部署门禁（Gate + 冒烟 + 探针）满足？",
+                                        "- [ ] 监控告警就位（错误率 / 延迟 / AI token）？",
+                                        "- [ ] 覆盖率 ≥ 80%，测试全绿，CI 门禁通过？"
+                                    ]
+                    },
+                    {
+                        "class":  "moved",
+                        "from":  "CONTEXT.md",
+                        "desc":  "§待办 7 条已完成里程碑（常驻层不写完成态历史）",
+                        "dest":  ".harness/changes/r5-context-budget/removed-context.md",
+                        "anchors":  [
+                                        "- [x] 单元测试与 E2E 测试已落地（Vitest 142 用例 / Playwright 34 例 / pytest 51 过 3 跳，2026-09-20 基线）",
+                                        "- [x] AI 第三方请求已收敛到后端代理（`/api/v1/ai/chat`，浏览器不再直连；DashScope）",
+                                        "- [x] 用户公开品鉴卡片和分享链接已实现（二维码 / `/share` 只读页）",
+                                        "- [x] 冲泡页已升级为 TresJS 3D 茶席 + 实景夜色暖光背景（`3D_SPEC.md`）",
+                                        "- [x] 迁移测试本地跑：`TEST_DATABASE_URL` 指向本地 PG 服务即可（不再依赖 Docker），CI 用 Postgres service",
+                                        "- [x] Redis 四场景已决策（ADR-012：两级缓存 / 语义缓存 / 分布式限流 / JWT 黑名单，M2/M3 落地）",
+                                        "- [x] 生产级收敛 P1（数据治理 DATA_POLICY / 测试体系 TESTING_SPEC / Design Spec 拆分 DESIGN_SPEC+3D_SPEC，2026-10 完成）"
+                                    ]
+                    },
+                    {
+                        "class":  "kept",
+                        "from":  ".harness/rules/编码规范.md",
+                        "desc":  "15 条红线编号锚点内联（R1-R15）",
+                        "dest":  ".harness/rules/编码规范.md",
+                        "anchors":  [
+                                        "【R1】",
+                                        "【R2】",
+                                        "【R3】",
+                                        "【R4】",
+                                        "【R5】",
+                                        "【R6】",
+                                        "【R7】",
+                                        "【R8】",
+                                        "【R9】",
+                                        "【R10】",
+                                        "【R11】",
+                                        "【R12】",
+                                        "【R13】",
+                                        "【R14】",
+                                        "【R15】"
+                                    ]
+                    },
+                    {
+                        "class":  "kept",
+                        "from":  ".harness/rules/编码规范.md",
+                        "desc":  "关键判据与标识符逐条保留（抽样 20 条）",
+                        "dest":  ".harness/rules/编码规范.md",
+                        "anchors":  [
+                                        "@Transactional(readOnly = true)",
+                                        "Executors.newFixedThreadPool",
+                                        "tea:{module}:{business}:{id}",
+                                        "min-h-[100dvh]",
+                                        "given_when_then",
+                                        "覆盖率 ≥ 80%",
+                                        "ix_{table}_{col}",
+                                        "HikariCP",
+                                        "KTX2",
+                                        "触控目标 ≥ 44px",
+                                        "LCP \u003c 2.5s",
+                                        "teaAI.ts",
+                                        "agent_prompts",
+                                        "ShedLock",
+                                        "MapStruct",
+                                        "后端代理 `/api/ai/*`",
+                                        "八维评分 0-100",
+                                        "LCP",
+                                        "REQUIRES_NEW",
+                                        "@WebMvcTest"
+                                    ]
+                    },
+                    {
+                        "class":  "kept",
+                        "from":  ".harness/rules/开发流程规范.md",
+                        "desc":  "阶段 Gate 判据全留（抽样）",
+                        "dest":  ".harness/rules/开发流程规范.md",
+                        "anchors":  [
+                                        "任务粒度 ≤ 4h",
+                                        "核心逻辑 100%",
+                                        "30 分钟观测期无异常",
+                                        "Given-When-Then",
+                                        "L0",
+                                        "L3",
+                                        "不触承重墙",
+                                        "评审-修复闭环 ≤ 2 轮"
+                                    ]
+                    },
+                    {
+                        "class":  "kept",
+                        "from":  ".harness/rules/开发流程规范.md",
+                        "desc":  "多 agent 调度纪律全留（抽样）",
+                        "dest":  ".harness/rules/开发流程规范.md",
+                        "anchors":  [
+                                        "文件所有权 pre-assign",
+                                        "task_create/task_list",
+                                        "≤ 80 行、原地重写不追加",
+                                        "R2/7/8/9/10/11/12/14"
+                                    ]
+                    },
+                    {
+                        "class":  "moved",
+                        "from":  ".harness/rules/编码规范.md",
+                        "desc":  "§35 回滚路线表 → 流程文档 §三（同一约束只留一处）",
+                        "dest":  ".harness/rules/开发流程规范.md",
+                        "anchors":  [
+                                        "`git checkout` 丢弃变更",
+                                        "迁移后应用异常",
+                                        "回滚镜像 / 版本标签",
+                                        "走回滚路线回到预发",
+                                        "30 分钟内指标越基线"
+                                    ]
+                    },
+                    {
+                        "class":  "moved",
+                        "from":  ".harness/rules/编码规范.md",
+                        "desc":  "§37 分支与提交 → 流程文档 §二",
+                        "dest":  ".harness/rules/开发流程规范.md",
+                        "anchors":  [
+                                        "feature/{feat-name}",
+                                        "只接受 MR 合入",
+                                        "`type(scope): message`",
+                                        "feat/fix/refactor/test/docs/chore",
+                                        "subject ≤ 72 字符",
+                                        "禁 force push main",
+                                        "fix/{issue-or-bug-desc}"
+                                    ]
+                    },
+                    {
+                        "class":  "moved",
+                        "from":  ".harness/rules/开发流程规范.md",
+                        "desc":  "§六 技能族计数、§八 三级进化判据 → AGENTS.md 声明处（唯一计数/判据源）",
+                        "dest":  "AGENTS.md",
+                        "anchors":  [
+                                        "技能全套 39 个（main-dev 14 / biz-dev 19 / trouble-shooting 6）",
+                                        "经验三级进化",
+                                        "晋升门槛"
+                                    ]
+                    },
+                    {
+                        "class":  "kept",
+                        "from":  "CONTEXT.md",
+                        "desc":  "术语表 14 条 + ADR 索引 001-020 + 架构关键词全留（抽样）",
+                        "dest":  "CONTEXT.md",
+                        "anchors":  [
+                                        "八维评分",
+                                        "工艺系数",
+                                        "同步状态",
+                                        "幂等创建",
+                                        "目标用户",
+                                        "ADR-020",
+                                        "pgvector",
+                                        "Vue 3.5 + TS 6",
+                                        "views → stores → services",
+                                        "TEST_DATABASE_URL",
+                                        "生产级收敛 P2",
+                                        "本地行为埋点"
+                                    ]
+                    },
+                    {
+                        "class":  "dropped",
+                        "from":  ".harness/rules/编码规范.md",
+                        "desc":  "§五 红线全文表（与 §1-§37 正文逐条重复）",
+                        "why":  "编号唯一锚点已内联到红线定义行（【R#】），保留同一约束两处维护只会漂移；R 编号本身经 kept 组校验"
+                    },
+                    {
+                        "class":  "dropped",
+                        "from":  "CONTEXT.md",
+                        "desc":  "ADR 索引「状态」列（20 行全为 Accepted）",
+                        "why":  "20 行同值，折叠为表头一句「状态均为 Accepted」，状态变化时改一处"
+                    },
+                    {
+                        "class":  "dropped",
+                        "from":  ".harness/rules/开发流程规范.md",
+                        "desc":  "§二 Example 列、§七 验证矩阵表头形态",
+                        "why":  "示例/命令为说明性内容，已并入约定列与路由列表；命令唯一来源是 package.json 与 ci.yml"
+                    },
+                    {
+                        "class":  "dropped",
+                        "from":  ".harness/rules/开发流程规范.md",
+                        "desc":  "§六 技能族用途表（main-dev 8 / biz-dev 19 / trouble-shooting 5 用途描述）",
+                        "why":  "数量与用途以 AGENTS.md §12 + 各族 README 为准（verify-harness §4c 校验），常驻层重复计数即漂移源"
+                    },
+                    {
+                        "class":  "kept",
+                        "from":  ".harness/rules/编码规范.md",
+                        "desc":  "清单第 2 项类名按代码修正后的文本（BusinessException）",
+                        "dest":  ".harness/skills/main-dev/coding-skill/SKILL.md",
+                        "anchors":  [
+                                        "异常走 BusinessException 体系"
+                                    ]
+                    },
+                    {
+                        "class":  "dropped",
+                        "from":  ".harness/rules/编码规范.md",
+                        "desc":  "清单第 2 项原文「异常走 BusinessError 体系」",
+                        "why":  "原文类名与代码不符（实际类名 BusinessException，见 backend/src/main/java/com/tea/common/exception/BusinessException.java）：搬运时按代码修正，改后文本由 kept 组锚点校验；不做\"逐字保留错误类名\"的机械保真"
+                    }
+                ]
+}

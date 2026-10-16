@@ -26,40 +26,41 @@ last_updated: 2026-10-12
 ## 1. 后端红线（`.harness/rules/编码规范.md`，逐行实测）
 
 > 文件头描述自称「红线 15 条零容忍」；实测 🔴 标记在后端域为 **14 条**（含数据库域 3 条另列）。差异见 F1。
+> **2026-10-16 引用方式变更**：编码规范压缩后行号不再有效，下表出处改为 **§ 小节号**（小节号是长期锚点，未随压缩变动）。下表的本报告编号为当时局部编号，与编码规范的规范编号（R1-R15）不是同一套，以编码规范为准。
 
-| # | 要点（一句话） | 出处（编码规范.md:行号） |
+| # | 要点（一句话） | 出处（编码规范 §） |
 |---|---|---|
-| R1 | 单向依赖 Controller → Service → Repository，禁反向 / 跨层（Controller 直查 Repository 即违规） | `:29` |
-| R2 | Controller 只做路径 + 鉴权 + 调 Service + 响应模型；禁写业务逻辑 / DB 查询 / 异常处理 | `:30` |
-| R3 | 异常统一继承 BusinessException（BadRequest/Unauthorized/NotFound/Conflict） | `:36` |
-| R4 | 禁裸抛 `RuntimeException`/`Exception`；`catch(Exception)` 后必须处理或记录并重抛业务异常 | `:37` |
-| R5 | 四层对象分离：Request DTO / Entity / VO / 内部 Model，职责不混用 | `:43` |
-| R6 | Entity 禁止直接出参 / 入参（防字段泄露、防层间耦合） | `:44` |
-| R7 | 禁事务内做远程调用 / 发消息 / 异步任务（用 `afterCommit` 回调） | `:51` |
-| R8 | 禁 N+1：fetch join / @EntityGraph / 批量查询；大列表必分页，禁全表查询 | `:58` |
-| R9 | 迁移只走 Flyway；禁生产 `ddl-auto: update` | `:61` |
-| R10 | 禁 `Executors.newFixedThreadPool/newCachedThreadPool`；统一有界 `ThreadPoolTaskExecutor` | `:71` |
-| R11 | SQL 参数化禁拼接；XSS 输出转义；Token/密码/密钥禁入日志 | `:77` |
-| R12 | `.env*` / `*.pem` / secrets 禁入库；依赖安全审计 | `:78` |
-| R13 | AI 请求必须走后端代理 `/api/ai/*`，禁前端直连第三方 AI | `:82` |
-| R14 | AI 降级链不可删（前端 teaAI.ts 承重墙 + 后端 fallback） | `:83` |
-| DB1 | Schema 变更只走 Flyway，`changes/{feat}/` 三件套与分支同名 | `:188` |
-| DB2 | 每个迁移必须可回滚，upgrade/downgrade 往返测试通过才提交 | `:189` |
-| DB3 | 禁生产 `ddl-auto: update/create`；禁手改已应用迁移 | `:190` |
+| R1 | 单向依赖 Controller → Service → Repository，禁反向 / 跨层（Controller 直查 Repository 即违规） | §1 |
+| R2 | Controller 只做路径 + 鉴权 + 调 Service + 响应模型；禁写业务逻辑 / DB 查询 / 异常处理 | §1 |
+| R3 | 异常统一继承 BusinessException（BadRequest/Unauthorized/NotFound/Conflict） | §2 |
+| R4 | 禁裸抛 `RuntimeException`/`Exception`；`catch(Exception)` 后必须处理或记录并重抛业务异常 | §2 |
+| R5 | 四层对象分离：Request DTO / Entity / VO / 内部 Model，职责不混用 | §3 |
+| R6 | Entity 禁止直接出参 / 入参（防字段泄露、防层间耦合） | §3 |
+| R7 | 禁事务内做远程调用 / 发消息 / 异步任务（用 `afterCommit` 回调） | §4 |
+| R8 | 禁 N+1：fetch join / @EntityGraph / 批量查询；大列表必分页，禁全表查询 | §5 |
+| R9 | 迁移只走 Flyway；禁生产 `ddl-auto: update` | §5 |
+| R10 | 禁 `Executors.newFixedThreadPool/newCachedThreadPool`；统一有界 `ThreadPoolTaskExecutor` | §7 |
+| R11 | SQL 参数化禁拼接；XSS 输出转义；Token/密码/密钥禁入日志 | §8 |
+| R12 | `.env*` / `*.pem` / secrets 禁入库；依赖安全审计 | §8 |
+| R13 | AI 请求必须走后端代理 `/api/ai/*`，禁前端直连第三方 AI | §9 |
+| R14 | AI 降级链不可删（前端 teaAI.ts 承重墙 + 后端 fallback） | §9 |
+| DB1 | Schema 变更只走 Flyway，`changes/{feat}/` 三件套与分支同名 | §27 |
+| DB2 | 每个迁移必须可回滚，upgrade/downgrade 往返测试通过才提交 | §27 |
+| DB3 | 禁生产 `ddl-auto: update/create`；禁手改已应用迁移 | §27 |
 
-强规范（🟢，非红线，本报告抽查见第二部分）：写方法 `@Transactional(rollbackFor = Exception.class)`（`:50`）；构造器注入 `final` + `@RequiredArgsConstructor`（`:34`）；禁 BeanUtils 反射拷贝（`:46`）。
+强规范（🟢，非红线，本报告抽查见第二部分）：写方法 `@Transactional(rollbackFor = Exception.class)`（§4）；构造器注入 `final` + `@RequiredArgsConstructor`（§1）；禁 BeanUtils 反射拷贝（§3）。
 
 ## 2. 前端规范（AGENTS.md §6 + 编码规范 §17–26）
 
-- 必用 Composition API + `<script setup lang="ts">`；禁 Options API；组件 ≤ 200 行，超了拆（编码规范 `:134`）。
-- TS strict；禁 `any`、禁 `@ts-ignore`（特例审批）（编码规范 `:139`）。
-- 单向数据流 views → stores → services；业务状态走 Pinia；局部用 ref/reactive（编码规范 `:143`）。
+- 必用 Composition API + `<script setup lang="ts">`；禁 Options API；组件 ≤ 200 行，超了拆（编码规范 §17）。
+- TS strict；禁 `any`、禁 `@ts-ignore`（特例审批）（编码规范 §18）。
+- 单向数据流 views → stores → services；业务状态走 Pinia；局部用 ref/reactive（编码规范 §19）。
 - IndexedDB 统一 `src/services/storage/`；API 统一 `src/services/api/`（AGENTS §6）。
-- 触控目标 ≥ 44px；状态五态齐全；正文对比度 ≥ 4.5:1（编码规范 `:176`）。
-- 字体自托管 `@font-face`，生产禁 Google Fonts link；全屏用 `min-h-[100dvh]` 禁 `h-screen`（AGENTS §6）。
-- 图标一个家族（lucide），禁手绘 SVG 路径；Tailwind 4 工具类，禁自定义 CSS 文件（组件内 scoped 除外）（编码规范 `:162`）。
+- 触控目标 ≥ 44px；状态五态齐全；正文对比度 ≥ 4.5:1（编码规范 §26）。
+- 字体自托管 `@font-face`，生产禁 Google Fonts link（DESIGN_SPEC §二）；全屏用 `min-h-[100dvh]` 禁 `h-screen`（编码规范 §25）。
+- 图标一个家族（`lucide-vue-next`），禁手绘 SVG 路径（DESIGN_SPEC §五）；Tailwind 4 工具类，禁自定义 CSS 文件（组件内 scoped 除外）（编码规范 §23）。
 - 设计门禁 6 步（含 ⓪ 轨道判定）；禁令速查：AI 紫渐变 / 暖米白+陶土 / 纯黑灰 / Inter 与衬线默认 / Hero+三卡片 / emoji 当图标 / 玻璃拟态 / 渐变文字 / bounce·elastic 动效（AGENTS §6）。
-- `src/components/three/` 只做视觉层不改状态机；禁直接创建 renderer（统一 TresJS）（编码规范 `:168-169`）。
+- `src/components/three/` 只做视觉层不改状态机；禁直接创建 renderer（统一 TresJS）（编码规范 §24）。
 
 ## 3. 数据规范（AGENTS §8）
 
@@ -123,7 +124,7 @@ TDD 优先；行为测试只走公共接口；不 mock 内部协作者（只 moc
 
 ## D. 文档漂移（治理发现）
 
-- **F1**：编码规范.md 文件头自称「红线 15 条零容忍」，后端域实测 🔴 为 14 条。建议：统一计数口径（或把 §4 部署红线 `:219` 计入）。
+- **F1**：编码规范.md 文件头自称「红线 15 条零容忍」，后端域实测 🔴 为 14 条。建议：统一计数口径（或把 §4 部署红线（§32）计入）。
 
 ---
 

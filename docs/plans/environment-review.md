@@ -44,4 +44,4 @@ owner: tea-harness
 
 1. 能当场修的当场修，修完重跑对应验证。
 2. 需决策的记入 `docs/TODO-PRIORITY.md`（标 P 级与影响）。
-3. 连续两周同一问题复发 → 写进 AGENTS.md §13 学习记录（沉淀为规则）。
+3. 连续两周同一问题复发 → 写进 `docs/plans/lessons.md`（够门槛再晋升为规则）。

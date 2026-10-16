@@ -125,7 +125,7 @@ H3: 20px/1.25rem  —— 模块标题
 ### 通用
 
 - **状态五态齐全**：hover / disabled / loading / error / empty，缺一不可。
-- **图标**：一个库一个家族（Iconify，统一 strokeWidth），禁 Emoji / Unicode 符号当图标、禁手绘 SVG 路径。
+- **图标**：一个库一个家族（`lucide-vue-next`，统一 strokeWidth），禁 Emoji / Unicode 符号当图标、禁手绘 SVG 路径。
 - **浏览器表面定制**：选区、滚动条、焦点环、光标、下划线偏移、表格数字上主题色。
 - **按钮文案**：写动作不写"提交"；错误说清问题 + 恢复方式，不道歉。
 

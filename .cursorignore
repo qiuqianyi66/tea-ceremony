@@ -1,0 +1,51 @@
+# AI 检索/索引排除清单（Cursor / 其他支持 .cursorignore 的工具）
+# 目的：AI 上下文只装任务相关内容，不把依赖、产物、日志、密钥装进去。
+# 语法同 .gitignore，支持 ! 反选。
+
+# 依赖与构建产物
+node_modules/
+dist/
+dev-dist/
+dist-ssr/
+coverage/
+test-results/
+playwright-report/
+blob-report/
+
+# 后端构建产物与 Python 环境
+backend/target/
+backend/.venv/
+.venv/
+__pycache__/
+
+# 版本控制与本地配置
+.git/
+.reasonix/
+.workbuddy/
+claude-code-template/
+.tmp/
+backups/
+
+# 部署产物（含凭据，严禁进上下文）
+deploy-gateway/
+yg-gateway-secrets/
+*.tar.gz
+gateway-config.b64.txt
+
+# 密钥与凭据（.env.example 是唯一可读样本）
+.env
+.env.*
+!.env.example
+*.pem
+credentials.json
+secrets/
+
+# 日志与运行产物
+*.log
+verify_garden_*.png
+verify_pavilion_*.png
+verify_icons_*.png
+pr69-*.txt
+
+# 大体积运行时静态资源（二进制，AI 不需要读）
+public/3d/

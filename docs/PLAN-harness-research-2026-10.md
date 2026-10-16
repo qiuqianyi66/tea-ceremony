@@ -54,7 +54,7 @@ owner: yanha
 
 | # | 事项 | 下一步 |
 |---|---|---|
-| P2-1 | AGENTS.md 精简评估（50-100 行地图模式） | ✅ 评估完成（2026-10-07）：204 行在维护区间 200-350，维持现状；学习记录已按维护规则限长，不外置 |
+| P2-1 | AGENTS.md 精简评估（50-100 行地图模式） | ✅ 评估完成（2026-10-07）：204 行在维护区间 200-350，维持现状；学习记录已按维护规则限长，不外置 **（2026-10-16 更新：结论已变——学习记录外置 `docs/plans/lessons.md`，AGENTS.md 估算 11.4K→6.6K token；行数指标失真，改用 `scripts/audit-context-budget.cjs` 的 token 口径）** |
 | P2-2 | doc-gardening 脚本化 | ✅ 已落地并挂 CI 合并门禁（2026-10-07）：scripts/verify-harness.cjs + harness-consistency job（CI 13 job） |
 | P2-3 | 架构文档成熟度评分追踪 | docs/architecture/system-overview 加"各域/层成熟度评分"节 |
 | P2-4 | 开源曝光落地 | Good First Issue / 传播帖 / release / Discussions |

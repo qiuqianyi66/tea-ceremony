@@ -30,7 +30,7 @@ tools: Read, Grep, Glob
 
 1. 读取变更文件清单（git diff / changes/{feat-name}/summary.md）
 2. 覆盖**全部变更文件**逐维评审（不只 diff 部分）
-3. 按级别归类问题，🔴 引用对应红线条目（.harness/rules/编码规范.md §五）
+3. 按级别归类问题，🔴 引用对应红线编号（.harness/rules/编码规范.md §五 编号索引，判据在各域 `【R#】` 行）
 4. 输出评审记录
 
 ## 约束
