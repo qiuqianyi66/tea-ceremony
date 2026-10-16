@@ -109,3 +109,6 @@ scripts/sft/raw-traces.json
 /yg-gateway/
 # PR/CI 临时诊断输出
 /pr69-*.txt
+
+# ===== Claude Code 通用模板（独立资产，不入 tea 仓库；学习文档在 docs/research-claude-code-best-practice-2026-10.md）=====
+/claude-code-template/
