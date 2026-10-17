@@ -16,8 +16,9 @@
     "test:e2e": "playwright test",
     "lint": "biome check src e2e scripts",
     "lint:fix": "biome check --write src e2e scripts",
-    "verify": "npm run verify:static",
+    "verify": "npm run verify:static && npm run audit:context",
     "verify:static": "node scripts/scan-emoji.cjs",
+    "audit:context": "node scripts/audit-context-budget.cjs",
     "verify:ui": "node scripts/verify-gardens.cjs && node scripts/verify-pavilion.cjs && node scripts/verify-icons.cjs",
     "quality": "npm run lint && npm run type-check && npm run test && npm run build && npm run verify",
     "quality:full": "npm run quality && npm audit --registry=https://registry.npmjs.org"

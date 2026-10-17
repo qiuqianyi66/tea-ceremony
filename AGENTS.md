@@ -1,7 +1,7 @@
 # AGENTS.md — 一盏茶项目 AI 协作规则
 
 > 给机器看的 README。仓库里所有 AI 编码助手（Codex、Claude Code、Cursor、Copilot、Gemini CLI 等）开工前必读。
-> 本文件是活文档：AI 每次犯错，往「13 更新记录」加一行；每几周修剪一次。V4 重构见 ADR-009。
+> 本文件是活文档：AI 每次犯错写一行 lesson → `docs/plans/lessons.md`（按需文件，不常驻）；本文件只留规则与索引，每几周修剪一次。V4 重构见 ADR-009。
 
 ## 0. 不可妥协
 
@@ -99,12 +99,9 @@
 
 ## 6. 前端规范
 
-- Vue 3 Composition API + `<script setup lang="ts">`，禁止 Options API、禁止 `any`；组件 ≤ 200 行超了拆；Props/Emits 必须带类型；副作用在 onMounted/onUnmounted 管理。
-- 状态：业务用 Pinia（`src/stores/`），局部用 `ref/reactive`；样式：Tailwind 4，不写自定义 CSS 文件。
-- IndexedDB 统一走 `src/services/storage/`；API 统一走 `src/services/api/`。
-- 触控目标 ≥ 44px；状态五态齐全（hover/disabled/loading/error/empty）；正文对比度 ≥ 4.5:1；浏览器表面定制（选区/滚动条/焦点环/光标）。
-- 字体自托管（@font-face + swap），生产禁 Google Fonts link；全屏 Hero 用 `min-h-[100dvh]` 禁 `h-screen`；图标一个库一个家族，禁手绘 SVG 路径；引入第三方库前先查 package.json。
-- **设计令牌与组件规则**：色值/间距/圆角/阴影/动效令牌、组件规则、Three.js 规则（禁直接创建 renderer，统一 TresJS）见 `DESIGN_SPEC.md`；3D 详细约束见 `3D_SPEC.md`。
+> 完整前端规范见 `.harness/rules/编码规范.md` §17-26（Vue 组件 / 类型安全 / 状态与数据流 / 路由 / 表单 / 样式与令牌 / 3D / 离线与性能 / 可访问性；红线 R11-R14 零容忍，含 3D 禁直建 renderer、统一 TresJS）。
+> 设计令牌、组件规则、字体（自托管 + 禁 Google Fonts link）、图标（一个库一个家族）、浏览器表面定制（选区/滚动条/焦点环/光标）见 `DESIGN_SPEC.md`；3D 约束见 `3D_SPEC.md`。**本节只列入口独有的门禁**；引入第三方库/图标前先查 `package.json`，禁重复引入。
+
 - **设计门禁（强制 6 步）**：⓪**先定轨道**（品牌物料轨：应用 UI / 图标 / 海报，全禁衬线；编辑出版轨：传播长文 / 文档 / 画册，长文允许衬线）——轨道定了才选风格，顺序不可颠倒（2026-10-10 融入，源自 design-aesthetics-book 轨道层）→ ① Design Read（页面类型/受众/vibe/倾向体系 + 三拨盘 8/6/4，未输出禁止写码）→ ② 视觉方向（一句话 + 4-6 色令牌 + 字体角色）→ ③ 对照简报评审 → ④ 实现（调用 taste-skill / ui-ux-pro-max / frontend-design / impeccable，禁模板手感）→ ⑤ critique（层级/清晰/情感）→ ⑥ audit + 设计审计 9 条，未过审计不得提交。完整规范见全局技能 `frontend-design-spec`。
 - 设计禁令速查：AI 紫渐变 / 暖米白+陶土 / 纯黑灰（要 tint）/ Tailwind 默认色板 / Inter 与衬线体默认 / Fraunces·Instrument_Serif / eyebrow 眉题 / Hero+三卡片 / Emoji 当图标 / 玻璃拟态装饰 / 渐变文字 / bounce·elastic 动效 / 每节同款入场 / 「提交」式按钮文案，一律禁止。
 
@@ -114,7 +111,7 @@
 
 - 后端重写为 Spring Boot 3.5 + Spring Data JPA + Spring AI Alibaba（**新代码按此规范；旧 FastAPI 代码仅维护，不新增功能**）。
 - 分层 `Controller → Service → Repository` 单向依赖；Controller 只做参数与响应，不写业务逻辑、不写数据库查询。分层规则已机械化：`backend/src/test/java/com/tea/architecture/LayerDependencyTest.java`（ArchUnit，CI Maven test 门禁）。
-- 错误统一 `ApiResponse<T>` + `{code, message}`：Service 抛 BusinessError 子类（BadRequest/Unauthorized/NotFound/Conflict）。
+- 错误统一 `ApiResponse<T>` + `{code, message}`：Service 抛 BusinessException 子类（BadRequest/Unauthorized/NotFound/Conflict/Gateway/QuotaExceeded）。
 - 认证：Spring Security + JWT；需登录接口加鉴权；密码哈希用 BCrypt。
 - 事务：写方法 `@Transactional(rollbackFor = Exception.class)`，只读 `readOnly = true`；禁事务内远程调用。
 
@@ -166,6 +163,7 @@ node scripts/verify-harness.cjs    # harness 一致性体检（ADR/CI job/技能
 node scripts/audit-redlines.cjs    # 红线机械化审计（替代 red-line-auditor；R2/7/8/9/10/11/12/14），期望 ERRORS: []，CI 门禁
 node scripts/audit-wiki-drift.cjs  # wiki 契约漂移审计（替代 consistency-verifier；api-contract 端点 vs 代码路由双向核对），期望 ERRORS: []，CI 门禁
 node scripts/add-doc-meta.cjs      # docs 元信息头批量补齐（新文档缺 frontmatter 时跑）
+node scripts/audit-context-budget.cjs  # 常驻上下文预算体检（估算 token；超预算即 error，防 AGENTS.md / 规则层重新膨胀），期望 ERRORS: []
 cd backend && python -m py_compile main.py                  # 后端语法（旧 FastAPI，过渡期；main.py 在 backend/ 根）
 cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量（旧 FastAPI，过渡期）
 # 后端重写完成后替换为：cd backend && mvn -q test              # 后端全量（Spring Boot）
@@ -195,6 +193,8 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量�
 - `.harness/rules/工程结构.md` — 工程结构（根目录/前端/后端新旧/目标 Spring Boot/.harness/docs 分层）
 - `.harness/rules/开发流程规范.md` — 开发流程（十阶段流水线 + 分支提交 + 回滚 + 多 agent + review + token 按需加载）
 - `.harness/rules/三层语义.md` — 规则/技能/工具三层语义与 token 分工红线（Rule 全量常驻 / Skill 按需加载 / Tool 不参与推理）
+- `docs/plans/lessons.md` — lesson 池（踩坑 / 精读 / 落地记录，按需加载；§13 新条目写这里）
+- `docs/token-optimization-guide.md` — 通用 token 优化方案（控制层 / 模板 / 度量 / 流行技巧审查）
 - `.harness/wiki/` — AI 编码上下文四件套（业务模型 / 接口协议 / 数据模型 / 领域术语），编码前按需读 ≤3 份
 - `.harness/changes/_template/` — 变更追踪模板（summary + db-migrations + rollback），与 git 分支同名
 - `.claude/agents/` — 三子代理（code-reviewer / consistency-verifier / red-line-auditor；Claude Code 专用。豆包环境等效：expert-reviewer / audit-wiki-drift.cjs + verify-harness.cjs / audit-redlines.cjs，见开发流程规范 §子代理）
@@ -206,56 +206,15 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量�
 
 ## 13. 更新记录
 
-**维护规则**：保持短（超 500 行就是在跟自己打架，200-350 行最舒服）；只留救过命的规则（问 "删掉这行会让 AI 犯错吗？" 不会就删）；命令必须真实（从 package.json/scripts 抄）；写规则不写建议（给 "禁止 X" 不给 "建议用 X"）；AI 每次犯错在此加一行，已有规则覆盖就收紧，不重复。**经验三级进化（2026-10-07）**：踩坑先写 lesson（单次记录）→ 跨项目复现归纳 pattern → 验证后晋升 instinct 自动生效；每级晋升需人工确认，防错误经验扩散。**晋升门槛（2026-10-10 收紧）**：晋升须附 **≥3 条真实可查证据**（真实日志/commit/文件，日期真实存在），证据不足只标「候选·证据不足」，禁止写成规则；**改技能/规则名或路径前先 grep 记忆层+技能层+任务层+文档层四处引用并同步**，防断链。**静默失效警觉（2026-10-10）**：治理类问题（规则漂移/技能断链/文档过期/引用失效）**当场不报错，几周后才显形**——所以「本次没发现问题」≠「没问题」，须靠确定性脚本（verify-harness 等）定期体检而非凭印象；指标取不到时报「未测」，禁按 0 计（把「没测到」读成「正常」是本机制最致命的失败模式）。**写入五问（写新条目/规则前自问，防膨胀）**：①与已有条目同主题？→合并更新不新增；②新说法覆盖旧说法？→替换不并存；③操作细节/命令/路径？→进技能不进规则；④临时状态/进行中？→不写（用会话/任务清单）；⑤核心偏好/身份？→画像层，环境事实→记忆层。**防膨胀护栏**：压缩稿须 <95% 原文（否则是"压缩后变大"），备份先行保留 14 天，单次降幅 ≤40%，**达标即停**（降到目标即止，不做超额治理）。**修剪（执行路径）**：稳定经验迁入 `docs/plans/patterns.md`（pattern 池，见开发流程规范 §八），AGENTS 留一行索引；学习记录可压缩为一行，不删除。
+**维护规则**：保持短（超 500 行就是在跟自己打架，200-350 行最舒服）；只留救过命的规则（问 "删掉这行会让 AI 犯错吗？" 不会就删）；命令必须真实（从 package.json/scripts 抄）；写规则不写建议（给 "禁止 X" 不给 "建议用 X"）；AI 每次犯错写一行进 `docs/plans/lessons.md`（本文件只收晋升后的规则），已有规则覆盖就收紧，不重复。**经验三级进化（2026-10-07）**：踩坑先写 lesson（单次记录）→ 跨项目复现归纳 pattern → 验证后晋升 instinct 自动生效；每级晋升需人工确认，防错误经验扩散。**晋升门槛（2026-10-10 收紧）**：晋升须附 **≥3 条真实可查证据**（真实日志/commit/文件，日期真实存在），证据不足只标「候选·证据不足」，禁止写成规则；**改技能/规则名或路径前先 grep 记忆层+技能层+任务层+文档层四处引用并同步**，防断链。**静默失效警觉（2026-10-10）**：治理类问题（规则漂移/技能断链/文档过期/引用失效）**当场不报错，几周后才显形**——所以「本次没发现问题」≠「没问题」，须靠确定性脚本（verify-harness 等）定期体检而非凭印象；指标取不到时报「未测」，禁按 0 计（把「没测到」读成「正常」是本机制最致命的失败模式）。**写入五问（写新条目/规则前自问，防膨胀）**：①与已有条目同主题？→合并更新不新增；②新说法覆盖旧说法？→替换不并存；③操作细节/命令/路径？→进技能不进规则；④临时状态/进行中？→不写（用会话/任务清单）；⑤核心偏好/身份？→画像层，环境事实→记忆层。**防膨胀护栏**：压缩稿须 <95% 原文（否则是"压缩后变大"），备份先行保留 14 天，单次降幅 ≤40%，**达标即停**（降到目标即止，不做超额治理）。**修剪（执行路径）**：lesson 进 `docs/plans/lessons.md`（按需池，不常驻），跨场景复现的进 `docs/plans/patterns.md`（pattern 池，见开发流程规范 §八），晋升后的约束写回本文件；本文件只留规则与索引。**迁移 ≠ 压缩**：整段外置到按需文件（内容零改动）不算压降，只须备份 + 引用同步；降幅护栏针对「同文件内删除/改写」。
 
-**学习记录（近况沉淀）**：
-- claude-code-best-practice 精读（2026-10-16）：吸收①最轻机制优先（Skill→Agent→Command 选择矩阵，已入 §2）②行为禁令式措辞（harness 确定性 enforce > 模型自觉，与现有禁令风格一致）③上下文污染是第一嫌疑（质量下滑先清会话非怀疑模型变笨，已由用户偏好层覆盖）；拒绝运行时特性（.claude 体系/MCP 选型/94 命令全表——豆包无等价物，吸收即死文件）。详见 `docs/research-claude-code-best-practice-2026-10.md`。
-- 删除/覆盖文件前先 Read 确认无独立价值；恢复成本高于删除成本。
-- 开工前调研必须用横纵分析框架：先纵向历史演进，再横向统一维度对比，两轴合看再规划；禁止只收集 star 数。
+**学习记录（近况沉淀）**：lesson 池已外置 → `docs/plans/lessons.md`（研究精读 / 落地记录 / 历史决策原文，**按需加载，不常驻**）。**新增 lesson 写进该文件，不写回本文件**；写入前过「写入五问」，晋升按下方门槛。
+**仍具约束力的条目（常驻保留，勿迁走）**：
 - 冲泡页零点击闭环：煮水→温杯→醒茶→出汤全自动，仅 READY 拖一次注水；禁止为温杯/醒茶/出汤加回手动确认按钮。
 - 新功能立项先过四维甄别（自由/用户/竞品/伪需求）；"团队自己会不会用" 是硬门槛，伪需求优先降级或砍。
-- PowerShell 往 .vue 写含 JS 模板字符串的代码（如 `/tea/${id}`）用单引号 here-string（@'...'@），防 `$` 插值破坏；动手前先探测行尾（HomeView LF，TeaRoom/MapView/TeaDetailView CRLF 混合）。
-- Edit/Write 工具对 CRLF 混合文件做字符串替换同样会把全文件归一为 LF（MapView 2026-10-08 教训：300 行行尾噪音）；修复 = 在 HEAD 字节上重放替换保留原行尾（.tmp/fix-mapview-eol.cjs），改 .vue 前先探测行尾。
-- `vite preview` 可能绑定 IPv6 ::1，`node scripts/smoke.mjs http://localhost:4173`（127.0.0.1 会全部 fetch failed）。
-- biome --write 的 organizeImports 会把 TresJS 模板组件导入转 type-only 导致运行时炸；biome.json 的 `**/*.vue` override 已关 useImportType/useExportType，且 biome.json 是严格 JSON 禁注释。
-- KTX2 工具链：装 Khronos KTX-Software 官方 exe 取 toktx.exe 转码；three basis transcoder 复制进 public/ 供 KTX2Loader 运行时加载；workbox runtimeCaching 的 /3d/ 必须补 `ktx2|wasm|js` 否则离线缓存失效。
 - 技能规范：新增/修改/删除技能必须按 `.harness/rules/技能规范.md`（frontmatter 必填、触发式描述、name=目录名、README 路由表同步；README 不列 = 不存在）。
 - 需求分析先行：批 B 及后续切片必须先产出需求文档（范围边界/做什么与不做什么/F-编号 + Given-When-Then 验收/影响分析）并经用户确认，才进方案设计；禁止跳过需求分析直接写方案（2026-10-06 沉淀）。
-- 数据库容器密码认证失败：先试候选已知密码（如历史 .env 值）再考虑重建卷；重建卷是最后手段，删前必须确认目标卷与生产/开发库卷独立（2026-10-06 沉淀）。
-- Canvas UI（canvasui.dev，MIT+Commons Clause）：25 个 canvas 特效组件库，Vue 版可用、Tailwind4/Three0.185 兼容；html-in-canvas 需 Chrome140+ flag/其余降级 overlay；禁转售组件本身。评估见 docs/canvas-ui.md，引入须过四维甄别 + 设计门禁（2026-10-06 沉淀）。
-- E2E 测试导航路径必须相对 baseURL（'login'、'brew'、'garden'），禁止前导斜杠（'/login'）：CI vite base=/tea-ceremony/，前导斜杠跳出 SW scope（离线深链 ERR_DISCONNECTED）或命中 vite base 提示页（无 title/lang，axe 挂）；重测试（真实 IndexedDB 批量写）显式传 timeout（2026-10-06 沉淀）。
-- npm audit 本地必须加 `--registry=https://registry.npmjs.org`（npmmirror 不实现 audit endpoint）；`npm audit fix` 后跑 quality 验证无破坏再提交（2026-10-06 沉淀）。
-- caveman-review 技能（main-dev）：评审输出格式变体，一行一条 finding（`L<line>: 🔴🟡🟢 <problem>. <why>. <fix>.`，问题/根因/修复三要素 + 关键项附失败原文）+ 结尾 verdict；不改评审维度与红线，默认评审仍走 expert-reviewer，用户点名/需省 token 时用（2026-10-06 沉淀，2026-10-07 升级三要素）。
-- 写作风格 = 80% ASD-STE100（航空维修手册规范）：一句一事实/指令≤20词描述≤25词/主动语态/同物同词/先答案后细节/编号列表每段≤6句/用中文简短/>3部分加 ASCII 图/"用 HTML 解释"→单文件交互页。已消化入 §2，与现有"不废话/编号清单/中文"合并不重复；评估见 docs/agent-eval-baseline.md（2026-10-06 沉淀）。
 - 治理文档须与实现同步：改 CI job 数、ADR 编号、技能数量、代理位置后立即更新 AGENTS.md + 对应规则文档；发现漂移当场修，不遗留（2026-10-07 沉淀：一次修 6 处）。
-- 阿里 Harness 精读对照（2026-10-07）：五层结构/薄主会话/门禁阻断/经验三级进化/eval 评测，见 docs/research-harness-alibaba-2026-10.md；已验证我们的 AGENTS.md+三规则+技能路由方向同构，差距为流程流水线与 eval 自动化（可迁移清单见该文）。
-- 285 Harness 落地（2026-10-07）：①ArchUnit 分层测试机械化（红线 #1，错误信息三要素）②caveman-review 三要素升级（问题/根因/修复）③verify-harness.cjs 一致性体检（ADR/CI/技能数/路径，首跑抓出流程族 30→32 漂移并已修）。来源 docs/research-harness-engineering-285-2026-10.md。
-- 285 docs 结构化落地（2026-10-07）：docs 元信息头 65/65（add-doc-meta.cjs 按 git 时间批量补）；verify-harness 挂 CI 门禁（CI 12→13 job）；expert-reviewer 补三要素（每条 finding 带 FIX + 规则出处）；docs/plans + reference 两层已建。
-- 流程断点审计（2026-10-07）：开发流程规范 7 处结构修复——流程路径分级（L0-L3↔十阶段）、小改动判据、.claude/agents 标注环境可用性（豆包用 expert-reviewer/verify-harness 替代）、wiki 选择映射、提交前验证矩阵、经验三级进化落点（docs/plans/patterns.md）、完成标准加 HANDOFF/环境审查。来源开发流程规范 §一/§四/§六-九。
-- 路径引用漂移审计（2026-10-07）：storage.ts/api.ts 实为目录（src/services/storage/ 与 src/services/api/）、waters.ts 不存在（水源数据在 src/data/constants.ts），三处已修；verify-harness 路径检查纳入 src/backend 前缀 + .agents 路由表双向核对 + 各族 README 数 + status 值域。
-- GitHub push（2026-10-07）：~/.ssh/config 走 ssh.github.com:443 可能被本地网络重置；用一次性 `$env:GIT_SSH_COMMAND="ssh -o HostName=github.com -o Port=22"` 走 22 端口，不动全局配置。（2026-10-13 更新：本地 id_ed25519 实测已被 GitHub 拒绝 publickey，`ssh -T` 认证失败，key 不在授权列表；当前可用通道改走 gh token HTTPS：`git -c credential.helper="!gh auth git-credential" push https://github.com/qiuqianyi66/tea-ceremony.git main`，token 不进命令行。GIT_SSH_COMMAND 内 Windows 反斜杠路径会被 ssh 转义吞掉，须用正斜杠。）
-- 集成测试首次真跑暴露三重欠账（2026-10-13）：①`backend/src/test/resources/application.yml` 源文件被删、target 残留旧产物**整体覆盖**主配置（JWT key 丢失 → bean 创建失败）——测试 classpath 同名 application.yml 优先级高于 main，必须镜像主配置启动必需段；②openai starter 引入后双 ChatModel 歧义 → 配置 `spring.ai.model.chat: dashscope` + autoconfigure.exclude 非 chat 模态；③生产 `docker-compose.yml` 被评测 gateway profile 污染（空 key → OpenAiApi 装配失败 → backend 起不来）——评测配置走 `docker-compose.eval.yml` override，生产 compose 禁带 gateway。铁律：**集成测试没真跑过 = 配置欠账未暴露**；compose 配置改动后必须重建镜像（`docker compose build`）再验证，旧镜像不反映当前源码（2026-10-13 沉淀）。
-- 三子代理豆包机械化替代（2026-10-07）：.claude/agents 是 Claude Code 配置，豆包运行时改走 audit-redlines.cjs（红线 15 条可机械子集 R2/7/8/9/10/11/12/14）+ audit-wiki-drift.cjs（api-contract 端点 vs 代码路由双向核对）+ expert-reviewer，均挂 CI harness job；首跑抓出 .env.development 被 git 跟踪（已解跟踪）、garden-plants 契约登记但无实现（已标注未实现）。
-- 开工前先查目标功能是否已实现：`git log --oneline -10`（用户可能自行提交，0f3549d 会话记忆即先例）；已实现 → 补缺验证，禁止从零重写（2026-10-08 沉淀）。
-- 编码：路由回落路径禁对可能为 null 的枚举直接 `.name()`——AgentOrchestrator 返回 null（透明代理）时 agent 归类须 fallback "chat"，否则集成测试 500（2026-10-08 沉淀）。
-- 技能准入 O-11（2026-10-08）：frontmatter 加 `type: executable|knowledge|flow` 三值；executable 必填 `verification` 验证命令（三条约束由 verify-harness.cjs §4f 机械化强制）；已标 6 个可执行类技能（db-migration/fastapi-endpoint/vue-component/agent-eval/unit-test-ci/3d-scene）。
-- ArchUnit 泛型返回类型（2026-10-08）：`getReturnType().getName()` 含泛型参数（如 `ApiResponse<X>`），比较原始类型用 `method.getRawReturnType().getName()`；事务注解属性用 `getAnnotationOfType(类型名)`（类对象版有泛型推断冲突）。ADR-014。
-- Spring AI Alibaba Graph 精读 + 实测反驳（2026-10-09）：见 docs/research-spring-ai-alibaba-graph-2026-10.md。**教材可信度低，须先读该文 §10**。实证成立：graph-core 由 agent-framework 传递依赖（引入零新增依赖）、HITL 三步曲（javap 核对签名）、条件边读写分离。**实测推翻文档三条**：①`experience_scorer`/`culture_scorer` 无入边永不执行（图能编译、Mermaid 好看但节点不跑）②不配 Executor **照样并行**（框架自带 `parallel-node-action-thread-N`，`addParallelNodeExecutor` 只是换池不是开关）③`PASS_THRESHOLD = 0` 与文档"≥80分"矛盾。铁律：**Mermaid 图对 ≠ 行为对**，Graph 验收必须断言「实际执行的节点集合」；框架"必须配 X"类警告要用时间戳/线程名实测，不能信文档（2026-10-09 沉淀）。
-- 技能新增（2026-10-09）：quality-audit（main-dev 8→9，四性审计门禁：规范性/维护性/安全性/可扩展性四批检查 + 修复清单 + 分批提交；type: executable，verification 挂 audit-redlines + verify-harness）。对应 REQ-quality-backlog 质量四性验收重头。
-- Graph 决策（2026-10-09）：ADR-018 判定 **Graph 编排暂缓**（四维甄别 0/4：业务闭环无「多步有状态 AI 编排」环节；HITL 与 §13「冲泡页零点击闭环」硬冲突）。实证砍掉两个候选件：结构化输出（tea 无「文本解析 LLM 输出」代码，无落点）、工具缓存（实测命中率 0-1%）。只保留 AI 会话配额（F-6，ADR-018）。需求/方案见 docs/prd/REQ-graph-introduce-2026-10-09.md + docs/plans/PLAN-graph-decision-2026-10-09.md。
-- **评测判分「中性计分」是最危险的口径陷阱**（2026-10-09）：`eval-core.cjs` 原对未跑的 judge 考点计「中性 1」，导致 v2 报 0.96；改为「未回填计 0」后同批 dry-run 仅 **0.19**——98 考点中 77 个是 judge，**78.6% 从未被判**。铁律：**判分器对「未判」必须计 0 而非中性**（失败要响亮）；报告须显式输出 `programOnly` 与 `judgeCoverage` 两个口径字段（F-1/F-2 已落地，单测 23/23 锁死）。
-- 容器出网 TLS 被拦排查法（2026-10-09）：症状「AI 调用超时 + `SSLHandshakeException: Remote host terminated the handshake`」按序验证：①`nc -zv host 443`（TCP）②`getent hosts`（DNS）③容器内 `openssl s_client -servername`（TLS 是否被掐）④宿主机 `New-Object SslStream` 对比。本次结论：TCP/DNS 均通但容器内 TLS `unexpected eof`，宿主同目标握手成功 → **环境级中间设备拦截**，非配置/代码问题。**清空 compose 代理变量无效**（已完整回滚），勿重复尝试。
 - **main 分支保护规则 = 只走 PR，禁直接 push main**（2026-10-09，用户拍板）：远端 main 设了「Changes must be made through a pull request」保护。本次 4 commit 直接 push 是 bypass（已确认接受现状），此后新改动一律 `feature/xxx` 或 `fix/xxx` 分支 → push 远端 → 开 PR → CI 全绿 → 合并。**禁再 bypass 直推 main**（force-push main 是红线，同禁）。
-- **「已知阻塞项」要定期实测复核，不能继承**（2026-10-10）：A4「cu 虚拟桌面占用」被连续多份交接记为唯一阻塞项（卡 K23 截图 / P0-3 验收 / v3 Judge 实跑），实测**全部不成立**——截图脚本自带 `ensure-dev-server.cjs`，`verify-*3d*`/`verify-pavilion`/`verify-gardens` 直接能跑（5173 自动拉起），`screenshot-home`/`-growth` 只需手起 5174，Judge 实跑更与桌面无关。`verify-gardens.cjs` ERRORS: []、`verify-pavilion.cjs` ERRORS: []、`verify-icons.cjs` ERRORS: []、三个截图脚本 exit 0、`eval-tea-ai.cjs --judge` 出全量分。铁律：**阻塞项是一句断言，不是事实**——每份交接必须先实测再转抄；「脚本跑不起来」多数是「没人试着跑」。截图/评测脚本调用方式与端口已写入 TODO-PRIORITY 命令表（2026-10-10 沉淀）。
-- **旁路埋点的 catch 会把「数据没落库」静默降级成一条 warn**（2026-10-10）：`TraceRecorder.complete()` 把 `AiChatVo` 的 `tokensIn/Out`、`latencyMs` 直塞 `NOT NULL` 列，而专家走两参构造 `AiChatVo(content, sources)` 时三字段为 null → insert 违反非空约束 → `record()` 的 catch 只落 warn → **Trace 永久丢失**。证据是数据缺口：`ai_eval_traces` 中 librarian **0 行**（其余 5 个 agent 均有），`ai_usage_logs` 却有 librarian 调用。铁律：**旁路（埋点/计量）必须对「落库成功率」有观测**，否则静默丢数据；实体有默认值为 `0` 的 NOT NULL 字段，赋值处必须 null 归零（2026-10-10 沉淀）。
-- **分支保护子端点不存在时只能整段 PUT**（2026-10-10）：`required_status_checks` 段缺失时，`POST`/`PATCH /branches/main/protection/required_status_checks` **均 404**；须用 `PUT /branches/main/protection` 整段覆盖，payload 同时带 `required_status_checks` + `required_pull_request_reviews` + 其余布尔开关（漏字段会被重置）。context 名必须与 `ci.yml` 各 job 的 `name` 逐字一致（13 个）。核对：`gh api repos/qiuqianyi66/tea-ceremony/branches/main/protection -q '.required_status_checks.contexts[]'`（2026-10-10 沉淀）。
-- **交接快照不可叠加，必须逐条实测**（2026-10-10）：三份交接同时交来，分别自称 main = `b9f083a` / `137b3a5` / `b9f083a`——**是三张不同时刻的快照，不是同一状态的三个视角**，叠加会得到"更全"的错觉。实测抓出 6 处硬错：A4 阻塞（假）、"后端重写已完成"（假，`backend/main.py` + `tests/` + `alembic.ini` 俱在，CI 仍 pytest/Maven 双跑）、测试数 201（实为 211）、`chore/pr-flow-rule` "未推送"（已合且远端已删）、`tea-testing` worktree "prunable"（已不存在）、v2 0.96 当成果（program-only 口径）。**commit 哈希全部真实**（14 个逐个 `git cat-file` 验证）——说明问题不在"编 ID"，而在**结论层不加复核地转抄**。铁律：接手交接先跑 `git log` / `git status` / 数字复算，逐条标「已复核 / 未复核断言」（2026-10-10 沉淀）。
 - **裸编号跨文档复用会造成实质误工**（2026-10-10）：`P0-3` 在三份文档指三个事项——`docs/PLAN-harness-research-2026-10.md` = 前端返工、`docs/TODO-PRIORITY.md`（deprecated）= AI key、`docs/OPTIMIZATION_PLAN.md` = PWA prompt。交接转述的「P0-3 前端返工验收」若被按 AI key 理解，会去做已完成的事。铁律：**编号不跨文档裸用**，引用时带文档前缀；消歧只在各文档就地加警示，**不做全库重编号**（会毁掉历史引用）。已在本会话修（2026-10-10 沉淀）。
-- **最高规范落点：任务控制四项已固化**（2026-10-10，用户要求）：§0 加第 6 条「客观执行」（结论以实测为准，未复核断言必须标注）、第 7 条「先拆解再动手」（现状→根因→子问题→待验证项，需求过 request-analysis、跨模块/架构/不可逆过 plan-control）；§4 工序加「1 分诊+拆解 / 3 需求分析 / 4 方案设计」并新增 §4.1 三轨道（Fast / Guided / Controlled）。**接线不抄正文**：正文留在 `.agents/skills/plan-control/SKILL.md` 与 `.harness/skills/main-dev/request-analysis/SKILL.md`，细节对照 `.harness/rules/开发流程规范.md` §一；禁把技能内容抄回 AGENTS.md（§2 token 红线 + plan-control §18 禁平行规则体系）（2026-10-10 沉淀）。
-- **全局技能融入（2026-10-10，各取所长非照搬）**：从 WorkBuddy 53 个全局技能**逐个读正文**后提炼增量（禁止凭 description 猜），分三批落地。**批次一（接线式）**：delivery-no-pseudoblock→§0 第 8 条「交付前自检」；grill-me-pro→§2「决策树拷问」+ request-analysis「frontier 提问」；prd-review→request-analysis「就绪度审查 8 维」；code-review-analyzer/assistant→expert-reviewer「OWASP 安全清单」。**批次二（新技能）**：agent-harness-architect→新增 `arch-deepen`（浅模块深化扫描）；task-handoff-summary + §13 交接教训→新增 `session-handoff`（交接已复核/未复核分栏）；using-agent-skills→§0 第 2 条「反驳要量化」；smart-memory-agent + knowledge-governance→§13「晋升门槛 ≥3 条真实证据」+「改名前 grep 四层引用」。**批次三（深读补漏）**：prd-assistant→request-analysis「Step 0 模式/复杂度判定（A/B/C + 只审校）」+「未知项并行推进」；task-handoff-summary 深读→session-handoff「长度硬限（行数+字符数非字节）」+「/compact 机制」+「负面清单」；knowledge-distiller→§13「静默失效警觉」。落点遵循三层语义（常驻约束进规则、按需能力进技能），禁照搬原文，用 tea 术语重写。
-- **skills.sh 下载榜吸收（2026-10-10，mattpocock/skills 三机制落地）**：调研 top10 + chatcut/anysearch/仓颉，判定 6 个已重合（find-skills/tdd/agent-browser/frontend-design/setup-matt-pocock-skills/triage）、3 个用不上（chatcut 视频剪辑、anysearch 被内置 general_search 覆盖、仓颉无公开出处）、3 个吸收并本地化——①grill-me 的 frontier 提问 → request-analysis「澄清规则」节升级为一轮带推荐答案的编号清单（≤5 条，不问能自己查的）；②improve-codebase-architecture 的浅模块深化 → 新建 `main-dev/arch-deepen`（Ousterhout 深模块视角，只出报告不改代码，dry-run 真命中 `ApiResponse<T>` 在 3 个 api 文件重复定义）；③handoff 标准化 → 新建 `main-dev/session-handoff`（五段强制结构：一句话现状/仓库状态带复核命令/已复核-vs-未复核分栏/下次第一步具体到命令/关键决策，把 §13 四条交接血泪教训固化为硬门）。main-dev 9→11，verify-harness ERRORS:[]。**铁律：外来 skill 不照搬原文，先对 tea 真实代码 dry-run 找信号，教科书信号（如"一行 Service return repository"）在本项目 0 命中必须删掉**。
-- **agent-harness-architect 融入（2026-10-10，只取不绑定 agent 运行时的通用部分）**：该 skill 服务对象是「设计 agent 运行时产品」，与 tea 定位不符——**tea 的 harness 是 AI 编码治理层**（`.harness/` + verify-harness.cjs + eval-harness.cjs，被测对象是协作流程本身），**没有** E 执行循环/T 工具注册/S 状态存储这些可设计层。故**只取三块通用方法论**：①**双向论证**（选 A 理由 + 否 B 理由 + 反转条件）→ `plan-control` §9.1，PLAN.md Trade-offs 与 §16 完成契约同步加项；②**症状→处方矩阵 + 反过度设计警示**（12 行对照表）→ `plan-control` §9.2；③**架构克制 YAGNI**（"能插件化≠该插件化"，附 ADR-018 Graph 四维甄别 0/4 被砍的本地实证）→ §2 + §0 第 7 条。**明确不取**：H 六层框架本体、六种静态执行模式、7 个框架案例库（tea 无对应对象，取了即术语堆砌）。docs/skills/plan-control.md 审查要点同步加 3 条核对项。verify-harness ERRORS:[]（2026-10-10 沉淀）。
-- **全量技能逐个比对（2026-10-10 第六轮，用户要求重过一遍）**：把 54 个用户级技能**逐个读正文对着 tea 真实文件核**，又找出 2 处真漏（此前只凭印象判"用不上"）：①**humanizer** 的 16 条去 AI 味模式；②**design-aesthetics-book** 的**轨道层**（先定轨道再选风格，顺序不可颠倒；品牌物料轨禁衬线 / 编辑出版轨允许衬线）→ §6 设计门禁从"6 步"改"6 步+⓪轨道判定"，补上 tea 之前直接进 Design Read 缺的一步。**同时诚实判定 fullstack-dev 无增量不融入**：其 Twelve-Factor（配置外置/环境隔离/健康检查）与契约测试，tea 已由编码规范 §96-97/§225-226 + `audit-wiki-drift.cjs`（端点 vs 代码双向核对，比契约测试更贴单仓现状）覆盖，逐条核实后端到 0 缺口。**铁律再确认：比对必须查 tea 真实文件，不能凭技能 description 或"看着差不多"下结论**（2026-10-10 沉淀）。
-- **迭代校准：融入必须从项目本身出发，不是从技能出发（2026-10-10 第七轮，用户点破）**：humanizer 第一版融入是把 8 条通用去 AI 味**堆进 §2 常驻规则（28 行）**——两处偏离项目：①违反 tea 自己的三层语义（操作细节进技能不进规则）；②通用清单对人类语感帮助有限。**重做为项目专属技能 `main-dev/tea-voice`**：读 tea 自己的 `docs/promotion/posts.md`（9 个平台文案）**反推 tea 声音四特征**——短句成段 / **正反对照定义法**（"不是百科，不是计时器，是能坐下来泡一杯茶的小茶室"）/ 动词主导 / 低音调不吆喝；AI 味清单按 tea 语料频次重排。§2 从 28 行压回**一行指针**。**方法论沉淀**：融入外来技能的正确顺序是「先读项目真实产物找声音/缺口 → 再定写成什么 → 最后才对技能取料」；反过来（先看技能有什么再找地方放）必然产出"正确但不像 tea"的东西。main-dev 13→14，verify-harness ERRORS:[]（2026-10-10 沉淀）。
 
-**2026-10-01 V4 重构**：ADR 拆 `docs/ADR/` 独立文件（ADR-001~009，统一格式）、CONTEXT.md 精简为术语+ADR 索引+架构关键词、新增 `npm run quality` 统一门禁、commit 改英文 conventional、新增 AI Change Protocol + Modification Level。详见 ADR-009。

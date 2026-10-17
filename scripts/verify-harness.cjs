@@ -219,6 +219,21 @@ for (const s of collectSkillFrontmatters()) {
   }
 }
 
+// 4g. 技能 frontmatter name/description 与 name=目录（技能规范 §1/§2，原 PowerShell 人工段的机械化替代）
+for (const s of collectSkillFrontmatters()) {
+  const name = fmField(s.front, 'name');
+  const desc = fmField(s.front, 'description');
+  const dir = path.basename(path.dirname(path.join(ROOT, s.rel))).replace(/^\d{2}-/, '');
+  if (!name) {
+    errors.push(`❌ ${s.rel} frontmatter 缺 name。\n✅ FIX: 补 name（= 目录名，kebab-case）。\n📖 See: .harness/rules/技能规范.md §2`);
+  } else if (name !== dir) {
+    errors.push(`❌ ${s.rel} name≠目录名：${name} vs ${dir}。\n✅ FIX: 二者取一致（name 用纯 kebab-case，目录带 NN- 前缀时剥前缀比对）。\n📖 See: .harness/rules/技能规范.md §1`);
+  }
+  if (!desc) {
+    errors.push(`❌ ${s.rel} frontmatter 缺 description。\n✅ FIX: 补触发式描述（见 §3）。\n📖 See: .harness/rules/技能规范.md §2`);
+  }
+}
+
 // 5. 关键路径引用存在性（AGENTS.md 中 docs/ .harness/ .agents/ scripts/ src/ backend/ 开头的反引号路径）
 const seen = new Set();
 const pathRefs = agents.match(/`((?:docs|\.harness|\.agents|scripts|src|backend)\/[^`]+)`/g) || [];

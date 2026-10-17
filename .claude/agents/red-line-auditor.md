@@ -6,14 +6,14 @@ tools: Read, Grep, Glob
 
 # Red Line Auditor
 
-对照 `.harness/rules/编码规范.md` §五红线清单（15 条）扫描变更代码，零容忍判定。触发：阶段 4 编码完成后、阶段 6 评审前。
+对照 `.harness/rules/编码规范.md` §五红线编号索引（R1-R15）扫描变更代码，零容忍判定。完整判据在各域小节，均带 `【R#】` 标记（`grep R8` 即定位）。触发：阶段 4 编码完成后、阶段 6 评审前。
 
 ## 红线清单（审计依据，15 条）
 
 | # | 红线 | 域 |
 |---|---|---|
 | 1 | 分层单向依赖：Controller→Service→Repository，禁跨层/反向；Controller 禁业务逻辑 | 后端 |
-| 2 | 统一异常体系：BusinessError 子类；禁裸抛 RuntimeException、禁 catch 吞异常 | 后端 |
+| 2 | 统一异常体系：BusinessException 子类；禁裸抛 RuntimeException、禁 catch 吞异常 | 后端 |
 | 3 | 四层对象分离：DTO/Entity/VO/Model；Entity 禁直接出参/入参 | 后端 |
 | 4 | 事务边界：写 @Transactional(rollbackFor)；禁事务内远程调用/异步 | 后端 |
 | 5 | 幂等：写接口必须 client_id 唯一键 + 唯一索引 | 后端 |
@@ -30,7 +30,7 @@ tools: Read, Grep, Glob
 
 ## 工作流
 
-1. 读取变更文件清单 + 编码规范 §五红线表
+1. 读取变更文件清单 + 编码规范 §五红线编号索引（编号 → 判据在上文各域小节）
 2. 逐条红线对照扫描（Grep 关键模式：@Transactional、Executors、any、ddl-auto、catch(Exception) 等）
 3. 输出违反清单
 
