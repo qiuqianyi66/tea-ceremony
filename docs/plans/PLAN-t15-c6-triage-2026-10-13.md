@@ -9,6 +9,8 @@ last_updated: 2026-10-13
 
 # T15 C6 低优先四维甄别决定表（2026-10-13）
 
+> **状态更新（2026-10-17 复核）**：决定表「做」的 4 项中 **K17 / K21 / P1-5 / P1-6 已完成**（K17 `scripts/eval-extract-regression.cjs`；K21 `session-handoff/SKILL.md:17-18`；P1-5 `LibrarianAgent.java:104-106`；P1-6 `AiUsageSummaryService`），**只剩 P1-10**（= PLAN-open-items A1）。
+
 > 来源：`PLAN-final-convergence-2026-10-09.md` T15；定义：K17-K22 见 `PLAN-harness-research-2026-10.md`，P1-5/6/7/9/10 见 `TODO-PRIORITY.md` D 区。
 > 四维甄别：自由（自用价值）/ 用户（真实需求）/ 竞品（差异化）/ 伪需求（不该做）。
 

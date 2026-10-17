@@ -9,6 +9,8 @@ last_updated: 2026-10-09
 
 # REQ：Spring AI Alibaba Graph 引入需求分析（2026-10-09）
 
+> **状态更新（2026-10-17 复核）**：F-1/F-2/F-4/F-5 已完成（v3 全量真实分 overall 0.81 / judgeCoverage 1）；F-3 Docker 阻塞已解除（compose up healthy）；F-6 会话配额已落地（`AiCallQuota` + 429 QuotaExceededException）。
+
 ## 0. 结论先行
 
 1. **Graph 编排本身：暂缓，不引入。** tea 现状（五专家单请求单专家路由 + 评测已达标 v2 0.96）**没有必须由 Graph 解决的需求**。引入属「为技术而技术」，过不了四维甄别的「自由维」与「伪需求」门槛。

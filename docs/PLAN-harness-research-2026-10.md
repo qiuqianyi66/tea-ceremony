@@ -6,6 +6,8 @@ owner: yanha
 
 # 一盏茶 工程单 PLAN — harness 研究落地（2026-10-07）
 
+> **状态更新（2026-10-17 复核）**：P3-4 / K23 / P0-3 的「cu 虚拟桌面阻塞」**前提已证伪**：verify-gardens / verify-pavilion / verify-icons / screenshot-* 全部本地 headless 跑通；P0-2「AI key 未配」与 DashScope 欠费同项（等充值）；P0-3 前端色值令牌化剩 268 处（原文写 ~500）。
+
 > 目的：把 5 篇研究底座（278/285/阿里/最新进展/技术比对）提炼为可执行工程单，与既有 TODO-PRIORITY 合并统一排序。每项标：现状 / 下一步 / 验证级别（AGENTS.md §5 Modification Level）/ 依赖。
 > 前置原则：不造轮子（先查成熟实践）；每次完成一件事 → 多轮 review → 再报告；治理文档与实现同步。
 

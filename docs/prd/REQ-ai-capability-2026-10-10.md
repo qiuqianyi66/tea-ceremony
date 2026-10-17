@@ -9,6 +9,8 @@ date: 2026-10-10
 
 # REQ：AI 能力建设（prompt 安全 / 知识注入 / 评测基线 / SFT 微调 / 缓存）
 
+> **状态更新（2026-10-17 复核）**：事实 4「语义缓存已规划未落地」**仍成立**：`git grep -il cache -- backend/src/main/java/com/tea/ai/` = 0 文件。已列入真待办 A3（PLAN-open-items §1）。
+
 > 依据：2026-10-10 会话实测（v5 全量实跑 15 条失败归因 + DB 数据盘点 + 百炼缓存/微调官方文档）。
 > 上游：`docs/prd/REQ-ai-project-2026-10-09.md`（评测体系）、`docs/plans/PLAN-final-convergence-2026-10-09.md`（T01-T15）。
 > **本 REQ 需要推翻上游两处「不做」决策**（见 §范围边界）。
