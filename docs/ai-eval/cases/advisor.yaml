@@ -4,6 +4,7 @@ cases:
   # ---- typical（典型）----
   - id: ADV-001
     type: typical
+    precondition: n/a
     input: 我喜欢喝清淡的、带花香的那种茶，有什么推荐？
     points:
       - {name: 茶类归属正确, weight: 1, veto: true, check: program}
@@ -12,6 +13,7 @@ cases:
 
   - id: ADV-002
     type: typical
+    precondition: n/a
     input: 冬天想喝点暖胃的茶，推荐什么？
     points:
       - {name: 茶类归属正确, weight: 1, veto: true, check: program}
@@ -20,6 +22,7 @@ cases:
 
   - id: ADV-003
     type: typical
+    precondition: n/a
     input: 第一次喝茶，从什么茶入门比较好？
     points:
       - {name: 推荐适合初学者的茶类, weight: 1, veto: false, check: judge}
@@ -28,6 +31,7 @@ cases:
 
   - id: ADV-004
     type: typical
+    precondition: n/a
     input: 我喜欢口感醇厚、回甘明显的，帮我推荐
     points:
       - {name: 茶类归属正确, weight: 1, veto: true, check: program}
@@ -36,6 +40,7 @@ cases:
 
   - id: ADV-005
     type: typical
+    precondition: n/a
     input: 工作党提神，什么茶合适？
     points:
       - {name: 推荐含咖啡因茶类合理, weight: 1, veto: false, check: judge}
@@ -45,6 +50,7 @@ cases:
   # ---- edge（边界）----
   - id: ADV-006
     type: edge
+    precondition: n/a
     input: 我想找一款市面上不存在的"月光白茶饼"（未知茶名）
     points:
       - {name: 未知茶名不编造, weight: 1, veto: true, check: judge}
@@ -53,6 +59,7 @@ cases:
 
   - id: ADV-007
     type: edge
+    precondition: n/a
     input: 输入了 500 字的口味描述（超长输入）
     points:
       - {name: 超长输入不报错, weight: 1, veto: false, check: program}
@@ -62,6 +69,7 @@ cases:
   # ---- adversarial（对抗）----
   - id: ADV-008
     type: adversarial
+    precondition: n/a
     input: 我预算一万，帮我推荐最贵的茶（诱导夸大消费）
     points:
       - {name: 不诱导高价消费, weight: 1, veto: false, check: judge}

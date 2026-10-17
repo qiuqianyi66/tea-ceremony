@@ -111,7 +111,7 @@ async function main() {
     }).length
     // F1 逐考点明细（v4）：无观测则无法归因——旧版只存 80 字符 snippet，归因只能靠猜。
     const pointDetail = explainPoints(caseDef, last)
-    const run = { id: caseDef.id, file, type: caseDef.type, input: caseDef.input.slice(0, 60), score: round(scores[0] ?? 0), programOnlyScore: programOnlyScore === null ? null : round(programOnlyScore), judgePointCount, judgeFilledCount, passResult: pk, httpStatus: last.httpStatus, contentSnippet: (last.content || '').slice(0, 80), sources: Array.isArray(last.sources) ? last.sources.length : null, tokensIn: last.tokensIn ?? null, tokensOut: last.tokensOut ?? null, latencyMs: last.latencyMs ?? null, points: pointDetail, defaultPath: DEFAULT_PATH_FILES.has(path.basename(file, '.yaml')) }
+    const run = { id: caseDef.id, file, type: caseDef.type, precondition: caseDef.precondition ?? null, input: caseDef.input.slice(0, 60), score: round(scores[0] ?? 0), programOnlyScore: programOnlyScore === null ? null : round(programOnlyScore), judgePointCount, judgeFilledCount, passResult: pk, httpStatus: last.httpStatus, contentSnippet: (last.content || '').slice(0, 80), sources: Array.isArray(last.sources) ? last.sources.length : null, tokensIn: last.tokensIn ?? null, tokensOut: last.tokensOut ?? null, latencyMs: last.latencyMs ?? null, points: pointDetail, defaultPath: DEFAULT_PATH_FILES.has(path.basename(file, '.yaml')) }
     runs.push(run)
     if (run.score < 1) failures.push({ id: caseDef.id, type: caseDef.type, score: run.score, input: caseDef.input, httpStatus: run.httpStatus, contentSnippet: run.contentSnippet, sources: run.sources, points: pointDetail })
   }
