@@ -1,3 +1,11 @@
+---
+last_updated: 2026-10-17
+status: deprecated
+owner: yanha
+---
+
+> **已归档**（2026-10-17 归位）：历史规划/调研文档，仅作追溯，**不要据此开工**。现行入口：`AGENTS.md` + `docs/plans/TODO-PRIORITY.md`。
+
 # Global Skills V2 Blueprint（Spring Boot Backend-First）
 
 > 目标：把全局技能库重构为 **AI-native Full-stack Developer Skill OS**——后端主栈 Java + Spring Boot，前端保留 Vue/TS/Vite，AI Agent / Vibe Coding / Design 保持优势。

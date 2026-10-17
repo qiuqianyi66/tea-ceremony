@@ -1,7 +1,7 @@
 # 「一盏茶」V3 路线图（V3_ROADMAP）
 
 > 对齐现状的开发指令基线：保留 V2 方法、对齐事实、修正违规、纳入深化、精而不滥。
-> 创建：2026-09-10。取代 `V2_UPGRADE.md` 作为开发指令；`V2_UPGRADE.md` 原文件保留供对照，不删不改。
+> 创建：2026-09-10。取代 `V2_UPGRADE.md` 作为开发指令；`V2_UPGRADE.md` 原文件保留供对照，不删不改（2026-10-17 归档至 `docs/plans/archive/`）。
 > 事实来源：代码与 `src/data/` 实核、`package.json`、`src/assets/SOURCES.md`、git log、AGENTS.md。未核实的数字一律标注"待核实"，不得写死。
 
 ---

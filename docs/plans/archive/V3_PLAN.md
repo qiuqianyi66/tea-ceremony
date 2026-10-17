@@ -1,3 +1,11 @@
+---
+last_updated: 2026-10-17
+status: deprecated
+owner: yanha
+---
+
+> **已归档**（2026-10-17 归位）：历史规划/调研文档，仅作追溯，**不要据此开工**。现行入口：`AGENTS.md` + `docs/plans/TODO-PRIORITY.md`。
+
 # 「一盏茶」V3 重写规划 — V3_ROADMAP.md 产出方案
 
 > 本文件是"把 V2_UPGRADE.md 重写为对齐现状的 V3_ROADMAP.md"的完整执行方案。

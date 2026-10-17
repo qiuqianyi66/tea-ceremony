@@ -1,3 +1,11 @@
+---
+last_updated: 2026-10-17
+status: deprecated
+owner: yanha
+---
+
+> **已归档**（2026-10-17 归位）：历史规划/调研文档，仅作追溯，**不要据此开工**。现行入口：`AGENTS.md` + `docs/plans/TODO-PRIORITY.md`。
+
 # 「一盏茶」V2.0 升级方案
 
 > 东方数字茶空间 — 从「品茶模拟器」到「沉浸式茶文化体验平台」
