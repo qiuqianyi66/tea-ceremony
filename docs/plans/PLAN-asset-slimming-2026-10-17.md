@@ -19,7 +19,7 @@ last_updated: 2026-10-17
 | **UNTRACK** | `git rm --cached` + `.gitignore` 加规则 | **保留** | 否 |
 | **COMPRESS** | 重新压缩/转格式后替换 | 替换为新版 | 是（更小） |
 
-总账：**86MB → 约 21MB（−76%）**，其中 UNTRACK 46.6MB、COMPRESS 18.9MB。
+总账（2026-10-17 实测修订）：**86MB → 约 36.4MB（−58%）**——UNTRACK 48MB + COMPRESS 1.6MB（仅 home 两张截图）。原估的「COMPRESS 18.9MB」已证伪：地形 jpg 与 hdr 压缩会带来不可验证的视觉劣化，见 §7。
 
 ## 1. `public/3d/`（11 文件，22.8MB）——全部运行时资产，一个都不删
 
@@ -29,8 +29,8 @@ last_updated: 2026-10-17
 | `textures/terrain/aerial_grass_rock_nor_gl_2k.ktx2` | 0.83MB | **KEEP** | 同上 |
 | `textures/terrain/brown_mud_dry_diff_2k.ktx2` | 0.82MB | **KEEP** | 同上 |
 | `textures/terrain/rock_ground_02_diff_2k.ktx2` | 0.84MB | **KEEP** | 同上 |
-| `textures/terrain/*.jpg` ×4 | **12.79MB** | **COMPRESS** 2K→1K 或 q75，目标 ≤4MB | `:529` `.catch(() => texLoader.loadAsync(...jpg))`——KTX2 解码失败时的**降级兜底**，不能删 |
-| `hdri/kloofendal_2k.hdr` | **6.18MB** | **CONVERT → ktx2**（项目已有 toktx 工具链），目标 ~2MB | `:618` 环境光照，运行时必需 |
+| `textures/terrain/*.jpg` ×4 | **12.79MB** | **KEEP（压缩已试并撤销，见 §7）** | `:529` `.catch(() => texLoader.loadAsync(...jpg))`——KTX2 解码失败时的**降级兜底**，不能删 |
+| `hdri/kloofendal_2k.hdr` | **6.18MB** | **KEEP（不转，见 §7.2）** | `:618` 环境光照，运行时必需 |
 | `basis/basis_transcoder.js` | 0.05MB | **KEEP** | KTX2 解码器 |
 | `basis/basis_transcoder.wasm` | 0.50MB | **KEEP** | 同上 |
 
@@ -97,3 +97,47 @@ last_updated: 2026-10-17
 | UNTRACK 后新 clone 缺素材 | 技能执行时少参考图 | 正文含取用说明；需要时从上游重取；单技能可 revert 恢复跟踪 |
 | 压缩后视觉差异 | 3D 场景观感下降 | 逐文件截图对比；PBR 贴图压到 1K 在有 mipmap 的场景通常不可见，但必须实拍验证 |
 | hdr 转 ktx2 后光照变化 | 明暗/色彩偏差 | 保留原 hdr 在本地备份 14 天；`verify-gardens` 四园截图对比 |
+
+## 7. 压缩环节的实测结论（2026-10-17，推翻原计划）
+
+### 7.1 地形 jpg：压了又撤
+
+先按 q75 压（12.79MB → 3.24MB），PR #100 合并后补做像素统计，发现质量不可接受：
+
+| 文件 | q75 MAE | 差>8 通道占比 |
+|---|---|---|
+| aerial_grass_rock_diff_2k | 4.54/255 | 13.60% |
+| aerial_grass_rock_nor_gl_2k（**法线贴图**） | **7.45/255** | **34.02%** |
+| brown_mud_dry_diff_2k | 7.26/255 | 33.87% |
+| rock_ground_02_diff_2k | 6.78/255 | 30.68% |
+
+提到 q90（法线 q95）后仍不达标：
+
+| 文件 | q90/q95 MAE | 差>8 占比 |
+|---|---|---|
+| aerial_grass_rock_diff_2k | 3.28/255 | 5.87% |
+| aerial_grass_rock_nor_gl_2k（q95） | 5.63/255 | 21.75% |
+| brown_mud_dry_diff_2k | 4.76/255 | 15.60% |
+| rock_ground_02_diff_2k | 4.47/255 | 13.35% |
+
+判断依据：
+
+1. 原图已是合理压缩（3.6MB / 2048² ≈ 0.86 byte/px），再压是**二次损失**。
+2. **法线贴图对压缩最敏感**——RGB 直接编码表面法向量，噪声会变成错误凹凸。
+3. 它们只在 **KTX2 兜底路径**加载（现代浏览器全走 ktx2），12.79MB 实际几乎不传输，体积收益不抵质量风险。
+
+→ **撤销压缩，恢复原件**。教训：资产压缩不能只验「体积下降 + 能解码」，必须测像素差异；安全线建议 MAE < 1.5、差>8 占比 < 2%（参照 home 截图实测 MAE 1.24 / <1%）。
+
+### 7.2 hdr：不转 ktx2
+
+- `toktx`（KTX-Software）未安装，需要额外工具链。
+- 更关键：hdr 是**环境光照**，转 ktx2 会改变 IBL 采样结果；而当前执行环境**无图像输入能力**，光照变化的「正确性」无法用像素统计判断（MAE 只能测「变了多少」，不能测「变得对不对」）。
+- 6.18MB 换一个不可验证的光照变化，风险大于收益 → **保持原样**。
+
+### 7.3 实际完成的瘦身
+
+| 动作 | 收益 |
+|---|---|
+| UNTRACK p0-audit + 无引用截图 + skills 素材（PR #99） | 48MB |
+| 压缩 home-desktop.png / home-mobile.png（MAE 1.24，差>8 <1%） | 1.6MB |
+| **合计** | **约 49.6MB（86MB → 36.4MB，−58%）** |
