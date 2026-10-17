@@ -85,8 +85,10 @@ jobs:
           python-version: '3.12'
       - name: Install pip-audit
         run: pip install pip-audit==2.10.1
-      # 已知残留（warn 不阻断）：pyasn1<0.5 受 python-jose 约束、ecdsa 无修复版本；
-      # 根治需迁移 PyJWT（已记录，未立项）。新出现的高危仍应在日志中可见。
+      # 已知残留（warn 不阻断）：pyasn1 0.4.8 / ecdsa 0.19.2（python-jose 传递依赖）。
+      # 不修理由（2026-10-17 复核）：旧栈 JWT 只用 HS256（backend/app/deps.py:22、auth_service.py:18），
+      # ecdsa/pyasn1 仅在 RS256/ES256 路径被调用 → 漏洞不可达；旧栈仅维护，生产跑 Spring Boot（jjwt）。
+      # 重评条件见 docs/plans/out-of-scope.md。新出现的高危仍应在日志中可见。
       - name: pip-audit (advisory, non-blocking)
         continue-on-error: true
         run: pip-audit -r backend/requirements.txt
