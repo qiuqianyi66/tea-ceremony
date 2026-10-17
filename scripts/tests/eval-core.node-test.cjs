@@ -19,11 +19,34 @@ test('温度区间：区间内数字得 1，区间外得 0，无温度得 0', ()
   assert.equal(evalPointProgram(p, { content: '用沸水冲泡即可', expectedTemp: { min: 90, max: 100 } }), 0)
 })
 
-test('RAG 命中：sources 非空得 1，空/null 得 0', () => {
+test('RAG 命中：sources 非空直接得 1', () => {
   const p = { name: '知识库命中', weight: 1, veto: false, check: 'program' }
   assert.equal(evalPointProgram(p, { sources: ['茶·铁观音'] }), 1)
-  assert.equal(evalPointProgram(p, { sources: [] }), 0)
-  assert.equal(evalPointProgram(p, { sources: null }), 0)
+})
+
+test('F-V2 未命中但合格常识回答：空白/夸大/回避得 0，实质回答得 1', () => {
+  const p = { name: '知识库命中', weight: 1, veto: false, check: 'program' }
+  // 未命中 + 空响应或敷衍 → 0（不放行空白）
+  assert.equal(evalPointProgram(p, { sources: [], content: '' }), 0)
+  assert.equal(evalPointProgram(p, { sources: null, content: '不知道' }), 0)
+  // 未命中 + 实质回答 → 1
+  assert.equal(
+    evalPointProgram(p, {
+      sources: [],
+      content: '铁观音属乌龙茶（青茶），产自福建安溪，半发酵工艺，香气以兰花香为主。',
+    }),
+    1,
+  )
+  // 未命中 + 夸大功效 → 0
+  assert.equal(
+    evalPointProgram(p, { sources: [], content: '这款茶能包治百病，长期饮用可根治一切慢性疾病。' }),
+    0,
+  )
+  // 未命中 + 回避式回复 → 0
+  assert.equal(
+    evalPointProgram(p, { sources: [], content: '抱歉，无法回答这个问题，请稍后重试或联系人工客服。' }),
+    0,
+  )
 })
 
 test('拒绝：输出拒绝词得 1，未拒绝得 0', () => {

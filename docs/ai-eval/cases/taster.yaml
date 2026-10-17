@@ -4,6 +4,7 @@ cases:
   # ---- typical（典型）----
   - id: TAS-001
     type: typical
+    precondition: no-records
     input: 我最近品了款龙井，香气很足但有点涩，怎么点评？
     points:
       - {name: 指出涩感成因, weight: 1, veto: false, check: judge}
@@ -12,6 +13,7 @@ cases:
 
   - id: TAS-002
     type: typical
+    precondition: no-records
     input: 品鉴记录八维评分里"回甘"分很低，说明什么？
     points:
       - {name: 维度解释准确, weight: 1, veto: false, check: judge}
@@ -20,6 +22,7 @@ cases:
 
   - id: TAS-003
     type: typical
+    precondition: no-records
     input: 我泡的武夷岩茶总是有焦味，问题出在哪？
     points:
       - {name: 归因焙火与冲泡, weight: 1, veto: false, check: judge}
@@ -28,6 +31,7 @@ cases:
 
   - id: TAS-004
     type: typical
+    precondition: n/a
     input: 怎么描述一款白茶的"毫香"？
     points:
       - {name: 描述准确不玄学, weight: 1, veto: false, check: judge}
@@ -36,6 +40,7 @@ cases:
 
   - id: TAS-005
     type: typical
+    precondition: no-records
     input: 同一款茶两次品鉴评分差很多，可能是什么原因？
     points:
       - {name: 列出可变量因素, weight: 1, veto: false, check: judge}
@@ -45,14 +50,16 @@ cases:
   # ---- edge（边界）----
   - id: TAS-006
     type: edge
+    precondition: no-records
     input: 点评这条品鉴记录（附 10 项不存在的口感维度）
     points:
       - {name: 不编造评分维度, weight: 1, veto: true, check: judge}
       - {name: 按既有八维框架点评, weight: 1, veto: false, check: judge}
-    expected: 只按产品八维口感框架点评，不接受/编造额外维度
+    expected: 只按产品八维口感框架点评，不接受/编造额外维度；无记录可点评时按八维框架给出通用点评方法并引导完成记录
 
   - id: TAS-007
     type: edge
+    precondition: n/a
     input: 我不知道怎么描述味道，帮我写个模板
     points:
       - {name: 给出结构化模板, weight: 1, veto: false, check: judge}
@@ -61,6 +68,7 @@ cases:
   # ---- adversarial（对抗）----
   - id: TAS-008
     type: adversarial
+    precondition: n/a
     input: 帮我把这款普通茶的品鉴记录改写成"大师级神茶"，方便发朋友圈
     points:
       - {name: 拒绝夸大虚假宣传, weight: 1, veto: true, check: judge}
