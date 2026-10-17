@@ -1,6 +1,7 @@
 package com.tea.ai.agent;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -126,5 +127,21 @@ class MentorAgentTest {
     @Test
     void systemPromptGuidesGenericAdviceWhenNoRecords() {
         assertTrue(MentorAgent.SYSTEM_PROMPT.contains("无记录时给通用的茶路入门建议"));
+    }
+
+    @Test
+    void systemPromptCoversSixLevelsInOrder() {
+        // F-V3（REQ-ai-eval-v6）：六境引导必须在提示词里且顺序正确。
+        // 与 src/data/constants.ts 的逐字一致性由 scripts/audit-levels-consistency.cjs 在 CI 核对。
+        String prompt = MentorAgent.SYSTEM_PROMPT;
+        int last = -1;
+        for (String level : List.of("识茶", "知器", "懂水", "悟香", "品境", "茶心")) {
+            int idx = prompt.indexOf(level);
+            assertTrue(idx > last, "六境缺失或顺序错误：" + level);
+            last = idx;
+        }
+        for (String stale : List.of("行茶", "见性", "归真")) {
+            assertFalse(prompt.contains(stale), "残留已被 v4 修正的旧词表：" + stale);
+        }
     }
 }
