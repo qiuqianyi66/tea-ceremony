@@ -1,6 +1,6 @@
 /**
  * 茶灵 AI 服务
- * LLM 优先（经后端 /api/ai 代理转发），规则引擎降级
+ * LLM 优先（经后端 /api/v1/ai 代理转发），规则引擎降级
  */
 
 import { getCurrentSolarTerm } from '@/data/solarTerms'

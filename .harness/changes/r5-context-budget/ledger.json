@@ -116,7 +116,7 @@
                                         "agent_prompts",
                                         "ShedLock",
                                         "MapStruct",
-                                        "后端代理 `/api/ai/*`",
+                                        "后端代理 `/api/v1/ai/*`",
                                         "八维评分 0-100",
                                         "LCP",
                                         "REQUIRES_NEW",

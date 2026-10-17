@@ -21,7 +21,7 @@ tools: Read, Grep, Glob
 | 7 | 迁移走 Flyway：禁生产 ddl-auto: update；迁移必须成对可回滚 | 数据库 |
 | 8 | 线程池：禁 Executors.newFixedThreadPool；统一有界线程池 | 后端 |
 | 9 | 安全：SQL 注入防拼接、XSS 转义、Token/密码/密钥禁入日志、.env 禁入库 | 后端 |
-| 10 | AI 代理：AI 请求必须走后端 /api/ai/*；降级链（teaAI.ts）禁删禁削弱 | 后端/AI |
+| 10 | AI 代理：AI 请求必须走后端 /api/v1/ai/*；降级链（teaAI.ts）禁删禁削弱 | 后端/AI |
 | 11 | Vue 纪律：Composition API + script setup；禁 Options API、禁 any/ts-ignore | 前端 |
 | 12 | 单向数据流：views → stores → services；业务状态走 Pinia | 前端 |
 | 13 | 设计门禁：改 UI 先 Design Read；禁 AI 默认痕迹 | 前端 |

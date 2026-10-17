@@ -187,7 +187,7 @@ async function seedRecords(page) {
   })
   const page = await ctx.newPage()
   page.on('pageerror', (e) => console.log('[pageerror]', e.message.slice(0, 250)))
-  await page.route('**/api/ai/*', (route) => route.abort())
+  await page.route('**/api/v1/ai/*', (route) => route.abort())
 
   // 空态
   await page.goto(base + '/growth')
@@ -212,7 +212,7 @@ async function seedRecords(page) {
       'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
   })
   const mpage = await mctx.newPage()
-  await mpage.route('**/api/ai/*', (route) => route.abort())
+  await mpage.route('**/api/v1/ai/*', (route) => route.abort())
   await seedRecords(mpage)
   await mpage.goto(base + '/growth')
   await mpage.waitForTimeout(1400)

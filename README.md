@@ -61,7 +61,7 @@
 | 3D | Three.js / TresJS（KTX2 压缩贴图 + basis transcode） |
 | 数据 | Dexie.js + IndexedDB（离线优先，`sync_status` 重试队列）；PostgreSQL + pgvector（RAG 向量检索） |
 | 后端 | Spring Boot 3.5 + Spring Data JPA + Spring AI Alibaba + Flyway（旧 FastAPI 仅维护） |
-| AI | 后端代理 `/api/ai/*`（浏览器禁止直连第三方），RAG 向量检索 + 五角色专家，DashScope，失败降级到规则引擎；熔断保护 + request_id 请求链路贯穿 |
+| AI | 后端代理 `/api/v1/ai/*`（浏览器禁止直连第三方），RAG 向量检索 + 五角色专家，DashScope，失败降级到规则引擎；熔断保护 + request_id 请求链路贯穿 |
 | 部署 | Docker Compose（frontend / backend / postgres / nginx），公网 ECS 在线，GitHub Pages 静态 Demo |
 | 测试 | Vitest + fake-indexeddb、Playwright E2E + axe、Maven（211 tests + Testcontainers + ArchUnit）、pytest（旧栈） |
 | CI | GitHub Actions 13 job：类型检查+build+smoke / Vitest / Biome / 依赖审计 / E2E / a11y / pytest / Spring Boot Maven / 迁移往返 / Compose 校验 / harness 一致性 |

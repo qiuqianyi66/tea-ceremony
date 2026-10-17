@@ -59,7 +59,7 @@ No ads, no paywall, self-hostable, offline-capable.
 | 3D | Three.js / TresJS (KTX2 compressed textures, basis transcoder) |
 | Data | Dexie.js + IndexedDB (offline-first, `sync_status` retry queue); PostgreSQL + pgvector (RAG vector retrieval) |
 | Backend | Spring Boot 3.5 + Spring Data JPA + Spring AI Alibaba + Flyway (legacy FastAPI maintenance-only) |
-| AI | Backend proxy only (`/api/ai/*`, browser never calls third-party AI directly), RAG vector retrieval + five specialist roles, DashScope, rule-based fallback |
+| AI | Backend proxy only (`/api/v1/ai/*`, browser never calls third-party AI directly), RAG vector retrieval + five specialist roles, DashScope, rule-based fallback |
 | Deploy | Docker Compose (frontend / backend / postgres / nginx), public ECS online, GitHub Pages static demo |
 | Tests | Vitest + fake-indexeddb, Playwright E2E + axe, Maven (211 tests + Testcontainers + ArchUnit), pytest (legacy) |
 | CI | GitHub Actions, 13 jobs: type-check+build+smoke / Vitest / Biome / dependency audit / E2E / a11y / pytest / Spring Boot Maven / migration round-trip / compose validation / harness consistency |

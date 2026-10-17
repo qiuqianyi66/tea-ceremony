@@ -11,7 +11,7 @@
 import { expect, type Page, test } from '@playwright/test'
 
 test.beforeEach(async ({ page }) => {
-  await page.route('**/api/ai/*', (route) => route.abort())
+  await page.route('**/api/v1/ai/*', (route) => route.abort())
   page.on('pageerror', (err) => console.log('[PAGEERROR]', err.stack || err.message))
 })
 

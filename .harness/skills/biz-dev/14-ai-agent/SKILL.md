@@ -6,7 +6,7 @@ description: AI 多智能体——Spring AI Alibaba 编排（5 专家：荐茶/�
 # AI Agent
 
 ## 触发
-- AI 功能开发（荐茶/品鉴分析/文化问答/冲泡建议/成长洞察）；/api/ai/* 后端代理。
+- AI 功能开发（荐茶/品鉴分析/文化问答/冲泡建议/成长洞察）；/api/v1/ai/* 后端代理。
 
 ## 工作流
 1. 5 专家角色（技术命名）：RecommendAgent / TastingAgent / CultureAgent / BrewCoach / GrowthMentor（ADR-011）。
@@ -19,7 +19,7 @@ description: AI 多智能体——Spring AI Alibaba 编排（5 专家：荐茶/�
 - AI 请求必须走后端代理（#10）；降级链不可删（#10 + 16-ai-fallback）。
 
 ## 自检
-- [ ] 请求走 /api/ai/*
+- [ ] 请求走 /api/v1/ai/*
 - [ ] prompt 版本化 + Schema 校验
 - [ ] 超时/重试/熔断就位
 - [ ] token 计量 + 敏感数据隔离

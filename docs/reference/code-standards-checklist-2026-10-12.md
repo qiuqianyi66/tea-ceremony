@@ -42,7 +42,7 @@ last_updated: 2026-10-12
 | R10 | 禁 `Executors.newFixedThreadPool/newCachedThreadPool`；统一有界 `ThreadPoolTaskExecutor` | §7 |
 | R11 | SQL 参数化禁拼接；XSS 输出转义；Token/密码/密钥禁入日志 | §8 |
 | R12 | `.env*` / `*.pem` / secrets 禁入库；依赖安全审计 | §8 |
-| R13 | AI 请求必须走后端代理 `/api/ai/*`，禁前端直连第三方 AI | §9 |
+| R13 | AI 请求必须走后端代理 `/api/v1/ai/*`，禁前端直连第三方 AI | §9 |
 | R14 | AI 降级链不可删（前端 teaAI.ts 承重墙 + 后端 fallback） | §9 |
 | DB1 | Schema 变更只走 Flyway，`changes/{feat}/` 三件套与分支同名 | §27 |
 | DB2 | 每个迁移必须可回滚，upgrade/downgrade 往返测试通过才提交 | §27 |
