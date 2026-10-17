@@ -277,14 +277,23 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-      # verify-harness.cjs 纯 fs 无依赖，不需 npm ci；期望输出 ERRORS: []
+      # verify-harness.cjs / audit-levels-consistency.cjs 纯 fs 无依赖，不需 npm ci；期望输出 ERRORS: []
       - name: Run harness consistency check
         run: node scripts/verify-harness.cjs
+      - name: Six-level word list consistency（六境跨语言一致）
+        run: node scripts/audit-levels-consistency.cjs
       # red-line-auditor / consistency-verifier 的豆包机械化替代（红线 15 条可判定子集 + wiki 契约双向核对）
       - name: Run red-line audit
         run: node scripts/audit-redlines.cjs
       - name: Run wiki drift audit
         run: node scripts/audit-wiki-drift.cjs
+      # nginx 侧两道机械化门禁（纯 fs 无依赖，不需要 npm ci / docker）
+      # 1) 安全头：任何自带 add_header 的 location 必须 include 片段，否则 CSP/X-Frame-Options 静默失效
+      # 2) 路由：nginx SPA 白名单 与 src/router/index.ts 双向一致，否则新路由线上 404
+      - name: Run nginx header audit
+        run: node scripts/verify-nginx-headers.cjs
+      - name: Run nginx route whitelist audit
+        run: node scripts/verify-nginx-routes.cjs
       # 常驻层 token 预算门禁（防膨胀）：AGENTS.md / CLAUDE.md / CONTEXT.md / .harness/rules/*.md 估算 token 超预算即 error
       - name: Run context budget check
         run: node scripts/audit-context-budget.cjs
