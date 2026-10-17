@@ -1,5 +1,5 @@
 # 一盏茶 AI 评测集 — mentor（茶路成长专家）
-# 依据：mentor 按茶修六境（识茶→知器→懂水→行茶→见性→归真，TEA_LEVELS）给成长路径
+# 依据：mentor 按茶修六境（识茶→知器→懂水→悟香→品境→茶心，TEA_LEVELS）给成长路径
 cases:
   # ---- typical（典型）----
   - id: MEN-001
