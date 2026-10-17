@@ -40,7 +40,7 @@ const router = useRouter()
 .garden-home {
   min-height: 100vh;
   background: linear-gradient(160deg, #0f1a14 0%, #1a2420 100%);
-  color: #f5f1e6;
+  color: var(--color-ink-bright);
   padding: 2rem 1rem;
   position: relative;
 }
@@ -53,7 +53,7 @@ const router = useRouter()
   color: rgba(245,241,230,0.8); font-size: 0.82rem; cursor: pointer;
   transition: background 0.2s, color 0.2s; font-family: inherit;
 }
-.back-home:hover { background: rgba(201,169,110,0.25); color: #f5f1e6; }
+.back-home:hover { background: rgba(201,169,110,0.25); color: var(--color-ink-bright); }
 .garden-header { text-align: center; margin-bottom: 2rem; }
 .garden-title { font-size: 2rem; font-weight: 300; letter-spacing: 0.2em; margin: 0 0 0.5rem; }
 .garden-sub { font-size: 0.85rem; color: rgba(245,241,230,0.5); letter-spacing: 0.15em; margin: 0; }

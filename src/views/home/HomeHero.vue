@@ -192,7 +192,7 @@ onUnmounted(() => window.removeEventListener('pointermove', onPointerMove))
   display: inline-flex; align-items: center; gap: 0.7rem;
   padding: 0.85rem 2.6rem 0.85rem 3rem;
   font-family: inherit; font-size: 1.05rem; letter-spacing: 0.4em;
-  color: #f5f1e6; border-radius: 999px; border: 1px solid rgba(245, 241, 230, 0.5);
+  color: var(--color-ink-bright); border-radius: 999px; border: 1px solid rgba(245, 241, 230, 0.5);
   background: rgba(201, 169, 110, 0.16); backdrop-filter: blur(12px);
   cursor: pointer; transition: all 0.4s ease;
 }

@@ -141,7 +141,7 @@ async function sendMessage(text?: string) {
   display: flex; flex-direction: column;
   min-height: 100dvh;
   background: linear-gradient(160deg, #0f1a14 0%, #1a2420 50%, #0d1410 100%);
-  color: #f5f1e6;
+  color: var(--color-ink-bright);
 }
 
 .ai-topbar {

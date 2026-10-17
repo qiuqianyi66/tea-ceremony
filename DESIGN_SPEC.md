@@ -39,6 +39,7 @@
 | `cream-dark` 暗宣纸 | `#1A120A` | 暗色页面背景（近黑） | `--color-cream-dark` |
 | `paper-dark` 暗纸 | `#2A1F15` | 暗色卡片/面板 | `--color-paper-dark` |
 | `ink-dark` 暗墨（暖白） | `#F5E6C8` | 暗色正文 | `--color-ink-dark` |
+| `ink-bright` 亮墨 | `#F5F1E6` | 暗色场景高对比正文/标题（比 ink-dark 更偏白，2026-10-17 新增，收编 17 处散落裸值） | `--color-ink-bright` |
 | `tea-gold-dark` 暗茶汤金 | `#C9A96E` | 暗色场景唯一强调色 | `--color-tea-gold-dark` |
 | `wood-dark` 暗木 | `#E8D5B0` | 暗色主文字/标题 | `--color-wood-dark` |
 | `wood-light-dark` 暗木浅 | `#B8A080` | 暗色次要文字 | `--color-wood-light-dark` |

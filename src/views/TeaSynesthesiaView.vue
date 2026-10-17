@@ -321,7 +321,7 @@ onUnmounted(() => {
   flex-direction: column;
   justify-content: space-between;
   padding: 3rem 1.5rem 2rem;
-  color: #f5f1e6;
+  color: var(--color-ink-bright);
   pointer-events: none;
 }
 .synth-overlay > * { pointer-events: auto; }
@@ -383,7 +383,7 @@ onUnmounted(() => {
   transition: all 0.25s;
   font-family: inherit;
 }
-.synth-btn:hover { background: rgba(245, 241, 230, 0.12); color: #f5f1e6; }
+.synth-btn:hover { background: rgba(245, 241, 230, 0.12); color: var(--color-ink-bright); }
 .synth-btn.primary {
   background: rgba(201, 169, 110, 0.9);
   border-color: rgba(201, 169, 110, 0.9);
