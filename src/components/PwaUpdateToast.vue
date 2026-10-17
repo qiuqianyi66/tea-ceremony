@@ -34,7 +34,7 @@ function applyUpdate() {
     <Transition name="pwa-update">
       <div
         v-if="needRefresh"
-        class="fixed bottom-4 right-4 z-[110] flex max-w-[92vw] items-center gap-3 rounded-xl border border-[var(--color-tea-gold)]/40 bg-[var(--color-cream-dark)]/95 px-4 py-3 text-sm leading-snug text-[#f5f1e6] shadow-lg backdrop-blur-sm"
+        class="fixed bottom-4 right-4 z-[110] flex max-w-[92vw] items-center gap-3 rounded-xl border border-[var(--color-tea-gold)]/40 bg-[var(--color-cream-dark)]/95 px-4 py-3 text-sm leading-snug text-[var(--color-ink-bright)] shadow-lg backdrop-blur-sm"
         role="status"
         aria-live="polite"
       >
@@ -48,7 +48,7 @@ function applyUpdate() {
         </button>
         <button
           type="button"
-          class="shrink-0 rounded-lg px-2 py-1.5 text-[#c9b99a] hover:text-[#f5f1e6]"
+          class="shrink-0 rounded-lg px-2 py-1.5 text-[#c9b99a] hover:text-[var(--color-ink-bright)]"
           @click="dismiss"
         >
           稍后

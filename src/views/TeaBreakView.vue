@@ -266,7 +266,7 @@ onUnmounted(() => {
   background:
     radial-gradient(ellipse at 50% 30%, rgba(201, 169, 110, 0.15), transparent 60%),
     linear-gradient(160deg, #0f1a14 0%, #1a2420 50%, #0d1410 100%);
-  color: #f5f1e6; padding: 2rem 1rem;
+  color: var(--color-ink-bright); padding: 2rem 1rem;
   position: relative; overflow: hidden;
 }
 .break-content {
@@ -330,7 +330,7 @@ onUnmounted(() => {
 }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 .finish-label { font-size: 0.9rem; letter-spacing: 0.25em; color: #c9a96e; margin: 0; }
-.finish-poem { font-size: 1.4rem; line-height: 2; color: #f5f1e6; margin: 0; font-weight: 300; }
+.finish-poem { font-size: 1.4rem; line-height: 2; color: var(--color-ink-bright); margin: 0; font-weight: 300; }
 .finish-poet { font-size: 0.85rem; color: rgba(245, 241, 230, 0.5); margin: 0; letter-spacing: 0.1em; }
 .finish-btn { margin-top: 1.5rem; }
 @media (max-width: 480px) {

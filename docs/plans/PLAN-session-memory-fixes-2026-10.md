@@ -1,6 +1,6 @@
 ---
 last_updated: 2026-10-08
-status: implemented
+status: deprecated
 owner: yanha
 ---
 

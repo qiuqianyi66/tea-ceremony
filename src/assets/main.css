@@ -20,6 +20,8 @@
   --color-paper-dark: #2a1f15;
   --color-tea-gold-dark: #c9a96e;
   --color-ink-dark: #f5e6c8;
+  /* 暗色场景高对比正文/标题（比 ink-dark 更偏白；与暗底形成更强对比。色值权威在 DESIGN_SPEC「暗色变体」） */
+  --color-ink-bright: #f5f1e6;
   /* 浏览器表面定制：暗色滚动条（木色深棕档，thumb / hover） */
   --color-wood-deep-dark: #3a2a1a;
   --color-wood-deep-dark-hover: #5a4030;

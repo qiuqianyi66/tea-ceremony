@@ -186,13 +186,13 @@ onMounted(loadGarden)
 .back-btn-3d {
   display: inline-flex; align-items: center; gap: 0.4rem;
   background: rgba(255,255,255,0.1); border: 1px solid rgba(245,241,230,0.2);
-  color: #f5f1e6; padding: 0.65rem 1rem; min-height: 44px; border-radius: 999px;
+  color: var(--color-ink-bright); padding: 0.65rem 1rem; min-height: 44px; border-radius: 999px;
   font-size: 0.85rem; cursor: pointer; transition: background 0.2s; font-family: inherit;
 }
 .back-btn-3d:hover { background: rgba(255,255,255,0.2); }
 .garden-title-area-3d { text-align: center; flex: 1; min-width: 0; padding: 0 0.5rem; }
 .garden-name-3d {
-  font-size: 1.15rem; font-weight: 500; margin: 0; color: #f5f1e6;
+  font-size: 1.15rem; font-weight: 500; margin: 0; color: var(--color-ink-bright);
   letter-spacing: 0.08em; text-shadow: 0 1px 4px rgba(0,0,0,0.5);
 }
 .topbar-actions-3d { display: flex; gap: 0.5rem; align-items: center; }
@@ -229,7 +229,7 @@ onMounted(loadGarden)
   border-radius: 4px; cursor: pointer; transition: border-color 0.2s;
 }
 .pavilion-panel:hover { border-color: rgba(201, 169, 110, 0.7); }
-.pavilion-quote { margin: 0 0 0.4rem; font-size: 0.95rem; line-height: 1.7; color: #f5f1e6; letter-spacing: 0.05em; }
+.pavilion-quote { margin: 0 0 0.4rem; font-size: 0.95rem; line-height: 1.7; color: var(--color-ink-bright); letter-spacing: 0.05em; }
 .pavilion-source { margin: 0; font-size: 0.72rem; color: rgba(201, 169, 110, 0.85); letter-spacing: 0.12em; text-align: right; }
 .pavilion-enter-active, .pavilion-leave-active { transition: opacity 0.25s, transform 0.25s; }
 .pavilion-enter-from, .pavilion-leave-to { opacity: 0; transform: translateY(-6px); }

@@ -225,7 +225,7 @@ onUnmounted(() => observer?.disconnect())
   position: relative; min-height: 100vh; overflow-x: hidden;
   background: #0e1a16;
   font-family: 'Noto Serif SC', serif;
-  color: #f5f1e6;
+  color: var(--color-ink-bright);
 }
 
 /* 顶部栏 */

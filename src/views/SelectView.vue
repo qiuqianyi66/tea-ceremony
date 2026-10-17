@@ -182,7 +182,7 @@ const types = getAllTypes()
 .select-root {
   min-height: 100dvh;
   background: linear-gradient(160deg, #0f1a14 0%, #1a2420 50%, #0d1410 100%);
-  color: #f5f1e6;
+  color: var(--color-ink-bright);
   font-family: var(--font-sans);
   padding-bottom: 6rem;
 }
@@ -195,7 +195,7 @@ const types = getAllTypes()
 .back-btn {
   display: inline-flex; align-items: center; gap: 0.4rem;
   background: rgba(255,255,255,0.08); border: 1px solid rgba(245,241,230,0.15);
-  color: #f5f1e6; padding: 0.5rem 1rem; border-radius: 999px;
+  color: var(--color-ink-bright); padding: 0.5rem 1rem; border-radius: 999px;
   font-size: 0.85rem; cursor: pointer; transition: background 0.25s;
   min-height: 2.75rem; font-family: inherit;
 }
