@@ -2,6 +2,7 @@
 
 import { type Tea, TeaType } from '@/types/tea'
 import { requestOrMock } from '../http'
+import type { ApiResponse } from './types'
 
 /** 新后端 TeaVo（snake_case 字段名，V2 种子全字段） */
 interface TeaVo {
@@ -23,12 +24,6 @@ interface TeaVo {
   soup_color_min?: string | null
   soup_color_max?: string | null
   dry_tea_color?: string | null
-}
-
-interface ApiResponse<T> {
-  code: string
-  message: string
-  data: T
 }
 
 /** 新契约分页结构（page 1-based） */

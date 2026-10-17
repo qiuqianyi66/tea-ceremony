@@ -4,11 +4,9 @@
 
 import router from '@/router'
 import { useUiStore } from '@/stores/ui'
+import { API_BASE } from './apiBase'
 import { clearAuth, getAuthToken } from './authStorage'
 
-// 生产环境通过 Nginx 代理到 /api；开发环境可通过 VITE_API_URL 指向后端。
-// 统一补齐 /api，避免把 http://localhost:8000 配置成不带前缀的错误地址。
-const API_BASE = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
 const DEV_MODE = import.meta.env.DEV && import.meta.env.VITE_DEV_MODE === 'true'
 const REQUEST_TIMEOUT_MS = 15_000
 

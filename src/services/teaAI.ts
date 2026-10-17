@@ -11,11 +11,11 @@ import { getAuthToken } from '@/services/authStorage'
 import { clearAiSessionId, loadAiSessionId, saveAiSessionId } from '@/services/aiSession'
 import type { TasteDimensions, TastingRecord } from '@/types/tasting'
 import type { Tea } from '@/types/tea'
+import { API_BASE } from './apiBase'
 
 // ============ LLM 调用 ============
 
 // 统一走后端 AI 代理（浏览器不直连第三方服务）；后端不可用时降级到规则引擎。
-const API_BASE = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
 
 async function callLLM(systemPrompt: string, userPrompt: string): Promise<string | null> {
   try {
