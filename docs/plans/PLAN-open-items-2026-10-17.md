@@ -10,7 +10,7 @@ last_updated: 2026-10-17
 
 > 用途：**未完成事项的唯一入口**。散在 `docs/plans/PLAN-*`、`docs/prd/REQ-*`、`docs/ENTERPRISE_GAP.md`、`docs/OPTIMIZATION_PLAN.md` 里的"未完成"，先读这里，别逐份翻。
 > 方法：25 份文档提取 86 条"未完成"声明 + 4 轮深度扫描（代码抑制标记 / 测试 skip / CI 弱化门禁 / 调度任务）→ **逐条实测复核**，不转抄文档结论。
-> 结论：**真未完成 0 项 / 等外部条件 4 条 / 待拍板 5 条（D1/D2/D4/D5/D6）/ 文档债 25 条**。（2026-10-17 五次复核：A 类全部处置；D3 已由 ADR-021 决策、D7 随 A6 结案、D8 已决策并落地）
+> 结论：**真未完成 0 项 / 等外部条件 4 条 / 待拍板 0 条 / 文档债 25 条 / 在途切片 1 个（§7）**。（2026-10-17 六次复核：A 类全部处置；D1/D2/D3/D5/D6/D7/D8 已全部拍板，D4 已定为「先拆 useAudio.ts」待开工）
 
 ## 0. 一分钟结论
 
@@ -86,12 +86,12 @@ last_updated: 2026-10-17
 
 | # | 决策点 | 推荐 | 代价 / 反转条件 |
 |---|---|---|---|
-| D1 | T15 决定表剩余项照准？（K18/K19/K20/K22/P1-7/P1-9 降级） | 照准降级 | 降级 ≠ 不做；**注：P1-6 在表里被降级，但它其实已实现**（见 §4） |
-| D2 | SFT 语料量级：241 条直接练 vs 先扩 500+ | 241 直接练 | 扩 500+ 多花 2-3 天合成 + 更多训练费，收益未验证 |
+| D1 | ~~T15 决定表剩余项照准~~ | **已照准（2026-10-17）**：做 4 / 降级 7 / 砍 0 按推荐执行；其中 K17/K21/P1-5/P1-6 已完成、P1-10 已于 10-13 完成 → 本表全部落地关闭 | — |
+| D2 | ~~SFT 语料量级~~ | **已拍板（2026-10-17）：241 条直接训练**（A 档），不扩 500+ | T13 待「百炼控制台确认单价 + 预算数字」后启动 |
 | D3 | ~~ADR-012 Redis + 语义缓存~~ | **已决策（ADR-021，2026-10-17）**：暂不引入 Redis，ADR-012 标 deprecated；语义缓存随「AI key + 真实流量」重启评估 | 反转条件：多实例水平扩展 / 语义缓存能算出净收益 / 简历目标重启 |
-| D4 | 超大单文件拆分：`TeaBrewSceneInner.vue` 1322 行 / `BrewView.vue` 812 / `useAudio.ts` 789 | 先拆 `useAudio.ts`（纯逻辑，E2E 兜底充分） | 3D 场景组件拆分风险高，单独一轮 |
-| D5 | SSE 流式输出立项 | 继续暂缓 | 200 字响应增益仅提前 1-2s；改契约 + 降级链回归面大 |
-| D6 | `filter-repo` 重写历史 | 暂不做 | 会改所有 commit hash，破坏外部引用 |
+| D4 | 超大单文件拆分 | **已拍板（2026-10-17）：先拆 `useAudio.ts`**（789 行）。拆解方案见下方 §7.1；`TeaBrewSceneInner.vue`(1322)/`BrewView.vue`(812) 单独一轮 | `useAudio` 有模块级单例（AudioContext/Howler）+ 单测 + 5 个消费方，属 L2 重构，需真实听测 |
+| D5 | ~~SSE 流式输出立项~~ | **已拍板（2026-10-17）：暂缓**，记入 `out-of-scope.md` | 反转条件：AI 回答长度普遍 >400 字，或用户明确要求流式 |
+| D6 | ~~`filter-repo` 重写历史~~ | **已拍板（2026-10-17）：不做**，记入 `out-of-scope.md` | 反转条件：`.git` 超过 500MB 或需要公开分发 |
 | D7 | ~~A6 安全债：迁 PyJWT 还是维持非阻断~~ | **已结案：不修**（漏洞不可达，见 A6） | — |
 | D8 | ~~裸值治理策略（268 处硬编码色值）~~ | **已决策并落地（2026-10-17）**：新增 `ink-bright` 令牌收编最高频的 17 处（等值替换，零视觉变化）；其余维持「派生色允许裸值 + 注释」，不追求清零 | 实测 9/268 可等值替换；扩表须逐个确认语义，禁止为凑数换错令牌 |
 
@@ -145,3 +145,47 @@ last_updated: 2026-10-17
 | `docs/prd/REQ-ai-eval-v6-2026-10-12.md` | v6 评测需求 | 不变；A2 引用它 |
 | `docs/ADR/ADR-012.md` | Redis 决策 | **status: active 但 0 实现 → D3 待重判** |
 | 各 `PLAN-*` | 单切片执行计划 | 已完成者按 §4 标 ✅，不再作为待办来源 |
+
+## 7. 在途切片登记与审查（2026-10-17，另一会话）
+
+> 按 AGENTS §10「临时产物与在途工作不跨界处置」：本轮维护者**不修改、不删除**下列文件，只登记 + 出只读审查意见。
+
+| 文件 | 内容 |
+|---|---|
+| `docs/ADR/ADR-022.md` | 匿名遥测上报（部分取代 ADR-006「错误与性能指标不上报」） |
+| `docs/reference/telemetry-contract.md` | 遥测契约 v1（端点 / 请求体 / 指纹算法 / 传输策略 / SLO / 保留策略） |
+| `nginx.conf` + `nginx/Dockerfile` + `nginx/snippets/` | nginx 配置 snippets 化 |
+| `public/robots.txt` + `public/sitemap.xml` | 站点 SEO 卫生 |
+
+**ADR-022 的论证（已核实其自述依据）**：线上 `42.121.125.4` 首屏 LCP 实测 5.8–6.3s、`/health` 页调不存在的 `/api/health` 永久显示后端不可达——两者客户端可见、服务端不可见；ADR-006 让埋点只写 IndexedDB，运维侧永远拿不到样本。故只推翻「传输」一条，隐私边界不动。
+
+### 审查意见（只读，未改动对方任何文件）
+
+| # | 级别 | 问题 | 建议 |
+|---|---|---|---|
+| R1 | 🔴 会撞门禁 | `ADR-022` 的 `status: proposed` 不在 `verify-harness` 值域（`active\|draft\|deprecated`） | 改 `draft`；正文 `**Status**: Proposed` 可保留 |
+| R2 | 🟡 治理一致性 | `ADR-006` 仍 `status: active`，未标「部分被取代」 | 参照 ADR-012→021 的做法，在 ADR-006 注明哪些部分被取代（行为埋点 `trackingEvents` 继续有效） |
+| R3 | 🔴 流程缺口 | 3 张新表（`telemetry_events`/`error_fingerprints`/`slo_snapshots`）属 **L3**，ADR 只写保留策略，未给迁移方案 | 补 Flyway `V7__telemetry.sql` + rollback + upgrade/downgrade 往返测试 |
+| R4 | 🟡 必然漂移 | 指纹算法要求「前后端必须一致」，但 FNV-1a 要写两份（TS + Java） | 本仓库已有 6 次「两份实现漂移」教训。建议：只前端算、后端信任；或补一组 golden test vectors 双向断言 |
+| R5 | 🟢 范围 | `GET /slo`、`GET/PATCH /fingerprints` 需 JWT，但当前无运营看板消费方 | 确认是否有前端页面；没有就先只做 `POST /batch`，其余留到有读者时再加 |
+| R6 | 🟢 安全 | `POST /api/v1/telemetry/batch` 匿名可写 | 契约已写「≤50 条/请求 + 10 次/分钟」，需在代码落地（`RateLimitFilter` 加规则 + 请求体大小上限），不能只停在契约文本 |
+
+### A7 D4 落地：拆 `useAudio.ts`（789 行 → 4 文件，2-3d，L2，待开工）
+
+现状（实测）：单文件 789 行，内含 state、AudioContext 管理、Howler 初始化、程序化雨/风声合成（约 110 行）、环境音切换与播放、SFX；模块级单例（`AudioContext`/`Howler` 实例）+ 单测 `__tests__/useAudio.spec.ts` + 5 个消费方（`BrewView`/`HomeView`/`TeaDragDrop`/`teaRoom` store/`TeaRoom`）。
+
+拆解边界（按「变什么拆什么」）：
+
+| 目标文件 | 职责 | 约行数 |
+|---|---|---|
+| `composables/useAudio.ts` | 对外 API（音量/静音/音轨状态），保留现有导出签名不变 | ~250 |
+| `composables/audio/synthAmbient.ts` | 程序化雨/风合成（start/stop/pause/resume/volume） | ~160 |
+| `composables/audio/howlerTracks.ts` | Howler 初始化 + 音轨表 + 播放控制 | ~200 |
+| `composables/audio/sfx.ts` | 音效精灵与单次播放 | ~120 |
+
+风险与验证：
+
+- 🔴 **单例语义**：AudioContext/Howler 必须仍是进程内单例，拆分后由 `useAudio.ts` 持有并注入，禁各子模块自建。
+- 🔴 **对外签名零变化**：5 个消费方不改 = 验收条件之一（改动若需动消费方，说明边界切错）。
+- 验证：`npm run test`（现有 useAudio 单测保持绿）+ `npm run build` + 真实浏览器听测（雨/风/音轨切换/静音/音量）+ 一条 e2e 冒烟。
+- 回滚：单 commit revert（不涉及数据/契约）。
