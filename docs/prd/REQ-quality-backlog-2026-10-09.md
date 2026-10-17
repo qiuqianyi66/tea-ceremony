@@ -9,6 +9,8 @@ last_updated: 2026-10-09
 
 # REQ：双线合并后剩余工作总需求分析（质量四性重头）
 
+> **状态更新（2026-10-17 复核）**：F-8/F-9/F-11/F-13/F-14 已完成（T10-T14：评测集/评测器/Judge 骨架/repo-map 270 行/经验池 9 条）；§110「待落地缺口」中 scheduled-task（=P1-6，`AiUsageSummaryService` @Scheduled + 预算告警 + 单测）与 K15 结构化日志（`RequestIdFilter` + logback MDC）已完成；Redis 四场景转决策项（见 PLAN-open-items D3）。
+
 ## 0. 结论先行
 
 - 双线合并后剩余工作共 **6 簇 17 项**：S1 收尾、治理收尾、质量收敛（重头）、依赖解锁、新功能、文档/决策漂移修复（纵览新发现）。

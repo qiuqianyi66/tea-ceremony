@@ -6,6 +6,8 @@ owner: yanha
 
 # 「一盏茶」企业级优化方案（OPTIMIZATION_PLAN）
 
+> **状态更新（2026-10-17 复核）**：§五「落地核对结论（2026-10-13，T15 P1-10）」**已存在**——P1-10 是已做过一轮，不是待做。增量：P2-5 视觉回归也已实现（`e2e/visual-regression.spec.ts` + 快照，CI 跳过属设计），§五 该行应为 ✅。剩余 3 项低优先增强见 §六。
+
 > 决策版方案：由 `docs/ENTERPRISE_GAP.md`（三路调研：前端/后端/GitHub 横纵）整合而来。
 > 2026-09-18。规模假设：单用户/小团队免费自托管，非多租户 SaaS。
 > 判据：投入/价值 × 是否破坏硬约束（离线优先 / 免费自托管 / 埋点无网络外发 / 不动 3D 状态机 / 不新增页面）。
@@ -199,3 +201,14 @@ owner: yanha
 **维持不做（对应原 🚫 清单）**：Argon2id、IndexedDB 加密、SRI、K8s、Celery、读写分离、Redis Cluster、OTel、付费 APM、Traefik、WAL/PITR、邮件找回、过度分包——理由不变。
 
 *本方案为决策版，落地时每项按 AGENTS.md 门禁链 + 功能/性能/安全三面验证执行。来源见 docs/ENTERPRISE_GAP.md 第六节。*
+
+## 六、增量更新（2026-10-17 复核）
+
+| 项 | §五 结论 | 2026-10-17 实测 | 现结论 |
+|---|---|---|---|
+| P2-5 视觉回归 | ⚠ 部分（无像素阈值） | `e2e/visual-regression.spec.ts` 已有 `toHaveScreenshot` + `maxDiffPixelRatio: 0.02` + 快照目录；CI 跳过因 Linux 字体像素误报（设计取舍） | ✅ 已做 |
+| P2-6 焦点管理 + ARIA | ⚠ 部分（live region 未确认） | `aria-live` 在 src 命中 3 个文件 | ⚠ 仍有缺口（未覆盖全部动态区域） |
+| P2-7 WebP/AVIF | ⚠ 部分（无 AVIF 转换） | `git grep -i avif -- scripts/ src/ vite.config.ts` = 0 | ⚠ 仍未做（AVIF 收益受浏览器支持率限制） |
+| P1-12 健康分离 | ⚠ 部分（/live /ready 未分离） | 仍只有 `/actuator/health` + compose healthcheck | ⚠ 仍未做（单实例部署无滚动更新需求） |
+
+> 结论：**P1-10 无需再做**（§五 即结果）。剩余 3 项属低优先增强，不阻塞发布。

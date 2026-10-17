@@ -1,10 +1,12 @@
 ---
 last_updated: 2026-10-08
-status: draft
+status: implemented
 owner: yanha
 ---
 
 # PLAN — harness 修复（G1/G3/§6）+ P0-1b 会话记忆（2026-10）
+
+> **状态更新（2026-10-17 复核）**：本 PLAN 的设计**已全部落地**：F-6 每会话配额（`AiCallQuota` + 429）、后端 anchor 前 20 条、游客本地 history、sessionId 透传（ec7e8f4 / 29d8d31）。O-1~O-6 的实际取值以代码为准，不再需要拍板。
 
 > 依据：`docs/research-harness-audit-2026-10-08.md`（体检报告）+ `docs/prd/P0-1b-chat-memory-requirements-2026-10-08.md`（需求+架构样例）。本 PLAN 为阶段 1 产物，**经用户批准后才执行**。
 

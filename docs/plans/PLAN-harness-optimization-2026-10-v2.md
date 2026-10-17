@@ -6,6 +6,8 @@ owner: yanha
 
 # PLAN — Harness 优化方案 v2（适配性裁剪后，2026-10）
 
+> **状态更新（2026-10-17 复核）**：K14（LLM mocking 确定性测试）**已实现**：后端 mock ChatClient + 无 key 502 契约测试；K15 结构化日志已落地（`RequestIdFilter` + MDC）；K16 eval Java 切片仍缺（低优先）。
+
 > 定位：对 v1（`PLAN-harness-optimization-2026-10.md`，32 项 H1-H32）做逐项适配性甄别后的精简版。原则：**不一定别的东西就是好的**；大团队/大厂设计对单人项目不适配即砍或降。v1 保留原样，本文件为待批准版。
 > 状态：draft，待用户批准。批准前不修改任何项目文件。
 > 写法：plan-control Controlled Track 精简九段体；结论先行。

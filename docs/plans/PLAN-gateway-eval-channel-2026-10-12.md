@@ -9,6 +9,8 @@ related: REQ-ai-eval-v6-2026-10-12.md, ITERATIONS.md
 
 # PLAN: yg-gateway 评测通道（解锁 T08/T09 的免费替代模型链路）
 
+> **状态更新（2026-10-17 复核）**：T08 pass³（32/50）与 T09 校准（一致率 95.0%）**已完成并合并**（PR #65 / #66）；正式通义基线仍等 DashScope 充值。
+
 ## 1. 背景与目标
 
 Phase 3 评测基线 T08（pass³）/ T09（judge 校准）被 OQ-2 阻塞：DashScope 账户欠费，
