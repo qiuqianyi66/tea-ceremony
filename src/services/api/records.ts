@@ -2,6 +2,7 @@
 
 import type { TasteDimensions, TastingRecord } from '@/types/tasting'
 import { requestOrMock } from '../http'
+import type { ApiResponse } from './types'
 
 export interface RecordCreateDto {
   /** 新契约必填：幂等键（V1 表 NOT NULL，uk_tasting_records_user_client） */
@@ -40,12 +41,6 @@ interface RecordVo {
   weather?: string | null
   mood?: string | null
   created_at: string
-}
-
-interface ApiResponse<T> {
-  code: string
-  message: string
-  data: T
 }
 
 /** 新契约分页结构 */

@@ -4,6 +4,7 @@
  */
 
 import { requestOrMock } from '../http'
+import type { ApiResponse } from './types'
 
 export interface GardenPlantCreateDto {
   /** 幂等键（V1 表 NOT NULL，uk_garden_plants_user_client） */
@@ -32,12 +33,6 @@ export interface GardenEnergySummaryVo {
   phase: string
   /** 各阶段阈值（前端进度展示） */
   phase_thresholds: Record<string, number>
-}
-
-interface ApiResponse<T> {
-  code: string
-  message: string
-  data: T
 }
 
 /** 空摘要 mock（DEV_MODE 降级；阈值与后端 application.yml garden.energy.phases 对齐） */

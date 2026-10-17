@@ -1,6 +1,7 @@
 /** 认证 API（Spring Boot /api/v1/auth，契约见 .harness/wiki/api-contract.md） */
 
 import { requestOrMock } from '../http'
+import type { ApiResponse } from './types'
 
 /** 新后端 TokenVo（ApiResponse.data；user.displayName 为 camelCase——后端无全局 snake_case 策略） */
 interface TokenVo {
@@ -13,12 +14,6 @@ interface TokenVo {
     level: number
     xp: number
   }
-}
-
-interface ApiResponse<T> {
-  code: string
-  message: string
-  data: T
 }
 
 /** 解包 ApiResponse.data，并把 user.displayName 还原为前端 UserInfo.display_name（store 零改动） */
