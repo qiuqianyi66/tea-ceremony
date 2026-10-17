@@ -10,7 +10,7 @@ import { expect, test } from '@playwright/test'
 
 test.beforeEach(async ({ page }) => {
   // 与全流程测试一致：拦截 AI 代理请求，避免依赖后端
-  await page.route('**/api/ai/*', (route) => route.abort())
+  await page.route('**/api/v1/ai/*', (route) => route.abort())
   page.on('pageerror', (err) => console.log('[PAGEERROR]', err.stack || err.message))
 })
 

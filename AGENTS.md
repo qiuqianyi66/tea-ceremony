@@ -42,7 +42,7 @@
 ## 3. 架构边界
 
 - 前端 `views → stores → services`；后端 `Controller → Service → Repository`（Controller 只做参数与响应）。详见 `docs/architecture/system-overview.md`。
-- **AI 请求必须走后端代理 `/api/ai/*`，禁止浏览器直连第三方 AI**；`teaAI.ts` 降级逻辑（网络不可用时规则回复）是承重墙，改动必须保留并回归。
+- **AI 请求必须走后端代理 `/api/v1/ai/*`，禁止浏览器直连第三方 AI**；`teaAI.ts` 降级逻辑（网络不可用时规则回复）是承重墙，改动必须保留并回归。
 - `src/components/three/` 只做视觉层，不改状态机（`3D_SPEC.md`）。
 - IndexedDB 记录带 `sync_status`（pending/synced/failed），新增字段考虑同步逻辑；写入前 `toRaw` 去代理（防 DataCloneError）。
 - 评分模型：品鉴结果 = 八维口感评分 × 冲泡工艺系数，保持可解释性（读 `tea-tasting`）。

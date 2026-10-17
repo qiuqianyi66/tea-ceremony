@@ -27,7 +27,7 @@ const { chromium } = require('@playwright/test')
   })
   const page = await ctx.newPage()
   page.on('pageerror', (e) => console.log('[pageerror]', e.message.slice(0, 250)))
-  await page.route('**/api/ai/*', (route) => route.abort())
+  await page.route('**/api/v1/ai/*', (route) => route.abort())
 
   await page.goto(base + '/')
   await page.waitForTimeout(2200) // 等待入场动画 + 背景图加载
@@ -46,7 +46,7 @@ const { chromium } = require('@playwright/test')
       'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
   })
   const mpage = await mctx.newPage()
-  await mpage.route('**/api/ai/*', (route) => route.abort())
+  await mpage.route('**/api/v1/ai/*', (route) => route.abort())
   await mpage.goto(base + '/')
   await mpage.waitForTimeout(2200)
   await mpage.screenshot({ path: 'docs/screenshots/home-mobile.png' })

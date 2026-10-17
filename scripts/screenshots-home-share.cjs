@@ -38,7 +38,7 @@ const r = Buffer.from(JSON.stringify(highScoreRecord)).toString('base64url')
     viewport: { width: 1280, height: 800 },
     deviceScaleFactor: 1,
   })
-  await page.route('**/api/ai/*', (route) => route.abort())
+  await page.route('**/api/v1/ai/*', (route) => route.abort())
   const base = 'http://localhost:4173'
 
   // 首页：固定等待仪式感动画完成（黑屏 2.5s + 淡出 1s + 余量）。

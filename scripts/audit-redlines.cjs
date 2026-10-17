@@ -10,7 +10,7 @@
  *   R7  ddl-auto: update/create 禁生产；.harness/changes 迁移与回滚成对
  *   R8  禁 Executors 快捷工厂（newFixedThreadPool 等）
  *   R9  密钥禁入库（git 跟踪 .env/pem/secrets/credentials.json）；禁 console 打印密钥字段
- *   R10 前端禁直连第三方 AI（api.openai.com / dashscope 等域名，须走后端 /api/ai/*）
+ *   R10 前端禁直连第三方 AI（api.openai.com / dashscope 等域名，须走后端 /api/v1/ai/*）
  *   R11 禁 Options API（data()/methods:/computed:）；禁显式 any / @ts-ignore
  *   R12 views → stores → services 单向（stores 禁 import views；services 禁 import stores/views）
  *   R14 禁直接创建 WebGLRenderer（统一 TresJS）
@@ -150,7 +150,7 @@ for (const f of frontendFiles) {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     if (isComment(line, lang)) continue;
-    if (AI_HOSTS.test(line)) aiHits.push(`${rel(f)}:${i + 1} 直连第三方 AI 域名（R10：AI 请求必须走后端 /api/ai/*）`);
+    if (AI_HOSTS.test(line)) aiHits.push(`${rel(f)}:${i + 1} 直连第三方 AI 域名（R10：AI 请求必须走后端 /api/v1/ai/*）`);
   }
 }
 for (const a of aiHits) errors.push(`R10 ${a}`);

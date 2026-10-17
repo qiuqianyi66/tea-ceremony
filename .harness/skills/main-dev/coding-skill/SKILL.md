@@ -43,7 +43,7 @@ backend/src/main/java/com/tea/
 ├── record/       # 品鉴记录（幂等 client_id）
 ├── culture/      # 茶文化
 ├── ware/         # 茶器
-└── ai/           # Spring AI Alibaba（代理 /api/ai/*）
+└── ai/           # Spring AI Alibaba（代理 /api/v1/ai/*）
 ```
 
 前端（见 §二）：

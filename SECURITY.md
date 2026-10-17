@@ -28,7 +28,7 @@
 - 密码哈希：bcrypt cost=12（`bcrypt==4.0.1` 锁定）
 - JWT：SECRET_KEY 启动校验 ≥32 字符；短期 access token
 - 依赖供应链：Dependabot 三生态 weekly；CI 跑 `npm audit` 与 `pip-audit`
-- 网络边界：AI 请求只走 `/api/ai/*` 后端代理，浏览器不直连第三方 AI
+- 网络边界：AI 请求只走 `/api/v1/ai/*` 后端代理，浏览器不直连第三方 AI
 - 隐私：埋点（tracking / web-vitals）只写本地 IndexedDB，无网络外发（ADR-006）
 - 部署：Docker 非 root 用户；Nginx 承载 TLS/HSTS（见 `DEPLOY.md`）
 

@@ -51,7 +51,7 @@
 
 - 前端：Vue 3.5 + TS 6（strict）+ Pinia 4 + Tailwind 4 + Vite 8 + TresJS 5.8 / Three 0.185 + Dexie 4 + ECharts 6 / Chart.js 4，Node 22.18+
 - 后端（新栈）：Spring Boot 3.5 + Spring Data JPA + Spring AI Alibaba（DashScope）+ Flyway + PostgreSQL 16 + pgvector，Java 17+；旧栈 FastAPI 0.115 + SQLAlchemy 2.0（async）+ Alembic 仅维护不新增
-- 分层：前端 `views → stores → services`；后端 `Controller → Service → Repository`，Controller 只做参数与响应；AI 请求必须走后端代理 `/api/ai/*`，禁止浏览器直连
+- 分层：前端 `views → stores → services`；后端 `Controller → Service → Repository`，Controller 只做参数与响应；AI 请求必须走后端代理 `/api/v1/ai/*`，禁止浏览器直连
 - 部署：Docker Compose 编排（db / backend / frontend），旧 Windows 原生脚本保留参考；详见 `DEPLOY.md`
 - 详细架构、目录速查与数据流：`docs/architecture/system-overview.md`
 

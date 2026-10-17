@@ -16,7 +16,7 @@
 * 简体中文优先；绝不编造；最小必要修改；困惑就停。
 * Vue 3 Composition API + `<script setup lang="ts">`，禁 Options API、禁 `any`。
 * 组件 ≤ 200 行；样式 Tailwind 4，不写自定义 CSS 文件。
-* AI 请求必须走后端代理 `/api/ai/*`，禁止浏览器直连第三方 AI。
+* AI 请求必须走后端代理 `/api/v1/ai/*`，禁止浏览器直连第三方 AI。
 * 数据库改动必须先读 `db-migration` 技能再动。
 * 密钥绝不提交 / 回显；AI 生成区与人类区分离。
 

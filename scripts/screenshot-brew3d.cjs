@@ -28,7 +28,7 @@ const { chromium } = require('@playwright/test')
   const page = await context.newPage()
   page.on('console', (m) => console.log(`[console.${m.type()}]`, m.text().slice(0, 250)))
   page.on('pageerror', (e) => console.log('[pageerror]', e.message.slice(0, 250)))
-  await page.route('**/api/ai/*', (route) => route.abort())
+  await page.route('**/api/v1/ai/*', (route) => route.abort())
   const base = 'http://localhost:5173'
 
   // 首页：固定等待仪式感动画完成（#11 首页重做后「入席」直达 /select，不再经过 /tearoom）

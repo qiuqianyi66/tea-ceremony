@@ -6,7 +6,7 @@ const { chromium } = require('playwright')
   const page = await browser.newPage({ viewport: { width: 1280, height: 800 } })
   const errors = []
   page.on('pageerror', (e) => errors.push('PAGEERROR: ' + e.message.slice(0, 150)))
-  await page.route('**/api/ai/*', (r) => r.abort())
+  await page.route('**/api/v1/ai/*', (r) => r.abort())
   const base = 'http://localhost:5173'
 
   // 首页：导航卡片 + 茶人故事 + 图谱入口

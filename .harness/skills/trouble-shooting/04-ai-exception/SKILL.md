@@ -6,7 +6,7 @@ description: AI 异常排查——LLM 超时/限流/内容异常/Schema 校验�
 # AI Exception
 
 ## 触发
-- /api/ai/* 异常：超时、502、内容异常、Schema 校验失败。
+- /api/v1/ai/* 异常：超时、502、内容异常、Schema 校验失败。
 
 ## 工作流
 1. 分类：超时（调超时/重试）、限流（429 退避/降级）、内容异常（重试/降级）、Schema 校验失败（模型输出问题 → 修 prompt/校验）。

@@ -117,9 +117,9 @@ AGENTS.md「前端」节：Composition API + `<script setup lang="ts">`，禁 an
 
 ---
 
-## Issue 4：茶器占位图标换成 Iconify
+## Issue 4：茶器占位图标换成 lucide 矢量图标
 
-**标题**：`[good first issue] design：茶器图标从占位符换成 Iconify 矢量图标`
+**标题**：`[good first issue] design：茶器图标从占位符换成 lucide 矢量图标`
 
 **正文**：
 
@@ -127,11 +127,11 @@ AGENTS.md「前端」节：Composition API + `<script setup lang="ts">`，禁 an
 ## 背景
 
 `src/data/teawares.ts` 中部分茶器（盖碗、紫砂壶、品茗杯、煮水壶等）用的是占位图标。
-项目图标统一走 Iconify，strokeWidth 一致。
+项目图标统一走 `lucide-vue-next`（已装，见 package.json），同一家族、strokeWidth 一致。
 
 ## 要做什么
 
-1. 在 Iconify 找一套风格统一的茶具/器物图标（推荐 `mdi` 或 `ph` 系列）
+1. 在 `lucide-vue-next` 里找一组风格统一的茶具/器物图标（同一家族内选，不引入第二套图标库）
 2. 替换 `src/data/teawares.ts` 中的占位
 3. 在茶器选择页和茶席场景确认显示正常
 4. 不要手绘 SVG 路径，不要混用多套图标库
@@ -144,7 +144,7 @@ AGENTS.md「前端」节：Composition API + `<script setup lang="ts">`，禁 an
 
 ## 参考
 
-AGENTS.md「前端设计·工程规范」：图标一个库一个家族（Iconify 统一 strokeWidth）。
+`DESIGN_SPEC.md`：图标一个库一个家族；AGENTS.md §6 设计门禁（品牌物料轨）。
 ```
 
 ---

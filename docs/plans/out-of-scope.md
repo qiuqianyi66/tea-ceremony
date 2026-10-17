@@ -21,7 +21,7 @@ last_updated: 2026-10-10
 | 视频本地化进 PWA | 体积过大；离线降级静态图即可 | PWA 配置时 | AGENTS.md §3 | 带宽成本不是问题且有强产品理由 |
 | SFT 微调专家模型 | 等预算数字；当前 v5 overall 0.80 已够用 | 2026-10-10 | PLAN-ai-capability Phase 4 | 用户给预算上限后 |
 | 旧 FastAPI 后端新增功能 | 重写为 Spring Boot 3.5；旧栈仅维护 | 后端重写启动时 | AGENTS.md §1/§7 | 永不（迁移完成即删旧栈） |
-| 直连第三方 AI SDK（浏览器端） | 必须走 `/api/ai/*` 后端代理；key 不能暴露前端 | 架构决策 | AGENTS.md §3 红线 | 永不 |
+| 直连第三方 AI SDK（浏览器端） | 必须走 `/api/v1/ai/*` 后端代理；key 不能暴露前端 | 架构决策 | AGENTS.md §3 红线 | 永不 |
 
 ## 维护
 
