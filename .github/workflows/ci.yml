@@ -283,6 +283,9 @@ jobs:
         run: node scripts/audit-redlines.cjs
       - name: Run wiki drift audit
         run: node scripts/audit-wiki-drift.cjs
+      # 常驻层 token 预算门禁（防膨胀）：AGENTS.md / CLAUDE.md / CONTEXT.md / .harness/rules/*.md 估算 token 超预算即 error
+      - name: Run context budget check
+        run: node scripts/audit-context-budget.cjs
       # eval-harness 门禁（G1/K5）：对最新切片跑七维评测，总分<60 退出码 1 阻断
       # O-5=扫描 .harness/changes/ 最新切片（按 mtime，排除 _template）；CI 不传 --verify（无前端依赖，正确性维记 0 分，语义见 AGENTS.md §11）
       - name: Run eval harness on latest slice

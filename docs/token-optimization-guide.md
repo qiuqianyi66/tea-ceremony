@@ -288,7 +288,7 @@ credentials.json
 1. **行数护栏会失真**：§13 学习记录一度占 AGENTS.md 的 51.7%，而文件只有 261 行——看似落在「200-350 行」维护区间内，实际 token 密度是同规模文件的 2-3 倍。**行数不能替代 token 度量**，这正是新增预算脚本的原因。
 2. **分轮迁移**：每轮各 ≤40% 降幅（仓库既有护栏），每轮后跑一致性体检 + 引用同步，再进下一轮。
 3. **零丢失双向校验**：R2 原始 48 条 → `lessons.md` 原文命中 41 条 + AGENTS.md 常驻保留 7 条 = 丢失 0；反向检查 0 条非原文（证明未改写）。R5 同法机械化：`.harness/changes/r5-context-budget/ledger.json` 台账 107 个锚点 + 基线 sha256，`node scripts/audit-context-migration.cjs` 核对命中数（26 项清单与 7 条里程碑为逐行原文命中）。
-4. **防反弹门禁**：`scripts/audit-context-budget.cjs` 超预算即 error，已挂 `npm run verify` → `npm run quality` → CI frontend job。R5 后总预算棘轮收紧 21,000 → 19,500，并给三个被压文件加单文件预算。
+4. **防反弹门禁**：`scripts/audit-context-budget.cjs` 超预算即 error，已挂 `npm run verify` → `npm run quality`（本地）并在 CI `harness-consistency` job（2026-10-16 接线）执行——**此前写的"已挂 CI frontend job"是未复核断言**：当时 `ci.yml` 无任何 job 跑 `npm run verify`/`quality`，门禁实际只在本地生效。R5 后总预算棘轮收紧 21,000 → 19,500，并给三个被压文件加单文件预算。
 5. **边际收益递减（R5 实测）**：去掉跨文件重复与派生清单后，剩下的基本都是单行短规则——继续压就得删规则或整域外置（治理决策，不是机械改写）。R5 单轮 −7.3%（四个文件合计 −1,472 token），总计 −27.7%，这是这一层的合理终点。
 6. **压缩会暴露规则漂移（R5 实测）**：搬动规则时逐条核对实现，抓到 3 处「规则说的和代码不一样」——§25 构建规则（手动 chunk/200KB 告警 vs `vite.config.ts` 实测 `chunkSizeWarningLimit: 1000`）、图标库（DESIGN_SPEC 写 Iconify vs 实际 `lucide-vue-next`）、异常基类名（规则 `BusinessError` vs 代码 `BusinessException`）。均已按实现对齐；**这类漂移不压缩就永远不会有人看**。
 
