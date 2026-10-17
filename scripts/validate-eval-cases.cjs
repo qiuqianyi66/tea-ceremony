@@ -12,6 +12,7 @@ const CASES_DIR = path.join(__dirname, '..', 'docs', 'ai-eval', 'cases')
 const FILES = ['advisor.yaml', 'taster.yaml', 'librarian.yaml', 'brewer.yaml', 'mentor.yaml', 'chat.yaml']
 const TYPES = ['typical', 'edge', 'adversarial']
 const CHECKS = ['program', 'judge']
+const PRECONDITIONS = ['no-records', 'has-records', 'n/a']
 
 const errors = []
 const ids = new Set()
@@ -45,6 +46,8 @@ for (const file of FILES) {
     ids.add(c.id)
     if (!TYPES.includes(c.type)) errors.push(`${c.id} type 非法: ${c.type}`)
     else typeCount[c.type]++
+    // F-V1 机械化门禁：前置态必须三条明确标注，否则「无记录时正确防御」与「真失败」无法区分
+    if (!PRECONDITIONS.includes(c.precondition)) errors.push(`${c.id} precondition 非法: ${c.precondition}`)
     if (typeof c.input !== 'string') errors.push(`${c.id} 缺 input`)
     if (typeof c.expected !== 'string' || c.expected.trim() === '') errors.push(`${c.id} 缺 expected`)
     if (!Array.isArray(c.points) || c.points.length === 0) {
