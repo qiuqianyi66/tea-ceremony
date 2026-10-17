@@ -1,8 +1,10 @@
 ---
 last_updated: 2026-10-08
-status: active
+status: deprecated
 owner: yanha
 ---
+
+> **已完结（历史交接）**：内容仅作记录，不作为现行依据；现行规则见 `AGENTS.md` 与 `.harness/rules/`。
 
 # HANDOFF-2026-10-07-execution.md — 今日执行上下文（供新对话接续）
 

@@ -1,11 +1,13 @@
 ---
 name: handoff-2026-10-10
 description: 会话交接总结（2026-10-10）——全局最新状态：PR-only 流程已启用（PR #41 走通）、评测判分口径已修正（v1/v2 为 program-only，勿用旧数字）、F-6 会话配额已上、ADR-018 Graph 暂缓；当前唯一阻塞 A4（cu 虚拟桌面）。
-status: active
+status: deprecated
 date: 2026-10-10
 last_updated: 2026-10-10
 owner: yanha
 ---
+
+> **已完结（历史交接）**：内容仅作记录，不作为现行依据；现行规则见 `AGENTS.md` 与 `.harness/rules/`。
 
 # HANDOFF · 2026-10-10（会话交接）
 

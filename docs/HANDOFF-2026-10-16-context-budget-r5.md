@@ -1,9 +1,11 @@
 ---
 title: HANDOFF-2026-10-16-context-budget-r5
 last_updated: 2026-10-16
-status: active
+status: deprecated
 owner: yanha
 ---
+
+> **已完结（历史交接）**：内容仅作记录，不作为现行依据；现行规则见 `AGENTS.md` 与 `.harness/rules/`。
 
 # 交接：常驻层压缩 R5（编码规范 / 开发流程规范 / CONTEXT + AGENTS §6 去重）
 

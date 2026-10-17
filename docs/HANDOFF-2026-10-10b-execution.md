@@ -1,11 +1,13 @@
 ---
 name: handoff-2026-10-10b
 description: 会话交接总结（2026-10-10 下午，本会话）——A4「cu 虚拟桌面」前提已证伪（截图链路 + v3 Judge 全量实跑均本地跑通）；v3 全量真实分 0.81 / judgeCoverage 1 / pass^1 37/50；分支保护 CI 门禁已补回 13 job；新发现并修复 TraceRecorder 静默丢 Trace 真 bug。取代同日 HANDOFF-2026-10-10-execution.md。
-status: active
+status: deprecated
 date: 2026-10-10
 last_updated: 2026-10-10
 owner: yanha
 ---
+
+> **已完结（历史交接）**：内容仅作记录，不作为现行依据；现行规则见 `AGENTS.md` 与 `.harness/rules/`。
 
 # HANDOFF · 2026-10-10b（会话交接 · 本会话）
 

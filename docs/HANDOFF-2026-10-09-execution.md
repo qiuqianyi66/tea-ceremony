@@ -1,11 +1,13 @@
 ---
 name: handoff-2026-10-09
 description: 会话交接总结（2026-10-09）——P0-3 AI key 已启用验证通过；茶园 S1 方案设计完成待确认；S1 实现未开工。供跨会话/新对话恢复上下文。
-status: active
+status: deprecated
 owner: yanha
 last_updated: 2026-10-09
 date: 2026-10-09
 ---
+
+> **已完结（历史交接）**：内容仅作记录，不作为现行依据；现行规则见 `AGENTS.md` 与 `.harness/rules/`。
 
 # HANDOFF · 2026-10-09（会话交接）
 

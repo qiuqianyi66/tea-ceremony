@@ -1,11 +1,13 @@
 ---
 name: handoff-2026-10-10c
 description: 会话交接总结（2026-10-10 晚）——AI 能力建设立项：v5 评测暴露安全风险 + RAG 表全空 + 缓存吃不到；出 REQ/PLAN/ADR-020。含新对话恢复指针与预算决策点。
-status: active
+status: deprecated
 date: 2026-10-10
 last_updated: 2026-10-10
 owner: yanha
 ---
+
+> **已完结（历史交接）**：内容仅作记录，不作为现行依据；现行规则见 `AGENTS.md` 与 `.harness/rules/`。
 
 # HANDOFF · 2026-10-10c（会话交接 · AI 能力建设立项）
 

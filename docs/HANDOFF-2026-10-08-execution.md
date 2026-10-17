@@ -1,11 +1,13 @@
 ---
 name: handoff-2026-10-08
 description: 会话交接总结（2026-10-08）——P0-1c 会话记忆收口 + prompt 版本化 + verify-gardens 截图打通。供跨会话恢复上下文。
-status: active
+status: deprecated
 owner: yanha
 date: 2026-10-08
 last_updated: 2026-10-09
 ---
+
+> **已完结（历史交接）**：内容仅作记录，不作为现行依据；现行规则见 `AGENTS.md` 与 `.harness/rules/`。
 
 # HANDOFF 2026-10-08 Execution
 

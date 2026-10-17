@@ -1,11 +1,13 @@
 ---
 name: handoff-2026-10-11-ai-course-execution
 description: 四份 AI 工程化课程学习完成交接——可吸收结论 + tea 未做清单 + 仓库状态（取代 docs/HANDOFF-2026-10-10c-execution.md）
-status: active
+status: deprecated
 date: 2026-10-11
 last_updated: 2026-10-11
 owner: yanha
 ---
+
+> **已完结（历史交接）**：内容仅作记录，不作为现行依据；现行规则见 `AGENTS.md` 与 `.harness/rules/`。
 
 # HANDOFF-2026-10-11-ai-course-execution
 
