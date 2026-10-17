@@ -42,6 +42,7 @@
 | ADR-008 | 全局技能库重构为 Spring Boot Full-stack Skill OS | ADR-018 | Spring AI Alibaba Graph 引入暂缓 |
 | ADR-009 | 文档治理与 AI 协作规范重构（V4） | ADR-019 | 任务控制协议上收至最高规范（分诊 / 拆解 / 客观执行） |
 | ADR-010 | 后端重写 ORM 选型（Spring Data JPA） | ADR-020 | SFT 微调纳入执行范围（推翻「只出概念文档」） |
+| ADR-011 | 不引入 Redis（单实例够用） | ADR-021 | 暂不引入 Redis（修订 ADR-012，前提失效 + 代码零实现） |
 
 新决策一律写入 `docs/ADR/ADR-0XX.md`，禁止塞进本文档。
 
@@ -63,5 +64,5 @@
 - [ ] 演示短视频未做（用户暂缓）
 - [ ] 生产级收敛 P2（回归测试体系剩余 / 部署运维 PRD 化）待排期
 - 测试基线（2026-09-20）：Vitest 142 用例 / Playwright 34 例 / pytest 51 过 3 跳；迁移测试本地跑只需 `TEST_DATABASE_URL` 指向本地 PG（CI 用 Postgres service）
-- 到期需复核的架构前提：Redis 四场景（两级缓存 / 语义缓存 / 分布式限流 / JWT 黑名单，ADR-012，M2/M3 已落地）、pgvector 混合检索（ADR-013）
+- 到期需复核的架构前提：Redis 四场景（ADR-012 **已被 ADR-021 取代：代码零实现，暂不引入**）、pgvector 混合检索（ADR-013）
 - 已完成里程碑（AI 代理收敛、公开品鉴分享、TresJS 3D 茶席、生产级收敛 P1）见 `CHANGELOG.md` 与对应 ADR
