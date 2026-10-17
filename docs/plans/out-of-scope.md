@@ -22,6 +22,7 @@ last_updated: 2026-10-10
 | SFT 微调专家模型 | 等预算数字；当前 v5 overall 0.80 已够用 | 2026-10-10 | PLAN-ai-capability Phase 4 | 用户给预算上限后 |
 | 旧 FastAPI 后端新增功能 | 重写为 Spring Boot 3.5；旧栈仅维护 | 后端重写启动时 | AGENTS.md §1/§7 | 永不（迁移完成即删旧栈） |
 | 直连第三方 AI SDK（浏览器端） | 必须走 `/api/v1/ai/*` 后端代理；key 不能暴露前端 | 架构决策 | AGENTS.md §3 红线 | 永不 |
+| 迁 PyJWT（修 python-jose 传递依赖 pyasn1/ecdsa 漏洞） | **漏洞不可达**：旧栈 JWT 只用 HS256（`backend/app/deps.py:22`、`backend/app/services/auth_service.py:18`），`ecdsa`/`pyasn1` 只在 RS256/ES256 路径被调用；且旧栈仅维护、生产跑 Spring Boot（jjwt） | 2026-10-17 | `.github/workflows/ci.yml` pip-audit 注释 + 本行 | 旧栈重新成为生产路径，或新增 RSA/ECDSA 需求 |
 
 ## 维护
 
