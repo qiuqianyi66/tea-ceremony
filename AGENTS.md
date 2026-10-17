@@ -140,7 +140,7 @@
 - 浏览器直连第三方 AI。
 - 不读不写人类手写的未标记内容；AI 生成区与人类区必须分离。
 - 删除/覆盖任何文件（含 git rm）前，先 Read 该文件并确认无独立价值。
-- **临时产物放自己的子目录**：`.tmp/<会话标识>/`（如 `.tmp/lead/`、`.tmp/agent-<id>/`）；清理只删本会话目录，禁 `Remove-Item .tmp -Recurse` / `Get-ChildItem .tmp | Remove-Item` 这类整目录清空（`.tmp` 在 `.gitignore` 内，误删无恢复路径）。
+- **临时产物放自己的子目录**：`.tmp/<会话标识>-<日期时分>/`（如 `.tmp/lead-1017-1545/`）。`<会话标识>` 单独不唯一——2026-10-17 实测两个会话都往 `.tmp/lead/` 写，必须带时间或 ID 后缀。清理只删本会话目录，禁 `Remove-Item .tmp -Recurse` / `Get-ChildItem .tmp | Remove-Item` 这类整目录清空（`.tmp` 在 `.gitignore` 内，误删无恢复路径）。
 - 技能返回 "不支持某能力" 时，先判断通用工具能否补齐（yt-dlp/PyAV/自写脚本），只有真实失败（403/风控/需登录/付费墙）才回报限制。
 - 上线前自查三项：健壮性（友好错误+输入校验）、安全性（防越权）、稳定性（失败重试/容错）；尽量周二~周四上线；上线后跑完整回归重点测权限，观察至少一周。
 - **Git commit**：英文 conventional commits `type(scope): desc`（feat/fix/refactor/perf/test/docs/chore/style），subject ≤ 72 字符，body 讲 why；缺陷修复与功能/测试分开提交；`main` 稳定，新功能 `feature/xxx`，修 bug `fix/xxx`。**AI 提交标记（K20，2026-10-13 起）**：AI 代理提交 subject 前加 `[ai]` 前缀（如 `[ai] docs(plans): ...`），供 `scripts/measure-ai-commits.cjs` 度量占比。

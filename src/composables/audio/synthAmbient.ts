@@ -8,8 +8,8 @@
  * 本模块只经 audioHost 读取，不自建、不自持宿主单例。
  */
 
-import { audioHost } from '../useAudio'
-import type { AmbientTrack } from '../useAudio'
+import { audioHost } from './host'
+import type { AmbientTrack } from './host'
 
 /** rain / wind 走程序化合成（零素材零依赖），其余走 Howler 音轨 */
 export function isSyntheticTrack(track: AmbientTrack): track is 'rain' | 'wind' {

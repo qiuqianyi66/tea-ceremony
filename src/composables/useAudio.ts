@@ -17,8 +17,9 @@
  * 本文件是宿主：持有 state 与 AudioContext / Howler 单例，经 audioHost 注入给子模块。
  */
 
-import type { Howl } from 'howler'
-import { getCurrentInstance, onUnmounted, ref } from 'vue'
+import { getCurrentInstance, onUnmounted } from 'vue'
+import { audioHost, state } from './audio/host'
+import type { AmbientTrack } from './audio/host'
 import {
   ambientTracks,
   initHowler,
@@ -56,69 +57,6 @@ import {
   stopSynthAmbient,
   syncSynthAmbientVolume,
 } from './audio/synthAmbient'
-
-// ============ 类型定义 ============
-
-type AmbientTrack = 'guqin' | 'xiao' | 'water' | 'night' | 'rain' | 'wind'
-
-type SfxSprite =
-  | 'boil' // 咕嘟沸腾声
-  | 'teaDrop' // 投茶沙沙声
-  | 'pour' // 注水声
-  | 'outflow' // 出汤声
-  | 'sip' // 轻啜声
-  | 'success' // 完成音
-  | 'crackle' // 火焰噼啪 (短时合成备用)
-
-interface AudioState {
-  ambientPlaying: boolean
-  currentAmbient: AmbientTrack | null
-  masterVolume: number
-  sfxVolume: number
-  ambientVolume: number
-  isMuted: boolean
-}
-
-// ============ 全局状态 ============
-
-const state = ref<AudioState>({
-  ambientPlaying: false,
-  currentAmbient: null,
-  masterVolume: 1,
-  sfxVolume: 0.8,
-  ambientVolume: 0.3,
-  isMuted: false,
-})
-
-// ============ 单例宿主 ============
-// AudioContext 与 Howler 实例唯一存放在本文件；子模块不得自建、自持，
-// 只能经 audioHost 读取或把新建实例登记回宿主。
-
-let ambientHowl: Howl | null = null
-let sfxHowl: Howl | null = null
-let audioCtx: AudioContext | null = null
-
-export const audioHost = {
-  state,
-  get ambientHowl(): Howl | null {
-    return ambientHowl
-  },
-  set ambientHowl(h: Howl | null) {
-    ambientHowl = h
-  },
-  get sfxHowl(): Howl | null {
-    return sfxHowl
-  },
-  set sfxHowl(h: Howl | null) {
-    sfxHowl = h
-  },
-  get audioCtx(): AudioContext | null {
-    return audioCtx
-  },
-  set audioCtx(ctx: AudioContext | null) {
-    audioCtx = ctx
-  },
-}
 
 // ============ 环境音控制 ============
 
@@ -313,16 +251,16 @@ export function useAudio() {
 
     // 底层实例 (高级用法)
     get ambientHowl() {
-      return ambientHowl
+      return audioHost.ambientHowl
     },
     get sfxHowl() {
-      return sfxHowl
+      return audioHost.sfxHowl
     },
   }
 }
 
 // 类型导出
-export type { AmbientTrack, AudioState, SfxSprite }
+export type { AmbientTrack, AudioState, SfxSprite } from './audio/host'
 
 // 兼容旧页面的模块级调用；新代码优先使用 useAudio()。
 export const startAmbient = () => toggleAmbient()
