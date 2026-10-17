@@ -9,8 +9,8 @@
  */
 
 import { Howler } from 'howler'
-import { audioHost } from '../useAudio'
-import type { SfxSprite } from '../useAudio'
+import { audioHost } from './host'
+import type { SfxSprite } from './host'
 import { initHowler } from './howlerTracks'
 import { createNoiseBuffer, ensureSynthCtx } from './synthAmbient'
 

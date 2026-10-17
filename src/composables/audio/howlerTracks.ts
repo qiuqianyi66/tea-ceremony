@@ -12,8 +12,8 @@
  */
 
 import { Howl, Howler } from 'howler'
-import { audioHost } from '../useAudio'
-import type { AmbientTrack } from '../useAudio'
+import { audioHost } from './host'
+import type { AmbientTrack } from './host'
 
 /** 有素材文件的 Howler 音轨；rain / wind 走程序化合成 */
 type HowlerTrack = Exclude<AmbientTrack, 'rain' | 'wind'>
