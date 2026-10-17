@@ -1,3 +1,11 @@
+---
+last_updated: 2026-10-17
+status: deprecated
+owner: yanha
+---
+
+> **已归档**（2026-10-17 归位）：历史规划/调研文档，仅作追溯，**不要据此开工**。现行入口：`AGENTS.md` + `docs/plans/TODO-PRIORITY.md`。
+
 # Plan · Global Skills V2 开源优先实施计划
 
 > 意图：Blueprint（v1）已定架构；本计划解决"新增 41 个技能从哪来"——**优先直接安装已验证的开源技能，其次改造，最后才自造**；同时引入开源"技能创作工程规范"作为新建技能的质检线。
