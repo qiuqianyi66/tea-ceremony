@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { API_BASE } from '@/services/apiBase'
 
 const router = useRouter()
-const API_BASE = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '')
 
 type HealthState = 'loading' | 'ok' | 'error'
 const state = ref<HealthState>('loading')
