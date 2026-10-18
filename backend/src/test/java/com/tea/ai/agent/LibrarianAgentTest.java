@@ -14,15 +14,19 @@ import static org.mockito.Mockito.when;
 import com.tea.ai.dto.AiChatRequest;
 import com.tea.ai.dto.ChatMessageDto;
 import com.tea.ai.service.AgentSkillRouter;
+import com.tea.ai.resilience.AiCallPolicy;
 import com.tea.ai.resilience.AiCallTestSupport;
+import com.tea.ai.service.AiCircuitBreaker;
 import com.tea.ai.service.AiUsageLogger;
 import com.tea.ai.service.PromptService;
+import com.tea.ai.tool.CultureQueryTools;
 import com.tea.ai.vo.AiChatVo;
 import com.tea.common.exception.BadGatewayException;
 import com.tea.culture.service.CultureSearchService;
 import com.tea.culture.vo.CultureSearchResult;
 import com.tea.culture.vo.PersonItem;
 import com.tea.culture.vo.TeaItem;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.chat.client.ChatClient;
@@ -46,6 +50,8 @@ class LibrarianAgentTest {
     private final AiUsageLogger usageLogger = mock(AiUsageLogger.class);
     private final PromptService promptService = mock(PromptService.class);
     private final AgentSkillRouter skillRouter = mock(AgentSkillRouter.class);
+    private final CultureQueryTools cultureQueryTools = new CultureQueryTools(search);
+    private final SimpleMeterRegistry registry = new SimpleMeterRegistry();
 
     private LibrarianAgent agent(String apiKey) {
         when(builder.build()).thenReturn(chatClient);
@@ -58,7 +64,11 @@ class LibrarianAgentTest {
         when(metadata.getModel()).thenReturn("qwen-plus");
         when(metadata.getUsage()).thenReturn(null);
         when(skillRouter.detect(anyString())).thenReturn(null);
-        return new LibrarianAgent(builder, search, usageLogger, promptService, skillRouter, apiKey, AiCallTestSupport.executor());
+        // 未配置实验 = 生产默认状态：直接检索（Tool Calling 灰度默认关闭）
+        return new LibrarianAgent(builder, search, cultureQueryTools,
+                AiCallTestSupport.noExperiment(), usageLogger, promptService, skillRouter, apiKey,
+                AiCallTestSupport.executor(AiCallPolicy.defaults(), new AiCircuitBreaker(5, 30_000), registry),
+                registry);
     }
 
     private static AiChatRequest question(String q) {
