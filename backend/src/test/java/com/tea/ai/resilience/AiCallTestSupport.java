@@ -1,9 +1,11 @@
 package com.tea.ai.resilience;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.tea.ai.experiment.service.ExperimentService;
 import com.tea.ai.fallback.LocalFallbackService;
 import com.tea.ai.service.AiCircuitBreaker;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -43,6 +45,25 @@ public final class AiCallTestSupport {
     public static LocalFallbackService noFallback() {
         LocalFallbackService service = mock(LocalFallbackService.class);
         when(service.answerFor(anyString())).thenReturn(Optional.empty());
+        return service;
+    }
+
+    /**
+     * 未运行任何实验：assignActive 恒为 empty。
+     *
+     * <p>这对应生产默认状态（没有实验行），语义是「保持现状」——不能返回 control，
+     * 否则会把「没配置实验」误当成「明确要求走旧路径」，把兜底能力关掉。</p>
+     */
+    public static ExperimentService noExperiment() {
+        ExperimentService service = mock(ExperimentService.class);
+        when(service.assignActive(anyString(), any())).thenReturn(Optional.empty());
+        return service;
+    }
+
+    /** 指定变体的实验：control / treatment。 */
+    public static ExperimentService experiment(String variant) {
+        ExperimentService service = mock(ExperimentService.class);
+        when(service.assignActive(anyString(), any())).thenReturn(Optional.of(variant));
         return service;
     }
 }

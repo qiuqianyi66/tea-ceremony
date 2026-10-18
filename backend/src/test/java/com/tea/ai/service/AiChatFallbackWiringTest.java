@@ -20,6 +20,8 @@ import com.tea.ai.agent.MentorAgent;
 import com.tea.ai.agent.TasterAgent;
 import com.tea.ai.dto.AiChatRequest;
 import com.tea.ai.dto.ChatMessageDto;
+import com.tea.ai.entity.AiEvalTrace;
+import com.tea.ai.experiment.service.ExperimentService;
 import com.tea.ai.fallback.LocalFallbackService;
 import com.tea.ai.resilience.AiCallTestSupport;
 import com.tea.ai.vo.AiChatVo;
@@ -53,10 +55,15 @@ class AiChatFallbackWiringTest {
 
     /** 透明代理路径：key 为 disabled 时必定抛 502，用它稳定复现「上游不可用」。 */
     private AiChatService service(AiCallQuota quota, AiCircuitBreaker breaker, LocalFallbackService fallback) {
+        return service(quota, breaker, fallback, AiCallTestSupport.noExperiment());
+    }
+
+    private AiChatService service(AiCallQuota quota, AiCircuitBreaker breaker,
+                                  LocalFallbackService fallback, ExperimentService experimentService) {
         return new AiChatService(builder, usageLogger, orchestrator, memoryService, traceRecorder,
                 librarian, advisor, taster, brewer, mentor, quota, breaker,
                 "dashscope", "disabled", "sk-openai-test",
-                AiCallTestSupport.executor(), fallback);
+                AiCallTestSupport.executor(), fallback, experimentService);
     }
 
     private static AiChatRequest ask(String text) {
@@ -143,5 +150,58 @@ class AiChatFallbackWiringTest {
 
         // 降级答复也要进历史，否则下一轮多轮锚定会缺一条 assistant
         verify(memoryService).appendMessage(eq(7), eq("assistant"), eq("规则答复"), eq("fallback"), any());
+    }
+
+    // ---------------------------------------------------------------- ADR-024 灰度
+
+    @Test
+    void controlVariantSuppressesFallbackAndKeeps502() {
+        stubTransparentSimple();
+        LocalFallbackService fallback = mock(LocalFallbackService.class);
+        when(fallback.answerFor(anyString())).thenReturn(Optional.of("规则答复"));
+
+        AiChatService service = service(new AiCallQuota(0), new AiCircuitBreaker(5, 30_000),
+                fallback, AiCallTestSupport.experiment(ExperimentService.CONTROL));
+
+        // 对照组 = ADR-023 之前的旧语义：直接 502 交前端兜底
+        assertThatThrownBy(() -> service.chat(null, ask("绿茶多少度")))
+                .isInstanceOf(BadGatewayException.class);
+        verify(fallback, never()).answerFor(anyString());
+    }
+
+    @Test
+    void treatmentVariantUsesFallback() {
+        stubTransparentSimple();
+        LocalFallbackService fallback = mock(LocalFallbackService.class);
+        when(fallback.answerFor(anyString())).thenReturn(Optional.of("规则答复"));
+
+        AiChatVo vo = service(new AiCallQuota(0), new AiCircuitBreaker(5, 30_000),
+                fallback, AiCallTestSupport.experiment(ExperimentService.TREATMENT))
+                .chat(null, ask("绿茶多少度"));
+
+        assertThat(vo.degraded()).isTrue();
+        verify(fallback, times(1)).answerFor(anyString());
+    }
+
+    @Test
+    void variantIsRecordedIntoEvalTrace() {
+        stubTransparentSimple();
+        LocalFallbackService fallback = mock(LocalFallbackService.class);
+        when(fallback.answerFor(anyString())).thenReturn(Optional.of("规则答复"));
+        AiEvalTrace[] captured = new AiEvalTrace[1];
+        when(traceRecorder.begin(any(), any(), any(), any(), any(), any(), any()))
+                .thenAnswer(inv -> {
+                    AiEvalTrace t = new AiEvalTrace();
+                    t.setPlanLayer("{\"variant\":\"" + inv.getArgument(5) + "\",\"experiment\":\"" + inv.getArgument(6) + "\"}");
+                    captured[0] = t;
+                    return t;
+                });
+
+        service(new AiCallQuota(0), new AiCircuitBreaker(5, 30_000),
+                fallback, AiCallTestSupport.experiment(ExperimentService.TREATMENT))
+                .chat(null, ask("绿茶多少度"));
+
+        // 变体必须落到 trace，否则 ExperimentGuardService 无法按組对比指标
+        assertThat(captured[0].getPlanLayer()).contains("treatment").contains("ai.fallback.rollout");
     }
 }

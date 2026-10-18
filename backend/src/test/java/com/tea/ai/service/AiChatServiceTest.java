@@ -70,14 +70,14 @@ class AiChatServiceTest {
     private AiChatService service(String apiKey) {
         return new AiChatService(builder, usageLogger, orchestrator, memoryService, traceRecorder,
                 librarian, advisor, taster, brewer, mentor, unlimitedQuota, closedBreaker,
-                "dashscope", apiKey, "sk-openai-test", AiCallTestSupport.executor(), AiCallTestSupport.noFallback());
+                "dashscope", apiKey, "sk-openai-test", AiCallTestSupport.executor(), AiCallTestSupport.noFallback(), AiCallTestSupport.noExperiment());
     }
 
     /** gateway profile（openai 模式）：key 检查走 openai key。 */
     private AiChatService gatewayService(String openaiKey) {
         return new AiChatService(builder, usageLogger, orchestrator, memoryService, traceRecorder,
                 librarian, advisor, taster, brewer, mentor, unlimitedQuota, closedBreaker,
-                "openai", "disabled", openaiKey, AiCallTestSupport.executor(), AiCallTestSupport.noFallback());
+                "openai", "disabled", openaiKey, AiCallTestSupport.executor(), AiCallTestSupport.noFallback(), AiCallTestSupport.noExperiment());
     }
 
     private static AiChatRequest req(String agent) {
@@ -426,7 +426,7 @@ class AiChatServiceTest {
         }
         AiChatService service = new AiChatService(builder, usageLogger, orchestrator, memoryService, traceRecorder,
                 librarian, advisor, taster, brewer, mentor, unlimitedQuota, openBreaker,
-                "dashscope", "test-key", "sk-openai-test", AiCallTestSupport.executor(), AiCallTestSupport.noFallback());
+                "dashscope", "test-key", "sk-openai-test", AiCallTestSupport.executor(), AiCallTestSupport.noFallback(), AiCallTestSupport.noExperiment());
 
         assertThrows(BadGatewayException.class, () -> service.chat(null, req("librarian")));
         verify(librarian, never()).chat(any(), any());

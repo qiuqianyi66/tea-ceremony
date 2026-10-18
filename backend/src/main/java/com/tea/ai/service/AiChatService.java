@@ -13,6 +13,7 @@ import com.tea.ai.dto.ChatMessageDto;
 import com.tea.ai.entity.AiChatMessage;
 import com.tea.ai.entity.AiChatSession;
 import com.tea.ai.entity.AiEvalTrace;
+import com.tea.ai.experiment.service.ExperimentService;
 import com.tea.ai.fallback.LocalFallbackService;
 import com.tea.ai.resilience.AiCallExecutor;
 import com.tea.ai.vo.AiChatVo;
@@ -75,6 +76,11 @@ public class AiChatService {
     private final AiCallExecutor aiCallExecutor;
     /** 多级兜底第 2 级：本地规则库（上游不可用时给有依据的答复，而不是只回 502）。 */
     private final LocalFallbackService localFallbackService;
+    /** A/B 实验（ADR-024）：控制「后端规则兜底」的灰度范围。 */
+    private final ExperimentService experimentService;
+
+    /** 兜底灰度的实验键（实验未创建/未运行时保持现状：兜底开启）。 */
+    static final String FALLBACK_ROLLOUT_EXPERIMENT = "ai.fallback.rollout";
 
     public AiChatService(ChatClient.Builder chatClientBuilder,
                          AiUsageLogger usageLogger,
@@ -92,7 +98,8 @@ public class AiChatService {
                          @Value("${spring.ai.dashscope.api-key:}") String dashscopeApiKey,
                          @Value("${spring.ai.openai.api-key:}") String openaiApiKey,
                          AiCallExecutor aiCallExecutor,
-                         LocalFallbackService localFallbackService) {
+                         LocalFallbackService localFallbackService,
+                         ExperimentService experimentService) {
         this.chatClient = chatClientBuilder.build();
         this.usageLogger = usageLogger;
         this.orchestrator = orchestrator;
@@ -110,6 +117,7 @@ public class AiChatService {
         this.openaiApiKey = openaiApiKey;
         this.aiCallExecutor = aiCallExecutor;
         this.localFallbackService = localFallbackService;
+        this.experimentService = experimentService;
     }
 
     public AiChatVo chat(Integer userId, AiChatRequest req) {
@@ -133,11 +141,20 @@ public class AiChatService {
             throw new QuotaExceededException("本轮对话已达上限（" + callQuota.maxCalls() + " 次），请开新会话继续");
         }
         persist(sessionId, "user", lastUserMessage(req), agentOf(type, req));
-        // T07 评测 Trace：入口埋点（input/context/plan 层，含复杂度档位），dispatch 后 complete/fail（ADR-016）
-        AiEvalTrace trace = traceRecorder.begin(sessionId, type, req, anchored, level);
+        // ADR-024 灰度：assignActive 为空 = 实验未运行 → 保持现状（兜底开启）；
+        // 返回 control = 实验明确把这批主体划到旧路径（只回 502，不走规则库）。
+        // 这个区分是必须的：若用 assign()，未配置实验也会得到 control，等于上线一个新实验
+        // 反而把已有兜底关掉。
+        String variant = experimentService
+                .assignActive(FALLBACK_ROLLOUT_EXPERIMENT, subjectOf(userId, sessionId))
+                .orElse(null);
+        boolean degradeAllowed = variant == null || ExperimentService.TREATMENT.equals(variant);
+        // T07 评测 Trace：入口埋点（input/context/plan 层，含复杂度档位与 A/B 变体），dispatch 后 complete/fail（ADR-016）
+        AiEvalTrace trace = traceRecorder.begin(sessionId, type, req, anchored, level, variant,
+                variant == null ? null : FALLBACK_ROLLOUT_EXPERIMENT);
         // P1-13 熔断：OPEN 窗口内快速失败（不调 LLM）。多级兜底第二级在此先试本地规则库，未命中才 502
         if (!circuitBreaker.allowCall()) {
-            return fallbackOrThrow(anchored, sessionId, trace,
+            return fallbackOrThrow(anchored, sessionId, trace, degradeAllowed,
                     new BadGatewayException("AI 服务暂时不可用（熔断保护中）"));
         }
         try {
@@ -153,8 +170,16 @@ public class AiChatService {
             return vo;
         } catch (BadGatewayException e) {
             circuitBreaker.onFailure();
-            return fallbackOrThrow(anchored, sessionId, trace, e);
+            return fallbackOrThrow(anchored, sessionId, trace, degradeAllowed, e);
         }
+    }
+
+    /** 分桶主体：优先登录用户（体验稳定），其次会话（游客可分桶，且不会因换设备跳到另一组）。 */
+    private static String subjectOf(Integer userId, Integer sessionId) {
+        if (userId != null) {
+            return "u:" + userId;
+        }
+        return sessionId == null ? null : "s:" + sessionId;
     }
 
     /**
@@ -168,9 +193,13 @@ public class AiChatService {
      * 这不会让上游过载——本地规则库不发起任何网络调用。</p>
      */
     private AiChatVo fallbackOrThrow(AiChatRequest anchored, Integer sessionId,
-                                     AiEvalTrace trace, BadGatewayException e) {
+                                     AiEvalTrace trace, boolean degradeAllowed, BadGatewayException e) {
         // Trace 一律记为失败：上游确实失败了，指标口径必须如实反映（兜底命中与否不影响这个事实）
         traceRecorder.fail(trace, e);
+        if (!degradeAllowed) {
+            // A/B 对照组：保持 ADR-023 之前的旧语义（直接 502，前端 teaAI.ts 兜第三级）
+            throw e;
+        }
         Optional<String> ruleAnswer = localFallbackService.answerFor(lastUserMessage(anchored));
         if (ruleAnswer.isEmpty()) {
             throw e;

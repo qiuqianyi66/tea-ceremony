@@ -166,6 +166,20 @@ description: tea 接口协议——现有端点、统一约定（前缀/鉴权/�
 |---|---|---|---|---|
 | GET | `/api/v1/ai/metrics/golden` | — | `ApiResponse{data:GoldenMetricsReport}`：`{windowStart, windowEnd, totalCalls, overall{agentType, calls, successRate, errorRate, p50, p95, p99, insufficientData}, byAgent[...]}`（查询参数 `windowMinutes` 默认 60、上限 1440；零调用时 successRate/errorRate 为 null，样本 <20 时 p99 为 null 且 insufficientData=true） | 401 |
 
+### A/B 实验 `/api/v1/admin/experiments`（需 `X-Admin-Token`，AdminTokenFilter fail-closed）
+
+| 方法 | 路径 | 请求体 | 成功响应 | 错误 |
+|---|---|---|---|---|
+| GET | `/api/v1/admin/experiments` | — | `ApiResponse{data:ExperimentOverview}`：`{windowStart, windowEnd, experiments:[{experiment:{expKey, name, description, status, trafficPercent, variants, sampleSize, lastEvaluatedAt, startedAt, stoppedAt, stopReason, createdAt, updatedAt}, guardrail:{maxErrorRateDelta, maxP99Ratio, minSampleSize}, control:{variant, calls, errorRate, p99}, treatment:{variant, calls, errorRate, p99}, sufficientSample}]}`（近 60 分钟窗口；零样本时 errorRate/p99 为 null；`sufficientSample=false` 表示任一组样本 < minSampleSize，此时自动回滚不判） | 401 |
+| GET | `/api/v1/admin/experiments/{key}` | — | `ApiResponse{data:ExperimentReport}`（单实验，字段同上 `experiments[]` 一项；窗口与列表页一致） | 401 / 404 |
+| POST | `/api/v1/admin/experiments/{key}/start` | — | `ApiResponse{data:ExperimentView}` 200（draft/paused → running，`startedAt` 刷新；running 幂等返回） | 401 / 404 / 409 已 stopped 不可重启 |
+| POST | `/api/v1/admin/experiments/{key}/stop` | `{reason?}`（≤256 字，可省略） | `ApiResponse{data:ExperimentView}` 200（任意 → stopped，`stoppedAt`/`stopReason` 落库；已 stopped 幂等返回首次原因；原因缺省为 `manual_stop`） | 400 原因超长 / 401 / 404 |
+
+- 鉴权：四个端点均需 `Authorization: Bearer <token>`（`SecurityConfig` 的 `anyRequest().authenticated()` 已覆盖，未新增放行规则）。
+- 灰度分桶：`SHA-256(expKey + ":" + subjectId)` 前 8 字节 `floorMod 100`，桶号 < `trafficPercent` 进 treatment；确定性、无状态、不落 assignment 表。实验未 running / 占比 0 / subjectId 缺失一律回落 control。
+- 自动回滚：`ExperimentGuardService` 每 5 分钟评估 running 实验，任一组样本 < `minSampleSize`（默认 30）跳过；`treatment.errorRate - control.errorRate > maxErrorRateDelta`（默认 0.05）或 `treatment.p99 > control.p99 × maxP99Ratio`（默认 1.5）命中即写 `stop_reason = auto_rollback: <原因>` 并打点 `tea.ab.auto_rollback{exp}`。
+- `guardrail` 缺键取默认值（`{maxErrorRateDelta:0.05, maxP99Ratio:1.5, minSampleSize:30}`）。指标来源 `ai_eval_traces.plan_layer`：`variant=control|treatment` 必需；`experiment=<expKey>` 为归属键——缺失的行仅在「唯一 running 实验」时计入，多实验并行时忽略（避免算给错误的实验）。
+
 ### MCP 工具协议 `/mcp`（P1-1 已实现，公开，非 HTTP JSON 契约）
 
 | 端点 | 传输 | 说明 |

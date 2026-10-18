@@ -9,6 +9,7 @@ import com.tea.ai.repository.AiEvalTraceRepository;
 import com.tea.ai.vo.AiChatVo;
 import com.tea.common.exception.BadGatewayException;
 import io.micrometer.core.instrument.MeterRegistry;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,32 @@ public class TraceRecorder {
 
     /** 入口埋点：input（原始问句 + 意图提示）+ context（历史锚定条数）+ plan（路由决策 + 复杂度档位）。不落库，等 complete/fail 统一保存。 */
     public AiEvalTrace begin(Integer sessionId, AgentType type, AiChatRequest req, AiChatRequest anchored, ComplexityLevel level) {
+        return begin(sessionId, type, req, anchored, level, null, null);
+    }
+
+    /**
+     * 带 A/B 变体的入口埋点（ADR-024）。
+     *
+     * <p>为什么变体放 {@code plan_layer} 而不新建列/新表：实验结论只需要「按 variant 分组的
+     * 调用/错误/延迟」，而这些字段本来就在 trace 里；加一列要迁移，加一张表要与 trace 对齐写。
+     * 复用 JSONB 是最小改动面。</p>
+     *
+     * @param variant control / treatment；null 或空表示未参与实验，不写入（保持既有 trace 形状不变）
+     */
+    public AiEvalTrace begin(Integer sessionId, AgentType type, AiChatRequest req, AiChatRequest anchored,
+                             ComplexityLevel level, String variant) {
+        return begin(sessionId, type, req, anchored, level, variant, null);
+    }
+
+    /**
+     * 带实验归属的入口埋点。
+     *
+     * <p>为什么要额外写 {@code experiment}：{@code ExperimentGuardService} 按
+     * {@code (experiment, variant)} 分组对比。若 trace 只有 variant 没有 experiment，
+     * 同时跑两个实验时同一 variant 的值会被混在一起统计，或者被整批忽略——两种都会让自动回滚失效。</p>
+     */
+    public AiEvalTrace begin(Integer sessionId, AgentType type, AiChatRequest req, AiChatRequest anchored,
+                             ComplexityLevel level, String variant, String experimentKey) {
         AiEvalTrace trace = new AiEvalTrace();
         trace.setSessionId(sessionId);
         trace.setRequestId(UUID.randomUUID());
@@ -41,10 +68,17 @@ public class TraceRecorder {
                 "agent_hint", req.agent() == null ? "" : req.agent())));
         trace.setContextLayer(json(Map.of(
                 "anchor_count", anchored.messages().size() - req.messages().size())));
-        trace.setPlanLayer(json(Map.of(
-                "agent_type", agent,
-                "route", type == null ? "transparent" : "expert",
-                "complexity", level == null ? "" : level.name())));
+        Map<String, Object> plan = new LinkedHashMap<>();
+        plan.put("agent_type", agent);
+        plan.put("route", type == null ? "transparent" : "expert");
+        plan.put("complexity", level == null ? "" : level.name());
+        if (variant != null && !variant.isBlank()) {
+            plan.put("variant", variant);
+        }
+        if (experimentKey != null && !experimentKey.isBlank()) {
+            plan.put("experiment", experimentKey);
+        }
+        trace.setPlanLayer(json(plan));
         return trace;
     }
 

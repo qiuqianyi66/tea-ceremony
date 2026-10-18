@@ -100,7 +100,7 @@ class AiCallQuotaTest {
         when(builder.build()).thenReturn(mock(ChatClient.class));
         return new AiChatService(builder, usageLogger, orchestrator, memoryService, traceRecorder,
                 librarian, advisor, taster, brewer, mentor, quota, new AiCircuitBreaker(5, 30_000),
-                "dashscope", apiKey, "sk-openai-test", AiCallTestSupport.executor(), AiCallTestSupport.noFallback());
+                "dashscope", apiKey, "sk-openai-test", AiCallTestSupport.executor(), AiCallTestSupport.noFallback(), AiCallTestSupport.noExperiment());
     }
 
     private static AiChatRequest req(Integer sessionId) {
