@@ -33,13 +33,23 @@ services:
       - ./yg-gateway/auths:/app/auths
       - ./yg-gateway/data:/app/data
       - ./yg-gateway/config.json:/app/config.json
+    # 网关镜像自带 HEALTHCHECK，但它没有 /healthz 端点 → 探针恒失败 → 容器永远 unhealthy；
+    # 一旦将来有任何服务写 depends_on: yg-gateway: service_healthy，就会永久卡在启动前。
+    # 网关自身可用性由 backend 的 502 → 前端规则引擎降级链兜底（teaAI.ts 承重墙）。
+    healthcheck:
+      disable: true
 
   # Spring Boot 后端（Flyway 自动迁移 + Actuator 健康探针）
   backend:
     build: ./backend
     restart: unless-stopped
     ports:
-      - "18080:8080"   # 8080 本机常被占用，宿主机映射 18080
+      # 8080 本机常被占用，宿主机映射 18080。
+      # 只绑 127.0.0.1：映射到 0.0.0.0 等于把 Spring Boot 直接暴露公网 ——
+      # 绕过 nginx 的 TLS、CSP/X-Frame-Options/nosniff 与限流，是一条后门。
+      # 容器间健康探针走 compose 网络（backend:8080），不受影响；
+      # 宿主调试仍可 curl http://127.0.0.1:18080/actuator/health。
+      - "127.0.0.1:18080:8080"
     environment:
       DB_URL: ${DB_URL:-jdbc:postgresql://db:5432/tea_ceremony}
       DB_USER: ${DB_USER:-tea_user}
@@ -74,8 +84,16 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
-    # HTTPS 就绪后开放 443（证书挂载见 DEPLOY.md「HTTPS」章节）
-    # - "443:443"
+      - "443:443"
+    # 配置与证书用 bind mount 而不是只靠镜像内副本：改 nginx.conf / 换证书只需重启容器，
+    # 不必重新 vite build（前端产物仍在镜像里，挂载只覆盖 conf 与 snippets）。
+    # certs 缺失或证书文件无效时 nginx 启动即失败 —— fail-closed，见 DEPLOY.md「HTTPS 启用顺序」。
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/snippets:/etc/nginx/snippets:ro
+      - ./certs:/etc/nginx/certs:ro
+      # ACME HTTP-01 挑战文件：certbot 容器写，nginx 容器只读
+      - ./certbot-www:/var/www/certbot:ro
     depends_on:
       backend:
         condition: service_healthy

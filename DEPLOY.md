@@ -15,7 +15,7 @@
 ### 0.1 前置
 
 - Docker + Docker Compose v2（Linux 服务器：dnf 装 docker-ce + compose 插件）。
-- 服务器放行 80（前端）、8080（可选直连后端）。
+- 服务器放行 80（ACME 挑战）与 443（HTTPS）；backend 只绑回环 `127.0.0.1:18080`，**不需要**对公网放行 8080。
 
 ### 0.2 首次部署（Linux）
 
@@ -34,13 +34,19 @@ cp .env.example .env
 #    AI_DASHSCOPE_API_KEY 可留（DashScope 备用通道，移除 gateway 配置即可切回）
 #    注意：compose 用 ${DB_PASSWORD:?} / ${JWT_SECRET:?} / ${AI_GATEWAY_API_KEY:?} 强制，缺失直接启动失败（预期安全行为）
 
-# 3. 起全套（db 就绪 → backend Flyway 迁移 → frontend 依赖 backend 健康）
+# 3. 证书先行（frontend 的 443 server 需要 certs/fullchain.pem + privkey.pem，
+#    缺失时 nginx 起不来；生产签 LE IP 证书，本地验证用自签）
+scripts/https-issue-cert.sh --ip <公网IP> --email <ASCII邮箱> --production
+#    或：powershell -File scripts/https-selfsigned.ps1 -Ip 127.0.0.1
+
+# 4. 起全套（db 就绪 → backend Flyway 迁移 → frontend 依赖 backend 健康）
 docker compose up -d --build
 
-# 4. 验证
-docker compose ps          # 三服务均 healthy
-curl -s http://localhost:18080/actuator/health          # 后端存活（宿主映射 18080）
-curl -s http://localhost/api/v1/teas                     # 匿名可读：200 + V2 文化种子
+# 5. 验证
+docker compose ps          # 三服务均 healthy（yg-gateway 无探针，不参与）
+curl -s http://127.0.0.1:18080/actuator/health            # 后端存活（只绑回环，外网不可达）
+curl -sI http://localhost/api/v1/teas | head -2           # 期望 301 → https://...
+curl -sk https://localhost/api/v1/teas | head -c 200      # 匿名可读：200 + V2 文化种子
 ```
 
 ### 0.3 架构与数据
@@ -62,9 +68,75 @@ docker compose down -v                # 停并删数据卷（谨慎：清空数�
 
 > 代码更新同步：目录非 git 仓库时按 0.2 第 1 步 git clone 覆盖；Maven Central 偶发 500（`dependency:go-offline` 失败）时重试 build，仍失败则改 pom 加阿里云 Maven 镜像。
 
-### 0.5 HTTPS
+### 0.5 HTTPS 启用顺序（不可跳步）
 
-证书就绪后：取消 `nginx.conf` 443 server block 注释 + `docker compose.yml` frontend 的 `443:443` 映射注释，证书挂载到 `/etc/nginx/certs/`（详见旧栈「七」节 HTTPS 要点，配置结构一致）。
+**前置事实：证书缺失时 nginx 起不来。** `nginx.conf` 的 443 server 常驻启用，直接引用
+`/etc/nginx/certs/fullchain.pem` 与 `/etc/nginx/certs/privkey.pem`。文件不存在时容器启动即失败
+（`emerg: cannot load certificate ...`）。这是刻意 fail-closed：宁可前端起不来，也不要静默退化成
+「HTTP 明文站点」——明文会让 TLS、HSTS、限流全部白配。
+
+顺序：
+
+1. **签证书**（服务器上，仓库根目录执行）
+   - 生产（Let's Encrypt IP 证书，`shortlived` profile，约 6 天有效）：
+     ```bash
+     # 先 staging 跑通链路（默认就是 staging，不占生产配额）
+     scripts/https-issue-cert.sh --ip 42.121.125.4 --email you@example.com
+     # 链路通了再签生产证书
+     scripts/https-issue-cert.sh --ip 42.121.125.4 --email you@example.com --production
+     ```
+     要求：certbot ≥ 5.4（脚本自检并给出升级命令）、云安全组放通 TCP 80、该 IP 前没有 CDN/反代。
+   - 本地 / 预发验证（**浏览器会告警，不要用于生产**）：
+     ```powershell
+     powershell -File scripts/https-selfsigned.ps1 -Ip 127.0.0.1
+     ```
+   两种方式产物相同：`./certs/fullchain.pem` + `./certs/privkey.pem`（私钥 600；`/certs/` 已在 `.gitignore`）。
+
+2. **确认挂载**（compose 已配好，无需手改）
+   `./certs → /etc/nginx/certs:ro`、`./certbot-www → /var/www/certbot:ro`、
+   `./nginx.conf → /etc/nginx/conf.d/default.conf:ro`、`./nginx/snippets → /etc/nginx/snippets:ro`。
+
+3. **起前端**
+   ```bash
+   docker compose up -d frontend
+   ```
+
+4. **语法校验**（改任何 nginx 配置后都先跑这个，再谈生效）
+   ```bash
+   docker compose exec frontend nginx -t
+   ```
+
+5. **验证**
+   ```bash
+   curl -sI  http://<IP>/api/v1/teas | head -3        # 期望 301 → https://<IP>/api/v1/teas
+   curl -skI https://<IP>/ | head -6                  # 期望 200 + strict-transport-security
+   curl -sk  https://<IP>/.well-known/acme-challenge/ping | head -1   # 期望 404（不是 301）
+   ```
+   第三条是续期生死线：挑战路径若被 301 跳走，证书 6 天后过期且续不上。
+   浏览器打开 `https://<IP>/`，锁标正常（staging / 自签证书告警属预期）。
+
+6. **确认 HTTPS 稳定后，再把站内 `http://` 链接换成 `https://`**
+   README / index.html / 文档里的 `http://<IP>` 一次性替换。顺序反过来会让用户先吃到证书告警。
+
+7. **续期**（`shortlived` 约 6 天，必须自动化）
+   ```bash
+   # cron 每 2 天（远早于 6.7 天过期）
+   17 4 */2 * * cd /opt/tea-ceremony-main && scripts/https-issue-cert.sh --renew --ip <IP> --email <邮箱> --production
+   ```
+   `--method standalone`（默认）续期要独占 80，脚本会先 `docker compose stop frontend` 再拉起（断站约 30 秒）；
+   想零停机用 `--method webroot`（要求 frontend 在跑，挑战由 80 端口的 nginx 直出）。
+
+8. **回滚**
+   不要靠删证书文件来关 HTTPS —— 删了 nginx 直接起不来（等于停机）。正确做法是把配置退回去：
+   ```bash
+   git checkout <上一个 commit> -- nginx.conf docker-compose.yml
+   docker compose up -d frontend && docker compose exec frontend nginx -t
+   ```
+   注意：一旦浏览器收到过 HSTS，`max-age=31536000` 内它只认 HTTPS，客户端侧无法撤回。
+
+> backend 端口已收紧为 `127.0.0.1:18080:8080`（只绑回环）：映射到 `0.0.0.0` 等于把 Spring Boot
+> 直接暴露公网，绕过 nginx 的 TLS / 安全头 / 限流。宿主调试仍可 `curl http://127.0.0.1:18080/actuator/health`；
+> 容器间探针走 compose 网络 `backend:8080`，不受影响。
 
 ---
 
@@ -354,7 +426,7 @@ cd C:\tea\backend
 
 ### 部署形态
 
-frontend 容器**零挂载**时 nginx.conf 打在镜像里，改宿主机文件不生效。故 compose 里加两个挂载：
+frontend 容器**零挂载**时 nginx.conf 打在镜像里，改宿主机文件不生效。故 compose 里挂四个只读挂载：
 
 ```yaml
   frontend:
@@ -363,10 +435,14 @@ frontend 容器**零挂载**时 nginx.conf 打在镜像里，改宿主机文件�
       - "443:443"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/snippets:/etc/nginx/snippets:ro
       - ./certs:/etc/nginx/certs:ro
+      - ./certbot-www:/var/www/certbot:ro
 ```
 
-nginx.conf 的 443 server 块原本是注释状态（`# server {` 起），上线时 `sed -i '70,123s/^#//'` 放开，并把 `server_name localhost` 改为 `_`（否则匹配不到用 IP 访问的请求）。
+2026-10-18 起 443 server 块常驻 `nginx.conf`（不再需要 `sed` 放开注释），location 段抽到
+`nginx/snippets/app-locations.conf`（HTTPS server include 它，单一来源）。
+代价：**证书缺失时 nginx 起不来**，启用顺序见 §0.5。
 
 ### 续期（renew-cert.sh）
 
