@@ -33,7 +33,6 @@ class AiCallPolicyTest {
             assertThat(policy.backoffMultiplier()).isEqualTo(2.0);
             assertThat(policy.backoffJitterRatio()).isEqualTo(0.2);
             assertThat(policy.maxCallDepth()).isEqualTo(3);
-            assertThat(policy.retryOnStatusCodes()).containsExactly(408, 429, 500, 502, 503, 504);
         });
     }
 
@@ -45,8 +44,7 @@ class AiCallPolicyTest {
                         "tea.ai.resilience.backoff-base-ms=0",
                         "tea.ai.resilience.backoff-multiplier=1.5",
                         "tea.ai.resilience.backoff-jitter-ratio=0",
-                        "tea.ai.resilience.max-call-depth=2",
-                        "tea.ai.resilience.retry-on-status-codes=500,503")
+                        "tea.ai.resilience.max-call-depth=2")
                 .run(context -> {
                     AiCallPolicy policy = context.getBean(AiCallPolicy.class);
                     assertThat(policy.timeoutMs()).isEqualTo(1500);
@@ -56,13 +54,12 @@ class AiCallPolicyTest {
                     assertThat(policy.backoffMultiplier()).isEqualTo(1.5);
                     assertThat(policy.backoffJitterRatio()).isZero();
                     assertThat(policy.maxCallDepth()).isEqualTo(2);
-                    assertThat(policy.retryOnStatusCodes()).containsExactly(500, 503);
                 });
     }
 
     @Test
     void invalidValuesFallBackToDefaultsInsteadOfBreakingStartup() {
-        AiCallPolicy policy = new AiCallPolicy(0, 0, -1, 0, -1, 0, List.of());
+        AiCallPolicy policy = new AiCallPolicy(0, 0, -1, 0, -1, 0);
 
         assertThat(policy.timeoutMs()).isEqualTo(20_000);
         assertThat(policy.maxAttempts()).isEqualTo(3);
@@ -70,12 +67,11 @@ class AiCallPolicyTest {
         assertThat(policy.backoffMultiplier()).isEqualTo(2.0);
         assertThat(policy.backoffJitterRatio()).isEqualTo(0.2);
         assertThat(policy.maxCallDepth()).isEqualTo(3);
-        assertThat(policy.retryOnStatusCodes()).containsExactly(408, 429, 500, 502, 503, 504);
     }
 
     @Test
     void jitterRatioIsClampedToOne() {
-        AiCallPolicy policy = new AiCallPolicy(1000, 1, 0, 2.0, 5.0, 1, List.of(500));
+        AiCallPolicy policy = new AiCallPolicy(1000, 1, 0, 2.0, 5.0, 1);
 
         assertThat(policy.backoffJitterRatio()).isEqualTo(1.0);
     }

@@ -124,7 +124,7 @@ public class AiCallExecutor {
                 log.warn("AI 调用上游失败 lane={} attempt={}/{}: {}", lane, attempt, maxAttempts, e.getMessage());
             } catch (BusinessException e) {
                 // 配额/鉴权/参数/资源不存在：请求本身有问题，重试不会变好，也不该被兜底掩盖
-                reportFailure(lane, OUTCOME_BUSINESS_ERROR);
+                reportBusinessError(lane);
                 log.warn("AI 调用业务错误 lane={} type={}: {}",
                         lane, e.getClass().getSimpleName(), e.getMessage());
                 throw e;
@@ -211,6 +211,19 @@ public class AiCallExecutor {
     private void reportFailure(String lane, String outcome) {
         circuitBreaker.onFailure(lane);
         count(lane, outcome);
+    }
+
+    /**
+     * 业务错误只计数，<b>不计入熔断</b>。
+     *
+     * <p>为什么必须分开：熔断器的语义是「下游坏了，别再打」，判据是上游健康状况。
+     * 业务错误（配额超限、鉴权失败、参数非法）恰恰说明**上游是好的**——它正确拒绝了一个坏请求。
+     * 把这类错误计进熔断，等于让一个反复触发配额的客户端替所有人把 lane 打挂：
+     * 一个用户刷爆配额 → 整条链路进入 OPEN → 其他用户全部拿到兜底或 502。
+     * 这正是熔断器被滥用时最典型的反向失效。</p>
+     */
+    private void reportBusinessError(String lane) {
+        count(lane, OUTCOME_BUSINESS_ERROR);
     }
 
     private void count(String lane, String outcome) {

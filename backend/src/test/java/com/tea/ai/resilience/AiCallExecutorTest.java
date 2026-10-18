@@ -35,8 +35,7 @@ class AiCallExecutorTest {
 
     private static AiCallPolicy policy(long timeoutMs, int maxAttempts, long baseMs, double multiplier,
                                        double jitter, int maxDepth) {
-        return new AiCallPolicy(timeoutMs, maxAttempts, baseMs, multiplier, jitter, maxDepth,
-                List.of(408, 429, 500, 502, 503, 504));
+        return new AiCallPolicy(timeoutMs, maxAttempts, baseMs, multiplier, jitter, maxDepth);
     }
 
     private AiCallExecutor executor(AiCallPolicy policy) {
@@ -53,6 +52,45 @@ class AiCallExecutorTest {
                 .tags("lane", lane, "outcome", outcome)
                 .counter();
         return counter == null ? 0 : counter.count();
+    }
+
+    @Test
+    void businessErrorsAreCountedButNeverTripTheBreaker() {
+        // 阈值 1：只要业务错误被计进熔断，第一次配额超限就会开门——能最直接地证伪
+        AiCircuitBreaker breaker = new AiCircuitBreaker(1, 60_000);
+        AiCallExecutor executor = executor(policy(2_000, 3, 0, 2.0, 0, 3), breaker);
+        AtomicInteger calls = new AtomicInteger();
+
+        for (int i = 0; i < 3; i++) {
+            // 第三个参数是兜底：返回 null 等于「没有兜底，原样抛出」
+            assertThatThrownBy(() -> executor.execute("advisor", () -> {
+                calls.incrementAndGet();
+                throw new QuotaExceededException("配额超限");
+            }, () -> null)).isInstanceOf(QuotaExceededException.class);
+        }
+
+        // 业务错误不重试：3 次调用各打 1 次上游
+        assertThat(calls.get()).isEqualTo(3);
+        // 指标上必须看得见（否则排障时以为没发生）
+        assertThat(count("advisor", AiCallExecutor.OUTCOME_BUSINESS_ERROR)).isEqualTo(3);
+        // 但熔断器必须还开着门：一个刷配额的客户端不该替所有人把 lane 打挂
+        assertThat(breaker.allowCall("advisor")).isTrue();
+    }
+
+    @Test
+    void upstreamFailuresDoTripTheBreaker() {
+        // 对照组：阈值 1、一次上游失败 → 必须开门。
+        // 没有这一条，上面那个「业务错误不开门」可能是熔断器整体失灵造成的假绿。
+        AiCircuitBreaker breaker = new AiCircuitBreaker(1, 60_000);
+        // 必须传入 breaker：用单参数重载会自建一个内部熔断器，断言就会查错对象（我第一版就错在这里）
+        AiCallExecutor executor = executor(policy(2_000, 1, 0, 2.0, 0, 3), breaker);
+
+        assertThatThrownBy(() -> executor.execute("advisor", () -> {
+            throw new BadGatewayException("上游 502");
+        }, () -> null)).isInstanceOf(BadGatewayException.class);
+
+        assertThat(breaker.currentFailures("advisor")).isEqualTo(1);
+        assertThat(breaker.allowCall("advisor")).isFalse();
     }
 
     @Test
