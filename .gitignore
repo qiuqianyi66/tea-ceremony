@@ -45,6 +45,11 @@ __screenshots__/
 __pycache__/
 *.py[cod]
 
+# TLS 证书与 ACME 挑战（2026-10-18：私钥严禁入库；服务器上由 scripts/https-issue-cert.sh 生成）
+/certs/
+/certbot-www/
+/certbot/
+
 # Python virtualenv
 .venv/
 

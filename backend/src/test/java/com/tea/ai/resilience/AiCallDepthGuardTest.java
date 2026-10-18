@@ -14,7 +14,7 @@ class AiCallDepthGuardTest {
     private final SimpleMeterRegistry registry = new SimpleMeterRegistry();
 
     private AiCallDepthGuard guard(int maxDepth) {
-        AiCallPolicy policy = new AiCallPolicy(20_000, 3, 800, 2.0, 0.2, maxDepth, List.of(500));
+        AiCallPolicy policy = new AiCallPolicy(20_000, 3, 800, 2.0, 0.2, maxDepth);
         return new AiCallDepthGuard(policy, registry);
     }
 

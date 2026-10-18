@@ -1,6 +1,5 @@
 package com.tea.ai.resilience;
 
-import java.util.List;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
@@ -26,13 +25,7 @@ public record AiCallPolicy(
         /** 退避抖动比例（0~1）：防同批请求在上一轮故障后同时重打（惊群）。 */
         @DefaultValue("0.2") double backoffJitterRatio,
         /** 允许的最大调用深度：防专家互调/推理链失控形成无限递归。 */
-        @DefaultValue("3") int maxCallDepth,
-        /**
-         * 可重试的 HTTP 状态集合（网关层口径，默认 408/429/5xx）。
-         * 当前 Spring AI 把 HTTP 失败统一包成异常，拿不到稳定状态码，分类按异常类型做；
-         * 该集合保留给网关 profile（openai 兼容层）按真实状态码分流的场景。
-         */
-        @DefaultValue({"408", "429", "500", "502", "503", "504"}) List<Integer> retryOnStatusCodes) {
+        @DefaultValue("3") int maxCallDepth) {
 
     private static final long DEFAULT_TIMEOUT_MS = 20_000;
     private static final int DEFAULT_MAX_ATTEMPTS = 3;
@@ -40,7 +33,6 @@ public record AiCallPolicy(
     private static final double DEFAULT_BACKOFF_MULTIPLIER = 2.0;
     private static final double DEFAULT_JITTER_RATIO = 0.2;
     private static final int DEFAULT_MAX_CALL_DEPTH = 3;
-    private static final List<Integer> DEFAULT_RETRY_STATUS_CODES = List.of(408, 429, 500, 502, 503, 504);
 
     public AiCallPolicy {
         timeoutMs = timeoutMs > 0 ? timeoutMs : DEFAULT_TIMEOUT_MS;
@@ -50,16 +42,12 @@ public record AiCallPolicy(
         backoffMultiplier = backoffMultiplier > 0 ? backoffMultiplier : DEFAULT_BACKOFF_MULTIPLIER;
         backoffJitterRatio = normalizeJitter(backoffJitterRatio);
         maxCallDepth = maxCallDepth > 0 ? maxCallDepth : DEFAULT_MAX_CALL_DEPTH;
-        retryOnStatusCodes = (retryOnStatusCodes == null || retryOnStatusCodes.isEmpty())
-                ? DEFAULT_RETRY_STATUS_CODES
-                : List.copyOf(retryOnStatusCodes);
     }
 
     /** 默认策略（等价于 yml 全缺省）：测试与兜底构造用，避免各处重复写字面量。 */
     public static AiCallPolicy defaults() {
         return new AiCallPolicy(DEFAULT_TIMEOUT_MS, DEFAULT_MAX_ATTEMPTS, DEFAULT_BACKOFF_BASE_MS,
-                DEFAULT_BACKOFF_MULTIPLIER, DEFAULT_JITTER_RATIO, DEFAULT_MAX_CALL_DEPTH,
-                DEFAULT_RETRY_STATUS_CODES);
+                DEFAULT_BACKOFF_MULTIPLIER, DEFAULT_JITTER_RATIO, DEFAULT_MAX_CALL_DEPTH);
     }
 
     private static double normalizeJitter(double ratio) {

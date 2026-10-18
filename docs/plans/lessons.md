@@ -80,3 +80,7 @@ owner: tea-harness
 
 - **本机跳过的集成测试 = 从未验证过的代码，CI 首跑必然抓出真 bug**（2026-10-18，遥测 HITL 用例）：`TelemetryIntegrationTest.reviewStateMachineEnforcedOverHttp` 在本机因 Docker 未启用一直 `skipped`，本地一律绿；PR CI 首跑就红——脱敏规则 `[A-Za-z0-9_-]{24,}` 把 36 位 UUID 替换成 `<token>`，测试却用原始 message 去比对落库的 `sampleMessage`，永远不等。铁律：**`Skipped` 不等于通过，也不是「暂时没问题」——它是「这段逻辑一次都没跑过」**；改集成测试或依赖 Docker 的断言后，必须推 PR 让 CI 真跑一次再算交付。
 - **改页面请求的端点，必须同步 4 处**（2026-10-18，`/health` 页改 `/actuator/health`）：①组件里的 fetch 路径 ②E2E 的 `page.route` mock 路径 ③mock 返回体形状 ④断言文本。本次只改了①，CI 的 `e2e/health-page.spec.ts` 立刻红（mock 拦的是旧 `/api/health`，页面改打新路径后拿不到 mock 就渲染不可达态）。铁律：**E2E mock 的 URL 是对生产契约的复制，不是测试私有细节**；端点变更时 `grep` 一遍 `page.route('**/api/...')` 再交付。
+
+- **没量过就说"清单里有什么"，和编造没有区别**（2026-10-18，PWA 预缓存）：我曾断言「`globIgnores` 只排除 `**/3d/**`，`public/` 下 2K 贴图仍在预缓存，共 7.3MB」。实测 `dist/sw.js`：126 条里 `3d/`/`.hdr`/`.ktx2` 条目 **0 条**，排除一直生效；真实的 7.21MB 是 `china-map` 981KB + `tres` 821KB + 正常贴图，唯一确定浪费的是 `og-cover.png` 515KB（只在 meta 里出现）。铁律：**"我认为配置没生效"必须先跑一次构建看产物**，凭源码推断配置行为（尤其 workbox 的 glob 语义）同样属于猜测。
+- **对照组测试要确认断言对象与执行对象是同一个**（2026-10-18，熔断回归）：写「业务错误不开门」的正向测试时，对照组误用单参数 `executor(policy)`——它内部自建了一个熔断器，而断言查的是我自己 new 的那个，结果期望 1 得 0。铁律：**验证"机制有效"的用例，必须显式注入被断言的同一个实例**；重载构造函数是这类错误的温床。
+- **可配但没人读的配置项比没有更糟**（2026-10-18，`retryOnStatusCodes`）：它从落地起就没有读者（Spring AI 拿不到稳定状态码），却让人以为重试策略可按状态码调。清理死配置不是"顺手优化"——它属于"删除误导性声明"。

@@ -44,7 +44,8 @@
 | ADR-010 | 后端重写 ORM 选型（Spring Data JPA） | ADR-020 | SFT 微调纳入执行范围（推翻「只出概念文档」） |
 | ADR-011 | 不引入 Redis（单实例够用） | ADR-021 | 暂不引入 Redis（修订 ADR-012，前提失效 + 代码零实现） |
 | ADR-022 | 匿名遥测上报（部分取代 ADR-006 的「不上报」） | ADR-023 | AI 多级兜底与分链路熔断 |
-| ADR-024 | A/B 实验与异常自动回滚 | — | — |
+| ADR-024 | A/B 实验与异常自动回滚 | ADR-025 | Prometheus 指标导出与告警栈 |
+| ADR-026 | AI 回答质量评分（quality_layer） | — | — |
 
 新决策一律写入 `docs/ADR/ADR-0XX.md`，禁止塞进本文档。
 

@@ -1,0 +1,51 @@
+# 可选观测栈：Prometheus + Grafana
+#
+# 为什么是独立 overlay 而不是塞进 docker-compose.yml：
+#   站点能不能跑不依赖这两个容器。把它们作为默认服务，会把「监控挂了」变成「站点起不来」
+#   ——可用性反而被监控拖累。用 -f 叠加启用，监控故障时可随时摘掉。
+#
+# 用法（在仓库根，与主 compose 叠加）：
+#   docker compose -f docker-compose.yml -f deploy/observability/docker-compose.observability.yml up -d
+#
+# 前提：backend 端口已绑定宿主机 127.0.0.1:18080（见主 compose）。
+# Prometheus 用 host.docker.internal 回环取数，Grafana 通过 3000 端口访问（默认只绑本机）。
+
+services:
+  prometheus:
+    image: prom/prometheus:v3.1.0
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ./deploy/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./deploy/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - promdata:/prometheus
+    extra_hosts:
+      # Linux 上 host.docker.internal 默认不存在，显式映射到宿主网关
+      - "host.docker.internal:host-gateway"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.enable-lifecycle'
+
+  grafana:
+    image: grafana/grafana:11.5.0
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD must be set}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      # 只读看板：避免有人手改面板后与仓库版本漂移
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/tea-ai-production.json
+    volumes:
+      - ./deploy/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafanadata:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+volumes:
+  promdata:
+  grafanadata:

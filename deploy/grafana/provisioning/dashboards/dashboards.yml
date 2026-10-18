@@ -1,0 +1,14 @@
+apiVersion: 1
+
+providers:
+  - name: tea-dashboards
+    orgId: 1
+    folder: 一盏茶
+    type: file
+    disableDeletion: true
+    # 不允许从 UI 改：看板必须改仓库里的 JSON 再重启，否则线上看板会与仓库版本漂移，
+    # 下次重建时改动静默丢失。
+    allowUiUpdates: false
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false

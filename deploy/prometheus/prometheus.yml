@@ -1,0 +1,30 @@
+# Prometheus 抓取配置（一盏茶生产）
+#
+# 为什么抓 host.docker.internal:18080 而不是 backend:8080：
+#   backend 端口在 compose 里绑定为 127.0.0.1:18080（只在本机回环），刻意不让它在容器网络里
+#   被随意访问——指标端点是明文无鉴权的。Prometheus 从宿主机回环取数，既拿到指标又不扩大暴露面。
+#   若把 Prometheus 与 backend 放进同一 compose 网络，两者之间走服务名即可，届时改 targets 一处。
+#
+# 部署：见 deploy/README.md
+
+global:
+  scrape_interval: 30s
+  evaluation_interval: 30s
+  external_labels:
+    service: tea-ceremony
+    env: production
+
+rule_files:
+  - /etc/prometheus/alerts.yml
+
+scrape_configs:
+  - job_name: tea-backend
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['host.docker.internal:18080']
+        labels:
+          instance: tea-backend
+
+  - job_name: prometheus
+    static_configs:
+      - targets: ['localhost:9090']
