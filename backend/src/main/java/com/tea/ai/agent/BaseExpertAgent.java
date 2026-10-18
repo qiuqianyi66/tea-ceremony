@@ -21,6 +21,16 @@ import org.springframework.ai.chat.model.ChatResponse;
 @Slf4j
 public abstract class BaseExpertAgent {
 
+    /**
+     * 门禁 key 的解析表达式（子类 @Value 引用本常量，勿各自写死）。
+     * 语义：跟随激活的 ChatModel（spring.ai.model.chat）——openai（gateway profile）取网关 key，
+     * 其余（dashscope）取 DashScope key，与 AiChatService.transparentChat 的判定一致。
+     * 单一写死的 DashScope key 会在 gateway profile 下把 5 个专家全部判成「未配置」。
+     */
+    public static final String AI_KEY_EXPR =
+            "#{'${spring.ai.model.chat:}'.trim() == 'openai' ? '${spring.ai.openai.api-key:}'"
+                    + " : '${spring.ai.dashscope.api-key:}'}";
+
     protected final ChatClient chatClient;
     protected final AiUsageLogger usageLogger;
     protected final PromptService promptService;
