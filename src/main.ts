@@ -5,6 +5,7 @@ import { createApp } from 'vue'
 import { registerIcons } from '@/plugins/icons'
 import { installErrorBuffer } from '@/services/errorBuffer'
 import { historyStorage, initDB } from '@/services/storage'
+import { initTelemetry } from '@/services/telemetry'
 import { initWebVitals } from '@/services/vitals'
 import { useAuthStore } from '@/stores/auth'
 import { useTeaStore } from '@/stores/tea'
@@ -13,6 +14,8 @@ import router from './router'
 
 // P1-9：Web Vitals 本地采集（只写 IndexedDB，无外发）；尽早注册以覆盖首屏 LCP
 initWebVitals()
+// ADR-022：匿名遥测（读设置开关，关闭时零监听零外发）；异步初始化，不阻塞渲染
+void initTelemetry()
 // P2-9：前端本地错误缓冲（只写 IndexedDB，无外发）；先于页面代码注册以捕获早期错误
 installErrorBuffer()
 

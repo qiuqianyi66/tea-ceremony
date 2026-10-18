@@ -16,4 +16,7 @@ FROM nginx:1.30.4-alpine
 RUN apk add --no-cache nginx-mod-http-brotli \
     && sed -i '1i load_module modules/ngx_http_brotli_filter_module.so;\nload_module modules/ngx_http_brotli_static_module.so;' /etc/nginx/nginx.conf
 COPY --from=builder /app/dist /usr/share/nginx/html
+# 安全头片段：nginx.conf 里每个自带 add_header 的 location 都要 include 它
+# （add_header 无部分继承，详见 nginx/snippets/security-headers.conf 头部说明）
+COPY nginx/snippets/ /etc/nginx/snippets/
 COPY nginx.conf /etc/nginx/conf.d/default.conf

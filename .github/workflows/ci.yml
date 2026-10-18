@@ -287,6 +287,13 @@ jobs:
         run: node scripts/audit-redlines.cjs
       - name: Run wiki drift audit
         run: node scripts/audit-wiki-drift.cjs
+      # nginx 侧两道机械化门禁（纯 fs 无依赖，不需要 npm ci / docker）
+      # 1) 安全头：任何自带 add_header 的 location 必须 include 片段，否则 CSP/X-Frame-Options 静默失效
+      # 2) 路由：nginx SPA 白名单 与 src/router/index.ts 双向一致，否则新路由线上 404
+      - name: Run nginx header audit
+        run: node scripts/verify-nginx-headers.cjs
+      - name: Run nginx route whitelist audit
+        run: node scripts/verify-nginx-routes.cjs
       # 常驻层 token 预算门禁（防膨胀）：AGENTS.md / CLAUDE.md / CONTEXT.md / .harness/rules/*.md 估算 token 超预算即 error
       - name: Run context budget check
         run: node scripts/audit-context-budget.cjs

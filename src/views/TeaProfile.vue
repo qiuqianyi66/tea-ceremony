@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import TasteProfileSection from '@/components/tasting/TasteProfileSection.vue'
 import { TEA_LEVELS } from '@/data/constants'
@@ -7,13 +7,34 @@ import { teas } from '@/data/teas'
 import { teawares } from '@/data/teawares'
 import { useProgressStore } from '@/stores/progress'
 import { useTeaStore } from '@/stores/tea'
+import {
+  getTelemetryEnabledSetting,
+  isTelemetryEnabled,
+  setTelemetryEnabled,
+} from '@/services/telemetry'
 
 const router = useRouter()
 const store = useTeaStore()
 const progress = useProgressStore()
 
-onMounted(() => {
+/** 匿名遥测开关（ADR-022 §7：用户可关闭；默认开） */
+const telemetryOn = ref(isTelemetryEnabled())
+const telemetryJustSaved = ref(false)
+
+async function toggleTelemetry() {
+  const next = !telemetryOn.value
+  telemetryOn.value = next
+  await setTelemetryEnabled(next)
+  telemetryJustSaved.value = true
+  window.setTimeout(() => {
+    telemetryJustSaved.value = false
+  }, 2000)
+}
+
+onMounted(async () => {
   store.loadHistory()
+  // 以持久化值为准（首帧先用内存值渲染，避免开关闪一下）
+  telemetryOn.value = await getTelemetryEnabledSetting()
 })
 
 const tastedTypes = computed(
@@ -122,6 +143,40 @@ const typeCoverage = computed(() => Math.round((tastedTypes.value.size / 6) * 10
           </div>
           <p v-if="r.notes" class="text-xs text-[var(--color-wood-light)] mt-1 italic">"{{ r.notes }}"</p>
         </div>
+      </div>
+    </div>
+
+    <!-- 隐私：匿名运行数据开关（ADR-022）。关掉即停止采集与上报，本地已存数据不删 -->
+    <div>
+      <h3 class="text-base font-bold text-[var(--color-wood)] mb-3">
+        <IconActivity class="inline-block -mt-1 w-4 h-4" /> 隐私
+      </h3>
+      <div class="glass-panel rounded-xl p-4">
+        <div class="flex items-start justify-between gap-4">
+          <div class="min-w-0">
+            <p class="text-sm font-medium text-[var(--color-wood)]">匿名运行数据</p>
+            <p class="mt-1 text-xs leading-relaxed text-[var(--color-wood-light)]">
+              上报脚本错误与页面性能，用来定位线上问题。只含错误堆栈和指标数值，不含品鉴内容与账号信息。
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            class="relative inline-flex min-h-11 w-14 shrink-0 items-center rounded-full transition-colors"
+            :class="telemetryOn ? 'bg-[var(--color-tea-gold)]' : 'bg-[var(--color-wood-light)]/35'"
+            :aria-checked="telemetryOn"
+            aria-label="匿名运行数据上报"
+            @click="toggleTelemetry"
+          >
+            <span
+              class="inline-block h-6 w-6 rounded-full bg-[var(--color-cream)] shadow transition-transform"
+              :class="telemetryOn ? 'translate-x-7' : 'translate-x-1'"
+            />
+          </button>
+        </div>
+        <p v-if="telemetryJustSaved" class="mt-3 text-xs text-[var(--color-tea-gold)]">
+          {{ telemetryOn ? '已开启' : '已关闭，不再上报' }}
+        </p>
       </div>
     </div>
   </div>

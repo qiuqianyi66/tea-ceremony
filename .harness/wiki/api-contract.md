@@ -150,7 +150,7 @@ description: tea 接口协议——现有端点、统一约定（前缀/鉴权/�
 
 | 方法 | 路径 | 请求体 | 成功响应 | 错误 |
 |---|---|---|---|---|
-| POST | `/api/v1/ai/chat` | `{messages:[{role(system/user/assistant), content≤4000}]`（1-20 条）；`agent?` ≤50（枚举：chat/advisor/taster/librarian/brewer/mentor；S2 全量生效）；`sessionId?`（≥1，M5-S2 会话记忆：带值=续写会话，缺省=登录用户开新会话） | `ApiResponse<{content, sources?, sessionId?}>` 200（sources=知识来源数组，透明代理为 null；sessionId=登录用户会话 id，游客/落库失败为 null） | 400 校验失败/未知 agent PARAM_INVALID；404 会话不存在或非本人（sessionId 越权）；**502 BAD_GATEWAY**（无 key/上游失败） |
+| POST | `/api/v1/ai/chat` | `{messages:[{role(system/user/assistant), content≤4000}]`（1-20 条）；`agent?` ≤50（枚举：chat/advisor/taster/librarian/brewer/mentor；S2 全量生效）；`sessionId?`（≥1，M5-S2 会话记忆：带值=续写会话，缺省=登录用户开新会话） | `ApiResponse<{content, sources?, sessionId?, degraded?}>` 200（sources=知识来源数组，透明代理为 null；sessionId=登录用户会话 id，游客/落库失败为 null；**degraded=true 表示答复来自本地规则库而非模型**，缺省不出现） | 400 校验失败/未知 agent PARAM_INVALID；404 会话不存在或非本人（sessionId 越权）；**502 BAD_GATEWAY**（无 key/上游失败且本地规则库未命中） |
 | POST | `/api/v1/ai/sessions` | `{topic?≤100, agent?≤50}` | `ApiResponse<{id, topic, agent, createdAt, updatedAt}>` 200（仅登录） | 400 / 401 |
 | GET | `/api/v1/ai/sessions` | — | `ApiResponse<[{id, topic, agent, createdAt, updatedAt}]>` 200（仅本人，updated_at 倒序） | 401 |
 | GET | `/api/v1/ai/sessions/{id}/messages` | — | `ApiResponse<[{id, role, content, agent, tokens, createdAt}]>` 200（created_at 正序，含全部消息） | 401 / 404 |
@@ -159,6 +159,12 @@ description: tea 接口协议——现有端点、统一约定（前缀/鉴权/�
 > M5-S2 编排：显式 `agent` → 对应专家（advisor 荐茶/teas+regions+processes、taster 品鉴/用户记录、librarian 文化/8 表 RAG、brewer 冲泡/工艺+茶器、mentor 成长/用户记录+常识；各专家回复附 sources）；无 agent 且文化意图关键词命中 → librarian；`agent=chat` 或无意图 → 回落透明代理（messages 原样转发）。未知 agent 值 400。仅成功调用落 `ai_usage_logs`（agent/model/tokens_in/tokens_out/latency；游客 user_id 空）。key 配置 `AI_DASHSCOPE_API_KEY`，无 key 占位 `disabled` 时 Service 显式 502。
 > M5-S2 会话记忆（2026-10-08）：登录用户响应成功落 `ai_chat_sessions`/`ai_messages`（user+assistant 各一条，agent 归类；游客不落）；带 `sessionId` 先做归属校验（非本人 → 404，不浪费 LLM 调用）；落库失败仅日志不影响响应（旁路，同计量）。prompt 版本化：专家 system prompt 读 `agent_prompts` active 版本，无则回退内置常量。
 > M5-S2 会话管理（2026-10-08，K4 补齐 F-1~F-4）：`/api/v1/ai/sessions` 四端点仅登录（Security 收窄：`/api/v1/ai/**` 放行范围从全公开改为仅 `/api/v1/ai/chat` 公开）；带 sessionId 的 chat 会前插历史（≤20 条，多轮锚定，278 Save Plan）且用户消息在 LLM 调用前落库（502 降级不丢用户消息）；历史锚定上限 20（决策 D-2/O-4）。
+
+### AI 黄金指标 `/api/v1/ai/metrics`（需 JWT；口径 = Task Success Rate / Tool Call Error Rate / P99 Latency）
+
+| 方法 | 路径 | 请求体 | 成功响应 | 错误 |
+|---|---|---|---|---|
+| GET | `/api/v1/ai/metrics/golden` | — | `ApiResponse{data:GoldenMetricsReport}`：`{windowStart, windowEnd, totalCalls, overall{agentType, calls, successRate, errorRate, p50, p95, p99, insufficientData}, byAgent[...]}`（查询参数 `windowMinutes` 默认 60、上限 1440；零调用时 successRate/errorRate 为 null，样本 <20 时 p99 为 null 且 insufficientData=true） | 401 |
 
 ### MCP 工具协议 `/mcp`（P1-1 已实现，公开，非 HTTP JSON 契约）
 
@@ -202,3 +208,19 @@ description: tea 接口协议——现有端点、统一约定（前缀/鉴权/�
 - 🔴 前后端联调以本文件为准；改契约先改本文件再改代码。
 - 🟢 新增端点先在本文件登记（方法/路径/请求体/响应/错误），评审时核对。
 - 🟢 错误码可查、稳定、不随文案变化；AI 路由 502 是降级链触发信号，禁改状态码语义。
+
+### 遥测 `/api/v1/telemetry`（批量上报匿名 + 其余需登录，ADR-022，字段细节见 `docs/reference/telemetry-contract.md`）
+
+| 方法 | 路径 | 请求体 | 成功响应 | 错误 |
+|---|---|---|---|---|
+| POST | `/api/v1/telemetry/batch` | `TelemetryBatchRequest{clientId, sessionId, appVersion, sentAt, events[]}`，`events` ≤50 | `ApiResponse{data:TelemetryBatchResult{accepted, duplicated, rejected}}` 200 | 400 体积/字段非法；429 限流 30/min |
+| GET | `/api/v1/telemetry/slo` | — | `ApiResponse{data:SloReport}` | 401 |
+| GET | `/api/v1/telemetry/fingerprints` | 查询参数 `reviewStatus` / `page` / `size` | `ApiResponse{data:PageResult{items,total,page,size}}` | 401 |
+| PATCH | `/api/v1/telemetry/fingerprints/{id}/review` | `ReviewRequest{status, note?}` | `ApiResponse{data:ErrorFingerprintView}` | 401 / 404 / 409 非法状态流转 |
+
+- 鉴权：`POST /batch` 匿名（`permitAll` + `RateLimitFilter`）；其余三个需 `Authorization: Bearer <token>`
+- `events[]` 是判别联合：`type=error` 带 `{kind,message,source,lineno,colno,stack,fingerprint}`；`type=vital` 带 `{name,value,rating,navigationType}`
+- 幂等：`client_event_id` 唯一约束，重复上报计入 `duplicated` 而非报错
+- 单条非法只计 `rejected`，不中断整批（只有 `events` 非数组 / >50 / 缺 `clientId` 才整体 400）
+- 指纹算法前后端逐字一致（FNV-1a 64bit，16 位 hex）；前端上报合法指纹时后端直接采用
+- HITL 状态机：`pending → acknowledged|ignored`，`acknowledged → resolved`；其余流转 409

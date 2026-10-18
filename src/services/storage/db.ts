@@ -5,6 +5,8 @@
 import Dexie from 'dexie'
 import type { Achievement, TastingRecord } from '@/types/tasting'
 import type { ErrorBufferRecord } from '@/types/errors'
+// 仅类型引用（编译期擦除），不会造成 storage ↔ telemetry 的运行时循环依赖
+import type { OutboxRecord } from '@/services/telemetry/types'
 import type { TrackEvent } from '@/types/tracking'
 import type { WebVitalRecord } from '@/types/vitals'
 
@@ -19,6 +21,7 @@ class TeaCeremonyDB extends Dexie {
   trackingEvents!: Dexie.Table<TrackEvent, number>
   webVitals!: Dexie.Table<WebVitalRecord, number>
   errorBuffer!: Dexie.Table<ErrorBufferRecord, number>
+  telemetryOutbox!: Dexie.Table<OutboxRecord, number>
 
   constructor() {
     super('teaCeremonyDB')
@@ -95,6 +98,20 @@ class TeaCeremonyDB extends Dexie {
       trackingEvents: '++id, category, event, ts',
       webVitals: '++id, name, rating, ts',
       errorBuffer: '++id, kind, ts',
+    })
+
+    // 版本 8：匿名遥测待发队列（ADR-022）——outbox 是投递队列，与本地错误缓冲语义不同，
+    // 需要 attempts/nextAttemptAt/status 三个投递状态字段，故单独立表
+    this.version(8).stores({
+      tastings: '++id, teaId, date, overallScore, [teaId+date], brewTemp, steepTime',
+      achievements: '++id, id, unlocked',
+      settings: '++id, key',
+      userXp: '++id, key',
+      collectedWare: '++id, id, unlockedAt',
+      trackingEvents: '++id, category, event, ts',
+      webVitals: '++id, name, rating, ts',
+      errorBuffer: '++id, kind, ts',
+      telemetryOutbox: '++id, status, nextAttemptAt, createdAt',
     })
   }
 }

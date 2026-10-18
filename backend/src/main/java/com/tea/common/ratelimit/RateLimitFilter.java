@@ -26,6 +26,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * 2026-10-13 线上加固：匿名/登录分级 + 每日总额——AI 面匿名 3 次/分 + 100 次/日，
  * 登录 30 次/分（防脚本慢速白嫖付费模型；游客正常聊天 3 次/分足够）。每个请求可命中多条规则
  * （如匿名 AI 同时吃分钟窗 + 日窗），任一条超限即 429。
+ *
+ * 2026-10-17 ADR-022：新增遥测上报面——/api/v1/telemetry/batch 匿名可写，单独 30 次/分钟一档。
  */
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {
@@ -34,6 +36,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
     /** 2026-10-12 安全审计 H4：文化搜索公开可调且触发付费 embedding（CultureSearchService.vectorHits），纳入同档限流。 */
     private static final String CULTURE_PREFIX = "/api/v1/culture/";
     private static final String LOGIN_PATH = "/api/v1/auth/login";
+    /** ADR-022：遥测批量上报匿名可写，必须挂频次上限（契约 §1「permitAll + 限流」）。 */
+    private static final String TELEMETRY_BATCH_PATH = "/api/v1/telemetry/batch";
     private static final String BEARER_PREFIX = "Bearer ";
     private static final long DAY_MS = 86_400_000L;
 
@@ -44,6 +48,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
     private final int aiAuthMax;
     private final int loginMax;
     private final long loginWindowMs;
+    private final int telemetryAnonMax;
+    private final long telemetryWindowMs;
 
     /** 窗口条目：时间戳队列 + 最后活跃时间（陈旧条目清理依据）。 */
     static final class Window {
@@ -61,7 +67,9 @@ public class RateLimitFilter extends OncePerRequestFilter {
             @Value("${tea.ratelimit.ai-anon-daily-max:100}") int aiAnonDailyMax,
             @Value("${tea.ratelimit.ai-auth-max:30}") int aiAuthMax,
             @Value("${tea.ratelimit.login-max:10}") int loginMax,
-            @Value("${tea.ratelimit.login-window-ms:300000}") long loginWindowMs) {
+            @Value("${tea.ratelimit.login-window-ms:300000}") long loginWindowMs,
+            @Value("${tea.ratelimit.telemetry-anon-max:30}") int telemetryAnonMax,
+            @Value("${tea.ratelimit.telemetry-window-ms:60000}") long telemetryWindowMs) {
         this.objectMapper = objectMapper;
         this.aiAnonMax = aiAnonMax;
         this.aiWindowMs = aiWindowMs;
@@ -69,6 +77,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
         this.aiAuthMax = aiAuthMax;
         this.loginMax = loginMax;
         this.loginWindowMs = loginWindowMs;
+        this.telemetryAnonMax = telemetryAnonMax;
+        this.telemetryWindowMs = telemetryWindowMs;
     }
 
     @Override
@@ -130,6 +140,10 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
         if (LOGIN_PATH.equals(uri)) {
             return List.of(new LimitRule("login", loginMax, loginWindowMs));
+        }
+        // 遥测上报不分匿名/登录档：端点是 permitAll，登录态也走同一计数（上报量由前端采样控制）
+        if (TELEMETRY_BATCH_PATH.equals(uri)) {
+            return List.of(new LimitRule("telemetry-anon", telemetryAnonMax, telemetryWindowMs));
         }
         return List.of();
     }

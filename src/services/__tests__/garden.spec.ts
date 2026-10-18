@@ -73,7 +73,12 @@ describe('garden 生长计算（纯函数）', () => {
   })
 
   it('getCurrentWaterLevel：随天数衰减、封顶 0-100', () => {
-    expect(getCurrentWaterLevel(makePlant())).toBe(100)
+    // 湿度按「距上次浇水的毫秒数」连续衰减，而 makePlant 与 getCurrentWaterLevel
+    // 各取一次 Date.now()：跨毫秒时差会让精确相等断言偶发飘成 99.99999976。
+    // 与 getPlantDays / getGrowthProgress 同模式，改用容差断言。
+    const fresh = getCurrentWaterLevel(makePlant())
+    expect(fresh).toBeLessThanOrEqual(100)
+    expect(fresh).toBeGreaterThan(99.99)
     const decayed = getCurrentWaterLevel(makePlant({ lastWateredAt: daysAgo(2), waterLevel: 100 }))
     expect(decayed).toBeGreaterThan(50)
     expect(decayed).toBeLessThan(70)
