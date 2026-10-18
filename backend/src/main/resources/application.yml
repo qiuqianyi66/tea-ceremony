@@ -70,7 +70,11 @@ tea:
     token: ${ADMIN_API_TOKEN:}
   ratelimit:
     # 批 3 安全审计：AI/登录公开端点限流（滑动窗口，进程内存；环境变量沿用旧栈 RATE_LIMIT_* 名称）
-    ai-max: ${RATE_LIMIT_AI_MAX:10}
+    # 分级（2026-10-13 加固）：匿名 3/min + 日配额 100（防刷付费出口），登录用户 30/min。
+    # 键名必须与 RateLimitFilter 的 @Value 对齐——此前的 ai-max 无人读取，匿名实际一直吃默认值。
+    ai-anon-max: ${RATE_LIMIT_AI_ANON_MAX:3}
+    ai-anon-daily-max: ${RATE_LIMIT_AI_ANON_DAILY_MAX:100}
+    ai-auth-max: ${RATE_LIMIT_AI_AUTH_MAX:30}
     ai-window-ms: ${RATE_LIMIT_AI_WINDOW_MS:60000}
     login-max: ${RATE_LIMIT_LOGIN_MAX:10}
     login-window-ms: ${RATE_LIMIT_LOGIN_WINDOW_MS:300000}
@@ -84,7 +88,7 @@ tea:
       simple-max-turns: ${AI_COMPLEXITY_SIMPLE_MAX_TURNS:3}
       complex-min-words: ${AI_COMPLEXITY_COMPLEX_MIN_WORDS:200}
     # F-6 会话配额（ADR-018）：单会话内 LLM 调用上限；0/负数=不限。
-    # 与 tea.ratelimit.ai-max（10/min 瞬时速率）是两层：限流管速率，配额管会话总量。
+    # 与 tea.ratelimit.ai-anon-max / ai-auth-max（每分钟速率）是两层：限流管速率，配额管会话总量。
     max-calls-per-session: ${AI_MAX_CALLS_PER_SESSION:10}
     # 容错执行器（AiCallExecutor）：硬超时 → 指数退避重试 → 按 lane 熔断 → 兜底。
     # 改这里只调参数，不改代码：上游变慢时先加 timeout-ms / max-attempts，别改业务逻辑。
