@@ -8,7 +8,7 @@
 | # | 项 | 交付 |
 |---|---|---|
 | 1 | 合并 PR #108 | 已 squash 合并（`5ccab4a`），三方夹带提交已 rebase 剥离 |
-| 2 | HTTPS / 443 就绪 | `nginx.conf` 真实 443 server + `app-locations.conf` 去重复 + compose 443/证书挂载 + 签发与自签脚本 |
+| 2 | HTTPS / 443 就绪 | `nginx.conf` 真实 443 server + `app-locations.conf` 单一 location 集合（80 只做 ACME + 301）+ compose 443/证书挂载 + 签发与自签脚本 |
 | 3 | 指标可见与告警 | `micrometer-registry-prometheus` + `/actuator/prometheus` + 13 条告警规则 + 10 面板看板 + 可选 overlay |
 | 4 | AI 回答质量指标化 | `quality_layer`（V10）+ 规则判官 + LLM 判官 + `GET /api/v1/ai/metrics/quality` |
 | 5 | Tool Calling 进 chat | `CultureQueryTools` + `LibrarianAgent` 双轨 + 实验键 `ai.librarian.tool-calling` |
@@ -16,7 +16,8 @@
 
 ## 验收判据
 
-1. `nginx -t` 在生产同款镜像里 `syntax is ok`，且 443 真能握手、80 真跳转、ACME 不被跳走。
+1. `nginx -t` 在生产镜像里 `syntax is ok`（无 warning），443 真能握手、80 真跳转、ACME 不被跳走。
+   证书用临时自签：TLS 层等价，但真实 Let's Encrypt 签发链路未验证。
 2. `/actuator/prometheus` 公网 404，指标只能从宿主机回环取。
 3. 告警规则里引用的每个指标都能在 Java 代码里找到埋点（机械化校验，含负向验证）。
 4. 质量分零样本返回 null 而非 0；判官不可用时整批降级且不抛异常。
@@ -28,7 +29,7 @@
 ```
 mvn clean test（Docker 已启用）        → Tests run: 487, Failures: 0, Errors: 0, Skipped: 0 / BUILD SUCCESS
 npm run quality                        → exit 0
-nginx -t（tea-frontend 镜像 + 真证书）  → syntax is ok（无 warn）
+nginx -t（nginx/Dockerfile 构建的生产镜像 + 临时自签证书）→ syntax is ok（无 warn）
 curl -k https://localhost:18443/       → 200，6 个安全头 + HSTS
 curl http://localhost:18081/           → 301 → https://localhost/
 curl .../.well-known/acme-challenge/x  → 404（不被 301 跳走，续期可用）

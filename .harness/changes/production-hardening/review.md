@@ -33,14 +33,16 @@
 
 | 验什么 | 结果 |
 |---|---|
-| `nginx -t`（`tea-frontend` 镜像 + 真证书） | `syntax is ok`，无 warning |
-| `curl -k https://localhost:18443/` | 200 + 6 个安全头 + HSTS |
+| `nginx -t`（用 `nginx/Dockerfile` 完整构建的生产镜像，含 brotli；临时自签证书） | `syntax is ok`，无 warning |
+| `curl -k https://localhost:18443/` | 200 + 6 个安全头 + 一条 HSTS（自签证书） |
 | `curl http://localhost:18081/` | 301 → `https://localhost/` |
 | `/.well-known/acme-challenge/<token>` | **404，不是 301** —— 挑战被跳走证书就永远续不了 |
 | `/actuator/prometheus` | 404（指标不公网可达） |
 | `openssl s_client -alpn h2` | `ALPN protocol: h2` |
 
-设计决定：**取消 80/443 的 location 双副本**。原注释理由是"怕漂移难排查"，但 150 行手抄两遍才是漂移的必然来源。抽出 `app-locations.conf`，两个 server 都 include，只有一份集合。
+设计决定：**取消 80/443 的 location 双副本**。原注释理由是"怕漂移难排查"，但 150 行手抄两遍才是漂移的必然来源。抽出 `app-locations.conf`，**只在 443 引用**。
+
+我最初的要求是"两个 server 都 include"，子代理没照做并给出了理由，它是对的：80 若 include 同一套 location，`/api/` 与 `/assets/` 在明文下仍然可用，等于给 TLS 开侧门；而 80 用 server 级 `return` 会把 ACME 挑战一起跳走、证书永远续不了。最终 80 = `^~ /.well-known/acme-challenge/` + `location / → 301`，location 集合只有一份，漂移源为 0——比我的原方案更彻底。**这是本轮唯一一次「执行者拒绝指令且拒绝得正确」的地方，保留记录。**
 
 顺手清掉 `gzip_types`/`brotli_types` 里重复的 `text/html`（nginx 内置它总是压缩），`nginx -t` 从 2 条 warning 变 0 条。
 
