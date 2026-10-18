@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+
+# 私有页面不入索引：内容为个人数据，且需登录才有意义
+Disallow: /profile
+Disallow: /history
+Disallow: /growth
+Disallow: /collection
+
+# 接口与内部端点
+Disallow: /api/
+Disallow: /actuator/
+
+Sitemap: http://42.121.125.4/sitemap.xml

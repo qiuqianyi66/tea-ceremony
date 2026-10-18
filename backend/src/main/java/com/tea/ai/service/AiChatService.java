@@ -13,11 +13,15 @@ import com.tea.ai.dto.ChatMessageDto;
 import com.tea.ai.entity.AiChatMessage;
 import com.tea.ai.entity.AiChatSession;
 import com.tea.ai.entity.AiEvalTrace;
+import com.tea.ai.experiment.service.ExperimentService;
+import com.tea.ai.fallback.LocalFallbackService;
+import com.tea.ai.resilience.AiCallExecutor;
 import com.tea.ai.vo.AiChatVo;
 import com.tea.common.exception.BadGatewayException;
 import com.tea.common.exception.QuotaExceededException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.AssistantMessage;
@@ -55,12 +59,28 @@ public class AiChatService {
     private final BrewerAgent brewerAgent;
     private final MentorAgent mentorAgent;
     private final AiCallQuota callQuota;
-    /** P1-13 熔断：上游连续失败达阈值后快速 502（前端降级链不变）。 */
+    /**
+     * P1-13 熔断：上游连续失败达阈值后快速 502（前端降级链不变）。
+     * 2026-10-18 起熔断器按 lane 分桶，本类只做「请求入口层」的粗粒度门禁，用的是 default 桶（无参旧 API）；
+     * 真实链路（chat/librarian/...）的桶由 AiCallExecutor 在每次尝试上报告。
+     * 两层不是同一桶：入口层保留原行为（既有测试与前端语义都依赖它），执行器层才做按链路隔离。
+     * 维护提示：不要因为「执行器内部已经报过熔断」就删掉这里的两处调用——入口层拦的是
+     * 「连上游都不该试」的快速失败，删了会让熔断窗口内仍然逐次进 dispatch。
+     */
     private final AiCircuitBreaker circuitBreaker;
     /** 激活的 ChatModel 提供商（spring.ai.model.chat）：openai（gateway profile）或 dashscope（生产）。 */
     private final String modelChat;
     private final String dashscopeApiKey;
     private final String openaiApiKey;
+    /** 容错骨架（深度/熔断/超时/重试）：透明代理这一处 LLM 调用走它，lane = chat。 */
+    private final AiCallExecutor aiCallExecutor;
+    /** 多级兜底第 2 级：本地规则库（上游不可用时给有依据的答复，而不是只回 502）。 */
+    private final LocalFallbackService localFallbackService;
+    /** A/B 实验（ADR-024）：控制「后端规则兜底」的灰度范围。 */
+    private final ExperimentService experimentService;
+
+    /** 兜底灰度的实验键（实验未创建/未运行时保持现状：兜底开启）。 */
+    static final String FALLBACK_ROLLOUT_EXPERIMENT = "ai.fallback.rollout";
 
     public AiChatService(ChatClient.Builder chatClientBuilder,
                          AiUsageLogger usageLogger,
@@ -76,7 +96,10 @@ public class AiChatService {
                          AiCircuitBreaker circuitBreaker,
                          @Value("${spring.ai.model.chat:}") String modelChat,
                          @Value("${spring.ai.dashscope.api-key:}") String dashscopeApiKey,
-                         @Value("${spring.ai.openai.api-key:}") String openaiApiKey) {
+                         @Value("${spring.ai.openai.api-key:}") String openaiApiKey,
+                         AiCallExecutor aiCallExecutor,
+                         LocalFallbackService localFallbackService,
+                         ExperimentService experimentService) {
         this.chatClient = chatClientBuilder.build();
         this.usageLogger = usageLogger;
         this.orchestrator = orchestrator;
@@ -92,6 +115,9 @@ public class AiChatService {
         this.modelChat = modelChat;
         this.dashscopeApiKey = dashscopeApiKey;
         this.openaiApiKey = openaiApiKey;
+        this.aiCallExecutor = aiCallExecutor;
+        this.localFallbackService = localFallbackService;
+        this.experimentService = experimentService;
     }
 
     public AiChatVo chat(Integer userId, AiChatRequest req) {
@@ -115,11 +141,21 @@ public class AiChatService {
             throw new QuotaExceededException("本轮对话已达上限（" + callQuota.maxCalls() + " 次），请开新会话继续");
         }
         persist(sessionId, "user", lastUserMessage(req), agentOf(type, req));
-        // T07 评测 Trace：入口埋点（input/context/plan 层，含复杂度档位），dispatch 后 complete/fail（ADR-016）
-        AiEvalTrace trace = traceRecorder.begin(sessionId, type, req, anchored, level);
-        // P1-13 熔断：OPEN 窗口内快速失败（不调 LLM），前端照常走 502 规则降级
+        // ADR-024 灰度：assignActive 为空 = 实验未运行 → 保持现状（兜底开启）；
+        // 返回 control = 实验明确把这批主体划到旧路径（只回 502，不走规则库）。
+        // 这个区分是必须的：若用 assign()，未配置实验也会得到 control，等于上线一个新实验
+        // 反而把已有兜底关掉。
+        String variant = experimentService
+                .assignActive(FALLBACK_ROLLOUT_EXPERIMENT, subjectOf(userId, sessionId))
+                .orElse(null);
+        boolean degradeAllowed = variant == null || ExperimentService.TREATMENT.equals(variant);
+        // T07 评测 Trace：入口埋点（input/context/plan 层，含复杂度档位与 A/B 变体），dispatch 后 complete/fail（ADR-016）
+        AiEvalTrace trace = traceRecorder.begin(sessionId, type, req, anchored, level, variant,
+                variant == null ? null : FALLBACK_ROLLOUT_EXPERIMENT);
+        // P1-13 熔断：OPEN 窗口内快速失败（不调 LLM）。多级兜底第二级在此先试本地规则库，未命中才 502
         if (!circuitBreaker.allowCall()) {
-            throw new BadGatewayException("AI 服务暂时不可用（熔断保护中）");
+            return fallbackOrThrow(anchored, sessionId, trace, degradeAllowed,
+                    new BadGatewayException("AI 服务暂时不可用（熔断保护中）"));
         }
         try {
             AiChatVo vo = dispatch(type, userId, anchored);
@@ -127,14 +163,51 @@ public class AiChatService {
             traceRecorder.complete(trace, vo);
             if (sessionId != null) {
                 persist(sessionId, "assistant", vo.content(), agentOf(type, req));
-                return new AiChatVo(vo.content(), vo.sources(), sessionId, vo.tokensIn(), vo.tokensOut(), vo.latencyMs());
+                // degraded 一并透传：专家层若已降级，绑定会话后不能把标记丢掉
+                return new AiChatVo(vo.content(), vo.sources(), sessionId,
+                        vo.tokensIn(), vo.tokensOut(), vo.latencyMs(), vo.degraded());
             }
             return vo;
         } catch (BadGatewayException e) {
             circuitBreaker.onFailure();
-            traceRecorder.fail(trace, e);
+            return fallbackOrThrow(anchored, sessionId, trace, degradeAllowed, e);
+        }
+    }
+
+    /** 分桶主体：优先登录用户（体验稳定），其次会话（游客可分桶，且不会因换设备跳到另一组）。 */
+    private static String subjectOf(Integer userId, Integer sessionId) {
+        if (userId != null) {
+            return "u:" + userId;
+        }
+        return sessionId == null ? null : "s:" + sessionId;
+    }
+
+    /**
+     * 多级兜底第二级：上游不可用 → 本地规则库（截图「兜底 Downgrade：核心服务不可用时调用本地规则库」）。
+     *
+     * <p>命中 → 200 + {@code degraded=true}，用户仍得到有数据依据的答复；同时补落 assistant 消息，保持会话历史完整。
+     * 未命中 → 原样抛 502，由前端 {@code teaAI.ts} 走第三级规则降级。
+     * <b>承重墙不变</b>：502 语义保留在「未命中」分支，前端降级链无需改动。</p>
+     *
+     * <p>为什么在入口熔断分支也走这里：熔断态下用户拿到的应该是规则答复，而不是一条 502。
+     * 这不会让上游过载——本地规则库不发起任何网络调用。</p>
+     */
+    private AiChatVo fallbackOrThrow(AiChatRequest anchored, Integer sessionId,
+                                     AiEvalTrace trace, boolean degradeAllowed, BadGatewayException e) {
+        // Trace 一律记为失败：上游确实失败了，指标口径必须如实反映（兜底命中与否不影响这个事实）
+        traceRecorder.fail(trace, e);
+        if (!degradeAllowed) {
+            // A/B 对照组：保持 ADR-023 之前的旧语义（直接 502，前端 teaAI.ts 兜第三级）
             throw e;
         }
+        Optional<String> ruleAnswer = localFallbackService.answerFor(lastUserMessage(anchored));
+        if (ruleAnswer.isEmpty()) {
+            throw e;
+        }
+        String content = ruleAnswer.get();
+        persist(sessionId, "assistant", content, "fallback");
+        log.info("ai degraded to local rule fallback: sessionId={} reason={}", sessionId, e.getMessage());
+        return new AiChatVo(content, List.of("本地规则库"), sessionId, null, null, null, true);
     }
 
     /** F-6 多轮锚定：登录 + 有 sessionId → 读历史（归属已在 chat() 入口 requireSession 校验，这里直接取消息，免二次查库）转 ChatMessageDto 前插；其余原样返回。COMPLEX → 只取最后 5 条（上下文压缩，T09）。 */
@@ -254,13 +327,12 @@ public class AiChatService {
 
         List<Message> messages = toSpringMessages(req.messages());
         long start = System.currentTimeMillis();
-        ChatResponse response;
-        try {
-            response = chatClient.prompt().messages(messages).call().chatResponse();
-        } catch (Exception e) {
-            log.warn("LLM call failed: {}", e.getMessage());
-            throw new BadGatewayException("AI 服务调用失败");
-        }
+        // 透明代理这一跳的容错全交给 AiCallExecutor（硬超时 + 重试 + 熔断按 lane=chat 隔离）；
+        // 失败已由执行器统一转 502，这里不再二次 try/catch，避免把业务异常也吞成 502。
+        ChatResponse response = aiCallExecutor.execute("chat", () -> chatClient.prompt()
+                .messages(messages)
+                .call()
+                .chatResponse(), null);
         int latency = (int) (System.currentTimeMillis() - start);
 
         String content = response.getResult().getOutput().getText();

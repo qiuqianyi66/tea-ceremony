@@ -1,6 +1,7 @@
 package com.tea.ai.agent;
 
 import com.tea.ai.dto.AiChatRequest;
+import com.tea.ai.resilience.AiCallExecutor;
 import com.tea.ai.service.AiUsageLogger;
 import com.tea.ai.service.PromptService;
 import com.tea.ai.vo.AiChatVo;
@@ -41,8 +42,9 @@ public class BrewerAgent extends BaseExpertAgent {
                        CultureSearchService cultureSearchService,
                        AiUsageLogger usageLogger,
                        PromptService promptService,
-                       @Value(AI_KEY_EXPR) String apiKey) {
-        super(chatClientBuilder, usageLogger, promptService, apiKey);
+                       @Value(AI_KEY_EXPR) String apiKey,
+                       AiCallExecutor aiCallExecutor) {
+        super(chatClientBuilder, usageLogger, promptService, apiKey, aiCallExecutor);
         this.cultureSearchService = cultureSearchService;
     }
 

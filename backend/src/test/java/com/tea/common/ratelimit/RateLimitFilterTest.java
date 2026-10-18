@@ -20,7 +20,7 @@ class RateLimitFilterTest {
 
     @BeforeEach
     void setUp() {
-        filter = new RateLimitFilter(new ObjectMapper(), 2, 60_000, 100, 30, 1, 300_000);
+        filter = new RateLimitFilter(new ObjectMapper(), 2, 60_000, 100, 30, 1, 300_000, 3600, 60_000);
     }
 
     @Test
@@ -64,7 +64,7 @@ class RateLimitFilterTest {
 
     @Test
     void windowExpiryAllowsRequestsAgain() throws Exception {
-        RateLimitFilter shortWindow = new RateLimitFilter(new ObjectMapper(), 2, 50, 100, 30, 1, 300_000);
+        RateLimitFilter shortWindow = new RateLimitFilter(new ObjectMapper(), 2, 50, 100, 30, 1, 300_000, 3600, 60_000);
         for (int i = 0; i < 2; i++) {
             shortWindow.doFilter(request("/api/v1/ai/chat", "1.1.1.1"), newResp(), new MockFilterChain());
         }
@@ -137,7 +137,7 @@ class RateLimitFilterTest {
     @Test
     void staleWindowsAreEvictedAfterTwoWindowPeriods() throws Exception {
         // 窗口 50ms；陈旧条目（队列空 + 空闲 > 2×窗口）在 key 再次访问时摘除
-        RateLimitFilter shortWindow = new RateLimitFilter(new ObjectMapper(), 2, 50, 100, 30, 1, 300_000);
+        RateLimitFilter shortWindow = new RateLimitFilter(new ObjectMapper(), 2, 50, 100, 30, 1, 300_000, 3600, 60_000);
         shortWindow.doFilter(request("/api/v1/ai/chat", "1.1.1.1"), newResp(), new MockFilterChain());
         shortWindow.doFilter(request("/api/v1/ai/chat", "2.2.2.2"), newResp(), new MockFilterChain());
         // 2 个 IP × 2 规则（ai-anon + ai-anon-daily）→ 4 个活跃条目
@@ -153,6 +153,24 @@ class RateLimitFilterTest {
         MockHttpServletResponse third = newResp();
         shortWindow.doFilter(request("/api/v1/ai/chat", "1.1.1.1"), third, new MockFilterChain());
         assertThat(third.getStatus()).isEqualTo(200); // 新窗口第 2 次仍放行
+    }
+
+    /** ADR-022：遥测上报单独一档（匿名 30/min），与 AI 面计数互不影响。 */
+    @Test
+    void telemetryBatchPathHasItsOwnLimit() throws Exception {
+        RateLimitFilter strict = new RateLimitFilter(new ObjectMapper(), 2, 60_000, 100, 30, 1, 300_000,
+                2, 60_000);
+        for (int i = 0; i < 2; i++) {
+            strict.doFilter(request("/api/v1/telemetry/batch", "1.1.1.1"), newResp(), new MockFilterChain());
+        }
+        MockHttpServletResponse blocked = newResp();
+        strict.doFilter(request("/api/v1/telemetry/batch", "1.1.1.1"), blocked, new MockFilterChain());
+        assertThat(blocked.getStatus()).isEqualTo(429);
+
+        // 同一 IP 的 AI 面计数独立，不被遥测上报吃掉额度
+        MockHttpServletResponse ai = newResp();
+        strict.doFilter(request("/api/v1/ai/chat", "1.1.1.1"), ai, new MockFilterChain());
+        assertThat(ai.getStatus()).isEqualTo(200);
     }
 
     private MockHttpServletRequest request(String uri, String ip) {

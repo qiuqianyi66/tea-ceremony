@@ -2,6 +2,7 @@ package com.tea.ai.agent;
 
 import com.tea.ai.dto.AiChatRequest;
 import com.tea.ai.dto.ChatMessageDto;
+import com.tea.ai.resilience.AiCallExecutor;
 import com.tea.ai.service.AgentSkillRouter;
 import com.tea.ai.service.AiUsageLogger;
 import com.tea.ai.service.PromptService;
@@ -43,6 +44,8 @@ public class LibrarianAgent {
     private final AiUsageLogger usageLogger;
     private final PromptService promptService;
     private final AgentSkillRouter skillRouter;
+    /** 容错骨架（深度/熔断/超时/重试）：本类不继承 BaseExpertAgent，需自己持有执行器。 */
+    private final AiCallExecutor aiCallExecutor;
     private final String apiKey;
 
     public LibrarianAgent(ChatClient.Builder chatClientBuilder,
@@ -50,13 +53,15 @@ public class LibrarianAgent {
                           AiUsageLogger usageLogger,
                           PromptService promptService,
                           AgentSkillRouter skillRouter,
-                          @Value(BaseExpertAgent.AI_KEY_EXPR) String apiKey) {
+                          @Value(BaseExpertAgent.AI_KEY_EXPR) String apiKey,
+                          AiCallExecutor aiCallExecutor) {
         this.chatClient = chatClientBuilder.build();
         this.cultureSearchService = cultureSearchService;
         this.usageLogger = usageLogger;
         this.promptService = promptService;
         this.skillRouter = skillRouter;
         this.apiKey = apiKey;
+        this.aiCallExecutor = aiCallExecutor;
     }
 
     public AiChatVo chat(Integer userId, AiChatRequest req) {
@@ -77,18 +82,14 @@ public class LibrarianAgent {
             system += "\n\n【领域技能·" + domain + "】\n" + skill;
         }
         system += "\n\n【知识库检索结果】\n" + context;
+        // 执行器在另一个线程执行操作，lambda 只能捕获 effectively final 值
+        String finalSystem = system;
 
         long start = System.currentTimeMillis();
-        ChatResponse response;
-        try {
-            response = chatClient.prompt()
-                    .system(system)
-                    .user(question)
-                    .call().chatResponse();
-        } catch (Exception e) {
-            log.warn("LibrarianAgent LLM call failed: {}", e.getMessage());
-            throw new BadGatewayException("AI 服务调用失败");
-        }
+        ChatResponse response = aiCallExecutor.execute("librarian", () -> chatClient.prompt()
+                .system(finalSystem)
+                .user(question)
+                .call().chatResponse(), null);
         int latency = (int) (System.currentTimeMillis() - start);
 
         String content = response.getResult().getOutput().getText();

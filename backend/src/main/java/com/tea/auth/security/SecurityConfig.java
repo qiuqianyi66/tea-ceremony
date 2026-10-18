@@ -50,6 +50,8 @@ public class SecurityConfig {
                         .requestMatchers("/mcp", "/mcp/messages").permitAll()
                         // 茶叶目录游客可浏览（PRD F2/F3；T7 只读放行）
                         .requestMatchers(HttpMethod.GET, "/api/v1/teas/**").permitAll()
+                        // ADR-022：批量遥测上报匿名可写（体积上限 + 限流由 RateLimitFilter 兜），其余 /api/v1/telemetry/** 仍需 JWT
+                        .requestMatchers(HttpMethod.POST, "/api/v1/telemetry/batch").permitAll()
                         .anyRequest().authenticated())
                 // 未认证/无效 token 访问受保护接口 → 401 统一 ApiResponse（编码规范 §6）
                 .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> {

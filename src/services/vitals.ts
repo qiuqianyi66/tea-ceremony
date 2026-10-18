@@ -1,13 +1,14 @@
 /**
  * Web Vitals 真实用户指标采集（P1-9）
  * - 使用官方 web-vitals 库（RUM 方式）采集 CLS/INP/LCP/FCP/TTFB
- * - 结果只写本地 IndexedDB（webVitals 表），无任何网络上报，遵循 ADR-006
+ * - 结果写本地 IndexedDB（webVitals 表）后追加匿名遥测上报（ADR-022）；本地行为不变
  * - 容量上限 MAX_VITALS，超出裁剪最旧；采集失败静默消化，绝不影响主流程
  */
 
 import type { Metric } from 'web-vitals'
 import { onCLS, onFCP, onINP, onLCP, onTTFB } from 'web-vitals'
 import { db, initDB } from '@/services/storage'
+import { reportVital } from '@/services/telemetry'
 import type { VitalName, WebVitalRecord } from '@/types/vitals'
 
 /** 本地指标容量上限（个人单机使用，500 条足够覆盖近期会话） */
@@ -49,6 +50,13 @@ async function saveVital(metric: Metric): Promise<void> {
       ts: Date.now(),
     }
     await db.webVitals.add(record)
+    // 匿名遥测（ADR-022）：本地落库已完成，上报走独立通道且永不 throw
+    void reportVital({
+      name: record.name,
+      value: record.value,
+      rating: record.rating,
+      ...(record.navigationType ? { navigationType: record.navigationType } : {}),
+    })
   } catch {
     // 指标采集失败不影响主流程（静默降级）
   }

@@ -5,10 +5,16 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import heroImg from '@/assets/tea-mountain-hero.jpg'
+import hero640 from '@/assets/hero/tea-mountain-hero-640.jpg'
+import hero1280 from '@/assets/hero/tea-mountain-hero-1280.jpg'
+import hero640Webp from '@/assets/hero/tea-mountain-hero-640.webp'
+import hero1280Webp from '@/assets/hero/tea-mountain-hero-1280.webp'
 import { getCurrentSolarTerm, getSeasonName } from '@/data/solarTerms'
 
 const heroVideoUrl = 'https://videos.pexels.com/video-files/38238683/16236719_1280_720_60fps.mp4'
 const prefersReducedMotion = ref(false)
+/** 是否启用背景视频。默认关，满足条件才在首屏稳定后打开（见 onMounted） */
+const videoEnabled = ref(false)
 const router = useRouter()
 const term = getCurrentSolarTerm()
 
@@ -49,6 +55,43 @@ function enter() {
   router.push('/select')
 }
 
+/** 延迟到首屏稳定后再决定是否加载外站视频的最小间隔 */
+const VIDEO_DELAY_MS = 2_500
+
+let videoTimer: ReturnType<typeof setTimeout> | null = null
+
+/**
+ * 背景视频按条件加载。
+ * 线上实测：无条件 autoplay 时首屏每次拉 8 MB 且 6 次请求全部 ERR_ABORTED ——
+ * 用户既没看到视频，又赔掉带宽和 LCP。这里只放行「大屏 + 非省流 + 非慢网 + 非减弱动效」。
+ */
+function shouldLoadHeroVideo(): boolean {
+  if (prefersReducedMotion.value) return false
+  if (window.innerWidth <= 768) return false
+
+  const conn = (
+    navigator as Navigator & {
+      connection?: { saveData?: boolean; effectiveType?: string }
+    }
+  ).connection
+  if (conn?.saveData) return false
+  if (conn?.effectiveType && ['slow-2g', '2g', '3g'].includes(conn.effectiveType)) return false
+
+  return true
+}
+
+function onVideoError() {
+  // 外站不可达：直接卸掉 video，静态图继续兜底（与离线降级静态图策略一致）
+  videoEnabled.value = false
+}
+
+function scheduleHeroVideo() {
+  if (!shouldLoadHeroVideo()) return
+  videoTimer = setTimeout(() => {
+    if (document.visibilityState === 'visible') videoEnabled.value = true
+  }, VIDEO_DELAY_MS)
+}
+
 onMounted(() => {
   requestAnimationFrame(() =>
     requestAnimationFrame(() => {
@@ -57,17 +100,58 @@ onMounted(() => {
   )
   prefersReducedMotion.value = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   window.addEventListener('pointermove', onPointerMove, { passive: true })
+  scheduleHeroVideo()
 })
-onUnmounted(() => window.removeEventListener('pointermove', onPointerMove))
+onUnmounted(() => {
+  window.removeEventListener('pointermove', onPointerMove)
+  if (videoTimer) clearTimeout(videoTimer)
+})
 </script>
 
 <template>
   <div class="home-hero" :class="[`time-${timeOfDay}`, { 'is-entered': entered }]">
     <div class="hero-parallax" :style="parallaxStyle">
-      <img :src="heroImg" alt="晨雾中的茶山茶园" class="hero-img hero-img-fallback" draggable="false" />
-      <video v-if="!prefersReducedMotion"
-        class="hero-video" autoplay muted loop playsinline
-        :poster="heroImg" preload="metadata" aria-hidden="true">
+      <!-- 移动端此前同样下载 1920px 原图（297 KB），而实际显示宽度仅约 420 px。
+           用 picture 分流：≤768 px 走预生成的 640/1280 变体（37 KB / 162 KB），
+           桌面端保持原图。fetchpriority=high 让 LCP 元素优先排队。 -->
+      <picture>
+        <source
+          media="(max-width: 768px)"
+          type="image/webp"
+          :srcset="`${hero640Webp} 640w, ${hero1280Webp} 1280w`"
+          sizes="100vw"
+        />
+        <source
+          media="(max-width: 768px)"
+          :srcset="`${hero640} 640w, ${hero1280} 1280w`"
+          sizes="100vw"
+        />
+        <img
+          :src="heroImg"
+          alt="晨雾中的茶山茶园"
+          class="hero-img hero-img-fallback"
+          width="1920"
+          height="886"
+          fetchpriority="high"
+          decoding="async"
+          draggable="false"
+        />
+      </picture>
+      <!-- 视频源是外站（Pexels），线上实测每次首屏都拉 8 MB 并以 ERR_ABORTED 失败。
+           AGENTS.md 规定视频不本地化，所以改为「按条件延迟加载」：
+           省流量模式/慢网/小屏/减弱动效一律不加载，首屏只剩静态图。 -->
+      <video
+        v-if="videoEnabled"
+        class="hero-video"
+        autoplay
+        muted
+        loop
+        playsinline
+        :poster="heroImg"
+        preload="none"
+        aria-hidden="true"
+        @error="onVideoError"
+      >
         <source :src="heroVideoUrl" type="video/mp4" />
       </video>
     </div>
@@ -110,6 +194,9 @@ onUnmounted(() => window.removeEventListener('pointermove', onPointerMove))
   filter: saturate(0.78) brightness(1.05) contrast(0.96);
   animation: kenburns 26s ease-in-out infinite alternate;
 }
+/* picture 只是分流容器，不能参与布局：display:contents 让内部 img 直接受
+   .hero-img 的 100% 尺寸约束（否则 inline 的 picture 会把高度算成 0） */
+.hero-parallax picture { display: contents; }
 @keyframes kenburns { from { transform: scale(1); } to { transform: scale(1.1) translate(-1.2%, -1%); } }
 .hero-video {
   position: absolute; inset: 0; width: 100%; height: 100%;

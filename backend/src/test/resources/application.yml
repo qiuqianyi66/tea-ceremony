@@ -44,6 +44,16 @@ spring:
     locations: classpath:db/migration
 
 tea:
+  # 容错执行器：测试环境零退避（真实等待会让重试用例从毫秒级涨到数秒），
+  # max-attempts 与生产一致保持 3，保证「重试次数」语义在测试里也是真的。
+  ai:
+    resilience:
+      timeout-ms: 20000
+      max-attempts: 3
+      backoff-base-ms: 0
+      backoff-multiplier: 2.0
+      backoff-jitter-ratio: 0.2
+      max-call-depth: 3
   jwt:
     # 测试固定密钥（≥32 字节，HS256 要求）；主配置 fail-closed 无兜底，测试环境必须显式提供
     secret: test-jwt-secret-0123456789abcdef
@@ -54,3 +64,5 @@ tea:
     ai-anon-daily-max: 1000000
     ai-auth-max: 100000
     login-max: 100000
+    # ADR-022 遥测上报面：集成测试多次 POST /batch，放宽避免被 429
+    telemetry-anon-max: 100000

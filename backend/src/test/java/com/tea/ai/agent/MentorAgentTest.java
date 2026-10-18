@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 
 import com.tea.ai.dto.AiChatRequest;
 import com.tea.ai.dto.ChatMessageDto;
+import com.tea.ai.resilience.AiCallTestSupport;
 import com.tea.ai.service.AiUsageLogger;
 import com.tea.ai.service.PromptService;
 import com.tea.ai.vo.AiChatVo;
@@ -59,7 +60,7 @@ class MentorAgentTest {
         when(response.getMetadata()).thenReturn(metadata);
         when(metadata.getModel()).thenReturn("qwen-plus");
         when(metadata.getUsage()).thenReturn(null);
-        return new MentorAgent(builder, tastingService, search, usageLogger, promptService, apiKey);
+        return new MentorAgent(builder, tastingService, search, usageLogger, promptService, apiKey, AiCallTestSupport.executor());
     }
 
     private static AiChatRequest question(String q) {

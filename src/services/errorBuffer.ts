@@ -4,8 +4,10 @@
  * - 只存结构化错误信息（message/source/lineno/stack），不存用户输入
  * - 容量上限 MAX_ERRORS，超出裁剪最旧；record() 永不 reject
  * - 用途：错误定位数据源（比 Sentry 便宜且不破离线优先）
+ * - 落库后追加匿名遥测上报（ADR-022）：本地行为不变，上报失败静默
  */
 import { db, initDB } from '@/services/storage'
+import { reportError } from '@/services/telemetry'
 import type { ErrorBufferRecord } from '@/types/errors'
 
 /** 本地错误记录容量上限（错误比埋点稀少，200 条足够定位） */
@@ -24,6 +26,8 @@ export async function recordError(entry: Omit<ErrorBufferRecord, 'ts' | 'id'>): 
       if (oldest.length > 0) await db.errorBuffer.bulkDelete(oldest)
     }
     await db.errorBuffer.add({ ...entry, ts: new Date().toISOString() })
+    // 匿名遥测（ADR-022）：只报结构化错误，reportError 永不 throw，不影响上面已完成的本地落库
+    void reportError(entry)
   } catch {
     // 错误缓冲失败静默：不递归、不阻塞主流程
   }
