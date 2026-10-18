@@ -35,6 +35,7 @@ curl http://localhost:18081/           → 301 → https://localhost/
 curl .../.well-known/acme-challenge/x  → 404（不被 301 跳走，续期可用）
 curl -k .../actuator/prometheus        → 404（公网不可达）
 openssl s_client -alpn h2              → ALPN protocol: h2
+promtool check rules / check config    → SUCCESS: 13 rules found / config valid
 node scripts/verify-alert-rules.cjs    → 埋点 12 / 规则 13 / 面板 10，ERRORS: []
   └ 负向：把 tea_ai_fallback_hit_total 改成 typo → 立即报「未知指标」
 ```
