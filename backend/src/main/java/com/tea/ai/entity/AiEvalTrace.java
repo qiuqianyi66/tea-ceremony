@@ -69,6 +69,15 @@ public class AiEvalTrace {
     @Column(name = "error_code", length = 32)
     private String errorCode;
 
+    /**
+     * 离线质量评分（V10 列，可空 = 未评分）。
+     * 为什么不另建表：质量分是 trace 的派生属性（1:1），单独建表只换来一次额外关联和一致性维护成本。
+     * 写入方是 {@code QualityJudgeService}（唯一写者，带 quality_layer IS NULL 守卫保证幂等）。
+     */
+    @Column(name = "quality_layer", columnDefinition = "jsonb")
+    @JdbcTypeCode(SqlTypes.JSON)
+    private String qualityLayer;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

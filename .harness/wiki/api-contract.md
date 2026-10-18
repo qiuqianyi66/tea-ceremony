@@ -165,6 +165,7 @@ description: tea 接口协议——现有端点、统一约定（前缀/鉴权/�
 | 方法 | 路径 | 请求体 | 成功响应 | 错误 |
 |---|---|---|---|---|
 | GET | `/api/v1/ai/metrics/golden` | — | `ApiResponse{data:GoldenMetricsReport}`：`{windowStart, windowEnd, totalCalls, overall{agentType, calls, successRate, errorRate, p50, p95, p99, insufficientData}, byAgent[...]}`（查询参数 `windowMinutes` 默认 60、上限 1440；零调用时 successRate/errorRate 为 null，样本 <20 时 p99 为 null 且 insufficientData=true） | 401 |
+| GET | `/api/v1/ai/metrics/quality` | — | `ApiResponse{data:QualityReport}`：`{windowStart, windowEnd, totalTraces, judgedTraces, coverage, relevanceAvg, groundednessAvg, actionabilityAvg, toneAvg, overallAvg, overallP50, insufficientData, byAgent[...]}`（查询参数 `windowMinutes` 默认 1440、上限 10080；零已评样本时各均值为 null、insufficientData=true；已评 <20 时 overallP50 为 null） | 401 |
 
 ### A/B 实验 `/api/v1/admin/experiments`（需 `X-Admin-Token`，AdminTokenFilter fail-closed）
 
