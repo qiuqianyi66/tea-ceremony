@@ -200,7 +200,11 @@ class TelemetryIntegrationTest {
     @Test
     void reviewStateMachineEnforcedOverHttp() throws Exception {
         String token = register("telemetry_reviewer");
-        String message = "TypeError: review flow " + UUID.randomUUID();
+        // 标记必须是短串：脱敏规则会把 24 位以上的连续 token 替换成 <token>，而 UUID 正好 36 位。
+        // 用 UUID 当标记时，落库的 sampleMessage 已变成 "Typeflow <token>"，下面的比对永远不等。
+        // 本机无 Docker 时该用例被跳过，所以直到 CI 首跑才暴露——这也是集成测试必须真跑的原因。
+        String marker = "r" + UUID.randomUUID().toString().replace("-", "").substring(0, 10);
+        String message = "TypeError: review flow " + marker;
         postBatch(batch(UUID.randomUUID(), UUID.randomUUID(),
                 List.of(errorEvent(UUID.randomUUID(), message))));
 
