@@ -128,7 +128,7 @@ SECRET_KEY=随机64位hex
 DATABASE_URL=postgresql://tea_user:刚才的密码@localhost:5432/tea_ceremony
 DEV_MODE=false
 # 生产放行实际域名/IP；不要用 *
-ALLOWED_HOSTS=120.26.49.122,你的域名.com
+ALLOWED_HOSTS=42.121.125.4,你的域名.com
 # 留空 = 进程内存限流（单实例推荐）
 REDIS_URL=
 # AI 代理（DeepSeek）
@@ -206,9 +206,9 @@ Start-Service tea-nginx
 
 ## 四、访问与验证
 
-- 前端：`http://120.26.49.122`（nginx 80 端口）
-- API：`http://120.26.49.122/api/`
-- API 文档：`http://120.26.49.122/api/docs`
+- 前端：`http://42.121.125.4`（nginx 80 端口）
+- API：`http://42.121.125.4/api/`
+- API 文档：`http://42.121.125.4/api/docs`
 - 后端存活探针：`http://127.0.0.1:8000/live`（在服务器本机访问；公网走 nginx）
 
 健康自检：
@@ -311,7 +311,7 @@ cd C:\tea\backend
 
 ## 八、域名和 HTTPS
 
-1. 域名解析到 `120.26.49.122`。
+1. 域名解析到 `42.121.125.4`。
 2. 申请证书（Let's Encrypt 或阿里云免费 SSL），得到 `fullchain.pem`、`privkey.pem`，放到 `C:\tea\certs\`。
 3. 编辑 `C:\nginx\conf\nginx.conf`，取消末尾 443 server block 的注释，把 `server_name _` 改成你的域名。
 4. 阿里云安全组放行 443。
