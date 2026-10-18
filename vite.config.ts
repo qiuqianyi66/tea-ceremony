@@ -76,7 +76,12 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,svg,webm,mp3,woff2,jpg,png,json}'],
-        globIgnores: ['**/3d/**', '**/*.map'],
+        // 排除项各自的理由：
+        //   **/3d/**      3D 贴图与 HDR 共 ~18MB，离线价值低、体积代价大（已实测：排除生效，清单里 0 条）
+        //   **/*.map      sourcemap 只在调试时需要
+        //   **/og-*.png   仅给社交爬虫读 og:image 用（index.html meta），用户页面从不渲染它，
+        //                 却被预缓存 515KB —— 纯浪费，实测占总体积 7%
+        globIgnores: ['**/3d/**', '**/*.map', '**/og-*.png'],
         runtimeCaching: [
           {
             urlPattern: /\.(?:webm|mp3|ogg)$/i,
