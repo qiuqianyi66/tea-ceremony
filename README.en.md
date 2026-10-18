@@ -19,7 +19,7 @@ Not an encyclopedia, not a timer. A digital tea room you can actually walk into.
 ## Try it now
 
 👉 **Live demo (no signup, works offline)**：[qiuqianyi66.github.io/tea-ceremony](https://qiuqianyi66.github.io/tea-ceremony/)
-👉 **Full version (with backend, public deployment)**：[http://42.121.125.4](http://42.121.125.4/)
+👉 **Full version (with backend, public deployment)**：[https://42.121.125.4](https://42.121.125.4/)
 
 ![Tea Ceremony · cover](docs/screenshots/og-cover.png)
 

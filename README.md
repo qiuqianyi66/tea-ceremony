@@ -19,7 +19,7 @@
 ## 立即体验
 
 👉 **在线 Demo（无需注册，离线可用）**：[qiuqianyi66.github.io/tea-ceremony](https://qiuqianyi66.github.io/tea-ceremony/)
-👉 **完整版（含后端，公网部署）**：[http://42.121.125.4](http://42.121.125.4/)
+👉 **完整版（含后端，公网部署）**：[https://42.121.125.4](https://42.121.125.4/)
 
 ![一盏茶 · 社交封面](docs/screenshots/og-cover.png)
 

@@ -206,9 +206,9 @@ Start-Service tea-nginx
 
 ## 四、访问与验证
 
-- 前端：`http://42.121.125.4`（nginx 80 端口）
-- API：`http://42.121.125.4/api/`
-- API 文档：`http://42.121.125.4/api/docs`
+- 前端：`https://42.121.125.4`（nginx 443 端口，HTTP/2）
+- API：`https://42.121.125.4/api/`（经 443 → 容器 80 → backend:8080）
+- API 文档：`https://42.121.125.4/api/docs`
 - 后端存活探针：`http://127.0.0.1:8000/live`（在服务器本机访问；公网走 nginx）
 
 健康自检：
@@ -341,3 +341,73 @@ cd C:\tea\backend
    ```
 4. 验证后端 `/ready` 返回 DB ok 后，再切 nginx 到原生配置。
 5. 确认无问题后，旧 Docker 文件保留作历史参考，不删。
+
+## HTTPS（裸 IP 证书，2026-10-18 上线）
+
+站点跑在裸 IP `42.121.125.4` 上，**无域名、无 ICP 备案**，用 Let's Encrypt 的 `shortlived` profile 签发 **IP 证书**。
+
+| 项 | 值 |
+|---|---|
+| 证书 | Let's Encrypt，SAN = `IP Address:42.121.125.4` |
+| 有效期 | **160 小时（≈6.7 天）**，必须自动续期 |
+| 端口 | 80（保留给 ACME 续期）+ 443（HTTP/2） |
+
+### 部署形态
+
+frontend 容器**零挂载**时 nginx.conf 打在镜像里，改宿主机文件不生效。故 compose 里加两个挂载：
+
+```yaml
+  frontend:
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+```
+
+nginx.conf 的 443 server 块原本是注释状态（`# server {` 起），上线时 `sed -i '70,123s/^#//'` 放开，并把 `server_name localhost` 改为 `_`（否则匹配不到用 IP 访问的请求）。
+
+### 续期（renew-cert.sh）
+
+standalone 模式需要 80 端口，而 nginx 正占着它 → **续期必须临时停站**（约 30 秒）。
+
+```bash
+#!/bin/bash
+set -e
+cd /opt/tea-ceremony-main
+docker compose stop frontend
+sleep 3
+/root/.acme.sh/acme.sh --cron --home /root/.acme.sh
+docker compose start frontend
+sleep 2
+curl -sfI http://42.121.125.4 > /dev/null && echo "site OK" || echo "SITE DOWN - CHECK"
+```
+
+cron（每 2 天跑一次，远早于 6.7 天过期）：
+
+```
+17 4 */2 * * /opt/tea-ceremony-main/renew-cert.sh >> /var/log/renew-cert.log 2>&1
+```
+
+reloadcmd 必须写成「先确保容器起来了再 reload」，否则停站续期时容器还没起，reload 会失败：
+
+```bash
+acme.sh --install-cert -d 42.121.125.4 --ecc \
+  --key-file       /opt/tea-ceremony-main/certs/privkey.pem \
+  --fullchain-file /opt/tea-ceremony-main/certs/fullchain.pem \
+  --reloadcmd "cd /opt/tea-ceremony-main && docker compose start frontend >/dev/null 2>&1; docker compose exec -T frontend nginx -s reload"
+```
+
+### 回滚
+
+```bash
+cd /opt/tea-ceremony-main
+cp nginx.conf.bak-https nginx.conf
+cp docker-compose.yml.bak-https docker-compose.yml
+docker compose up -d frontend
+```
+
+### 已知噪声（无害）
+
+nginx reload 时会打印 `duplicate MIME type "text/html"` 警告 —— nginx 镜像自带 mime.types 里 text/html 被重复声明，与本次改动无关，不影响服务。
