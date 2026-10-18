@@ -1,7 +1,7 @@
 ---
 name: plan-ip-cert-2026-10-18
 description: 裸 IP（42.121.125.4）上 HTTPS 的可执行方案——用 Let's Encrypt IP 证书（shortlived profile，6 天有效期，需自动续期），无需域名与 ICP 备案。含前置条件、逐条命令、验证与回滚；前置缺失项为服务器 SSH 凭证与 443 安全组。
-status: active
+status: completed
 owner: yanha
 last_updated: 2026-10-18
 ---
@@ -160,3 +160,35 @@ nginx -t && nginx -s reload
 - 未修改 nginx.conf 的 HTTPS 块（仍保持注释状态）
 
 以上均待前置条件（§2）满足后执行。
+
+## 7. 执行结果（2026-10-18，**已完成**）
+
+| 项 | 结果 |
+|---|---|
+| 证书签发 | ✅ `Cert success.`，SAN = `IP Address:42.121.125.4` |
+| 有效期 | 实测 `notBefore Oct 18 02:42` → `notAfter Oct 24 18:41`（6.7 天）|
+| HTTPS | ✅ `curl -Ik https://42.121.125.4` → `HTTP/2 200` |
+| 挂载 | ✅ nginx.conf + certs 两个 bind mount 生效 |
+| 自动续期 | ✅ cron `17 4 */2 * *` + `renew-cert.sh` |
+| 强制续期实测 | ✅ `--renew --force` 跑通，notAfter 刷新，站点恢复 200 |
+
+### 本次实测踩到的 3 个坑（原方案未预见）
+
+1. **acme.sh 默认 CA 是 ZeroSSL，不是 Let's Encrypt**
+   - `acme.sh --register-account` 注册的是 ZeroSSL；签发时加 `--server letsencrypt` 会另外注册 LE 账户。
+   - 若安装脚本传入的邮箱含非 ASCII（如占位符「你的邮箱@example.com」），LE 注册会报 `invalidContact: contact email contains non-ASCII characters`。
+   - 正确做法：`acme.sh --register-account -m <真实邮箱> --server letsencrypt` 显式注册一次。
+
+2. **standalone 续期需要 80 端口，而 nginx 正占着它**
+   - `acme.sh --cron --force` → `tcp port 80 is already used`。
+   - 解决：续期脚本先 `docker compose stop frontend`，续完再 `start`（停站约 30 秒，6.7 天一次，可接受）。
+   - 更优雅的替代是改 webroot 模式（nginx 暴露 `/.well-known/acme-challenge/`），可做到零中断，本次未采用。
+
+3. **reloadcmd 在停站续期时必然失败**
+   - acme.sh 在证书写入瞬间就执行 reloadcmd，此时容器还是停的 → `service "frontend" is not running`。
+   - 实际无害（后面 `docker compose start` 会加载新证书），但为干净要写成「先 start 再 reload」。`start` 对已运行的容器是幂等的。
+
+### 仍未处理
+
+- 443 server 块的 `/api/` 缺 `X-Request-ID`（80 块有）—— 仅影响链路追踪，不影响功能。
+- `README` / `index.html` 的链接已改为 https（本 PR）；`TODO-PRIORITY.md` 里 2026-10-13 的历史记录保持 http 原样（不篡改历史）。

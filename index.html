@@ -4,17 +4,27 @@
     <meta charset="UTF-8">
     <link rel="icon" href="/favicon.ico">
     <link rel="apple-touch-icon" href="/pwa-icon.svg">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- 允许缩放：此前的 maximum-scale=1.0 + user-scalable=no 触发 axe meta-viewport
+         违规（WCAG 1.4.4），视障用户无法放大页面 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#5D4E37">
     <meta name="description" content="沉浸式在线茶道体验 — 选茶、煮水、冲泡、品鉴，感受工夫茶之道">
+    <!-- 规范 URL 与分享图：此前指向已废弃的 GitHub Pages 域名。
+         绑定自定义域名后，把下面三处与 public/robots.txt、public/sitemap.xml 一起改掉 -->
+    <link rel="canonical" href="https://42.121.125.4/">
+    <meta property="og:url" content="https://42.121.125.4/">
+    <meta property="og:site_name" content="一盏茶">
+    <meta property="og:locale" content="zh_CN">
     <meta property="og:title" content="一盏茶 · Tea Ceremony">
     <meta property="og:description" content="一席茶，一方天地。浏览器里的 3D 工夫茶：选茶、煮水、冲泡、品鉴，离线可用。">
     <meta property="og:type" content="website">
-    <meta property="og:image" content="https://qiuqianyi66.github.io/tea-ceremony/og-cover.png">
+    <meta property="og:image" content="https://42.121.125.4/og-cover.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="539">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="一盏茶 · Tea Ceremony">
     <meta name="twitter:description" content="浏览器里的 3D 工夫茶，离线可用。">
-    <meta name="twitter:image" content="https://qiuqianyi66.github.io/tea-ceremony/og-cover.png">
+    <meta name="twitter:image" content="https://42.121.125.4/og-cover.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="一盏茶">
