@@ -2,7 +2,16 @@
 /**
  * 告警规则与看板的机械化审计（替代 promtool 在本机不可用的场景）。
  *
- * 为什么需要它：本机 Docker Hub 拉不到 prom/prometheus，`promtool check rules` 跑不了；
+ * 与 promtool 的分工：promtool 校验 PromQL 语法与配置结构（权威），
+ * 本脚本多查一件 promtool 查不出的事——指标名是否真的在代码里埋过。两者都跑，不能互相替代。
+ *
+ * promtool（需 Docker，本地/CI 都用这条）：
+ *   docker run --rm -v "$PWD/deploy/prometheus:/etc/prometheus:ro" --entrypoint promtool \
+ *     prom/prometheus:v3.1.0 check rules /etc/prometheus/alerts.yml
+ *   docker run --rm -v "$PWD/deploy/prometheus:/etc/prometheus:ro" --entrypoint promtool \
+ *     prom/prometheus:v3.1.0 check config /etc/prometheus/prometheus.yml
+ *
+ * 为什么还需要它：本机 Docker Hub 一度拉不到 prom/prometheus，promtool 跑不了；
  * 而"规则写错"这类问题**上线后不会报错**——Prometheus 会安静地把非法表达式当成空结果，
  * 告警永远不响。那正是"静默失效"，只能靠确定性脚本在提交前拦住。
  *

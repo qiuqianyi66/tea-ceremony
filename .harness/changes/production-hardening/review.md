@@ -51,7 +51,14 @@
 - 延迟阈值：来自 `application.yml` 的 SLO 常量与 `AiCallExecutor` 的 20s 硬超时，有依据。
 - 错误率 / 兜底率：**标为初始值**。系统尚未承接真实流量，没有基线可依；上线后观察一周拿 P50/P95 分布再收紧。带着未校准阈值上线，结果一定是告警疲劳——那时真故障就没人看了。
 
-promtool 在本机拉不到镜像（`auth.docker.io` EOF），所以自写 `verify-alert-rules.cjs`。它比 promtool 多查一件 promtool 查不出的事：**表达式里的指标名是否真的在代码里埋过**。指标名写错是 Prometheus 最典型的静默失效——不报错、永不触发。已做负向验证（把 `fallback_hit` 改成 typo，脚本立刻报错）。
+promtool 一开始拉不到镜像（`auth.docker.io` EOF），所以先自写了 `verify-alert-rules.cjs`；后来镜像拉通，promtool 也跑过：
+
+```
+promtool check rules  → SUCCESS: 13 rules found
+promtool check config → SUCCESS: 1 rule files found / valid prometheus config file syntax
+```
+
+两者互补，都保留：promtool 校验 PromQL 语法与配置结构（权威），自写脚本多查一件 promtool 查不出的事——**表达式里的指标名是否真的在代码里埋过**。指标名写错是 Prometheus 最典型的静默失效（不报错、永不触发），已做负向验证（把 `fallback_hit` 改成 typo，脚本立刻报错）。
 
 ## 五、质量指标：口径与降级
 
