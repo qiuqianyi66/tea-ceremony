@@ -38,6 +38,14 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
+        <!-- Prometheus 指标导出（/actuator/prometheus）。
+             只加 actuator 不够：Micrometer 的 Prometheus registry 是独立可选模块，
+             不加这一条 endpoints 里写 prometheus 也只会 404。详见 ADR-025。 -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+            <scope>runtime</scope>
+        </dependency>
         <!-- 持久化：JPA + Flyway + PostgreSQL（红线 #7：禁 ddl-auto: update，ddl-auto=validate） -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

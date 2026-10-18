@@ -136,7 +136,21 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,prometheus
   endpoint:
     health:
       show-details: when_authorized
+    # 指标端点是明文、无鉴权的：安全边界不靠它自己，而靠「backend 端口只绑宿主机 127.0.0.1」
+    # （docker-compose.yml ports: "127.0.0.1:18080:8080"）+ nginx 路由白名单不放行 /actuator。
+    # 不要在公网可达的端口上暴露它——那是把内部拓扑和调用量直接送出去。
+    prometheus:
+      access: read_only
+
+# ADR-026 AI 回答质量评分：默认关闭——LLM 判官有成本，不该在上线第一天就烧钱。
+# 需要质量数据时先开 enabled + llm-enabled=false（零成本规则模式）跑一周，再决定是否开 LLM 判官。
+tea:
+  ai:
+    quality:
+      enabled: ${TEA_AI_QUALITY_ENABLED:false}
+      llm-enabled: ${TEA_AI_QUALITY_LLM_ENABLED:true}
+      batch-size: ${TEA_AI_QUALITY_BATCH_SIZE:20}

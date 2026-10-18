@@ -1,0 +1,183 @@
+# 一盏茶 AI / 站点告警规则
+#
+# 阈值来源与免责：
+#   - 延迟阈值取自后端 SLO 常量（application.yml telemetry.*.target）与 AiCallExecutor 的
+#     20s 硬超时，不是拍脑袋的数字。
+#   - 错误率 / 兜底率阈值为**初始值**，没有生产基线可依（系统尚未承接真实流量）。
+#     上线后先在 Grafana 观察一周、拿到 P50/P95 分布，再回来收紧。带着未校准的阈值上线，
+#     结果一定是长期告警疲劳——那时真正的故障就没人看了。
+#
+# 命名约定：Micrometer 的 `tea.ai.call.attempts` 导出到 Prometheus 是
+# `tea_ai_call_attempts_total`（点转下划线 + 计数器加 _total）。
+
+groups:
+  - name: tea-ai-availability
+    rules:
+      - alert: AiCallErrorRateHigh
+        expr: |
+          sum(rate(tea_ai_call_attempts_total{outcome=~"failure|timeout"}[5m]))
+          /
+          clamp_min(sum(rate(tea_ai_call_attempts_total[5m])), 0.001)
+          > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          component: ai
+        annotations:
+          summary: "AI 上游失败率 > 5%（5 分钟）"
+          description: "当前失败率 {{ $value | humanizePercentage }}。可能上游网关不可用，或本地 key 配置失效。"
+          runbook: "deploy/README.md#ai-上游失败率"
+
+      - alert: AiCircuitBreakerOpen
+        expr: increase(tea_ai_call_attempts_total{outcome="circuit_open"}[2m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+          component: ai
+        annotations:
+          summary: "AI 熔断器已打开（lane {{ $labels.lane }}）"
+          description: "熔断打开期间请求全部走兜底或 502，用户直接影响。先确认上游状态，再决定是否手动重启释放。"
+          runbook: "deploy/README.md#ai-熔断"
+
+      - alert: AiP99LatencyHigh
+        expr: |
+          histogram_quantile(
+            0.99,
+            sum by (le) (rate(http_server_requests_seconds_bucket{uri=~"/api/v1/ai/.*"}[10m]))
+          ) > 20
+        for: 10m
+        labels:
+          severity: warning
+          component: ai
+        annotations:
+          summary: "AI 接口 P99 > 20s（等于硬超时上限）"
+          description: "P99 触到 AiCallExecutor 的 20s 硬超时，说明上游在挂起而不是快速失败。用户体感是「转圈到超时」。"
+          runbook: "deploy/README.md#ai-延迟"
+
+      - alert: AiCallDepthExceeded
+        expr: increase(tea_ai_call_depth_exceeded_total[10m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+          component: ai
+        annotations:
+          summary: "AI 执行深度超限（递归保护触发）"
+          description: "有调用链条超过 3 层。正常请求不应触达；出现即说明某条路径在自我递归，会烧掉配额。"
+          runbook: "deploy/README.md#ai-执行深度"
+
+  - name: tea-ai-degradation
+    rules:
+      - alert: AiFallbackHitRateHigh
+        expr: |
+          sum(rate(tea_ai_fallback_hit_total[10m]))
+          /
+          clamp_min(sum(rate(tea_ai_call_attempts_total[10m])), 0.001)
+          > 0.1
+        for: 10m
+        labels:
+          severity: warning
+          component: ai
+        annotations:
+          summary: "本地规则兜底命中率 > 10%（10 分钟）"
+          description: "兜底在替上游干活。用户拿到的是规则答案而不是模型答案——可用性没崩，但质量在滑坡。"
+          runbook: "deploy/README.md#兜底命中率"
+
+      - alert: ExperimentAutoRollbackFired
+        expr: increase(tea_ab_auto_rollback_total[15m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+          component: experiment
+        annotations:
+          summary: "A/B 实验被守门自动回滚（{{ $labels.exp }}）"
+          description: "实验组指标越过阈值，灰度已自动停止。需要人看：是实验本身有问题，还是上游整体在抖。"
+          runbook: "deploy/README.md#实验自动回滚"
+
+      - alert: ToolCallingFallbackSpike
+        expr: increase(tea_ai_toolcalling_fallback_total[10m]) > 5
+        for: 5m
+        labels:
+          severity: warning
+          component: tool-calling
+        annotations:
+          summary: "Tool Calling 频繁回落到直接检索"
+          description: "实验组在降级使用旧路径。通常意味着模型不支持工具调用或参数解析失败——此时 A/B 结论会被污染，应停止实验。"
+          runbook: "deploy/README.md#tool-calling"
+
+  - name: tea-observability-integrity
+    rules:
+      - alert: TraceSaveFailing
+        expr: increase(tea_ai_trace_save_failed_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+          component: observability
+        annotations:
+          summary: "评测 Trace 落库失败——指标会失真"
+          description: "Trace 是黄金指标与实验判据的唯一数据源。写失败意味着看板在骗人：调用照常但数字停在过去。"
+          runbook: "deploy/README.md#trace-落库失败"
+
+      - alert: UsageLogSaveFailing
+        expr: increase(tea_ai_usage_save_failed_total[5m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+          component: observability
+        annotations:
+          summary: "AI 用量日志落库失败——成本统计会漏"
+          description: "token 用量丢失会让成本核算偏低，月底对账才对得上。"
+          runbook: "deploy/README.md#用量日志"
+
+      - alert: VectorSearchDegraded
+        expr: increase(tea_culture_search_vector_degraded_total[15m]) > 20
+        for: 5m
+        labels:
+          severity: warning
+          component: retrieval
+        annotations:
+          summary: "文化检索向量通道降级（reason={{ $labels.reason }}）"
+          description: "向量检索失败会退回关键词检索，回答的召回质量下降但不报错——静默质量损失。"
+          runbook: "deploy/README.md#向量检索降级"
+
+  - name: tea-site-health
+    rules:
+      - alert: Http5xxRateHigh
+        expr: |
+          sum(rate(http_server_requests_seconds_count{status=~"5.."}[5m]))
+          /
+          clamp_min(sum(rate(http_server_requests_seconds_count[5m])), 0.001)
+          > 0.01
+        for: 5m
+        labels:
+          severity: critical
+          component: http
+        annotations:
+          summary: "HTTP 5xx 比例 > 1%"
+          description: "当前 {{ $value | humanizePercentage }}。先看是 AI 链路还是业务接口。"
+          runbook: "deploy/README.md#5xx"
+
+      - alert: DbPoolSaturated
+        expr: hikaricp_connections_pending > 5
+        for: 5m
+        labels:
+          severity: warning
+          component: db
+        annotations:
+          summary: "数据库连接池排队 > 5"
+          description: "连接不够用了。常见原因是慢查询或事务里做了远程调用（红线：禁事务内远程调用）。"
+          runbook: "deploy/README.md#连接池"
+
+      - alert: JvmHeapPressure
+        expr: |
+          sum(jvm_memory_used_bytes{area="heap"})
+          /
+          clamp_min(sum(jvm_memory_max_bytes{area="heap"}), 1)
+          > 0.9
+        for: 10m
+        labels:
+          severity: warning
+          component: jvm
+        annotations:
+          summary: "JVM 堆使用 > 90%"
+          description: "GC 会开始拖慢 P99。若同时伴随 AiP99LatencyHigh，先查是不是大对象在 trace 序列化里。"
+          runbook: "deploy/README.md#堆压力"
