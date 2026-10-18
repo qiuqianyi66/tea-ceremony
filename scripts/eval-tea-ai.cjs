@@ -8,8 +8,11 @@
  *   node scripts/eval-tea-ai.cjs --file librarian.yaml --subset 2   # 单文件前 N 条
  *   node scripts/eval-tea-ai.cjs --dry-run            # 不调 API，验证管道（mock 响应）
  *   node scripts/eval-tea-ai.cjs --delay 13000        # 覆盖条间隔（默认 6500ms）
+ *   node scripts/eval-tea-ai.cjs --login u:p          # 登录后带 JWT 跑（走认证档限流，推荐）
+ *   node scripts/eval-tea-ai.cjs --jwt <token>        # 直接复用已有 JWT
  * 依赖：后端容器 tea-backend-1（18080）；AI key 在 .env（AI_DASHSCOPE_API_KEY），承重墙 502 降级可测。
- * 注意：AI 面限流 10/min（tea.ratelimit.ai-max=10，T04 引入）——评测按真实用户节奏跑，默认每条间隔 6.5s；--judge 时每条 2 次调用，建议 --delay 13000。
+ * 限流（分级加固 2026-10-13，见 RateLimitFilter）：匿名 3/min + 日配额 100；登录用户 30/min。
+ *   匿名跑必须 --delay ≥40000（每条 1~3 次调用）；带 --login/--jwt 时 --delay 13000 足够。
  * 判分核心在 scripts/eval-core.cjs（纯函数，node --test 单测）。
  */
 const fs = require('node:fs')
@@ -79,11 +82,14 @@ const opt = {
   file: argVal(args, '--file', null),
   subset: parseInt(argVal(args, '--subset', '0'), 10),
   delayMs: parseInt(argVal(args, '--delay', '6500'), 10),
+  jwt: argVal(args, '--jwt', null),
+  login: argVal(args, '--login', null),
 }
 
 main().catch((e) => { console.error(e); process.exit(1) })
 
 async function main() {
+  if (!opt.jwt && opt.login) opt.jwt = await login(opt, opt.login)
   const cases = loadCases(opt.file)
   const runs = []
   const failures = []
@@ -177,6 +183,26 @@ function explainPoints(caseDef, result) {
  *   被评测的真调用 = true（与真实前端 teaAI.ts 一致）；
  *   评委调用 = false（评委是独立裁判，带茶灵人设会污染判分——F-A5 单维评委原则）。
  */
+/**
+ * 登录换 JWT（--login 用户名:密码）。分层限流下这是评测能跑满的前提：
+ * 匿名 3/min（RateLimitFilter 默认值，2026-10-13 分级加固），登录 30/min。
+ * 拿不到 token 直接抛错——别让评测退化成「大量 429 的假 0 分」。
+ */
+async function login(opt, cred) {
+  const i = String(cred).indexOf(':')
+  if (i <= 0) throw new Error('--login 格式应为 用户名:密码')
+  const res = await fetch(`${opt.baseUrl}/api/v1/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: cred.slice(0, i), password: cred.slice(i + 1) }),
+  })
+  const body = await res.json().catch(() => ({}))
+  const token = body?.data?.token
+  if (!token) throw new Error(`登录失败 http=${res.status} ${JSON.stringify(body).slice(0, 160)}`)
+  console.log(`已登录（JWT 已注入，认证档 30/min）`)
+  return token
+}
+
 async function callChat(opt, file, input, opts = {}) {
   const { withSystemPrompt = true } = opts
   const agent = path.basename(file, '.yaml')
@@ -186,9 +212,11 @@ async function callChat(opt, file, input, opts = {}) {
     const messages = []
     if (withSystemPrompt && SYSTEM_PROMPT) messages.push({ role: 'system', content: SYSTEM_PROMPT })
     messages.push({ role: 'user', content: input })
+    const headers = { 'Content-Type': 'application/json' }
+    if (opt.jwt) headers.Authorization = `Bearer ${opt.jwt}`
     const res = await fetch(`${opt.baseUrl}/api/v1/ai/chat`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ messages, agent }),
       signal: ctrl.signal,
     })
