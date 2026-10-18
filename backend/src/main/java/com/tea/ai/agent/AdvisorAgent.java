@@ -41,7 +41,7 @@ public class AdvisorAgent extends BaseExpertAgent {
                         CultureSearchService cultureSearchService,
                         AiUsageLogger usageLogger,
                         PromptService promptService,
-                        @Value("${spring.ai.dashscope.api-key:}") String apiKey) {
+                        @Value(AI_KEY_EXPR) String apiKey) {
         super(chatClientBuilder, usageLogger, promptService, apiKey);
         this.cultureSearchService = cultureSearchService;
     }

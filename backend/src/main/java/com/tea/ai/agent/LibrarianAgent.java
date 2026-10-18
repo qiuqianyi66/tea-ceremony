@@ -50,7 +50,7 @@ public class LibrarianAgent {
                           AiUsageLogger usageLogger,
                           PromptService promptService,
                           AgentSkillRouter skillRouter,
-                          @Value("${spring.ai.dashscope.api-key:}") String apiKey) {
+                          @Value(BaseExpertAgent.AI_KEY_EXPR) String apiKey) {
         this.chatClient = chatClientBuilder.build();
         this.cultureSearchService = cultureSearchService;
         this.usageLogger = usageLogger;
