@@ -2,18 +2,20 @@ package com.tea.ai.agent;
 
 import com.tea.ai.dto.AiChatRequest;
 import com.tea.ai.dto.ChatMessageDto;
+import com.tea.ai.resilience.AiCallExecutor;
 import com.tea.ai.service.AiUsageLogger;
 import com.tea.ai.service.PromptService;
 import com.tea.ai.vo.AiChatVo;
 import com.tea.common.exception.BadGatewayException;
 import java.util.List;
+import java.util.Locale;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.metadata.Usage;
 import org.springframework.ai.chat.model.ChatResponse;
 
 /**
- * 专家基类（M5-S2 四专家共享）：key 门禁 / 取用户消息 / LLM 调用（502 兜底）/ 计量旁路 / prompt 版本化。
+ * 专家基类（M5-S2 四专家共享）：key 门禁 / 取用户消息 / LLM 调用（AiCallExecutor 容错，失败 502）/ 计量旁路 / prompt 版本化。
  * 子类职责：SYSTEM_PROMPT + 检索/记录加载 + 上下文渲染 + 来源标注 + chat() 组装。
  * 承重墙不变：key 缺失/上游失败 → 502；成功调用落计量；计量失败不影响响应。
  * prompt 版本化（agent_prompts 表）：systemPrompt(agent, fallback) 读 active 版本，无则回退内置常量。
@@ -34,16 +36,20 @@ public abstract class BaseExpertAgent {
     protected final ChatClient chatClient;
     protected final AiUsageLogger usageLogger;
     protected final PromptService promptService;
+    /** 容错骨架（深度/熔断/超时/重试）：专家只提供 lane，不各自复制容错代码。 */
+    private final AiCallExecutor aiCallExecutor;
     private final String apiKey;
 
     protected BaseExpertAgent(ChatClient.Builder chatClientBuilder,
                               AiUsageLogger usageLogger,
                               PromptService promptService,
-                              String apiKey) {
+                              String apiKey,
+                              AiCallExecutor aiCallExecutor) {
         this.chatClient = chatClientBuilder.build();
         this.usageLogger = usageLogger;
         this.promptService = promptService;
         this.apiKey = apiKey;
+        this.aiCallExecutor = aiCallExecutor;
     }
 
     /** key 门禁：缺失/占位 disabled → 502（前端 teaAI.ts 据此降级规则引擎）。 */
@@ -70,18 +76,24 @@ public abstract class BaseExpertAgent {
         return promptService.getPrompt(agent, fallback);
     }
 
-    /** LLM 调用（异常转 502，不向上抛原始堆栈）。 */
+    /** LLM 调用：走容错执行器（深度门禁 → 熔断 → 超时 + 重试），失败由执行器统一转 502，不向上抛原始堆栈。 */
     protected ChatResponse callLlm(String system, String question) {
-        long start = System.currentTimeMillis();
-        try {
-            return chatClient.prompt()
-                    .system(system)
-                    .user(question)
-                    .call().chatResponse();
-        } catch (Exception e) {
-            log.warn("{} LLM call failed: {}", getClass().getSimpleName(), e.getMessage());
-            throw new BadGatewayException("AI 服务调用失败");
+        return aiCallExecutor.execute(lane(), () -> chatClient.prompt()
+                .system(system)
+                .user(question)
+                .call().chatResponse(), null);
+    }
+
+    /**
+     * 本专家的熔断隔离键：类名去掉 Agent 后缀转小写（LibrarianAgent → librarian）。
+     * 从类名推导而不是让子类各传常量：新增专家时不会因为忘传 lane 而退回共享桶。
+     */
+    protected String lane() {
+        String name = getClass().getSimpleName();
+        if (name.endsWith("Agent")) {
+            name = name.substring(0, name.length() - "Agent".length());
         }
+        return name.toLowerCase(Locale.ROOT);
     }
 
     /** 提取正文（空 → 502），并落计量（旁路：失败不影响响应）。latency 由调用处 start 计时；tokens/latency 透传供 T07 Trace。 */

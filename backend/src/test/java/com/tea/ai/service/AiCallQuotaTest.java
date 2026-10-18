@@ -17,6 +17,7 @@ import com.tea.ai.agent.MentorAgent;
 import com.tea.ai.agent.TasterAgent;
 import com.tea.ai.dto.AiChatRequest;
 import com.tea.ai.dto.ChatMessageDto;
+import com.tea.ai.resilience.AiCallTestSupport;
 import com.tea.common.exception.QuotaExceededException;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -99,7 +100,7 @@ class AiCallQuotaTest {
         when(builder.build()).thenReturn(mock(ChatClient.class));
         return new AiChatService(builder, usageLogger, orchestrator, memoryService, traceRecorder,
                 librarian, advisor, taster, brewer, mentor, quota, new AiCircuitBreaker(5, 30_000),
-                "dashscope", apiKey, "sk-openai-test");
+                "dashscope", apiKey, "sk-openai-test", AiCallTestSupport.executor(), AiCallTestSupport.noFallback());
     }
 
     private static AiChatRequest req(Integer sessionId) {

@@ -25,6 +25,7 @@ import com.tea.ai.dto.AiChatRequest;
 import com.tea.ai.dto.ChatMessageDto;
 import com.tea.ai.entity.AiChatMessage;
 import com.tea.ai.entity.AiChatSession;
+import com.tea.ai.resilience.AiCallTestSupport;
 import com.tea.ai.vo.AiChatVo;
 import com.tea.common.exception.BadGatewayException;
 import com.tea.common.exception.BadRequestException;
@@ -69,14 +70,14 @@ class AiChatServiceTest {
     private AiChatService service(String apiKey) {
         return new AiChatService(builder, usageLogger, orchestrator, memoryService, traceRecorder,
                 librarian, advisor, taster, brewer, mentor, unlimitedQuota, closedBreaker,
-                "dashscope", apiKey, "sk-openai-test");
+                "dashscope", apiKey, "sk-openai-test", AiCallTestSupport.executor(), AiCallTestSupport.noFallback());
     }
 
     /** gateway profile（openai 模式）：key 检查走 openai key。 */
     private AiChatService gatewayService(String openaiKey) {
         return new AiChatService(builder, usageLogger, orchestrator, memoryService, traceRecorder,
                 librarian, advisor, taster, brewer, mentor, unlimitedQuota, closedBreaker,
-                "openai", "disabled", openaiKey);
+                "openai", "disabled", openaiKey, AiCallTestSupport.executor(), AiCallTestSupport.noFallback());
     }
 
     private static AiChatRequest req(String agent) {
@@ -425,7 +426,7 @@ class AiChatServiceTest {
         }
         AiChatService service = new AiChatService(builder, usageLogger, orchestrator, memoryService, traceRecorder,
                 librarian, advisor, taster, brewer, mentor, unlimitedQuota, openBreaker,
-                "dashscope", "test-key", "sk-openai-test");
+                "dashscope", "test-key", "sk-openai-test", AiCallTestSupport.executor(), AiCallTestSupport.noFallback());
 
         assertThrows(BadGatewayException.class, () -> service.chat(null, req("librarian")));
         verify(librarian, never()).chat(any(), any());
