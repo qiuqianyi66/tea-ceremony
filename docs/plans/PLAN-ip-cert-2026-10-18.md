@@ -1,7 +1,7 @@
 ---
 name: plan-ip-cert-2026-10-18
 description: 裸 IP（42.121.125.4）上 HTTPS 的可执行方案——用 Let's Encrypt IP 证书（shortlived profile，6 天有效期，需自动续期），无需域名与 ICP 备案。含前置条件、逐条命令、验证与回滚；前置缺失项为服务器 SSH 凭证与 443 安全组。
-status: completed
+status: deprecated
 owner: yanha
 last_updated: 2026-10-18
 ---
