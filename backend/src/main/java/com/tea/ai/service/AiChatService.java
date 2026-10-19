@@ -30,7 +30,6 @@ import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.metadata.Usage;
 import org.springframework.ai.chat.model.ChatResponse;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 /**
@@ -82,42 +81,35 @@ public class AiChatService {
     /** 兜底灰度的实验键（实验未创建/未运行时保持现状：兜底开启）。 */
     static final String FALLBACK_ROLLOUT_EXPERIMENT = "ai.fallback.rollout";
 
-    public AiChatService(ChatClient.Builder chatClientBuilder,
-                         AiUsageLogger usageLogger,
-                         AgentOrchestrator orchestrator,
-                         ChatMemoryService memoryService,
-                         TraceRecorder traceRecorder,
-                         LibrarianAgent librarianAgent,
-                         AdvisorAgent advisorAgent,
-                         TasterAgent tasterAgent,
-                         BrewerAgent brewerAgent,
-                         MentorAgent mentorAgent,
-                         AiCallQuota callQuota,
-                         AiCircuitBreaker circuitBreaker,
-                         @Value("${spring.ai.model.chat:}") String modelChat,
-                         @Value("${spring.ai.dashscope.api-key:}") String dashscopeApiKey,
-                         @Value("${spring.ai.openai.api-key:}") String openaiApiKey,
-                         AiCallExecutor aiCallExecutor,
-                         LocalFallbackService localFallbackService,
-                         ExperimentService experimentService) {
-        this.chatClient = chatClientBuilder.build();
-        this.usageLogger = usageLogger;
-        this.orchestrator = orchestrator;
-        this.memoryService = memoryService;
-        this.traceRecorder = traceRecorder;
-        this.librarianAgent = librarianAgent;
-        this.advisorAgent = advisorAgent;
-        this.tasterAgent = tasterAgent;
-        this.brewerAgent = brewerAgent;
-        this.mentorAgent = mentorAgent;
-        this.callQuota = callQuota;
-        this.circuitBreaker = circuitBreaker;
-        this.modelChat = modelChat;
-        this.dashscopeApiKey = dashscopeApiKey;
-        this.openaiApiKey = openaiApiKey;
-        this.aiCallExecutor = aiCallExecutor;
-        this.localFallbackService = localFallbackService;
-        this.experimentService = experimentService;
+    /**
+     * 单参构造：18 个依赖由 {@link AiChatDeps} 聚合传入。
+     *
+     * <p>为什么不再逐个参数：18 个参数是强依赖链的中心，调用点靠位置对齐、同类型参数错配编译不报错。
+     * 聚合后依赖清单只有一处权威定义（record），本类只按字段名取值，语义自证。</p>
+     *
+     * <p>不加 {@code @Autowired}：单构造器由 Spring 4.3+ 自动选用，与本项目其余服务的构造器注入风格一致。</p>
+     *
+     * <p>行为不变：ChatClient 仍只 build 一次，赋值逐字段一一对应，不做任何额外校验或转换。</p>
+     */
+    public AiChatService(AiChatDeps deps) {
+        this.chatClient = deps.chatClientBuilder().build();
+        this.usageLogger = deps.usageLogger();
+        this.orchestrator = deps.orchestrator();
+        this.memoryService = deps.memoryService();
+        this.traceRecorder = deps.traceRecorder();
+        this.librarianAgent = deps.librarianAgent();
+        this.advisorAgent = deps.advisorAgent();
+        this.tasterAgent = deps.tasterAgent();
+        this.brewerAgent = deps.brewerAgent();
+        this.mentorAgent = deps.mentorAgent();
+        this.callQuota = deps.callQuota();
+        this.circuitBreaker = deps.circuitBreaker();
+        this.modelChat = deps.modelChat();
+        this.dashscopeApiKey = deps.dashscopeApiKey();
+        this.openaiApiKey = deps.openaiApiKey();
+        this.aiCallExecutor = deps.aiCallExecutor();
+        this.localFallbackService = deps.localFallbackService();
+        this.experimentService = deps.experimentService();
     }
 
     public AiChatVo chat(Integer userId, AiChatRequest req) {

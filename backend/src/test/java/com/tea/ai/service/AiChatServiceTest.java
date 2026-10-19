@@ -68,16 +68,21 @@ class AiChatServiceTest {
 
     /** 既有用例默认 dashscope 模式（生产承重墙语义），保持原行为。 */
     private AiChatService service(String apiKey) {
-        return new AiChatService(builder, usageLogger, orchestrator, memoryService, traceRecorder,
-                librarian, advisor, taster, brewer, mentor, unlimitedQuota, closedBreaker,
-                "dashscope", apiKey, "sk-openai-test", AiCallTestSupport.executor(), AiCallTestSupport.noFallback(), AiCallTestSupport.noExperiment());
+        return new AiChatService(deps("dashscope", apiKey, "sk-openai-test", closedBreaker));
     }
 
     /** gateway profile（openai 模式）：key 检查走 openai key。 */
     private AiChatService gatewayService(String openaiKey) {
-        return new AiChatService(builder, usageLogger, orchestrator, memoryService, traceRecorder,
-                librarian, advisor, taster, brewer, mentor, unlimitedQuota, closedBreaker,
-                "openai", "disabled", openaiKey, AiCallTestSupport.executor(), AiCallTestSupport.noFallback(), AiCallTestSupport.noExperiment());
+        return new AiChatService(deps("openai", "disabled", openaiKey, closedBreaker));
+    }
+
+    /** 依赖聚合夹具：参数顺序与 AiChatDeps 字段一致，避免同类型参数（专家 / 字符串 key）位置错配。 */
+    private AiChatDeps deps(String modelChat, String dashscopeKey, String openaiKey, AiCircuitBreaker breaker) {
+        return new AiChatDeps(builder, modelChat, dashscopeKey, openaiKey,
+                orchestrator, usageLogger, traceRecorder, memoryService,
+                librarian, advisor, taster, brewer, mentor,
+                unlimitedQuota, breaker,
+                AiCallTestSupport.executor(), AiCallTestSupport.noFallback(), AiCallTestSupport.noExperiment());
     }
 
     private static AiChatRequest req(String agent) {
@@ -424,9 +429,7 @@ class AiChatServiceTest {
         for (int i = 0; i < 5; i++) {
             openBreaker.onFailure();
         }
-        AiChatService service = new AiChatService(builder, usageLogger, orchestrator, memoryService, traceRecorder,
-                librarian, advisor, taster, brewer, mentor, unlimitedQuota, openBreaker,
-                "dashscope", "test-key", "sk-openai-test", AiCallTestSupport.executor(), AiCallTestSupport.noFallback(), AiCallTestSupport.noExperiment());
+        AiChatService service = new AiChatService(deps("dashscope", "test-key", "sk-openai-test", openBreaker));
 
         assertThrows(BadGatewayException.class, () -> service.chat(null, req("librarian")));
         verify(librarian, never()).chat(any(), any());

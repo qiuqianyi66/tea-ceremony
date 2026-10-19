@@ -98,9 +98,12 @@ class AiCallQuotaTest {
 
     private AiChatService serviceWith(AiCallQuota quota, String apiKey) {
         when(builder.build()).thenReturn(mock(ChatClient.class));
-        return new AiChatService(builder, usageLogger, orchestrator, memoryService, traceRecorder,
-                librarian, advisor, taster, brewer, mentor, quota, new AiCircuitBreaker(5, 30_000),
-                "dashscope", apiKey, "sk-openai-test", AiCallTestSupport.executor(), AiCallTestSupport.noFallback(), AiCallTestSupport.noExperiment());
+        // 参数顺序与 AiChatDeps 字段一致（模型 / 编排 / 记忆 / 专家 / 配额与熔断 / 兜底与实验）
+        return new AiChatService(new AiChatDeps(builder, "dashscope", apiKey, "sk-openai-test",
+                orchestrator, usageLogger, traceRecorder, memoryService,
+                librarian, advisor, taster, brewer, mentor,
+                quota, new AiCircuitBreaker(5, 30_000),
+                AiCallTestSupport.executor(), AiCallTestSupport.noFallback(), AiCallTestSupport.noExperiment()));
     }
 
     private static AiChatRequest req(Integer sessionId) {
