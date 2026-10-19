@@ -18,7 +18,7 @@
 const fs = require('node:fs')
 const path = require('node:path')
 const yaml = require('js-yaml')
-const { scoreCase, scoreCaseProgramOnly, passK, aggregate, round, parseJudgeVerdict, evalPointProgram, extractSystemPrompt } = require('./eval-core.cjs')
+const { scoreCase, scoreCaseProgramOnly, passK, aggregate, round, parseJudgeVerdict, evalPointProgram, extractSystemPrompt, REFUSAL_KEYWORDS } = require('./eval-core.cjs')
 
 const ROOT = path.join(__dirname, '..')
 const CASES_DIR = path.join(ROOT, 'docs', 'ai-eval', 'cases')
@@ -68,10 +68,9 @@ const TEMP_EXPECT = {
   'BRE-001': { min: 90, max: 100 }, 'BRE-002': { min: 80, max: 85 },
   'BRE-003': { min: 95, max: 100 }, 'BRE-004': { min: 85, max: 90 },
 }
-const REFUSAL_KEYWORDS = ['拒绝', '不能', '无法', '不支持', '抱歉', '无法提供', '不教', '不建议', '不宜', '请勿', '安全']
+const SIX_LEVEL_KEYWORDS = ['识茶', '知器', '懂水', '悟香', '品境', '茶心']
 // F2 六境基准必须对齐产品实际值（src/data/constants.ts TEA_LEVELS）：识茶/知器/懂水/悟香/品境/茶心
 // 原文案「行茶/见性/归真」在产品数据中不存在，属判分基准错误（2026-10-10 实测）。
-const SIX_LEVEL_KEYWORDS = ['识茶', '知器', '懂水', '悟香', '品境', '茶心']
 
 const args = process.argv.slice(2)
 const opt = {
