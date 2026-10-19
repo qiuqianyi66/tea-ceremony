@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-10-09
+last_updated: 2026-10-19
 status: active
 owner: yanha
 ---
@@ -7,7 +7,7 @@ owner: yanha
 # 系统架构总览
 
 > 「一盏茶」沉浸式在线茶道应用 — 前后端架构、业务域划分与核心数据流。
-> 最后更新：2026-10-09（后端 Spring Boot 重写中：主仓库已实现 7 域；旧 FastAPI 仅维护不新增，结构见 `.harness/rules/工程结构.md`）
+> 最后更新：2026-10-19（后端 Spring Boot 重写中：主仓库已实现 10 域 23 Service；旧 FastAPI 仅维护不新增，结构见 `.harness/rules/工程结构.md`）
 
 ## 1. 分层架构
 
@@ -56,7 +56,7 @@ flowchart LR
 ```
 
 - **Controller 只做三件事**：声明路径与鉴权、调用 service、声明响应模型。分层由 ArchUnit 机械化强制（`LayerDependencyTest`，CI Maven test 门禁）。
-- **Service 承载业务规则**：已实现 7 域 8 Service（ai / auth / common / culture / record / tea / ware；AiChatService / ChatMemoryService / PromptService / JwtService / AuthService / CultureSearchService / TastingRecordService / TeaService）。
+- **Service 承载业务规则**：已实现 10 域 23 Service（ai 10 / auth 2 / culture 2 / garden 2 / record 1 / tea 1 / telemetry 5；清单：ExperimentGuardService / ExperimentService / LocalFallbackService / GoldenMetricsService / QualityJudgeService / QualityMetricsService / AiChatService / AiUsageSummaryService / ChatMemoryService / PromptService / JwtService / AuthService / ChunkBackfillService / CultureSearchService / GardenEnergyService / GardenPlantService / TastingRecordService / TeaService / ErrorFingerprintService / FingerprintService / SloEvaluationService / TelemetryIngestService / TelemetryRetentionService；实测口径 `backend/src/main/java` 下 `*Service*.java`）。
 - **统一异常**：Service 抛 BusinessError 子类，全局转 `ApiResponse<T>` 的 `{code, message}` 中文响应。
 - **认证**：Spring Security + JWT（BCrypt 哈希）；旧 FastAPI 栈（routers/services/models/schemas + BusinessError）仅维护不新增。
 
@@ -67,11 +67,12 @@ flowchart LR
 | 茶叶 | `stores/tea.ts` | `TeaService` | 六大茶类目录、产区/工艺关联详情 |
 | 冲泡 | `stores/brew.ts` | —（纯前端状态机） | BrewPhase 流转、水温/投茶量/进度 |
 | 品鉴 | `stores/taste.ts` + `progress.ts` | `TastingRecordService` | 四步流程、八维评分、成就判定 |
-| 茶园 | `stores/garden.ts` | garden 域（S1 能量账本，PR #40 待合 main） | 3D 景观 + 能量收集/阶段推进（S1） |
+| 茶园 | `stores/garden.ts` | `GardenEnergyService` + `GardenPlantService` | 3D 景观 + 能量收集/阶段推进（S1，PR #40 已合入 main：f600967） |
 | 记录 | `stores/record.ts` | `TastingRecordService` | 品鉴历史 CRUD + 离线同步队列 |
 | 认证 | `stores/ui.ts`（会话） | `AuthService` + `JwtService` | 注册/登录/JWT（Spring Security） |
 | 茶文化 | `services/`（读取） | `CultureSearchService` | 产区/茶人/茶诗/搜索（RAG 检索） |
 | 茶灵 AI | `services/teaAI.ts` | `AiChatService` | 五专家路由 + RAG + 降级承重墙 |
+| 遥测 | — | `TelemetryIngestService` + `TelemetryRetentionService` + `ErrorFingerprintService` + `FingerprintService` + `SloEvaluationService` | 指标摄取/保留、错误指纹、SLO 评估 |
 | 器具 | — | ware 域（并入 tea 相关服务） | 茶器数据（重写中覆盖） |
 
 ## 4. 核心数据流
@@ -152,8 +153,10 @@ backend/（Spring Boot，Maven）
     ├── auth/       认证（Security + JWT）
     ├── common/     通用（ApiResponse / 异常）
     ├── culture/    文化检索（RAG）
+    ├── garden/     茶园能量账本（S1）
     ├── record/     品鉴记录
     ├── tea/        茶叶目录
+    ├── telemetry/  遥测（指标摄取/错误指纹/SLO）
     ├── ware/       茶器
     └── resources/db/migration/   Flyway 迁移（V1~V4）
 
