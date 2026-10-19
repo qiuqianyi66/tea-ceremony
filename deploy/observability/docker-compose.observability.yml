@@ -7,8 +7,8 @@
 # 用法（在仓库根，与主 compose 叠加）：
 #   docker compose -f docker-compose.yml -f deploy/observability/docker-compose.observability.yml up -d
 #
-# 前提：backend 端口已绑定宿主机 127.0.0.1:18080（见主 compose）。
-# Prometheus 用 host.docker.internal 回环取数，Grafana 通过 3000 端口访问（默认只绑本机）。
+# 网络：overlay 与主 compose 同属一个项目，自动共享默认网络；Prometheus 用服务名 backend:8080 直连容器，
+# 不经过宿主机端口映射（backend 只绑 127.0.0.1，容器内到不了宿主回环）。Grafana 只绑本机 127.0.0.1:3000。
 
 services:
   prometheus:
@@ -20,9 +20,8 @@ services:
       - ./deploy/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./deploy/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
       - promdata:/prometheus
-    extra_hosts:
-      # Linux 上 host.docker.internal 默认不存在，显式映射到宿主网关
-      - "host.docker.internal:host-gateway"
+    # 不需要 extra_hosts：抓取走同 compose 网络内的服务名 backend:8080。
+    # 用 host-gateway 会解析到网桥网关（172.x.0.1），而 backend 只绑 127.0.0.1，连不上。
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.retention.time=15d'
