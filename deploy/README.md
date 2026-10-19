@@ -201,7 +201,17 @@ VALUES (
 );
 ```
 
-### 启停（需 `X-Admin-Token`，与 `ADMIN_API_TOKEN` 一致）
+### 启停（只需 `X-Admin-Token`，与 `ADMIN_API_TOKEN` 一致）
+
+管理端点的唯一闸门是 `X-Admin-Token`（`AdminTokenFilter`：fail-closed + 常量时间比较），**不需要用户 JWT** —— 这是 `AdminTokenFilter` javadoc 与 `SecurityConfig` 注释的共同约定。
+
+排障对照：
+
+| 返回 | 原因 |
+|---|---|
+| `管理端点未配置访问令牌（ADMIN_API_TOKEN）` | backend 进程里该变量为空。`docker-compose.yml` 必须传 `ADMIN_API_TOKEN`，否则 `.env` 里配了也无效（2026-10-19 踩过） |
+| `管理端点访问令牌无效` | 请求头与 backend 里的令牌不一致；检查 `docker inspect <backend> --format '{{range .Config.Env}}{{println .}}{{end}}' \| grep ADMIN_API_TOKEN` |
+| `未登录或登录已过期` | 说明该路径被 Spring Security 的 JWT 校验拦了 —— 这是配置回退到旧行为的信号，不该出现在管理端点 |
 
 ```bash
 curl -X POST -H "X-Admin-Token: $ADMIN_API_TOKEN" \
