@@ -20,7 +20,9 @@ import com.tea.ai.vo.AiChatVo;
 import com.tea.common.exception.BadGatewayException;
 import com.tea.common.exception.QuotaExceededException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -137,13 +139,27 @@ public class AiChatService {
         // 返回 control = 实验明确把这批主体划到旧路径（只回 502，不走规则库）。
         // 这个区分是必须的：若用 assign()，未配置实验也会得到 control，等于上线一个新实验
         // 反而把已有兜底关掉。
-        String variant = experimentService
-                .assignActive(FALLBACK_ROLLOUT_EXPERIMENT, subjectOf(userId, sessionId))
-                .orElse(null);
+        String subject = subjectOf(userId, sessionId);
+        Map<String, String> experiments = new LinkedHashMap<>();
+        Optional<String> rollout = experimentService.assignActive(FALLBACK_ROLLOUT_EXPERIMENT, subject);
+        rollout.ifPresent(v -> experiments.put(FALLBACK_ROLLOUT_EXPERIMENT, v));
+        String variant = rollout.orElse(null);
+        // degradeAllowed 只看兜底实验：它是「上游失败后是否走规则库」的唯一开关，
+        // 不能因为其它实验（如 librarian 工具调用）的变体不同而改变兜底行为。
         boolean degradeAllowed = variant == null || ExperimentService.TREATMENT.equals(variant);
-        // T07 评测 Trace：入口埋点（input/context/plan 层，含复杂度档位与 A/B 变体），dispatch 后 complete/fail（ADR-016）
+        // 只在真的会走 librarian 的请求上评估 tool-calling 实验：其它专家不受它影响，
+        // 若一律记录归属，实验指标里会混进没有经过该开关的流量，对比结果失真。
+        if (type == AgentType.LIBRARIAN) {
+            // 这里与 LibrarianAgent 内部各算一次：分桶是确定性哈希（同 expKey + 同主体恒定同结果），
+            // 且 assignActive 有 30 秒快照缓存，重复调用不额外打库；换来的是两条链路口径一致，
+            // 不需要把结果从 Agent 反传回服务层（那要改 Agent 返回值形状，影响面更大）。
+            experimentService.assignActive(LibrarianAgent.TOOL_CALLING_EXPERIMENT, subject)
+                    .ifPresent(v -> experiments.put(LibrarianAgent.TOOL_CALLING_EXPERIMENT, v));
+        }
+        // T07 评测 Trace：入口埋点（input/context/plan 层，含复杂度档位与多实验归属），dispatch 后 complete/fail（ADR-016）。
+        // 顶层 variant/experiment 继续写兜底实验：历史行与既有查询口径不变。
         AiEvalTrace trace = traceRecorder.begin(sessionId, type, req, anchored, level, variant,
-                variant == null ? null : FALLBACK_ROLLOUT_EXPERIMENT);
+                variant == null ? null : FALLBACK_ROLLOUT_EXPERIMENT, experiments);
         // P1-13 熔断：OPEN 窗口内快速失败（不调 LLM）。多级兜底第二级在此先试本地规则库，未命中才 502
         if (!circuitBreaker.allowCall()) {
             return fallbackOrThrow(anchored, sessionId, trace, degradeAllowed,

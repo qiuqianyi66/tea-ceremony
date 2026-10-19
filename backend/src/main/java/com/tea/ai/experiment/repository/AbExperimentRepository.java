@@ -14,10 +14,10 @@ import org.springframework.data.repository.query.Param;
  * 对比查询为什么下推 Postgres：窗口内 trace 可能上万行，拉进 JVM 再按变体分组、排序取分位不可接受；
  * percentile_cont(0.99) 必须在库侧算，口径才与 GoldenMetricsService 的 P99 一致。
  *
- * **trace 侧写入约定**：plan_layer 需带 {@code variant=control|treatment}（必需）；
- * {@code experiment=<exp_key>} 为多实验并行时的归属键——缺失的行只在「唯一 running 实验」时被计入，
- * 否则忽略（宁可少算也不把流量算给错误的实验），见 ExperimentService#variantsOf。
- * 缺 variant 的行一律不计入任何一组。
+ * **trace 侧写入约定**（2026-10-19 起多实验）：{@code plan_layer.experiments} 是
+ * {@code {"<expKey>": "control|treatment"}}，一次请求可归属多个实验；
+ * 历史行只带顶层 {@code variant} + {@code experiment}，由本文件 SQL 的 COALESCE 分支兜住。
+ * 缺归属键的行不进入任何实验的分组（宁可少算也不把流量算给错误的实验），见 ExperimentService#variantsOf。
  */
 public interface AbExperimentRepository extends JpaRepository<AbExperiment, Long> {
 
@@ -29,22 +29,31 @@ public interface AbExperimentRepository extends JpaRepository<AbExperiment, Long
     List<AbExperiment> findAllByOrderByExpKeyAsc();
 
     /**
-     * 窗口内按 (实验, 变体) 分组的调用数 / 失败数 / P99。
-     * 行 = [exp_key(String 或 null), variant(String), calls(Long), error_calls(Long), p99(Double)]。
+     * 窗口内某实验按变体分组的调用数 / 失败数 / P99。
+     * 行 = [variant(String), calls(Long), error_calls(Long), p99(Double)]。
      * 时间参数显式 cast timestamptz：created_at 是 timestamptz，原生查询不做参数类型推断（同 AiEvalTraceRepository）。
      *
-     * exp_key 允许为 null：写入侧（TraceRecorder）目前只把 variant 写进 plan_layer，
-     * 「未标注实验」的行由 Service 层决定归属（唯一 running 实验时才计入，见 ExperimentService#variantsOf）。
-     * 这样既能在当前写入形态下出数，也不会在多个实验并行时把流量算给错误的实验。
+     * <p>为什么按 exp_key 逐个查：归属写在 {@code plan_layer.experiments} 这个 JSONB 对象里，
+     * 键是动态的。要么在 SQL 里展开所有键（lateral jsonb_each），要么把键作为参数传入。
+     * 传参的写法让「属谁」只有一处定义——COALESCE 的两个分支——统计口径不会随写入形态演进失配。
+     * 实验数量是个位数，多一次索引扫描换来规则可读，值得。</p>
+     *
+     * <p>变体取值顺序：先看 {@code experiments[expKey]}（新格式）；没有再看
+     * 「顶层 experiment 等于本键时」的顶层 variant（历史单实验行）。两者都没有的行不参与分组。</p>
      */
-    @Query(value = "select plan_layer->>'experiment' as exp_key, "
-            + "plan_layer->>'variant' as variant, "
+    @Query(value = "select s.variant as variant, "
             + "count(*) as calls, "
-            + "count(*) filter (where error_code is not null) as error_calls, "
-            + "percentile_cont(0.99) within group (order by latency_ms) as p99 "
-            + "from ai_eval_traces "
-            + "where created_at >= cast(:start as timestamptz) and created_at < cast(:end as timestamptz) "
-            + "and plan_layer->>'variant' in ('control', 'treatment') "
-            + "group by 1, 2", nativeQuery = true)
-    List<Object[]> variantWindowStats(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+            + "count(*) filter (where s.error_code is not null) as error_calls, "
+            + "percentile_cont(0.99) within group (order by s.latency_ms) as p99 "
+            + "from (select coalesce(t.plan_layer -> 'experiments' ->> :expKey, "
+            + "case when t.plan_layer ->> 'experiment' = :expKey then t.plan_layer ->> 'variant' end) as variant, "
+            + "t.error_code, t.latency_ms "
+            + "from ai_eval_traces t "
+            + "where t.created_at >= cast(:start as timestamptz) and t.created_at < cast(:end as timestamptz)) s "
+            // 变体过滤放在外层：与改造前 plan_layer->>'variant' in (...) 同一语义，只对 control/treatment 计数
+            + "where s.variant in ('control', 'treatment') "
+            + "group by 1", nativeQuery = true)
+    List<Object[]> variantWindowStats(@Param("expKey") String expKey,
+                                      @Param("start") LocalDateTime start,
+                                      @Param("end") LocalDateTime end);
 }
