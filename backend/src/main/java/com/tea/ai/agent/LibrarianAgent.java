@@ -67,8 +67,13 @@ public class LibrarianAgent {
             5. 引古籍须忠于原文语境，禁以引文暗示疗效；涉功效须说明茶是饮品而非药物。拒绝整书复制。
             """;
 
-    /** A/B 实验键：不存在或未 running 时 assignActive 返回 empty → 走直接检索（现状）。 */
-    static final String TOOL_CALLING_EXPERIMENT = "ai.librarian.tool-calling";
+    /**
+     * A/B 实验键：不存在或未 running 时 assignActive 返回 empty → 走直接检索（现状）。
+     * 为什么是 public：{@link com.tea.ai.service.AiChatService} 要把本次请求归属到该实验，
+     * 写进 trace 的 {@code plan_layer.experiments}（否则该实验永远攒不到样本，守门回滚无从触发）。
+     * 键值只有一处定义，服务层不复制字面量。
+     */
+    public static final String TOOL_CALLING_EXPERIMENT = "ai.librarian.tool-calling";
 
     /** 路径调用计数：lane=direct（改造前路径）/ tool（工具调用路径），灰度期用于核对流量比例。 */
     static final String METRIC_INVOCATIONS = "tea.ai.toolcalling.invocations";

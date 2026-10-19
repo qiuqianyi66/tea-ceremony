@@ -191,7 +191,7 @@ class AiChatFallbackWiringTest {
         LocalFallbackService fallback = mock(LocalFallbackService.class);
         when(fallback.answerFor(anyString())).thenReturn(Optional.of("规则答复"));
         AiEvalTrace[] captured = new AiEvalTrace[1];
-        when(traceRecorder.begin(any(), any(), any(), any(), any(), any(), any()))
+        when(traceRecorder.begin(any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenAnswer(inv -> {
                     AiEvalTrace t = new AiEvalTrace();
                     t.setPlanLayer("{\"variant\":\"" + inv.getArgument(5) + "\",\"experiment\":\"" + inv.getArgument(6) + "\"}");

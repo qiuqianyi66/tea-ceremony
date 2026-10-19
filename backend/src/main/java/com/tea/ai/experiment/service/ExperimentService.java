@@ -62,7 +62,7 @@ public class ExperimentService {
     private static final int STOP_REASON_MAX = 256;
     /** 人工停止但未填原因时的兜底值：看板能区分「人工止血」与「自动回滚」。 */
     public static final String MANUAL_STOP_REASON = "manual_stop";
-    /** trace 未标注 experiment 时的分组键（写入侧只记 variant 的情况，见 #variantsOf）。 */
+    /** trace 没有任何实验归属键时的分组键（历史数据/测试夹具；生产写入方现在一律写 experiments）。 */
     static final String UNATTRIBUTED_KEY = "";
 
     private final AbExperimentRepository repository;
@@ -228,8 +228,8 @@ public class ExperimentService {
     public ExperimentOverview overview() {
         LocalDateTime end = LocalDateTime.now();
         LocalDateTime start = end.minusMinutes(EVALUATION_WINDOW_MINUTES);
-        Map<String, Map<String, VariantMetrics>> stats = variantStats(start, end);
         List<AbExperiment> all = repository.findAllByOrderByExpKeyAsc();
+        Map<String, Map<String, VariantMetrics>> stats = variantStats(all, start, end);
         List<String> runningKeys = all.stream()
                 .filter(experiment -> AbExperiment.STATUS_RUNNING.equals(experiment.getStatus()))
                 .map(AbExperiment::getExpKey)
@@ -249,7 +249,7 @@ public class ExperimentService {
         AbExperiment experiment = requireExperiment(expKey);
         LocalDateTime end = LocalDateTime.now();
         Map<String, Map<String, VariantMetrics>> stats =
-                variantStats(end.minusMinutes(EVALUATION_WINDOW_MINUTES), end);
+                variantStats(List.of(experiment), end.minusMinutes(EVALUATION_WINDOW_MINUTES), end);
         List<String> runningKeys = repository.findByStatus(AbExperiment.STATUS_RUNNING).stream()
                 .map(AbExperiment::getExpKey)
                 .toList();
@@ -260,9 +260,9 @@ public class ExperimentService {
     /**
      * 取某实验的变体指标。
      *
-     * 归属规则：优先用 plan_layer 里标注了 experiment 的行；若该实验没有自己的行，而窗口内存在
-     * 「未标注 experiment」的行（当前 TraceRecorder 只写 variant），则仅在它是唯一 running 实验时计入。
-     * 多个实验并行时未标注的行无法区分归属——忽略并告警，避免把流量算给错误的实验。
+     * <p>归属已由 SQL 按 exp_key 完成（{@code plan_layer.experiments[expKey]}，历史行回落顶层
+     * experiment/variant）。这里保留「未标注行」的兜底分支：mock/旧数据仍可能给出空 exp_key，
+     * 唯一 running 实验时计入、多实验并行时忽略——宁可少算，也不把流量算给错误的实验。</p>
      */
     public static Map<String, VariantMetrics> variantsOf(String expKey, Map<String, Map<String, VariantMetrics>> stats,
                                                         String singleRunningKey, int runningCount) {
@@ -287,7 +287,7 @@ public class ExperimentService {
     @Transactional(readOnly = true)
     public Map<String, Map<String, VariantMetrics>> variantStats() {
         LocalDateTime end = LocalDateTime.now();
-        return variantStats(end.minusMinutes(EVALUATION_WINDOW_MINUTES), end);
+        return variantStats(repository.findAllByOrderByExpKeyAsc(), end.minusMinutes(EVALUATION_WINDOW_MINUTES), end);
     }
 
     /** 守卫任务写回评估结果：样本不足也要更新，否则「没评估」与「评估了但样本不够」看不出来。 */
@@ -315,17 +315,24 @@ public class ExperimentService {
         return new ExperimentReport(view(experiment), guardrail, control, treatment, sufficientSample);
     }
 
-    private Map<String, Map<String, VariantMetrics>> variantStats(LocalDateTime start, LocalDateTime end) {
+    private Map<String, Map<String, VariantMetrics>> variantStats(List<AbExperiment> experiments,
+                                                                 LocalDateTime start, LocalDateTime end) {
         Map<String, Map<String, VariantMetrics>> result = new HashMap<>();
-        for (Object[] row : repository.variantWindowStats(start, end)) {
-            if (row == null || row.length < 5 || row[1] == null) {
-                continue;
+        for (AbExperiment experiment : experiments) {
+            String expKey = experiment.getExpKey();
+            Map<String, VariantMetrics> byVariant = new HashMap<>();
+            for (Object[] row : repository.variantWindowStats(expKey, start, end)) {
+                // 行 = [variant, calls, error_calls, p99]；variant 为 null 说明该行不属于本实验（COALESCE 两分支都未命中）
+                if (row == null || row.length < 4 || row[0] == null) {
+                    continue;
+                }
+                String variant = String.valueOf(row[0]);
+                byVariant.put(variant, metrics(variant, longOf(row[1]), longOf(row[2]), doubleOrNull(row[3])));
             }
-            // exp_key 允许为空：未标注实验的行归入 UNATTRIBUTED_KEY，由 variantsOf 决定是否计入
-            String expKey = row[0] == null ? UNATTRIBUTED_KEY : String.valueOf(row[0]);
-            String variant = String.valueOf(row[1]);
-            result.computeIfAbsent(expKey, key -> new HashMap<>())
-                    .put(variant, metrics(variant, longOf(row[2]), longOf(row[3]), doubleOrNull(row[4])));
+            // 无行不建键：与改造前一致（旧 SQL 只在有分组时返回行），variantsOf 据 null/空区分「没数据」
+            if (!byVariant.isEmpty()) {
+                result.put(expKey, byVariant);
+            }
         }
         return result;
     }

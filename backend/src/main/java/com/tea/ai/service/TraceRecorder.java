@@ -32,7 +32,7 @@ public class TraceRecorder {
 
     /** 入口埋点：input（原始问句 + 意图提示）+ context（历史锚定条数）+ plan（路由决策 + 复杂度档位）。不落库，等 complete/fail 统一保存。 */
     public AiEvalTrace begin(Integer sessionId, AgentType type, AiChatRequest req, AiChatRequest anchored, ComplexityLevel level) {
-        return begin(sessionId, type, req, anchored, level, null, null);
+        return begin(sessionId, type, req, anchored, level, null, null, Map.of());
     }
 
     /**
@@ -46,11 +46,11 @@ public class TraceRecorder {
      */
     public AiEvalTrace begin(Integer sessionId, AgentType type, AiChatRequest req, AiChatRequest anchored,
                              ComplexityLevel level, String variant) {
-        return begin(sessionId, type, req, anchored, level, variant, null);
+        return begin(sessionId, type, req, anchored, level, variant, null, Map.of());
     }
 
     /**
-     * 带实验归属的入口埋点。
+     * 带实验归属的入口埋点（单实验）。
      *
      * <p>为什么要额外写 {@code experiment}：{@code ExperimentGuardService} 按
      * {@code (experiment, variant)} 分组对比。若 trace 只有 variant 没有 experiment，
@@ -58,6 +58,25 @@ public class TraceRecorder {
      */
     public AiEvalTrace begin(Integer sessionId, AgentType type, AiChatRequest req, AiChatRequest anchored,
                              ComplexityLevel level, String variant, String experimentKey) {
+        return begin(sessionId, type, req, anchored, level, variant, experimentKey, Map.of());
+    }
+
+    /**
+     * 带多实验归属的入口埋点：一次请求可能同时属于多个实验（兜底灰度 + librarian 工具调用）。
+     *
+     * <p>为什么用嵌套对象而不是并列的多个字段：实验是逐个上线的，字段名不能写死；
+     * {@code experiments: {"<expKey>": "control|treatment"}} 让新增实验只改写入方，读侧按 key 取值。
+     * 统计 SQL 以它为第一优先（见 {@code AbExperimentRepository#variantWindowStats}）。</p>
+     *
+     * <p>为什么仍写顶层 {@code variant}/{@code experiment}：历史行与既有查询都读这两个字段，
+     * 保留它们等于保留兜底口径——统计 SQL 在 {@code experiments} 缺失时回落到这里。
+     * 只在 variant 非空时写，未参与实验的 trace 形状与改造前一致。</p>
+     *
+     * @param experiments 实验键 → 变体；null 或空表示没有可归属的实验，不写入该字段
+     */
+    public AiEvalTrace begin(Integer sessionId, AgentType type, AiChatRequest req, AiChatRequest anchored,
+                             ComplexityLevel level, String variant, String experimentKey,
+                             Map<String, String> experiments) {
         AiEvalTrace trace = new AiEvalTrace();
         trace.setSessionId(sessionId);
         trace.setRequestId(UUID.randomUUID());
@@ -77,6 +96,9 @@ public class TraceRecorder {
         }
         if (experimentKey != null && !experimentKey.isBlank()) {
             plan.put("experiment", experimentKey);
+        }
+        if (experiments != null && !experiments.isEmpty()) {
+            plan.put("experiments", experiments);
         }
         trace.setPlanLayer(json(plan));
         return trace;
