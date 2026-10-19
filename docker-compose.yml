@@ -55,6 +55,19 @@ services:
       DB_USER: ${DB_USER:-tea_user}
       DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
+      # 管理端点令牌（/api/v1/admin/**）。application.yml 里默认值是**空** → AdminTokenFilter
+      # fail-closed 就把所有管理端点打成 401。此前 compose 没传这一项，导致 .env 里配了也无效
+      # （实测：启动灰度实验返回「管理端点未配置访问令牌」）。管理端点=实验启停与回填，
+      # 没有它就只能等自动回滚、无法人工止血。
+      ADMIN_API_TOKEN: ${ADMIN_API_TOKEN:-}
+      # 以下为运维调参口，默认值与 application.yml 完全一致（不传行为不变）：
+      #   - 容错执行器：上游变慢时先调大 timeout-ms，别改业务逻辑（见 deploy/README.md「AI 延迟」）
+      #   - 质量评分：默认关闭（LLM 判官有成本），需按周开一次拿数据
+      AI_RESILIENCE_TIMEOUT_MS: ${AI_RESILIENCE_TIMEOUT_MS:-20000}
+      AI_RESILIENCE_MAX_ATTEMPTS: ${AI_RESILIENCE_MAX_ATTEMPTS:-3}
+      TEA_AI_QUALITY_ENABLED: ${TEA_AI_QUALITY_ENABLED:-false}
+      TEA_AI_QUALITY_LLM_ENABLED: ${TEA_AI_QUALITY_LLM_ENABLED:-true}
+      TEA_AI_QUALITY_BATCH_SIZE: ${TEA_AI_QUALITY_BATCH_SIZE:-20}
       # AI 通道 = yg-gateway（gateway profile，openai 兼容，DeepSeek 账号池）。
       # 2026-10-14 用户拍板：生产 AI 走 yg-gateway；API key 缺失时启动失败（预期安全行为）。
       # DashScope 主路径保留可切回：移除 SPRING_PROFILES_ACTIVE 与 AI_GATEWAY_* 即可（AI_DASHSCOPE_API_KEY 行保留无害）。

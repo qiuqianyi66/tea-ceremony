@@ -43,6 +43,13 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // 管理端点：唯一闸门是 AdminTokenFilter 的静态令牌（fail-closed、常量时间比较）。
+                        // 这里必须 permitAll —— 否则 SecurityFilterChain 还会要求用户 JWT，
+                        // 与 AdminTokenFilter 的设计意图直接冲突（它的 javadoc 写着
+                        // 「管理端点不再接受用户 JWT，仅接受独立令牌头 X-Admin-Token」）。
+                        // 实测症状：带正确的 X-Admin-Token 却返回「未登录或登录已过期」→
+                        // 运维侧 curl 永远调不通，灰度实验只能自动回滚、无法人工止血。
+                        .requestMatchers("/api/v1/admin/**").permitAll()
                         // ADR-025：/actuator/prometheus 必须 permitAll，否则 Prometheus 抓取全部 401
                         // （实测踩过：只留 /actuator/health 时，抓取端拿到的是 {"code":"UNAUTHORIZED"}，
                         //  指标系统表面接好了、实际一条数都进不来）。

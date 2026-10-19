@@ -101,10 +101,29 @@ class AdminCultureBackfillIntegrationTest {
     }
 
     @Test
-    void backfillRequiresAuth() {
-        // 2026-10-12 安全审计 H1：管理端点不接受匿名请求 → 401（AdminTokenFilter fail-closed）
-        ResponseEntity<String> res = backfill(null, false);
-        assertThat(res.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    void backfillRequiresAdminToken() {
+        // 管理端点的唯一闸门是独立管理令牌（AdminTokenFilter：fail-closed + 常量时间比较）。
+        // 注意这里必须显式传 adminToken=null —— 2 参重载会带上有效令牌，那样测的就不是「匿名」了
+        // （2026-10-19 修正：原用例用 2 参重载，实际带令牌，却按「匿名请求」断言，名实不符）。
+        ResponseEntity<String> noToken = backfill(null, false, null);
+        assertThat(noToken.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+
+        ResponseEntity<String> wrongToken = backfill(null, false, "wrong-token");
+        assertThat(wrongToken.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    /**
+     * 设计确认：管理端点只认管理令牌，不要求用户 JWT。
+     *
+     * <p>AdminTokenFilter 的 javadoc 与 SecurityConfig 的注释都写着「管理端点不再接受用户 JWT，
+     * 仅接受独立令牌头 X-Admin-Token」，但此前 SecurityFilterChain 仍要求 authenticated，
+     * 导致运维侧 curl（没有用户 JWT）永远调不通管理端点——灰度实验只能等自动回滚，无法人工止血。
+     * 此用例把「仅凭令牌即可调用」固化为契约。</p>
+     */
+    @Test
+    void backfillAcceptsAdminTokenWithoutUserJwt() {
+        ResponseEntity<String> res = backfill(null, false, "test-admin-token-123456");
+        assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
     /**
