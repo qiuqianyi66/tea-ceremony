@@ -178,6 +178,48 @@ function auditRules(emitted) {
   return ruleCount
 }
 
+/**
+ * 校验每条告警的 runbook 链接是否真的能落到 deploy/README.md 的某个标题上。
+ *
+ * 为什么需要：告警触发时人才会点那个链接——那一刻链接是死的，等于手册不存在。
+ * 而断链在主流程里不会报任何错。锚点规则按 GitHub 的标题生成规则近似实现
+ * （小写、去标点与行内代码标记、空格转连字符），中文标题原样保留。
+ */
+function auditRunbookLinks(doc) {
+  const readmePath = path.join(ROOT, 'deploy/README.md')
+  const text = readText(readmePath)
+  if (!text) return
+
+  const anchorOf = (heading) =>
+    heading
+      .trim()
+      .toLowerCase()
+      .replace(/[`*_]/g, '')
+      .replace(/[^\w\u4e00-\u9fa5\- ]/g, '')
+      .replace(/\s+/g, '-')
+
+  const anchors = new Set([...text.matchAll(/^#{2,4}\s+(.+)$/gm)].map((m) => anchorOf(m[1])))
+
+  for (const group of doc.groups) {
+    for (const rule of group.rules) {
+      const runbook = rule.annotations && rule.annotations.runbook
+      if (!runbook) {
+        errors.push(`${rule.alert}: 缺少 annotations.runbook（告警响了没人知道该做什么）`)
+        continue
+      }
+      const hash = runbook.match(/#(.+)$/)
+      if (!hash) {
+        errors.push(`${rule.alert}: runbook 没有锚点（${runbook}）`)
+        continue
+      }
+      if (!anchors.has(hash[1])) {
+        errors.push(`${rule.alert}: runbook 锚点不存在 "#${hash[1]}"（deploy/README.md 里没有同名标题）`)
+      }
+    }
+  }
+  return anchors.size
+}
+
 function auditPromConfig() {
   const text = readText(PROM_CFG)
   if (!text) return
@@ -237,6 +279,14 @@ function auditDashboard(emitted) {
 
 const emitted = collectEmittedMetrics()
 const ruleCount = auditRules(emitted)
+const alertsDoc = (() => {
+  try {
+    return yaml.load(readText(ALERTS) || '')
+  } catch {
+    return null
+  }
+})()
+const anchorCount = alertsDoc ? auditRunbookLinks(alertsDoc) : undefined
 auditPromConfig()
 const panelCount = auditDashboard(emitted)
 

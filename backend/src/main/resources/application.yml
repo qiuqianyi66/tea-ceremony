@@ -99,6 +99,10 @@ tea:
       backoff-multiplier: ${AI_RESILIENCE_BACKOFF_MULTIPLIER:2.0}
       backoff-jitter-ratio: ${AI_RESILIENCE_BACKOFF_JITTER_RATIO:0.2}
       max-call-depth: ${AI_RESILIENCE_MAX_CALL_DEPTH:3}
+    quality:
+      enabled: ${TEA_AI_QUALITY_ENABLED:false}
+      llm-enabled: ${TEA_AI_QUALITY_LLM_ENABLED:true}
+      batch-size: ${TEA_AI_QUALITY_BATCH_SIZE:20}
   # P1-13 熔断（AiCircuitBreaker）：连续失败达阈值 → 时间窗内快速 502（防上游故障时全量等待超时）
   circuit-breaker:
     failure-threshold: ${AI_CIRCUIT_BREAKER_FAILURE_THRESHOLD:5}
@@ -149,12 +153,3 @@ management:
     # 不要在公网可达的端口上暴露它——那是把内部拓扑和调用量直接送出去。
     prometheus:
       access: read_only
-
-# ADR-026 AI 回答质量评分：默认关闭——LLM 判官有成本，不该在上线第一天就烧钱。
-# 需要质量数据时先开 enabled + llm-enabled=false（零成本规则模式）跑一周，再决定是否开 LLM 判官。
-tea:
-  ai:
-    quality:
-      enabled: ${TEA_AI_QUALITY_ENABLED:false}
-      llm-enabled: ${TEA_AI_QUALITY_LLM_ENABLED:true}
-      batch-size: ${TEA_AI_QUALITY_BATCH_SIZE:20}

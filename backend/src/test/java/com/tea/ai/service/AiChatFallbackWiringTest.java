@@ -60,10 +60,12 @@ class AiChatFallbackWiringTest {
 
     private AiChatService service(AiCallQuota quota, AiCircuitBreaker breaker,
                                   LocalFallbackService fallback, ExperimentService experimentService) {
-        return new AiChatService(builder, usageLogger, orchestrator, memoryService, traceRecorder,
-                librarian, advisor, taster, brewer, mentor, quota, breaker,
-                "dashscope", "disabled", "sk-openai-test",
-                AiCallTestSupport.executor(), fallback, experimentService);
+        // 参数顺序与 AiChatDeps 字段一致（模型 / 编排 / 记忆 / 专家 / 配额与熔断 / 兜底与实验）
+        return new AiChatService(new AiChatDeps(builder, "dashscope", "disabled", "sk-openai-test",
+                orchestrator, usageLogger, traceRecorder, memoryService,
+                librarian, advisor, taster, brewer, mentor,
+                quota, breaker,
+                AiCallTestSupport.executor(), fallback, experimentService));
     }
 
     private static AiChatRequest ask(String text) {

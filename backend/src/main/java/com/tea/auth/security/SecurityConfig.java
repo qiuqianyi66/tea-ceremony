@@ -43,7 +43,14 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/auth/**", "/api/v1/ai/chat", "/api/v1/culture/**", "/actuator/health").permitAll()
+                        // ADR-025：/actuator/prometheus 必须 permitAll，否则 Prometheus 抓取全部 401
+                        // （实测踩过：只留 /actuator/health 时，抓取端拿到的是 {"code":"UNAUTHORIZED"}，
+                        //  指标系统表面接好了、实际一条数都进不来）。
+                        // 它的安全边界不是鉴权而是网络可达面：backend 端口只绑宿主 127.0.0.1（compose
+                        // ports: "127.0.0.1:18080:8080"），nginx 路由白名单只放行 = /actuator/health，
+                        // 其余 /actuator/* 一律 404。给抓取端发 JWT 会引入会过期的凭据，反而更脆。
+                        .requestMatchers("/api/v1/auth/**", "/api/v1/ai/chat", "/api/v1/culture/**",
+                                "/actuator/health", "/actuator/prometheus").permitAll()
                         // M5-S2 会话管理：/api/v1/ai/sessions/** 需登录（游客 401，F-10）；仅 /chat 保持公开（前端降级链游客可用）
                         // MCP 工具协议端点（P1-1）：culture-search 只读公开知识检索，与 /api/v1/culture/** 同风险等级；
                         // 未来接入敏感工具（写操作/个人数据）时必须单独收紧鉴权
