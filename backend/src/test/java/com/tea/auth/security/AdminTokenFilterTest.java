@@ -62,6 +62,32 @@ class AdminTokenFilterTest {
         assertThat(resp.getStatus()).isEqualTo(200);
     }
 
+    /**
+     * 百分号编码前缀不得绕过令牌校验。
+     *
+     * <p>根因：filter 用 {@code getRequestURI().startsWith("/api/v1/admin/")} 做字符串前缀判断，
+     * 而 Servlet 容器返回的 URI 是<b>未解码</b>的 —— {@code /api/v1/%61dmin/...} 过不了 startsWith，
+     * 于是 filter 放行；但 Spring MVC 在路由时会解码并能命中同一个 handler，
+     * SecurityConfig 的 {@code permitAll("/api/v1/admin/**")} 用的是 MVC 匹配器（同样解码）。
+     * 两处判据语义不一致 ⇒ 唯一的 admin 闸门被绕开。
+     */
+    @Test
+    void percentEncodedAdminPrefixIsStillRejected() throws Exception {
+        AdminTokenFilter filter = new AdminTokenFilter(objectMapper, "correct-token");
+        MockHttpServletResponse resp = new MockHttpServletResponse();
+        filter.doFilterInternal(request("POST", "/api/v1/%61dmin/culture/chunks/backfill"), resp, new MockFilterChain());
+        assertThat(resp.getStatus()).isEqualTo(401);
+    }
+
+    /** 无尾斜杠的 {@code /api/v1/admin} 同样是管理端点：当前无 handler，但新增 handler 后即为裸奔。 */
+    @Test
+    void adminPathWithoutTrailingSlashIsStillRejected() throws Exception {
+        AdminTokenFilter filter = new AdminTokenFilter(objectMapper, "correct-token");
+        MockHttpServletResponse resp = new MockHttpServletResponse();
+        filter.doFilterInternal(request("GET", "/api/v1/admin"), resp, new MockFilterChain());
+        assertThat(resp.getStatus()).isEqualTo(401);
+    }
+
     private MockHttpServletRequest request(String method, String uri) {
         MockHttpServletRequest req = new MockHttpServletRequest(method, uri);
         req.setRemoteAddr("127.0.0.1");
