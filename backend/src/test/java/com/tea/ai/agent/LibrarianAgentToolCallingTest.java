@@ -205,13 +205,13 @@ class LibrarianAgentToolCallingTest {
     @Test
     void treatmentWithoutToolCallReturnsEmptySourcesAndKeepsRiskMarker() {
         LibrarianAgent agent = agent("test-key", AiCallTestSupport.experiment(ExperimentService.TREATMENT));
-        mockLlmReply("知识库未命中，以下为常识回答：……");
+        mockLlmReply("……");
 
         AiChatVo vo = agent.chat(null, question("泛泛聊聊"));
 
         // 模型没调工具 = 没有依据：给空数组，绝不编造来源
         assertThat(vo.sources()).isEmpty();
-        assertThat(vo.content()).startsWith("⚠ 无来源（知识库未命中，以下为常识回答）");
+        assertThat(vo.content()).startsWith("以下为茶路常识，未引自站内文献。");
     }
 
     @Test

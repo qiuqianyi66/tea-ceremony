@@ -103,13 +103,14 @@ class LibrarianAgentTest {
     void emptyHitFallsBackToGeneralKnowledge() {
         LibrarianAgent agent = agent("test-key");
         when(search.search(anyString())).thenReturn(new CultureSearchResult(List.of(), List.of(), List.of(), List.of()));
-        mockLlmReply("知识库未命中，以下为常识回答：……");
+        mockLlmReply("……");
 
         AiChatVo vo = agent.chat(null, question("完全冷门的问题"));
 
         assertTrue(vo.sources().isEmpty());
-        // P1-5 审计员风险标记：无来源输出必须带 ⚠ 警示前缀
-        assertTrue(vo.content().startsWith("⚠ 无来源（知识库未命中，以下为常识回答）"));
+        // P1-5 审计员风险标记：无来源输出必须带「未引自站内文献」警示前缀。
+        // 该前缀不得出现「知识库/检索/命中」等内部机制词——那是系统内部状态，不该暴露给用户。
+        assertTrue(vo.content().startsWith("以下为茶路常识，未引自站内文献。"));
     }
 
     @Test
