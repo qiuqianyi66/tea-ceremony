@@ -11,7 +11,10 @@ import com.tea.culture.vo.TeaItem;
 import com.tea.culture.vo.TeawareItem;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.embedding.EmbeddingModel;
@@ -34,6 +37,27 @@ public class CultureSearchService {
     private static final double VECTOR_MIN_SIM = 0.55;
     /** 向量分支每类型补缺上限（ILIKE 未命中时补位；各类型总量仍 ≤5）。 */
     private static final int VECTOR_TOP_N = 3;
+    /**
+     * query → embedding 的 LRU 缓存上限。embedding 是 1024 维 float（约 4 KB/条），
+     * 512 条约 2 MB，对单实例 Spring Boot 是可接受的内存上限。
+     */
+    private static final int EMBED_CACHE_MAX = 512;
+
+    /**
+     * query → embedding 进程内 LRU（accessOrder + 有界 + synchronizedMap 保线程安全）。
+     *
+     * <p><b>只缓存向量、不缓存检索结果</b>：embedding 是 q 的纯函数（同输入同输出），无失效问题；
+     * 而检索结果依赖 culture_chunks 内容，backfill 新增 chunk 后必须即时反映，缓存结果会读到陈旧数据。
+     * <p>为什么值得缓存：embedding 是付费调用，ragHitRate 长期低位意味着多数调用未产生命中，
+     * 重复查询重复付费纯属浪费。</p>
+     */
+    private final Map<String, float[]> embeddingCache = Collections.synchronizedMap(
+            new LinkedHashMap<>(16, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String, float[]> eldest) {
+                    return size() > EMBED_CACHE_MAX;
+                }
+            });
 
     private final JdbcTemplate jdbcTemplate;
     private final ObjectProvider<EmbeddingModel> embeddingModelProvider;
@@ -131,12 +155,9 @@ public class CultureSearchService {
             meterRegistry.counter("tea.culture.search.vector.degraded", "reason", "no_model").increment();
             return List.of();
         }
-        float[] qv;
-        try {
-            qv = model.embed(q);
-        } catch (Exception e) {
-            log.warn("vector search degraded to keyword-only: {}", e.getMessage());
-            meterRegistry.counter("tea.culture.search.vector.degraded", "reason", "embed_failed").increment();
+        float[] qv = embedCached(model, q);
+        if (qv == null) {
+            // 上游 embedding 失败：已由 embedCached 记录降级，走纯 ILIKE
             return List.of();
         }
         meterRegistry.counter("tea.culture.search.vector.attempted").increment();
@@ -160,6 +181,30 @@ public class CultureSearchService {
             log.warn("vector search degraded to keyword-only: {}", e.getMessage());
             meterRegistry.counter("tea.culture.search.vector.degraded", "reason", "query_failed").increment();
             return List.of();
+        }
+    }
+
+    /**
+     * 带缓存的 embedding：命中 → 复用（省一次付费调用）；未命中 → 调上游并写入缓存。
+     *
+     * <p>失败返回 null 且<b>不缓存</b>：上游抖动是一次性事件，把失败结果放进缓存会让后续
+     * 请求在 TTL 内持续拿不到向量。返回的数组是副本，调用方改写不会污染缓存项。</p>
+     */
+    private float[] embedCached(EmbeddingModel model, String q) {
+        float[] cached = embeddingCache.get(q);
+        if (cached != null) {
+            meterRegistry.counter("tea.culture.search.vector.cache", "outcome", "hit").increment();
+            return cached.clone();
+        }
+        meterRegistry.counter("tea.culture.search.vector.cache", "outcome", "miss").increment();
+        try {
+            float[] fresh = model.embed(q);
+            embeddingCache.put(q, fresh.clone());
+            return fresh;
+        } catch (Exception e) {
+            log.warn("vector search degraded to keyword-only: {}", e.getMessage());
+            meterRegistry.counter("tea.culture.search.vector.degraded", "reason", "embed_failed").increment();
+            return null;
         }
     }
 
