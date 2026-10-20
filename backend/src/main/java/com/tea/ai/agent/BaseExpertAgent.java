@@ -5,6 +5,7 @@ import com.tea.ai.dto.ChatMessageDto;
 import com.tea.ai.resilience.AiCallExecutor;
 import com.tea.ai.service.AiUsageLogger;
 import com.tea.ai.service.PromptService;
+import com.tea.ai.util.ChatResponseText;
 import com.tea.ai.vo.AiChatVo;
 import com.tea.common.exception.BadGatewayException;
 import java.util.List;
@@ -98,10 +99,7 @@ public abstract class BaseExpertAgent {
 
     /** 提取正文（空 → 502），并落计量（旁路：失败不影响响应）。latency 由调用处 start 计时；tokens/latency 透传供 T07 Trace。 */
     protected AiChatVo toVo(Integer userId, AiChatRequest req, ChatResponse response, List<String> sources, long startMillis) {
-        String content = response.getResult().getOutput().getText();
-        if (content == null) {
-            throw new BadGatewayException("AI 服务返回为空");
-        }
+        String content = ChatResponseText.requireNonBlank(response);
         int latency = (int) (System.currentTimeMillis() - startMillis);
         try {
             usageLogger.save(userId, req, response, latency);

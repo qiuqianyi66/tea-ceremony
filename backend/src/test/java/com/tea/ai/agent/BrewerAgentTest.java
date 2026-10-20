@@ -118,4 +118,25 @@ class BrewerAgentTest {
 
         verify(usageLogger).save(isNull(), eq(question("怎么泡茶")), eq(response), anyInt());
     }
+
+    @Test
+    void blankReplyThrowsBadGateway() {
+        // 模型返回空白正文（风控拦截 / 空 completion）→ 必须 502，不能静默返回 200 空体
+        BrewerAgent agent = agent("test-key");
+        when(search.search(anyString())).thenReturn(new CultureSearchResult(List.of(), List.of(), List.of(), List.of()));
+        mockLlmReply("   ");
+
+        assertThrows(BadGatewayException.class, () -> agent.chat(null, question("怎么泡茶")));
+    }
+
+    @Test
+    void nullResultReplyThrowsBadGateway() {
+        // getResult() 为 null（上游异常）→ 旧代码 NPE→500，现应统一 502
+        BrewerAgent agent = agent("test-key");
+        when(search.search(anyString())).thenReturn(new CultureSearchResult(List.of(), List.of(), List.of(), List.of()));
+        mockLlmReply("回答");
+        when(response.getResult()).thenReturn(null);
+
+        assertThrows(BadGatewayException.class, () -> agent.chat(null, question("怎么泡茶")));
+    }
 }

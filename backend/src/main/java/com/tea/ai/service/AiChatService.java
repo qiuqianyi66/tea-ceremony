@@ -16,6 +16,7 @@ import com.tea.ai.entity.AiEvalTrace;
 import com.tea.ai.experiment.service.ExperimentService;
 import com.tea.ai.fallback.LocalFallbackService;
 import com.tea.ai.resilience.AiCallExecutor;
+import com.tea.ai.util.ChatResponseText;
 import com.tea.ai.vo.AiChatVo;
 import com.tea.common.exception.BadGatewayException;
 import com.tea.common.exception.QuotaExceededException;
@@ -343,10 +344,7 @@ public class AiChatService {
                 .chatResponse(), null);
         int latency = (int) (System.currentTimeMillis() - start);
 
-        String content = response.getResult().getOutput().getText();
-        if (content == null) {
-            throw new BadGatewayException("AI 服务返回为空");
-        }
+        String content = ChatResponseText.requireNonBlank(response);
 
         // 计量失败不影响已成功的 LLM 响应（旁路观测）
         try {

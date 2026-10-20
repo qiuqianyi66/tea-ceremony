@@ -129,4 +129,25 @@ class LibrarianAgentTest {
 
         verify(usageLogger).save(isNull(), eq(question("讲讲茶")), eq(response), anyInt());
     }
+
+    @Test
+    void blankReplyThrowsBadGateway() {
+        // 模型返回空白正文 → 必须 502，不能静默降级且计量误判成功
+        LibrarianAgent agent = agent("test-key");
+        when(search.search(anyString())).thenReturn(new CultureSearchResult(List.of(), List.of(), List.of(), List.of()));
+        mockLlmReply("   ");
+
+        assertThrows(BadGatewayException.class, () -> agent.chat(null, question("讲讲茶")));
+    }
+
+    @Test
+    void nullResultReplyThrowsBadGateway() {
+        // getResult() 为 null → 旧代码 NPE→500，现应统一 502
+        LibrarianAgent agent = agent("test-key");
+        when(search.search(anyString())).thenReturn(new CultureSearchResult(List.of(), List.of(), List.of(), List.of()));
+        mockLlmReply("回答");
+        when(response.getResult()).thenReturn(null);
+
+        assertThrows(BadGatewayException.class, () -> agent.chat(null, question("讲讲茶")));
+    }
 }
