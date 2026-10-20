@@ -157,6 +157,27 @@ class AiChatServiceTest {
     }
 
     @Test
+    void blankTransparentReplyThrowsBadGateway() {
+        // 透明代理拿到空白正文 → 必须 502，不能返回 200 空体
+        mockTransparentReply("   ");
+        AiChatService service = service("test-key");
+        when(orchestrator.routeToAgent(req("chat"))).thenReturn(null);
+
+        assertThrows(BadGatewayException.class, () -> service.chat(null, req("chat")));
+    }
+
+    @Test
+    void nullResultTransparentReplyThrowsBadGateway() {
+        // getResult() 为 null → 旧代码 NPE→500，现应统一 502
+        mockTransparentReply("回答");
+        when(response.getResult()).thenReturn(null);
+        AiChatService service = service("test-key");
+        when(orchestrator.routeToAgent(req("chat"))).thenReturn(null);
+
+        assertThrows(BadGatewayException.class, () -> service.chat(null, req("chat")));
+    }
+
+    @Test
     void chatTypeFallsBackToTransparentProxy() {
         mockTransparentReply("透明回答");
         AiChatService service = service("test-key");

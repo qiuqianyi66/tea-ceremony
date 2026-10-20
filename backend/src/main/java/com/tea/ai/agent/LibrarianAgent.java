@@ -8,6 +8,7 @@ import com.tea.ai.service.AgentSkillRouter;
 import com.tea.ai.service.AiUsageLogger;
 import com.tea.ai.service.PromptService;
 import com.tea.ai.tool.CultureQueryTools;
+import com.tea.ai.util.ChatResponseText;
 import com.tea.ai.vo.AiChatVo;
 import com.tea.common.exception.BadGatewayException;
 import com.tea.common.exception.QuotaExceededException;
@@ -205,10 +206,7 @@ public class LibrarianAgent {
 
     /** 提取正文（空 → 502）+ 落计量（旁路失败不影响响应）+ 无来源时的确定性风险标记。两条路径共用。 */
     private AiChatVo toVo(Integer userId, AiChatRequest req, ChatResponse response, List<String> sources, long start) {
-        String content = response.getResult().getOutput().getText();
-        if (content == null) {
-            throw new BadGatewayException("AI 服务返回为空");
-        }
+        String content = ChatResponseText.requireNonBlank(response);
         int latency = (int) (System.currentTimeMillis() - start);
         try {
             usageLogger.save(userId, req, response, latency);
