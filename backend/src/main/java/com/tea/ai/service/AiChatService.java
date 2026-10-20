@@ -25,6 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.AssistantMessage;
@@ -60,6 +61,16 @@ public class AiChatService {
     private final TasterAgent tasterAgent;
     private final BrewerAgent brewerAgent;
     private final MentorAgent mentorAgent;
+
+    /**
+     * 专家派发表（审计 #7：收敛散弹式改动）。新增专家只需在此登记一行，
+     * 替代原先逐个 {@code if (type == AgentType.X)} 的分支堆叠；忘了登记由
+     * {@code AgentDispatchRegistryTest} 兜底变红。
+     *
+     * <p>键不含 {@code CHAT}：它与 {@code null} 一样回落透明代理，故不登记。
+     * 不可变 {@code Map.of} 的 {@code get(null)} 会 NPE，查表前必须先判 null。</p>
+     */
+    final Map<AgentType, BiFunction<Integer, AiChatRequest, AiChatVo>> experts;
     private final AiCallQuota callQuota;
     /**
      * P1-13 熔断：上游连续失败达阈值后快速 502（前端降级链不变）。
@@ -113,6 +124,12 @@ public class AiChatService {
         this.aiCallExecutor = deps.aiCallExecutor();
         this.localFallbackService = deps.localFallbackService();
         this.experimentService = deps.experimentService();
+        this.experts = Map.of(
+                AgentType.LIBRARIAN, librarianAgent::chat,
+                AgentType.ADVISOR, advisorAgent::chat,
+                AgentType.TASTER, tasterAgent::chat,
+                AgentType.BREWER, brewerAgent::chat,
+                AgentType.MENTOR, mentorAgent::chat);
     }
 
     public AiChatVo chat(Integer userId, AiChatRequest req) {
@@ -276,24 +293,13 @@ public class AiChatService {
         }
     }
 
-    /** 五专家派发；null/CHAT 回落透明代理。 */
+    /**
+     * 五专家派发；null/CHAT 回落透明代理。
+     * 查表替代分支堆叠：圈复杂度 6 → 1，行为逐路径等价（未登记的类型与 null 同回透明代理）。
+     */
     private AiChatVo dispatch(AgentType type, Integer userId, AiChatRequest req) {
-        if (type == AgentType.LIBRARIAN) {
-            return librarianAgent.chat(userId, req);
-        }
-        if (type == AgentType.ADVISOR) {
-            return advisorAgent.chat(userId, req);
-        }
-        if (type == AgentType.TASTER) {
-            return tasterAgent.chat(userId, req);
-        }
-        if (type == AgentType.BREWER) {
-            return brewerAgent.chat(userId, req);
-        }
-        if (type == AgentType.MENTOR) {
-            return mentorAgent.chat(userId, req);
-        }
-        return transparentChat(userId, req);
+        BiFunction<Integer, AiChatRequest, AiChatVo> expert = type == null ? null : experts.get(type);
+        return expert == null ? transparentChat(userId, req) : expert.apply(userId, req);
     }
 
     private String agentOf(AgentType type, AiChatRequest req) {
