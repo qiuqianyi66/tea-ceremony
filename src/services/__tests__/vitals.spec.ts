@@ -42,6 +42,13 @@ beforeEach(async () => {
   initWebVitals()
 })
 
+/**
+ * 全量并行跑（25 个测试文件）时 CPU 争抢，vi.waitFor 默认 1s 不够用：
+ * 实测「超过 500 条裁剪」在默认超时下偶发 count 仍为 0 而失败（flaky）。
+ * 统一放宽到 10s，单机单跑时行为不变。
+ */
+const WAIT = { timeout: 10000, interval: 50 } as const
+
 /** 等待同步触发的回调的异步落库链全部 settle（count 连续两次轮询不变） */
 async function waitForSettle() {
   let prev = -1
@@ -77,7 +84,7 @@ describe('指标落库', () => {
     await Promise.resolve()
     await vi.waitFor(async () => {
       expect(await db.webVitals.count()).toBe(1)
-    })
+    }, WAIT)
     const records = await getWebVitals()
     expect(records[0]).toMatchObject({
       name: 'LCP',
@@ -93,7 +100,7 @@ describe('指标落库', () => {
     handlers.INP(metric('INP', 88, 'needs-improvement'))
     await vi.waitFor(async () => {
       expect(await db.webVitals.count()).toBe(2)
-    })
+    }, WAIT)
     const all = await getWebVitals()
     expect(all.map((r) => r.name).sort()).toEqual(['CLS', 'INP'])
   })
@@ -106,7 +113,7 @@ describe('容量与隐私', () => {
     }
     await vi.waitFor(async () => {
       expect(await db.webVitals.count()).toBe(MAX_VITALS)
-    })
+    }, WAIT)
     // 再触发一批 → 裁剪后不超上限
     for (let i = 0; i < 50; i++) {
       handlers.LCP(metric('LCP', 9999))
@@ -122,7 +129,7 @@ describe('容量与隐私', () => {
     await vi.waitFor(async () => {
       // 按 name 精确计数，不受其他测试迟到的 LCP 写入影响
       expect(await db.webVitals.where('name').equals('FCP').count()).toBe(1)
-    })
+    }, WAIT)
     expect(fetchSpy).not.toHaveBeenCalled()
     fetchSpy.mockRestore()
   })
@@ -131,7 +138,7 @@ describe('容量与隐私', () => {
     handlers.LCP(metric('LCP', 100))
     await vi.waitFor(async () => {
       expect(await db.webVitals.count()).toBe(1)
-    })
+    }, WAIT)
     await clearWebVitals()
     expect(await db.webVitals.count()).toBe(0)
   })
