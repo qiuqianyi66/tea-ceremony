@@ -90,7 +90,7 @@ class AdvisorAgentTest {
     void emptyHitFallsBackToGeneralKnowledge() {
         AdvisorAgent agent = agent("test-key");
         when(search.search(anyString())).thenReturn(new CultureSearchResult(List.of(), List.of(), List.of(), List.of()));
-        mockLlmReply("知识库未命中，以下为常识回答：……");
+        mockLlmReply("……");
 
         AiChatVo vo = agent.chat(null, question("随便推荐一款"));
 

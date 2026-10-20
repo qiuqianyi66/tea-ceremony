@@ -65,7 +65,10 @@ class CultureQueryToolsTest {
 
         String out = tools.cultureQuery("完全冷门的主题");
 
-        assertThat(out).startsWith("知识库无匹配");
+        assertThat(out).startsWith("库内暂无该关键词对应的条目");
+        // 回归锁：空命中文案是给模型的操作指令，不是给用户看的结论句。
+        // 旧版以「并说明知识库未命中」结尾，模型会整句复述到回复里，把检索状态暴露给终端用户。
+        assertThat(out).doesNotContain("知识库未命中，以下为常识回答");
     }
 
     @Test
@@ -74,7 +77,7 @@ class CultureQueryToolsTest {
 
         String out = tools.cultureQuery("   ");
 
-        assertThat(out).startsWith("知识库无匹配");
+        assertThat(out).startsWith("库内暂无该关键词对应的条目");
         verify(search).search("");
     }
 
@@ -84,7 +87,7 @@ class CultureQueryToolsTest {
 
         String out = tools.cultureQuery("boom");
 
-        assertThat(out).startsWith("知识库检索失败");
+        assertThat(out).startsWith("检索暂不可用");
     }
 
     @Test
