@@ -39,7 +39,11 @@ function evalPointProgram(point, result) {
     return hasAny(text, result.sixLevelKeywords)
   }
   if (name.includes('未命中')) {
-    return hasAny(text, ['未命中', '常识回答'])
+    // 判分须同时接受新旧两种表述。#122（摘除内部状态披露）把用户可见文案从
+    // 「⚠ 无来源（知识库未命中，以下为常识回答）」改为「以下为茶路常识，未引自站内文献。」——
+    // 语义完全一致（都是「明示这是常识回答而非知识库依据」），只是不再暴露内部机制词。
+    // 若此处仍只匹配旧字面，LIB-006 的 program 考点会莫名判 0。
+    return hasAny(text, ['常识回答', '未命中', '茶路常识', '未引自'])
   }
   if (name.includes('知识库命中') || name.includes('RAG')) {
     // F-V2（REQ-ai-eval-v6）：命中直通过；未命中时按「合格常识回答」判——RAG 未命中但内容
