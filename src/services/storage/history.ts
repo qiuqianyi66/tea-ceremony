@@ -28,9 +28,12 @@ export const historyStorage = {
     await initDB()
 
     // 检查是否已存在相同茶叶同一天的记录（防重复）
-    const recordDay = record.date.split('T')[0]
+    // 走 [teaId+date] 复合索引的区间查询：上界取「当天 + U+FFFF」实现当天任意时刻的前缀匹配，
+    // 替代原先 O(n) 全表 filter——原写法在遇到缺 date 的脏记录时会抛 TypeError，直接阻断新增。
+    const recordDay = record.date.split('T')[0]!
     const existing = await db.tastings
-      .filter((item) => item.teaId === record.teaId && item.date.startsWith(recordDay!))
+      .where('[teaId+date]')
+      .between([record.teaId, recordDay], [record.teaId, `${recordDay}\uffff`], true, true)
       .first()
 
     if (existing) {
@@ -91,10 +94,8 @@ export const historyStorage = {
   /** 根据茶叶 ID 查询记录 */
   async getByTea(teaId: string): Promise<TastingRecord[]> {
     await initDB()
-    return db.tastings
-      .filter((record) => record.teaId === teaId)
-      .reverse()
-      .toArray()
+    // teaId 有独立索引；原先 filter 是全表扫描
+    return db.tastings.where('teaId').equals(teaId).reverse().toArray()
   },
 
   /** 查询高分记录 */

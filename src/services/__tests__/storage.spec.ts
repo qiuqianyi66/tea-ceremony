@@ -155,3 +155,55 @@ describe('syncPending：离线记录重试', () => {
     expect(createMock).not.toHaveBeenCalled()
   })
 })
+
+describe('add：去重语义（[teaId+date] 索引改造的守卫）', () => {
+  beforeEach(() => {
+    createMock.mockResolvedValue({ id: 1 } as never)
+  })
+
+  it('同茶同日但时刻不同 → 仍去重（锁「当天前缀」语义，非整串等值）', async () => {
+    await historyStorage.add(makeRecord({ date: '2026-09-10T08:00:00.000Z' }))
+    await historyStorage.add(makeRecord({ id: 'rec_second', date: '2026-09-10T21:30:00.000Z' }))
+
+    expect(await db.tastings.count()).toBe(1)
+    expect(createMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('同茶不同日 → 正常新增两条（锁区间不过度匹配）', async () => {
+    await historyStorage.add(makeRecord({ date: '2026-09-10T10:00:00.000Z' }))
+    await historyStorage.add(makeRecord({ id: 'rec_second', date: '2026-09-11T10:00:00.000Z' }))
+
+    expect(await db.tastings.count()).toBe(2)
+    expect(createMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('不同茶同日 → 正常新增两条（teaId 前缀相邻不误伤）', async () => {
+    await historyStorage.add(makeRecord({ teaId: 'longjing' }))
+    await historyStorage.add(
+      makeRecord({ id: 'rec_second', teaId: 'longjing2', teaName: '龙井二号' }),
+    )
+
+    expect(await db.tastings.count()).toBe(2)
+  })
+
+  it('历史脏数据（date 缺失）不阻断新增', async () => {
+    await db.tastings.put({
+      ...makeRecord({ id: 'dirty' }),
+      date: undefined,
+    } as unknown as TastingRecord)
+
+    await historyStorage.add(makeRecord())
+    expect(await db.tastings.count()).toBe(2)
+  })
+})
+
+describe('getByTea：按茶叶查询', () => {
+  it('只返回该茶的记录（走 teaId 索引，非全表 filter）', async () => {
+    await db.tastings.put(makeRecord({ id: 'a', teaId: 'longjing' }))
+    await db.tastings.put(makeRecord({ id: 'b', teaId: 'tieguanyin', teaName: '铁观音' }))
+
+    const rows = await historyStorage.getByTea('longjing')
+    expect(rows).toHaveLength(1)
+    expect(rows[0]!.teaId).toBe('longjing')
+  })
+})
