@@ -354,3 +354,76 @@ describe('teaAI 系统提示安全红线（F-A / Phase 1 回归锁）', () => {
     expect(system).toContain('整书复制')
   })
 })
+
+describe('teaAI 超时预算（RAG / LLM 挂起不拖垮链路）', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  /** 模拟「永不返回、但对 abort 作出响应」的请求（与真实 fetch 的中止语义一致）。 */
+  function hangingFetch() {
+    return vi.fn(
+      (_url: string, init: RequestInit) =>
+        new Promise<never>((_resolve, reject) => {
+          init.signal?.addEventListener('abort', () =>
+            reject(new DOMException('Aborted', 'AbortError')),
+          )
+        }),
+    )
+  }
+
+  it('RAG 请求带中止信号（超时保护存在，删掉即变红）', async () => {
+    let ragInit: RequestInit | null = null
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string, init: RequestInit) => {
+        if (url.includes('culture/search')) {
+          ragInit = init
+          return Promise.resolve({ ok: true, json: async () => ({ code: 'OK', data: {} }) })
+        }
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ code: 'OK', data: { content: '回复' } }),
+        })
+      }),
+    )
+    const { askTeaMaster } = await freshTeaAI()
+    await askTeaMaster('你好')
+    expect(ragInit?.signal).toBeInstanceOf(AbortSignal)
+  })
+
+  it('RAG 检索挂起：在预算内中止并继续 chat，不无限等待', async () => {
+    vi.useFakeTimers()
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string, init: RequestInit) => {
+        if (url.includes('culture/search')) {
+          return new Promise((_resolve, reject) => {
+            init.signal?.addEventListener('abort', () =>
+              reject(new DOMException('Aborted', 'AbortError')),
+            )
+          })
+        }
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ code: 'OK', data: { content: 'AI 回复' } }),
+        })
+      }),
+    )
+
+    const { askTeaMaster } = await freshTeaAI()
+    const pending = askTeaMaster('西湖龙井怎么泡？')
+    // 推进超过 RAG 预算：挂起的检索被中止 → 降级为空 → chat 照常发出
+    await vi.advanceTimersByTimeAsync(6_000)
+    await expect(pending).resolves.toMatchObject({ content: 'AI 回复' })
+  })
+
+  it('LLM 挂起：超过预算后降级为规则评语（callLLM 超时保护）', async () => {
+    vi.useFakeTimers()
+    vi.stubGlobal('fetch', hangingFetch())
+    const { generateTastingNote } = await freshTeaAI()
+    const pending = generateTastingNote('西湖龙井', DIMENSIONS, 8.6)
+    await vi.advanceTimersByTimeAsync(31_000)
+    await expect(pending).resolves.toContain('今日品西湖龙井')
+  })
+})

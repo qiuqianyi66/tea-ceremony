@@ -13,33 +13,63 @@ import type { TasteDimensions, TastingRecord } from '@/types/tasting'
 import type { Tea } from '@/types/tea'
 import { API_BASE } from './apiBase'
 
-// ============ LLM 调用 ============
+// ============ AI 请求统一出口 ============
 
 // 统一走后端 AI 代理（浏览器不直连第三方服务）；后端不可用时降级到规则引擎。
 
-async function callLLM(systemPrompt: string, userPrompt: string): Promise<string | null> {
+/** LLM 链路超时：DeepSeek 推理模型响应 10-30s（thinking 计入生成时间），短于此会被误中止。 */
+const AI_TIMEOUT_MS = 30_000
+/**
+ * RAG 上下文是「尽力而为」的增强：命中则注入 system prompt，失败/超时即降级为空。
+ * 预算独立且远小于 LLM——文化检索一旦挂住，不应拖垮整条问答链路。
+ */
+const RAG_TIMEOUT_MS = 5_000
+
+interface AiResponse<T> {
+  status: number
+  data: T | null
+}
+
+/**
+ * AI 链路统一 fetch 出口（收敛原先三处各自重复的「超时 + 吞错 + 解包 data」写法）。
+ *
+ * - 返回 `null` = 网络错误 / 超时 / body 非 JSON，调用方按自身语义降级
+ * - 非 2xx 只回 status、不解析 body（错误体格式不定，且与降级路径无关）
+ * - 用 AbortController + setTimeout 而非 AbortSignal.timeout：可被测试的假定时器驱动
+ *
+ * 复杂度：单次请求、无循环与递归 → 时间 O(1)；单 try/catch → 圈复杂度 1。
+ */
+async function aiFetch<T>(
+  url: string,
+  init: Omit<RequestInit, 'signal'>,
+  timeoutMs: number = AI_TIMEOUT_MS,
+): Promise<AiResponse<T> | null> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
   try {
-    const controller = new AbortController()
-    // DeepSeek 推理模型响应 10-30s（thinking 计入生成时间）；8s 太短会被中止 → 规则降级
-    const timeout = setTimeout(() => controller.abort(), 30000)
-    const res = await fetch(`${API_BASE}/v1/ai/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      signal: controller.signal,
-      body: JSON.stringify({
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-        ],
-      }),
-    })
-    clearTimeout(timeout)
-    if (!res.ok) return null
-    const data = await res.json()
-    return data.data?.content || null
+    const res = await fetch(url, { ...init, signal: controller.signal })
+    if (!res.ok) return { status: res.status, data: null }
+    const body = (await res.json()) as { data?: T | null }
+    return { status: res.status, data: body?.data ?? null }
   } catch {
     return null
+  } finally {
+    clearTimeout(timer)
   }
+}
+
+async function callLLM(systemPrompt: string, userPrompt: string): Promise<string | null> {
+  const res = await aiFetch<{ content?: string }>(`${API_BASE}/v1/ai/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
+    }),
+  })
+  return res?.data?.content || null
 }
 
 // ============ 系统提示词 ============
@@ -351,43 +381,46 @@ interface CultureSearchResult {
   poems?: { id: number; title: string; author?: string; type: string }[]
 }
 
+/**
+ * 拉取茶文化知识库上下文。尽力而为：非 2xx / 网络错误 / 超时一律降级为空串，
+ * 由调用方按「无 RAG」继续问答（原先此处无任何超时，检索挂住会卡死整条链路）。
+ */
 async function fetchRAGContext(question: string): Promise<string> {
-  try {
-    const res = await fetch(`${API_BASE}/v1/culture/search?q=${encodeURIComponent(question)}`)
-    if (!res.ok) return ''
-    const wrapped = await res.json()
-    const data = wrapped.data as CultureSearchResult
-    const parts: string[] = ['【茶文化知识库资料】']
+  const res = await aiFetch<CultureSearchResult>(
+    `${API_BASE}/v1/culture/search?q=${encodeURIComponent(question)}`,
+    { method: 'GET' },
+    RAG_TIMEOUT_MS,
+  )
+  const data = res?.data
+  if (!data) return ''
+  const parts: string[] = ['【茶文化知识库资料】']
 
-    if (data.teas?.length) {
-      parts.push('\n相关茶叶：')
-      data.teas.forEach((t) => {
-        parts.push(`- ${t.name}`)
-      })
-    }
-    if (data.people?.length) {
-      parts.push('\n相关茶人：')
-      data.people.forEach((p) => {
-        parts.push(`- ${p.name}（${p.dynasty ?? ''}）`)
-      })
-    }
-    if (data.regions?.length) {
-      parts.push('\n相关产区：')
-      data.regions.forEach((r) => {
-        parts.push(`- ${r.name}（${r.province ?? ''}）`)
-      })
-    }
-    if (data.poems?.length) {
-      parts.push('\n相关茶诗：')
-      data.poems.forEach((p) => {
-        parts.push(`- 《${p.title}》${p.author ?? ''}`)
-      })
-    }
-
-    return parts.join('\n')
-  } catch {
-    return ''
+  if (data.teas?.length) {
+    parts.push('\n相关茶叶：')
+    data.teas.forEach((t) => {
+      parts.push(`- ${t.name}`)
+    })
   }
+  if (data.people?.length) {
+    parts.push('\n相关茶人：')
+    data.people.forEach((p) => {
+      parts.push(`- ${p.name}（${p.dynasty ?? ''}）`)
+    })
+  }
+  if (data.regions?.length) {
+    parts.push('\n相关产区：')
+    data.regions.forEach((r) => {
+      parts.push(`- ${r.name}（${r.province ?? ''}）`)
+    })
+  }
+  if (data.poems?.length) {
+    parts.push('\n相关茶诗：')
+    data.poems.forEach((p) => {
+      parts.push(`- 《${p.title}》${p.author ?? ''}`)
+    })
+  }
+
+  return parts.join('\n')
 }
 
 /**
@@ -445,38 +478,29 @@ export async function askTeaMaster(
     body.agent = agent
   }
 
-  try {
-    const res = await fetch(`${API_BASE}/v1/ai/chat`, {
-      method: 'POST',
-      headers,
-      signal: AbortSignal.timeout(30000),
-      body: JSON.stringify(body),
-    })
+  const res = await aiFetch<{ content?: string; sessionId?: number; sources?: string[] | null }>(
+    `${API_BASE}/v1/ai/chat`,
+    { method: 'POST', headers, body: JSON.stringify(body) },
+  )
 
-    if (!res.ok) {
-      // F-4 配额超限（429）：清 sessionId（下次请求后端自动开新会话），静默规则降级
-      if (res.status === 429) {
-        clearAiSessionId()
-      }
-      void track({ category: 'ai', event: 'ai_ask', label: 'ask', result: 'degraded' })
-      return { content: ruleBasedReply(question), sources: [] }
+  const payload = res?.data
+  const content = payload?.content
+  // 网络错误 / 超时 / 非 2xx / 空正文 → 一律规则降级（承重墙不变）
+  if (!payload || !content) {
+    // F-4 配额超限（429）：清 sessionId（下次请求后端自动开新会话），静默规则降级
+    if (res?.status === 429) {
+      clearAiSessionId()
     }
-    const data = await res.json()
-    if (!data.data?.content) {
-      void track({ category: 'ai', event: 'ai_ask', label: 'ask', result: 'degraded' })
-      return { content: ruleBasedReply(question), sources: [] }
-    }
-    // F-2 登录用户：后端返回新会话 id → 持久化，下次续用（配额按 sessionId 计数）
-    if (loggedIn && data.data?.sessionId) {
-      saveAiSessionId(data.data.sessionId)
-    }
-    void track({ category: 'ai', event: 'ai_ask', label: 'ask', result: 'success' })
-    // P-O4：解包 sources（透明代理/无命中为 null → 空数组）
-    return { content: data.data.content, sources: data.data.sources ?? [] }
-  } catch {
     void track({ category: 'ai', event: 'ai_ask', label: 'ask', result: 'degraded' })
     return { content: ruleBasedReply(question), sources: [] }
   }
+  // F-2 登录用户：后端返回新会话 id → 持久化，下次续用（配额按 sessionId 计数）
+  if (loggedIn && payload.sessionId) {
+    saveAiSessionId(payload.sessionId)
+  }
+  void track({ category: 'ai', event: 'ai_ask', label: 'ask', result: 'success' })
+  // P-O4：解包 sources（透明代理/无命中为 null → 空数组）
+  return { content, sources: payload.sources ?? [] }
 }
 
 export function getSuggestion(): string[] {
