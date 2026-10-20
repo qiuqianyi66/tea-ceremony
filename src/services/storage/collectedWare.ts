@@ -25,7 +25,13 @@ export const collectedWareStorage = {
 
   async add(wareId: string): Promise<Set<string>> {
     await initDB()
-    await db.collectedWare.put({ id: wareId, unlockedAt: new Date().toISOString() })
+    // collectedWare 表主键是自增 ++id，wareId 只是二级索引；直接 put({id}) 不带主键
+    // 会每次新增一行重复记录，而 remove 只删首行 → 残留脏数据。故先按业务 id 查重，
+    // 已收藏则幂等跳过（与 achievements.unlock 同款防御，2026-10-20 排雷发现）。
+    const existing = await db.collectedWare.where('id').equals(wareId).first()
+    if (!existing) {
+      await db.collectedWare.add({ id: wareId, unlockedAt: new Date().toISOString() })
+    }
     return this.load()
   },
 
