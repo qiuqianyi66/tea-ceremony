@@ -81,7 +81,15 @@ export default defineConfig({
         //   **/*.map      sourcemap 只在调试时需要
         //   **/og-*.png   仅给社交爬虫读 og:image 用（index.html meta），用户页面从不渲染它，
         //                 却被预缓存 515KB —— 纯浪费，实测占总体积 7%
-        globIgnores: ['**/3d/**', '**/*.map', '**/og-*.png'],
+        //   china-map-*   中国地图 GeoJSON 981KB（src/data/china-map.json，阿里 DataV.GeoAtlas）。
+        //                 MapView 以 ?url 按需引入，全站仅 /map 一处使用；预缓存它等于让每个
+        //                 访问者在首页就后台下载 1MB 地图数据。改走 runtimeCaching（见下）。
+        globIgnores: [
+          '**/3d/**',
+          '**/*.map',
+          '**/og-*.png',
+          '**/china-map-*.json',
+        ],
         runtimeCaching: [
           {
             urlPattern: /\.(?:webm|mp3|ogg)$/i,
@@ -99,6 +107,16 @@ export default defineConfig({
             options: {
               cacheName: '3d-textures',
               expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 365 },
+            },
+          },
+          {
+            // 中国地图 GeoJSON：981KB、仅 /map 使用，不该由全站访问者预下载。
+            // 首次进入 /map 时才缓存，之后离线重访 /map 仍可用。
+            urlPattern: /china-map-[A-Za-z0-9_-]+\.json$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'map-data',
+              expiration: { maxEntries: 2, maxAgeSeconds: 60 * 60 * 24 * 30 },
             },
           },
         ],
