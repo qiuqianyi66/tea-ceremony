@@ -84,11 +84,18 @@ export default defineConfig({
         //   china-map-*   中国地图 GeoJSON 981KB（src/data/china-map.json，阿里 DataV.GeoAtlas）。
         //                 MapView 以 ?url 按需引入，全站仅 /map 一处使用；预缓存它等于让每个
         //                 访问者在首页就后台下载 1MB 地图数据。改走 runtimeCaching（见下）。
+        //   *-albedo-* / *-porcelain-*
+        //                 3D 材质贴图（zisha-albedo 570KB、blue-white-porcelain 650KB）。
+        //                 它们经 src/assets import，vite hash 后落进 dist/assets/，**不在 3d/ 下**，
+        //                 因此逃避了上面的 **/3d/** 排除，也不匹配下方只认 /3d/ 路径的运行时规则 ——
+        //                 实测这 1.2MB 长期裸预缓存、无任何兜底。改走 runtimeCaching（见下）。
         globIgnores: [
           '**/3d/**',
           '**/*.map',
           '**/og-*.png',
           '**/china-map-*.json',
+          '**/*-albedo-*.jpg',
+          '**/*-porcelain-*.jpg',
         ],
         runtimeCaching: [
           {
@@ -103,6 +110,17 @@ export default defineConfig({
             // 3D 纹理大图（jpg 单张 2-6MB；P2-8 起优先 KTX2 ~0.9MB/张）不走预缓存，
             // 首次加载后 CacheFirst；basis transcoder（wasm/js）同目录一并缓存
             urlPattern: /\/3d\/.*\.(?:jpg|png|ktx2|wasm|js)$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: '3d-textures',
+              expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 365 },
+            },
+          },
+          {
+            // 同是 3D 材质，但被 vite hash 进了 dist/assets/（见 globIgnores 注释），路径不含 /3d/，
+            // 故需独立 pattern。共用 3d-textures 缓存：不进预缓存，冲泡页首次加载后才缓存，
+            // 之后离线仍可用 —— 与 3d/ 下纹理完全一致的取舍。
+            urlPattern: /(?:albedo|porcelain)-[A-Za-z0-9_-]+\.jpg$/i,
             handler: 'CacheFirst',
             options: {
               cacheName: '3d-textures',
