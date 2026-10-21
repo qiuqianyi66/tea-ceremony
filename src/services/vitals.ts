@@ -7,9 +7,10 @@
 
 import type { Metric } from 'web-vitals'
 import { onCLS, onFCP, onINP, onLCP, onTTFB } from 'web-vitals'
-import { db, initDB } from '@/services/storage'
 import { reportVital } from '@/services/telemetry'
 import type { VitalName, WebVitalRecord } from '@/types/vitals'
+
+const loadStorage = () => import('@/services/storage')
 
 /** 本地指标容量上限（个人单机使用，500 条足够覆盖近期会话） */
 export const MAX_VITALS = 500
@@ -33,6 +34,7 @@ export function initWebVitals(): void {
 /** 单条指标落库（fire-and-forget，永不 reject） */
 async function saveVital(metric: Metric): Promise<void> {
   try {
+    const { db, initDB } = await loadStorage()
     await initDB()
 
     const count = await db.webVitals.count()
@@ -65,6 +67,7 @@ async function saveVital(metric: Metric): Promise<void> {
 /** 读取全部指标（本地调试 / 未来设置页性能面板用） */
 export async function getWebVitals(): Promise<WebVitalRecord[]> {
   try {
+    const { db, initDB } = await loadStorage()
     await initDB()
     return await db.webVitals.orderBy('ts').toArray()
   } catch {
@@ -75,6 +78,7 @@ export async function getWebVitals(): Promise<WebVitalRecord[]> {
 /** 清空指标（测试 / 隐私管理） */
 export async function clearWebVitals(): Promise<void> {
   try {
+    const { db, initDB } = await loadStorage()
     await initDB()
     await db.webVitals.clear()
   } catch {

@@ -7,15 +7,11 @@ import { defineStore } from 'pinia'
 import { computed, ref, toRaw } from 'vue'
 import { ACHIEVEMENTS, TEA_LEVELS } from '@/data/constants'
 import { getTeaById } from '@/data/teas'
-import {
-  achievementStorage,
-  collectedWareStorage,
-  settingsStorage,
-  xpStorage,
-} from '@/services/storage'
 import type { Achievement, TastingRecord } from '@/types/tasting'
 import { TeaType } from '@/types/tea'
 import { useRecordStore } from './record'
+
+const loadStorage = () => import('@/services/storage')
 
 export const useProgressStore = defineStore('progress', () => {
   const recordStore = useRecordStore()
@@ -39,11 +35,13 @@ export const useProgressStore = defineStore('progress', () => {
   const xpForNextLevel = computed(() => nextLevel.value?.minXp ?? userXp.value)
 
   async function addXp(amount: number) {
+    const { xpStorage } = await loadStorage()
     userXp.value += amount
     await xpStorage.save(userXp.value)
   }
 
   async function loadXp() {
+    const { xpStorage } = await loadStorage()
     userXp.value = await xpStorage.load()
   }
 
@@ -52,6 +50,7 @@ export const useProgressStore = defineStore('progress', () => {
   const newAchievement = ref<string | null>(null)
 
   async function initAchievements() {
+    const { achievementStorage } = await loadStorage()
     const saved = await achievementStorage.load()
     if (saved.length === 0) {
       const initial = ACHIEVEMENTS.map((a) => ({
@@ -143,6 +142,7 @@ export const useProgressStore = defineStore('progress', () => {
     if (unlocked) {
       // Vue reactive 数组的元素是 Proxy，Proxy 无法被 IndexedDB 结构化克隆，
       // 写入前必须 toRaw 还原为普通对象，否则品鉴保存会抛 DataCloneError。
+      const { achievementStorage } = await loadStorage()
       await achievementStorage.save(all.map((ach) => toRaw(ach)))
       achievements.value = all
     }
@@ -186,6 +186,7 @@ export const useProgressStore = defineStore('progress', () => {
     }
 
     if (changed) {
+      const { collectedWareStorage } = await loadStorage()
       await collectedWareStorage.save(collectedTeaWareIds.value)
     }
   }
@@ -201,6 +202,7 @@ export const useProgressStore = defineStore('progress', () => {
 
   /** 初始化茶器收藏（首次运行时 IndexedDB 为空，三件基础茶器默认解锁） */
   async function initCollectedWares() {
+    const { collectedWareStorage } = await loadStorage()
     const savedWareIds = await collectedWareStorage.load()
     if (savedWareIds.size === 0) {
       collectedTeaWareIds.value = new Set(DEFAULT_COLLECTED_WARE_IDS)
@@ -214,6 +216,7 @@ export const useProgressStore = defineStore('progress', () => {
   const solarCheckins = ref<Record<string, string>>({})
 
   async function loadSolarCheckins() {
+    const { settingsStorage } = await loadStorage()
     solarCheckins.value = await settingsStorage.get<Record<string, string>>('solar-checkins', {})
   }
 
@@ -222,6 +225,7 @@ export const useProgressStore = defineStore('progress', () => {
     if (solarCheckins.value[termId]) return false
     solarCheckins.value = { ...solarCheckins.value, [termId]: new Date().toISOString() }
     // 写入前 toRaw 去代理，防止 Dexie 结构化克隆抛 DataCloneError
+    const { settingsStorage } = await loadStorage()
     await settingsStorage.set('solar-checkins', toRaw(solarCheckins.value))
     return true
   }

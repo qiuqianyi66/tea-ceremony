@@ -6,7 +6,8 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { authApi } from '@/services/api'
 import { clearAuth, loadAuth, saveAuth } from '@/services/authStorage'
-import { historyStorage } from '@/services/storage'
+
+const loadStorage = () => import('@/services/storage')
 
 export interface UserInfo {
   id: number
@@ -39,6 +40,7 @@ export const useAuthStore = defineStore('auth', () => {
       token.value = result.access_token as string
       user.value = result.user as UserInfo
       saveToStorage()
+      const { historyStorage } = await loadStorage()
       await historyStorage.syncPending()
       return true
     }
@@ -62,6 +64,7 @@ export const useAuthStore = defineStore('auth', () => {
       token.value = result.access_token as string
       user.value = result.user as UserInfo
       saveToStorage()
+      const { historyStorage } = await loadStorage()
       await historyStorage.syncPending()
       return true
     }

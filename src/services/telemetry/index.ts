@@ -8,7 +8,6 @@
  * 3. 开关关闭时：不注册任何监听、reportXxx 直接 return（ADR-022 §7）。
  */
 import type { ErrorBufferRecord } from '@/types/errors'
-import { initDB, settingsStorage } from '@/services/storage'
 import {
   BATCH_MAX,
   FALLBACK_FLUSH_MS,
@@ -45,6 +44,8 @@ import type {
   TelemetryVitalRating,
   TelemetryVitalPayload,
 } from './types'
+
+const loadStorage = () => import('@/services/storage')
 
 /** reportVital 的入参：只取 web-vitals Metric 与 WebVitalRecord 的共有字段，SDK 不依赖 web-vitals 类型 */
 export interface VitalInput {
@@ -174,6 +175,7 @@ export async function initTelemetry(): Promise<void> {
   if (initialized) return
   initialized = true
   try {
+    const { settingsStorage, initDB } = await loadStorage()
     enabled = await settingsStorage.get(TELEMETRY_ENABLED_KEY, TELEMETRY_ENABLED_DEFAULT)
     if (!enabled) return
 
@@ -320,6 +322,7 @@ export function isTelemetryEnabled(): boolean {
 /** 读取持久化的开关值（设置页首次渲染用；与运行时标志可能有一瞬差异） */
 export async function getTelemetryEnabledSetting(): Promise<boolean> {
   try {
+    const { settingsStorage } = await loadStorage()
     return await settingsStorage.get(TELEMETRY_ENABLED_KEY, TELEMETRY_ENABLED_DEFAULT)
   } catch {
     return TELEMETRY_ENABLED_DEFAULT
@@ -329,6 +332,7 @@ export async function getTelemetryEnabledSetting(): Promise<boolean> {
 /** 设置开关（设置页调用）：关闭时立即摘监听停调度，开启时重新初始化 */
 export async function setTelemetryEnabled(value: boolean): Promise<void> {
   try {
+    const { settingsStorage } = await loadStorage()
     await settingsStorage.set(TELEMETRY_ENABLED_KEY, value)
   } catch {
     // 持久化失败也要让本次会话生效，只是下次刷新会回到旧值
