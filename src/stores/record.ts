@@ -4,14 +4,16 @@
  */
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { historyStorage } from '@/services/storage'
 import type { TastingRecord } from '@/types/tasting'
+
+const loadStorage = () => import('@/services/storage')
 
 export const useRecordStore = defineStore('record', () => {
   const history = ref<TastingRecord[]>([])
   const loaded = ref(false)
 
   async function load() {
+    const { historyStorage } = await loadStorage()
     history.value = await historyStorage.load()
     loaded.value = true
   }
@@ -30,6 +32,7 @@ export const useRecordStore = defineStore('record', () => {
 
   /** 重试离线同步队列，成功后刷新本地列表 */
   async function syncPending(): Promise<{ synced: number; failed: number }> {
+    const { historyStorage } = await loadStorage()
     const result = await historyStorage.syncPending()
     await load()
     return result

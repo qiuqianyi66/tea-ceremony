@@ -7,7 +7,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { WATER_TYPES } from '@/data/constants'
 import { calculateOverallScore, calculateProcessFactor, generateRecordId } from '@/services/scoring'
-import { historyStorage } from '@/services/storage'
+const loadStorage = () => import('@/services/storage')
 import type { TastingRecord } from '@/types/tasting'
 import type { Tea } from '@/types/tea'
 import type { TeaWare } from '@/types/teaware'
@@ -88,6 +88,7 @@ export const useTeaStore = defineStore('tea', () => {
       ...(weather !== undefined ? { weather } : {}),
       ...(mood !== undefined ? { mood } : {}),
     }
+    const { historyStorage } = await loadStorage()
     const allRecords = await historyStorage.add(record)
     recordStore.setAll(allRecords)
 

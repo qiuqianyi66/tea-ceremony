@@ -6,9 +6,10 @@
  * - 用途：错误定位数据源（比 Sentry 便宜且不破离线优先）
  * - 落库后追加匿名遥测上报（ADR-022）：本地行为不变，上报失败静默
  */
-import { db, initDB } from '@/services/storage'
 import { reportError } from '@/services/telemetry'
 import type { ErrorBufferRecord } from '@/types/errors'
+
+const loadStorage = () => import('@/services/storage')
 
 /** 本地错误记录容量上限（错误比埋点稀少，200 条足够定位） */
 export const MAX_ERRORS = 200
@@ -18,6 +19,7 @@ const TRIM_BATCH = 50
 /** 记录一条错误（fire-and-forget，任何失败静默消化） */
 export async function recordError(entry: Omit<ErrorBufferRecord, 'ts' | 'id'>): Promise<void> {
   try {
+    const { db, initDB } = await loadStorage()
     await initDB()
     // 容量上限：超出则删除最旧 TRIM_BATCH 条
     const count = await db.errorBuffer.count()
@@ -36,6 +38,7 @@ export async function recordError(entry: Omit<ErrorBufferRecord, 'ts' | 'id'>): 
 /** 读取全部错误（按时间倒序，最近在前） */
 export async function listErrors(): Promise<ErrorBufferRecord[]> {
   try {
+    const { db, initDB } = await loadStorage()
     await initDB()
     return db.errorBuffer.orderBy('ts').reverse().toArray()
   } catch {
@@ -46,6 +49,7 @@ export async function listErrors(): Promise<ErrorBufferRecord[]> {
 /** 清空错误记录（测试 / 用户隐私管理） */
 export async function clearErrors(): Promise<void> {
   try {
+    const { db, initDB } = await loadStorage()
     await initDB()
     await db.errorBuffer.clear()
   } catch {

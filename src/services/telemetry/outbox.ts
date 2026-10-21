@@ -6,14 +6,16 @@
  *
  * 全部导出函数永不 reject：遥测不可用不能影响业务（承重墙，与 teaAI 降级同级）。
  */
-import { db, initDB } from '@/services/storage'
 import { MAX_ATTEMPTS, OUTBOX_MAX } from './config'
 import type { OutboxRecord, TelemetryEvent } from './types'
+
+const loadStorage = () => import('@/services/storage')
 
 /** 入队一批事件（容量超限淘汰最旧，照 errorBuffer 的裁剪风格） */
 export async function enqueue(events: TelemetryEvent[]): Promise<void> {
   if (events.length === 0) return
   try {
+    const { db, initDB } = await loadStorage()
     await initDB()
     // 单次入队就超过上限时只留最新 OUTBOX_MAX 条：更旧的此刻已无投递价值
     const accepted = events.length > OUTBOX_MAX ? events.slice(events.length - OUTBOX_MAX) : events
@@ -47,6 +49,7 @@ export async function enqueue(events: TelemetryEvent[]): Promise<void> {
  */
 export async function takeBatch(limit: number): Promise<OutboxRecord[]> {
   try {
+    const { db, initDB } = await loadStorage()
     await initDB()
     const now = Date.now()
     const queued = await db.telemetryOutbox.where('status').equals('queued').toArray()
@@ -80,6 +83,7 @@ export async function takeBatch(limit: number): Promise<OutboxRecord[]> {
 export async function markSent(ids: number[]): Promise<void> {
   if (ids.length === 0) return
   try {
+    const { db, initDB } = await loadStorage()
     await initDB()
     await db.telemetryOutbox.bulkDelete(ids)
   } catch {
@@ -91,6 +95,7 @@ export async function markSent(ids: number[]): Promise<void> {
 export async function markFailed(ids: number[], backoffMs: number): Promise<void> {
   if (ids.length === 0) return
   try {
+    const { db, initDB } = await loadStorage()
     await initDB()
     const now = Date.now()
     await db.transaction('rw', db.telemetryOutbox, async () => {
@@ -119,6 +124,7 @@ export async function markFailed(ids: number[], backoffMs: number): Promise<void
 export async function markDead(ids: number[]): Promise<void> {
   if (ids.length === 0) return
   try {
+    const { db, initDB } = await loadStorage()
     await initDB()
     await db.telemetryOutbox.bulkUpdate(
       ids.map((key) => ({ key, changes: { status: 'dead' as const } })),
@@ -131,6 +137,7 @@ export async function markDead(ids: number[]): Promise<void> {
 /** 待发记录数（queued + inflight）；dead 不算待发 */
 export async function pendingCount(): Promise<number> {
   try {
+    const { db, initDB } = await loadStorage()
     await initDB()
     return await db.telemetryOutbox.where('status').anyOf('queued', 'inflight').count()
   } catch {
@@ -141,6 +148,7 @@ export async function pendingCount(): Promise<number> {
 /** 把上次会话卡在 inflight 的记录放回队列（页面在发送中被关闭时会留下这种记录） */
 export async function requeueInflight(): Promise<void> {
   try {
+    const { db, initDB } = await loadStorage()
     await initDB()
     await db.telemetryOutbox.where('status').equals('inflight').modify({ status: 'queued' })
   } catch {
@@ -151,6 +159,7 @@ export async function requeueInflight(): Promise<void> {
 /** 清空队列（测试 / 用户隐私管理） */
 export async function clearOutbox(): Promise<void> {
   try {
+    const { db, initDB } = await loadStorage()
     await initDB()
     await db.telemetryOutbox.clear()
   } catch {

@@ -5,8 +5,9 @@
  * - 容量上限 MAX_EVENTS，超出裁剪最旧，防本地存储无限膨胀
  * - track() 永不 reject：埋点失败静默消化，不影响主流程
  */
-import { db, initDB } from '@/services/storage'
 import type { TrackCategory, TrackEvent, TrackInput, TrackResult } from '@/types/tracking'
+
+const loadStorage = () => import('@/services/storage')
 
 /** 本地事件容量上限 */
 export const MAX_EVENTS = 2000
@@ -29,6 +30,7 @@ export async function track(input: TrackInput): Promise<void> {
     if (input.label && input.label.length > FIELD_MAX) return
     if (input.result && !RESULTS.includes(input.result)) return
 
+    const { db, initDB } = await loadStorage()
     await initDB()
 
     // 容量上限：超出则删除最旧 TRIM_BATCH 条（避免本地无限增长）
@@ -54,6 +56,7 @@ export async function track(input: TrackInput): Promise<void> {
 /** 统计汇总：按 `category:event[:result]` 计数，供 T2.4 茶灵去留决策 */
 export async function getTrackingSummary(): Promise<Record<string, number>> {
   try {
+    const { db, initDB } = await loadStorage()
     await initDB()
     const all = await db.trackingEvents.toArray()
     const summary: Record<string, number> = {}
@@ -70,6 +73,7 @@ export async function getTrackingSummary(): Promise<Record<string, number>> {
 /** 清空全部事件（测试 / 用户隐私管理） */
 export async function clearTracking(): Promise<void> {
   try {
+    const { db, initDB } = await loadStorage()
     await initDB()
     await db.trackingEvents.clear()
   } catch {
