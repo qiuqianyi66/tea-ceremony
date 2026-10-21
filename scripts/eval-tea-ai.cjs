@@ -116,9 +116,22 @@ async function main() {
     }).length
     // F1 逐考点明细（v4）：无观测则无法归因——旧版只存 80 字符 snippet，归因只能靠猜。
     const pointDetail = explainPoints(caseDef, last)
-    const run = { id: caseDef.id, file, type: caseDef.type, precondition: caseDef.precondition ?? null, input: caseDef.input.slice(0, 60), score: round(scores[0] ?? 0), programOnlyScore: programOnlyScore === null ? null : round(programOnlyScore), judgePointCount, judgeFilledCount, passResult: pk, httpStatus: last.httpStatus, contentSnippet: (last.content || '').slice(0, 80), sources: Array.isArray(last.sources) ? last.sources.length : null, tokensIn: last.tokensIn ?? null, tokensOut: last.tokensOut ?? null, latencyMs: last.latencyMs ?? null, points: pointDetail, defaultPath: DEFAULT_PATH_FILES.has(path.basename(file, '.yaml')) }
+    // v5 逐轮明细：pass^3 的判据是「k 次全过」，但旧报告只存最后一轮的
+    // contentSnippet + points。结果是 MEN-004 那类「三次里错一次」根本无法归因——
+    // 分不清是 judge 抖动（该改 judge）还是模型真有 1/3 概率漏考点（该改 prompt）。
+    // 逐轮落盘 score / 逐考点明细 / judge 原始判定（含 UNKNOWN），归因才有据可依。
+    const iterationDetail = results.map((r, i) => ({
+      iteration: i + 1,
+      score: round(scores[i]),
+      httpStatus: r.httpStatus ?? null,
+      sources: Array.isArray(r.sources) ? r.sources.length : null,
+      contentSnippet: (r.content || '').slice(0, 80),
+      judgeScores: r.judgeScores ?? null,
+      points: explainPoints(caseDef, r),
+    }))
+    const run = { id: caseDef.id, file, type: caseDef.type, precondition: caseDef.precondition ?? null, input: caseDef.input.slice(0, 60), score: round(scores[0] ?? 0), programOnlyScore: programOnlyScore === null ? null : round(programOnlyScore), judgePointCount, judgeFilledCount, passResult: pk, httpStatus: last.httpStatus, contentSnippet: (last.content || '').slice(0, 80), sources: Array.isArray(last.sources) ? last.sources.length : null, tokensIn: last.tokensIn ?? null, tokensOut: last.tokensOut ?? null, latencyMs: last.latencyMs ?? null, points: pointDetail, iterations: iterationDetail, defaultPath: DEFAULT_PATH_FILES.has(path.basename(file, '.yaml')) }
     runs.push(run)
-    if (run.score < 1) failures.push({ id: caseDef.id, type: caseDef.type, score: run.score, input: caseDef.input, httpStatus: run.httpStatus, contentSnippet: run.contentSnippet, sources: run.sources, points: pointDetail })
+    if (run.score < 1) failures.push({ id: caseDef.id, type: caseDef.type, score: run.score, input: caseDef.input, httpStatus: run.httpStatus, contentSnippet: run.contentSnippet, sources: run.sources, points: pointDetail, iterations: iterationDetail })
   }
 
   const report = {

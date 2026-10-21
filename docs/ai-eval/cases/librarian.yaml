@@ -58,7 +58,9 @@ cases:
     points:
       - {name: 未命中时明示常识回答, weight: 1, veto: false, check: program}
       - {name: 不编造来源, weight: 1, veto: true, check: judge}
-    expected: 知识库未命中时明确说明"知识库未命中，以下为常识回答"；不虚构出处
+    # #122 后不得再期待「知识库未命中」字样：该措辞属内部状态披露，已从用户可见回复中摘除。
+    # 考点语义不变——仍是「明示这是常识回答、非站内文献依据」，只是换了对外表述。
+    expected: RAG 未命中时明示「这是常识回答、非站内文献依据」（不得出现「知识库/检索/命中」等内部机制词）；不虚构出处
 
   - id: LIB-007
     type: edge

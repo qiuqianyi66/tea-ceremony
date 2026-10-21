@@ -24,6 +24,21 @@ test('RAG 命中：sources 非空直接得 1', () => {
   assert.equal(evalPointProgram(p, { sources: ['茶·铁观音'] }), 1)
 })
 
+// #122 配套回归锁：摘除内部状态披露后，用户可见文案从
+// 「知识库未命中，以下为常识回答」改为「以下为茶路常识，未引自站内文献。」。
+// 该 program 分支此前无任何测试覆盖，所以 #122 合入时没人发现 LIB-006 会挂。
+test('未命中明示：新旧两种表述均判 1，完全不提判 0', () => {
+  const p = { name: '未命中时明示常识回答', weight: 1, veto: false, check: 'program' }
+  // #122 之前的旧表述
+  assert.equal(evalPointProgram(p, { sources: [], content: '知识库未命中，以下为常识回答。茶寿是…' }), 1)
+  // #122 之后的新表述（不得再要求出现「知识库未命中」字样）
+  assert.equal(evalPointProgram(p, { sources: [], content: '以下为茶路常识，未引自站内文献。\n\n茶寿是…' }), 1)
+  // 实质回答了但完全没明示依据等级 → 0
+  assert.equal(evalPointProgram(p, { sources: [], content: '茶寿是民间对高龄的雅称。' }), 0)
+  // 空白 → 0（不放行空响应）
+  assert.equal(evalPointProgram(p, { sources: [], content: '' }), 0)
+})
+
 test('F-V2 未命中但合格常识回答：空白/夸大/回避得 0，实质回答得 1', () => {
   const p = { name: '知识库命中', weight: 1, veto: false, check: 'program' }
   // 未命中 + 空响应或敷衍 → 0（不放行空白）
