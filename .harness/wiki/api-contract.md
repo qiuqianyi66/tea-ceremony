@@ -55,12 +55,6 @@ description: tea 接口协议——现有端点、统一约定（前缀/鉴权/�
 - 鉴权：GET 公开（游客可浏览，PRD F2/F3）；列表默认按 id 排序（seeds 顺序即茶类分组）
 - 与旧 `/api/teas` 差异：新契约分页 + snake_case 全字段；旧端点在过渡期保留（前端联调切片切换）
 
-### 茶器 `/api/teawares`（公开）
-
-| 方法 | 路径 | 成功响应 |
-|---|---|---|
-| GET | `/api/teawares/` | `list[TeaWareResponse]` |
-
 ### 品鉴记录 `/api/records`（需登录）
 
 | 方法 | 路径 | 请求体 / 参数 | 成功响应 | 错误 |
@@ -105,21 +99,11 @@ description: tea 接口协议——现有端点、统一约定（前缀/鉴权/�
 - 归属：全部按 `user_id` 过滤；游客前端不调能量接口（纯观赏降级）
 - 与旧 `/api/garden-plants/` 差异：路径对齐新栈 `/api/v1/`；旧端点从未实现（404），无兼容负担
 
-### 茶文化 `/api/culture`（公开，旧 FastAPI，仅维护）
+### 茶文化 `/api/culture`（旧 FastAPI）—— **已于 2026-10-22 D9 退役**
 
-| 方法 | 路径 | 参数 | 成功响应 | 错误 |
-|---|---|---|---|---|
-| GET | `/api/culture/regions` | `province?` | `list[RegionResponse]` | — |
-| GET | `/api/culture/regions/{region_id}` | — | `RegionResponse` | 404 |
-| GET | `/api/culture/people` | `dynasty?` | `list[PersonResponse]` | — |
-| GET | `/api/culture/people/{person_id}` | — | `PersonResponse` | 404 |
-| GET | `/api/culture/poems` | `author?` | `list[PoemResponse]` | — |
-| GET | `/api/culture/poems/{poem_id}` | — | `PoemResponse` | 404 |
-| GET | `/api/culture/processes` | — | 工艺列表 | — |
-| GET | `/api/culture/processes/{process_id}` | — | 工艺详情 | 404 |
-| GET | `/api/culture/teas/{tea_id}/detail` | — | 茶叶详情（含产区/工艺/关联） | 404 |
-| GET | `/api/culture/graph/{tea_id}` | — | 茶文化知识图谱 | 404 |
-| GET | `/api/culture/search` | `q` 默认空串 | 搜索结果 | — |
+> 11 个只读端点（regions/people/poems/processes/teas-detail/graph/search）随旧栈移除：0 前端消费方，
+> 文化数据改走新栈 `/api/v1/culture/search`（8 表 RAG）。退役决策与执行清单见
+> `docs/architecture/backend-migration-status.md` §3。若产品将来要做文化浏览页，按新栈 culture 域重做，不从旧代码迁移。
 
 ### 文化搜索 `/api/v1/culture`（Spring Boot 目标，T11 已实现，公开）
 
@@ -142,9 +126,10 @@ description: tea 接口协议——现有端点、统一约定（前缀/鉴权/�
 
 | 方法 | 路径 | 请求体 | 成功响应 | 错误 |
 |---|---|---|---|---|
-| POST | `/api/ai/recommend` | `{time, weather, mood}`（各 ≤20 字） | `{content}` 200 | 502 |
-| POST | `/api/ai/note` | `{tea_name, score(0-10), dimensions}` | `{content}` | 502 |
 | POST | `/api/ai/chat` | `{messages:[{role, content}]}`（1-20 条，content ≤4000 字） | `{content}` | 502 |
+
+> recommend/note 两端点已于 2026-10-22 D9 退役（荐茶能力由新栈 advisor 专家覆盖；茶记无消费方）。
+> 旧 `/chat` 亦将随旧栈整体退役，生产调用走 `/api/v1/ai/chat`。
 
 ### 茶灵 AI `/api/v1/ai`（Spring Boot 目标，T11 已实现，公开；LLM 不可用时 502，前端降级）
 
