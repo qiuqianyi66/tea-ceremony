@@ -1,9 +1,9 @@
 ---
 name: plan-storage-lazy-loading-2026-10-21
 description: 把压首屏的 storage chunk（Dexie + 存储桶，51.77 KB gzip）移出首屏静态图——10 处消费方改动态 import 的方案、逐文件改造规范、影响与验证计划。v2 细化（2026-10-21 晚）。
-status: draft
+status: active
 owner: yanha
-last_updated: 2026-10-21
+last_updated: 2026-10-22
 ---
 
 # PLAN-storage-lazy-loading-2026-10-21
@@ -137,3 +137,18 @@ last_updated: 2026-10-21
 - 不给 `db` 包 getter 代理层（YAGNI：调用点全部在异步函数内）。
 - 不给 errorBuffer 加内存队列（早期错误「延迟补写非丢失」已是现行语义的同级行为，队列是新增复杂度零新收益）。
 - 不改 `CollectionView.vue` 的静态 import（路由懒加载已使其不影响首屏）。
+
+## 7. 实施结果（2026-10-21 晚，提交 `fff6c68`，PR #142 已合 main → `390d147`）
+
+按 §2.1 施工表逐项落地，10 个文件 +65/-17，`src/services/storage/*` 桶与测试零改动。
+
+| 指标 | 改前 | 改后（实测） |
+|---|---|---|
+| 首屏 JS（gzip） | 121.09 KB | **89.95 KB（−31.1 KB，−25.7%）** |
+| storage chunk | 149.32 KB raw / 51.77 KB gzip，静态依赖 + modulepreload | 102.99 KB raw / 33.39 KB gzip，**异步 chunk** |
+| `index.html` preload 含 storage | 是 | 否；无任何 preloaded chunk 含 `teaCeremonyDB` |
+| PWA precache 条目 | 122 | 129 |
+
+- **净降幅小于 §3 粗估的原因**：约 20.8 KB 的 http/api/store 代码从 storage chunk 剥离后另起为独立 preload chunk——这些字节首屏本来就在下载，只是改后分别计数。**评估此类改动要看首屏 gzip 总量，不能看单个 chunk 名的降幅**（单个 chunk 降幅会系统性偏小）。
+- **预取生效**：`main.ts` 在挂载前发起但不 await 动态 import，下载与 Vue 挂载并行；ESM 模块缓存保证 `db` 单例，早期调用方在 await 上排队不会重复下载。
+- **验证**：TNB type-check、vitest 30 文件 / 268 用例、build、`npm run lint` 全过；PR CI 13/13 success（含 E2E full journey、axe 无障碍）；main HEAD 自身 CI + Deploy 均 success。
