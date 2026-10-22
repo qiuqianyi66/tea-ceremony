@@ -1,3 +1,11 @@
+---
+name: review-four-dimensions-2026-10-20
+description: 一盏茶全项目四维评审报告（性能 / 安全性 / 可扩展性 / 可维护性）——静态扫描 + 高危路径逐文件深读 + 部署链路核实，含覆盖边界与「未做」项的诚实声明。
+status: active
+owner: yanha
+last_updated: 2026-10-20
+---
+
 # 一盏茶 全项目四维评审报告（2026-10-20）
 
 - 评审人：WorkBuddy（AI）
