@@ -1,7 +1,7 @@
 ---
 name: todo-priority
 description: 一盏茶跨会话状态活文档——状态速览 / 阻塞项 / 可直接开工 / 低优先 / 最近完成（防重做）/ 关键 ID 与命令。新会话先读本文件恢复上下文。
-last_updated: 2026-10-17
+last_updated: 2026-10-19
 status: active
 owner: yanha
 ---
@@ -101,6 +101,7 @@ owner: yanha
 
 ## 最近完成（防重做：先查这里，勿从零重写）
 
+- **每周质量巡检**（2026-10-19，定时任务）：verify-harness `ERRORS: []`（修 1 处 WARNING：PLAN-ip-cert status `completed`→`deprecated` 入合法值域）；前端 Vitest 25 文件 / **238 tests 全过**；后端 Maven **451 tests / Failures 0**（9 Errors 为本地 Docker 未启动的 Testcontainers 环境性失败，Skipped 7）；**eval 未重跑**（本地 backend 未运行 + 10-18 已跑 full judge，引用 `docs/ai-eval/reports/2026-10-18-full-judge.json`：**overall 0.90 / judgeCoverage 1 / pass³ 41/50**，men 子集 0.88/6-8，已入 ITERATIONS v6）；RAG 命中率 **0.16**（default 0.28 / expert 0.09）为当前主要短板（advisor/taster/brewer/mentor 大量"知识库未命中，常识回答"）。
 - **网关部署配套收尾**（2026-10-13）：PR #69（key check 跟随激活 chat model，gateway profile，a317454）、#70（compose 加 yg-gateway service + backend gateway profile env，c4f5acc）已合 main；本地工作区清理（`build-corpus.cjs` 死代码删除、`raw-traces.json` 入 ignore）。
 - **2026-10-13 晚间收尾（直推 main，bypass 特例，a84439f）**：工作区清理（build-corpus.cjs 死代码 + raw-traces.json 入 ignore）、6 文档 frontmatter 修复、README 中英文更新（Spring Boot 新栈/Compose 部署/AI 五专家/工程治理章节）、.env.example 清旧栈 DeepSeek 残留、T15 C6 四维甄别决定表。治理检查 verify-harness ERRORS: []。
 - **Q1 后端公网部署完成**（2026-10-13，本会话）：阿里云 ECS 免费试用实例（42.121.125.4，2C2G 经济型 e，Alibaba Cloud Linux 3，3 个月 300 元额度 ¥0.123/时）——公网 SSH 被拦（banner 超时，仅 Workbench 通道可用）→ 走 Workbench 部署：codeload 下载代码（GitHub 直连超时，改用 codeload 200）→ Docker Hub 拉镜像超时（配 daocloud 无效→ 开 VPN 直连通）→ Maven/npm 换阿里云镜像加速（VPN 下 go-offline 21 分钟不动 → 中断配 aliyun settings.xml + npmmirror，CACHED 重构建 5 分钟）→ 三容器 Healthy/Running；**验证：首页 200（SPA）、注册接口 200 + JWT、`/api/actuator/health` 401 为 Security 前缀保护（容器内 `/actuator/health` 直连健康，属预期）**；前端同学直接访问 `http://42.121.125.4`（nginx 同源反代，GitHub Pages 因 Mixed Content 不能跨 http 后端）；AI 未配 key → 茶灵规则引擎降级（Q1 试用可接受）；注意：VPN 关后 rebuild 需重开，3 个月到期需释放/续购轻量 68 元/年。
