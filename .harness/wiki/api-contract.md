@@ -5,7 +5,7 @@ description: tea 接口协议——现有端点、统一约定（前缀/鉴权/�
 
 # 接口协议（api-contract）
 
-> 来源：docs/api/endpoints.md（从 backend/app/routers/ 反推，最后更新 2026-09-11）。后端重写为 Spring Boot 过程中契约逐步迁移，**公开端点的路径与语义保持兼容**。
+> 来源：docs/api/endpoints.md（从 backend/app/routers/ 反推，最后更新 2026-10-23）。后端重写为 Spring Boot 过程中契约逐步迁移，**公开端点的路径与语义保持兼容**。
 
 ## 1. 统一约定
 
