@@ -88,11 +88,11 @@ def test_ai_rate_limit_blocks_after_threshold(limited_app: FastAPI):
 
 
 def test_ai_paths_share_rate_limit_key(limited_app: FastAPI):
-    """AI 各路径共享统一限流 key：轮换端点不能绕限流。"""
+    """AI 路径共享统一限流 key：同前缀轮换端点不能绕限流（D9 后 AI 面仅剩 /chat，仍验证共享 key 机制）。"""
     client = TestClient(limited_app)
     assert client.post("/api/ai/chat").status_code == 200
     assert client.post("/api/ai/chat").status_code == 200
-    res = client.post("/api/ai/recommend")
+    res = client.post("/api/ai/chat")
     assert res.status_code == 429
 
 

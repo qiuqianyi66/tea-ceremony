@@ -108,6 +108,8 @@
 ## 7. 后端规范
 
 > 完整编码规范（分层/异常/对象模型/事务/数据访问/线程/安全/AI 集成）见 `.harness/rules/编码规范.md`（15 条红线零容忍），此处只列要点。
+> 安全工程实施（威胁模型 / 控制矩阵 / 新功能安全 checklist）见 `docs/security-harness-engineering-spec.md`；新端点、新公开面、新 AI 能力动手前过其 §4。
+> 迁移进度（哪些端点已迁/未迁/退役）见 `docs/architecture/backend-migration-status.md`；「重写完成」判据见其 §5。
 
 - 后端重写为 Spring Boot 3.5 + Spring Data JPA + Spring AI Alibaba（**新代码按此规范；旧 FastAPI 代码仅维护，不新增功能**）。
 - 分层 `Controller → Service → Repository` 单向依赖；Controller 只做参数与响应，不写业务逻辑、不写数据库查询。分层规则已机械化：`backend/src/test/java/com/tea/architecture/LayerDependencyTest.java`（ArchUnit，CI Maven test 门禁）。
@@ -130,7 +132,7 @@
 - **行为测试三规则**：只走公共接口；不 mock 内部协作者（mock 只用于跨进程/外部边界：网络、时钟、DB 驱动）；重构不改测试。
 - 宽重构走 expand-contract：先 expand（新旧并存、CI 保持绿）→ 按包分批迁移（每批独立 commit）→ contract（旧形式无引用后删除）。
 - E2E 用真实等待，选择器用可见文本/角色，不依赖动画中间态；测试发现的缺陷按根因修，单独 commit。
-- CI 13 job 是合并门禁（type-check+build+smoke / Vitest / Biome / npm+pip audit / E2E / axe / 后端语法 / pytest / ruff+bandit / Spring Boot Maven / 迁移测试 / Compose 校验 / harness 一致性）。
+- CI 14 job 是合并门禁（type-check+build+smoke / Vitest / Biome / npm+pip audit / gitleaks 密钥扫描 / E2E / axe / 后端语法 / pytest / ruff+bandit / Spring Boot Maven / 迁移测试 / Compose 校验 / harness 一致性）。
 
 ## 10. 禁止事项
 

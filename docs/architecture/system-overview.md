@@ -130,7 +130,7 @@ flowchart LR
 - **Docker Compose 编排（现行）**：db / backend / frontend 三服务（nginx 并入 frontend 镜像），详见 `DEPLOY.md`；旧 Windows 原生脚本（NSSM + nginx for Windows）保留参考。
 - **Nginx**：SPA fallback（`/` 回 index.html）、`/api` 反向代理到 backend、安全响应头、静态资源缓存。
 - **PWA**：`vite-plugin-pwa` 生成 Service Worker，核心路由离线可访问。
-- **CI（GitHub Actions 13 job 门禁）**：type-check + build + smoke / Vitest / Biome / npm+pip audit / E2E / axe / 后端语法 / pytest / ruff+bandit / Spring Boot Maven / 迁移测试 / Compose 校验 / harness 一致性。
+- **CI（GitHub Actions 14 job 门禁）**：type-check + build + smoke / Vitest / Biome / npm+pip audit / gitleaks 密钥扫描 / E2E / axe / 后端语法 / pytest / ruff+bandit / Spring Boot Maven / 迁移测试 / Compose 校验 / harness 一致性。
 
 ## 6. 目录速查
 

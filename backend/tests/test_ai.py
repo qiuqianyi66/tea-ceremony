@@ -54,32 +54,6 @@ def _patch_client(monkeypatch, responses: list) -> FakeClient:
     return client
 
 
-def test_ai_recommend_success(client: TestClient, monkeypatch):
-    async def fake_proxy(messages):
-        return "推荐绿茶，清新怡人，80度冲泡"
-
-    monkeypatch.setattr(ai, "_proxy", fake_proxy)
-    res = client.post(
-        "/api/ai/recommend",
-        json={"time": "morning", "weather": "sunny", "mood": "calm"},
-    )
-    assert res.status_code == 200
-    assert res.json()["content"] == "推荐绿茶，清新怡人，80度冲泡"
-
-
-def test_ai_note_success(client: TestClient, monkeypatch):
-    async def fake_proxy(messages):
-        return "今日品龙井，豆香清雅，回甘悠长"
-
-    monkeypatch.setattr(ai, "_proxy", fake_proxy)
-    res = client.post(
-        "/api/ai/note",
-        json={"tea_name": "西湖龙井", "score": 8.6, "dimensions": {"bitterness": 2}},
-    )
-    assert res.status_code == 200
-    assert res.json()["content"].startswith("今日品龙井")
-
-
 def test_ai_chat_success(client: TestClient, monkeypatch):
     async def fake_proxy(messages):
         return "泡茶水温宜 80 度"
@@ -98,8 +72,8 @@ def test_ai_proxy_failure_returns_502(client: TestClient, monkeypatch):
 
     monkeypatch.setattr(ai, "_proxy", boom)
     res = client.post(
-        "/api/ai/recommend",
-        json={"time": "morning", "weather": "sunny", "mood": "calm"},
+        "/api/ai/chat",
+        json={"messages": [{"role": "user", "content": "绿茶多少度"}]},
     )
     assert res.status_code == 502
     body = res.json()

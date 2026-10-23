@@ -1,14 +1,19 @@
-/** 端到端同步验证：登录 → 种茶 → 前端 synced + 后端落库 → 采摘 → 后端状态更新 */
+/** 端到端同步验证：登录 → 种茶 → 前端 synced + 后端落库 → 采摘 → 后端状态更新
+ *  2026-10-22：注册路径对齐新栈 /api/v1/auth + ApiResponse 解包（旧 /api/auth 随 FastAPI 退役）。
+ *  前置：本地 PG 运行中；queryPg 的 python 需装 sqlalchemy + psycopg2（默认找 backend/.venv，
+ *  可用 TEA_PY 环境变量覆盖，如指向新栈开发用的任意 python）。
+ *  口令不入库（R9）：PG 连接串走 TEA_PG 环境变量，仓库只留本地开发默认值的占位说明。 */
 const { chromium } = require('@playwright/test')
 const { execSync } = require('child_process')
 
-const PG = 'postgresql://tea_user:qwe810325@localhost:5432/tea_ceremony'
+const PG = process.env.TEA_PG || 'postgresql://tea_user:<本地开发口令>@localhost:5432/tea_ceremony'
+const PY = process.env.TEA_PY || 'backend/.venv/Scripts/python.exe'
 
 function queryPg(sql) {
   const script = `from sqlalchemy import create_engine, text; e=create_engine('${PG}'); print([[str(c) if c is not None else 'null' for c in r] for r in e.connect().execute(text('''${sql}'''))])`
   const fs = require('fs')
   fs.writeFileSync('backend/_pgq.py', script)
-  const out = execSync('cd backend && .\\.venv\\Scripts\\python.exe _pgq.py', { encoding: 'utf8' })
+  const out = execSync(`cd backend && "${PY}" _pgq.py`, { encoding: 'utf8' })
   fs.unlinkSync('backend/_pgq.py')
   return out.trim()
 }
@@ -25,16 +30,17 @@ function queryPg(sql) {
   await page.goto('http://localhost:5173/', { waitUntil: 'domcontentloaded' })
   await page.waitForTimeout(4000)
 
-  // 1. 注册/登录（真实后端）
+  // 1. 注册/登录（真实后端；2026-10-22 对齐新栈：/api/v1 + ApiResponse 解包）
   const username = `sync_${Date.now().toString(36)}`
   await page.evaluate(async (u) => {
-    const res = await fetch('/api/auth/register', {
+    const res = await fetch('/api/v1/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: u, password: 'pass-123', display_name: '同步测试' }),
     })
-    const data = await res.json()
-    localStorage.setItem('tea-auth', JSON.stringify({ token: data.access_token, user: data.user }))
+    const body = await res.json()
+    const data = body.data // ApiResponse<TokenVo>：{ token, expiresInSeconds, user }
+    localStorage.setItem('tea-auth', JSON.stringify({ token: data.token, user: data.user }))
   }, username)
   await page.reload({ waitUntil: 'domcontentloaded' })
   await page.waitForTimeout(4000)

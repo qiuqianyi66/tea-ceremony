@@ -70,7 +70,7 @@ if not DATABASE_URL:
 
 # 配置校验通过后再创建数据库引擎和加载路由（刻意延迟导入，E402 不适用）。
 from app.database import engine  # noqa: E402
-from app.routers import ai, auth, culture, records, teas, teawares  # noqa: E402
+from app.routers import ai, auth, records, teas  # noqa: E402
 
 # ============ Sentry 错误追踪 ============
 # 配置 SENTRY_DSN 后启用：未捕获异常自动上报（聚合/上下文/告警）。
@@ -116,11 +116,12 @@ app.add_middleware(CorrelationIdMiddleware)
 register_error_handlers(app)
 
 # 注册路由
+# 2026-10-22 D9 退役（详见 docs/architecture/backend-migration-status.md §3）：
+# teawares（前端本地静态数据）/ culture 只读 10 端点（0 消费方）随旧栈移除；
+# ai 仅保留 /chat（recommend/note 能力由新栈五专家覆盖）。生产跑 Spring Boot 新栈，不受影响。
 app.include_router(auth.router, prefix="/api/auth", tags=["认证"])
 app.include_router(teas.router, prefix="/api/teas", tags=["茶叶"])
-app.include_router(teawares.router, prefix="/api/teawares", tags=["茶器"])
 app.include_router(records.router, prefix="/api/records", tags=["品鉴记录"])
-app.include_router(culture.router, prefix="/api/culture", tags=["茶文化"])
 app.include_router(ai.router, prefix="/api/ai", tags=["茶灵 AI"])
 
 # P1-2：Prometheus /metrics（SRE 四信号：延迟/流量/错误/饱和），默认指标暴露文本格式
