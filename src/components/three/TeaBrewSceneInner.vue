@@ -121,7 +121,6 @@ const {
   SET_Z,
   camPos,
   camLook,
-  viewportAspect,
   syncViewportAspect,
   camFov,
   keyLightPos,
