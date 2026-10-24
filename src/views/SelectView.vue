@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { useImgFailed } from '@/composables/useImgFailed'
 import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
 import { getTeaMastersForTea } from '@/data/teaMasters'
@@ -38,10 +39,7 @@ function pickMood(id: string) {
   selectedTea.value = null
 }
 
-const imgFailed = reactive<Record<string, boolean>>({})
-function markImgFailed(id: string) {
-  imgFailed[id] = true
-}
+const { imgFailed, markImgFailed } = useImgFailed()
 
 const visibleTeas = computed(() =>
   selectedType.value

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { PageHeader } from '@/components/ui'
 import { useRouter } from 'vue-router'
 import TasteProfileSection from '@/components/tasting/TasteProfileSection.vue'
 import { TEA_LEVELS } from '@/data/constants'
@@ -57,10 +58,7 @@ const typeCoverage = computed(() => Math.round((tastedTypes.value.size / 6) * 10
 
 <template>
   <div class="min-h-[100dvh] p-4 sm:p-8">
-    <div class="flex items-center justify-between mb-6">
-      <h2 class="text-3xl font-bold text-[var(--color-wood)]"><IconSprout class="inline-block -mt-1 w-7 h-7" /> 茶修档案</h2>
-      <button @click="router.push('/')" class="inline-flex min-h-11 min-w-11 items-center justify-center text-[var(--color-wood-light)] hover:text-[var(--color-wood)]">返回</button>
-    </div>
+    <PageHeader icon="IconSprout" title="茶修档案" tight />
 
     <!-- 当前境界 -->
     <div class="glass-panel rounded-2xl p-6 mb-6 text-center">

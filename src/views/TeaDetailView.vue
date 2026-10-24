@@ -6,7 +6,9 @@
  * - 冲泡详解（参数 + 为什么）
  * - 相似茶推荐
  */
-import { computed, reactive } from 'vue'
+import { computed } from 'vue'
+import { useImgFailed } from '@/composables/useImgFailed'
+import { SectionHeader } from '@/components/ui'
 import { useRoute, useRouter } from 'vue-router'
 import { gardenRegions } from '@/data/gardenRegions'
 import { getTeaMastersForTea } from '@/data/teaMasters'
@@ -39,10 +41,7 @@ const culturalLinks = computed(() => {
 })
 
 // 茶图加载失败记录：Hero 降级为纯渐变、相似茶卡降级为渐变色块
-const imgFailed = reactive<Record<string, boolean>>({})
-function markImgFailed(id: string) {
-  imgFailed[id] = true
-}
+const { imgFailed, markImgFailed } = useImgFailed()
 
 /** 冲泡建议文案：根据茶类给"为什么这样泡" */
 function getBrewAdvice(t: Tea): string {
@@ -104,7 +103,7 @@ function shareTea() {
     <main class="mx-auto max-w-2xl px-4">
       <!-- 来历故事（核心深度） -->
       <section class="mt-6">
-        <h2 class="mb-3 text-lg font-bold text-[var(--color-wood)]"><IconScrollText class="inline-block -mt-1 w-5 h-5" /> 来历故事</h2>
+        <SectionHeader :icon="'IconScrollText'"> 来历故事</SectionHeader>
         <div class="glass-panel rounded-2xl p-5">
           <p class="text-sm leading-8 text-[var(--color-wood)]">{{ tea.story }}</p>
         </div>
@@ -112,7 +111,7 @@ function shareTea() {
 
       <!-- 产区风土（有产区归属时显示，数据来自 gardenRegions） -->
       <section v-if="region" class="mt-6">
-        <h2 class="mb-3 text-lg font-bold text-[var(--color-wood)]"><IconMountain class="inline-block -mt-1 w-5 h-5" /> 产区风土</h2>
+        <SectionHeader :icon="'IconMountain'"> 产区风土</SectionHeader>
         <div class="glass-panel rounded-2xl p-5">
           <div class="mb-3 flex flex-wrap items-center gap-2">
             <span class="inline-block h-2.5 w-2.5 rounded-full" :style="{ background: region.accentColor }"></span>
@@ -126,7 +125,7 @@ function shareTea() {
 
       <!-- 风味与汤色 -->
       <section class="mt-6">
-        <h2 class="mb-3 text-lg font-bold text-[var(--color-wood)]"><IconLeaf class="inline-block -mt-1 w-5 h-5" /> 风味解析</h2>
+        <SectionHeader :icon="'IconLeaf'"> 风味解析</SectionHeader>
         <div class="glass-panel rounded-2xl p-5">
           <p class="text-sm leading-7 text-[var(--color-wood)]">{{ tea.description }}</p>
           <div class="mt-4 flex items-center gap-4">
@@ -146,7 +145,7 @@ function shareTea() {
 
       <!-- 冲泡详解 -->
       <section class="mt-6">
-        <h2 class="mb-3 text-lg font-bold text-[var(--color-wood)]"><IconCupSoda class="inline-block -mt-1 w-5 h-5" /> 冲泡详解</h2>
+        <SectionHeader :icon="'IconCupSoda'"> 冲泡详解</SectionHeader>
         <div class="glass-panel rounded-2xl p-5">
           <div class="grid grid-cols-3 gap-3 text-center">
             <div>
@@ -168,7 +167,7 @@ function shareTea() {
 
       <!-- 文化关联（T4.5：图谱内容并入详情——工艺/茶器/茶人） -->
       <section v-if="culturalLinks" class="mt-6">
-        <h2 class="mb-3 text-lg font-bold text-[var(--color-wood)]"><IconBookOpen class="inline-block -mt-1 w-5 h-5" /> 文化关联</h2>
+        <SectionHeader :icon="'IconBookOpen'"> 文化关联</SectionHeader>
         <div class="glass-panel rounded-2xl p-5">
           <div class="space-y-3 text-sm">
             <div class="flex items-start justify-between gap-4 py-1 border-b border-[var(--color-paper)]">
@@ -194,7 +193,7 @@ function shareTea() {
       </section>
       <!-- 相似茶推荐 -->
       <section v-if="similarTeas.length > 0" class="mt-6">
-        <h2 class="mb-3 text-lg font-bold text-[var(--color-wood)]"><IconShare2 class="inline-block -mt-1 w-5 h-5" /> 同类好茶</h2>
+        <SectionHeader :icon="'IconShare2'"> 同类好茶</SectionHeader>
         <div class="grid grid-cols-3 gap-3">
           <button v-for="t in similarTeas" :key="t.id"
             @click="router.push(`/tea/${t.id}`)"

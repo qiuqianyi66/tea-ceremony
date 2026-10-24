@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { PageHeader } from '@/components/ui'
+import { useImgFailed } from '@/composables/useImgFailed'
 import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
 import { SOLAR_TERMS } from '@/data/solarTerms'
@@ -106,29 +108,21 @@ const bestScore = computed(() => {
 const unlockedWares = computed(() => teawares.filter((w) => progress.isTeaWareUnlocked(w.id)))
 
 // 茶图加载失败记录：茶图鉴降级为渐变色块；茶器图降级为 lucide 图标（key 用 ware.id）
-const imgFailed = reactive<Record<string, boolean>>({})
-const wareImgFailed = reactive<Record<string, boolean>>({})
-function markImgFailed(id: string) {
-  imgFailed[id] = true
-}
-function markWareImgFailed(id: string) {
-  wareImgFailed[id] = true
-}
+const { imgFailed, markImgFailed } = useImgFailed()
+const { imgFailed: wareImgFailed, markImgFailed: markWareImgFailed } = useImgFailed()
 </script>
 
 <template>
   <div class="min-h-[100dvh] p-4 sm:p-8">
-    <div class="flex items-center justify-between mb-8">
-      <h2 class="text-3xl font-bold text-[var(--color-wood)]">我的茶柜</h2>
-      <div class="flex items-center gap-2">
+    <PageHeader title="我的茶柜">
+      <template #actions>
         <button @click="exportRecords" :disabled="exporting"
           class="rounded-full border border-[var(--color-tea-gold)]/50 px-4 py-2 text-sm text-[var(--color-wood)] transition-colors hover:bg-[var(--color-tea-gold)]/10 disabled:opacity-50"
           title="导出全部品鉴记录为 JSON 文件">
           <IconDownload class="inline-block -mt-0.5 w-4 h-4" /> {{ exporting ? '导出中…' : '导出记录' }}
         </button>
-        <button @click="router.push('/')" class="text-[var(--color-wood-light)] hover:text-[var(--color-wood)]">返回</button>
-      </div>
-    </div>
+      </template>
+    </PageHeader>
 
     <!-- 统计卡片 -->
     <div class="grid grid-cols-3 gap-3 mb-8">

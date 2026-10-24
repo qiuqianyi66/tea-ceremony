@@ -8,7 +8,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import TasteRadarChart from '@/components/tasting/TasteRadarChart.vue'
 import TasteTrendChart from '@/components/tasting/TasteTrendChart.vue'
-import { BaseSpinner, EmptyState } from '@/components/ui'
+import { BaseSpinner, EmptyState, PageHeader, PillButton } from '@/components/ui'
 import { teas } from '@/data/teas'
 import {
   averageDimensions,
@@ -51,19 +51,11 @@ const hasRecords = computed(() => recordStore.history.length > 0)
 
 <template>
   <div class="min-h-[100dvh] p-4 sm:p-8">
-    <div class="flex items-center justify-between mb-8">
-      <h2 class="text-3xl font-bold text-[var(--color-wood)]">成长看板</h2>
-      <div class="flex items-center gap-4">
-        <button
-          class="inline-flex min-h-11 items-center text-xs px-3 rounded-full border border-[var(--color-wood-light)]/30 text-[var(--color-wood-light)] hover:bg-white/60"
-          @click="router.push('/history')"
-        >品鉴历史</button>
-        <button
-          class="inline-flex min-h-11 min-w-11 items-center justify-center text-[var(--color-wood-light)] hover:text-[var(--color-wood)]"
-          @click="router.push('/')"
-        >返回</button>
-      </div>
-    </div>
+    <PageHeader title="成长看板">
+      <template #actions>
+        <PillButton @click="router.push('/history')">品鉴历史</PillButton>
+      </template>
+    </PageHeader>
 
     <!-- 加载态 -->
     <div v-if="!recordStore.loaded && !loadError" class="flex min-h-[55vh] items-center justify-center">
@@ -73,10 +65,7 @@ const hasRecords = computed(() => recordStore.history.length > 0)
     <!-- 错误态 -->
     <div v-else-if="loadError" class="glass-panel mx-auto max-w-md rounded-xl p-6 text-center">
       <p class="text-sm text-[var(--color-wood)]">记录加载失败：{{ loadError }}</p>
-      <button
-        class="mt-4 inline-flex min-h-11 items-center text-xs px-3 rounded-full border border-[var(--color-wood-light)]/30 text-[var(--color-wood-light)] hover:bg-white/60"
-        @click="loadRecords"
-      >重试</button>
+      <PillButton class="mt-4" @click="loadRecords">重试</PillButton>
     </div>
 
     <!-- 空态 -->

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ECharts, EChartsOption } from 'echarts'
+import { PageHeader } from '@/components/ui'
 import { MapChart } from 'echarts/charts'
 import { TooltipComponent } from 'echarts/components'
 import * as echarts from 'echarts/core'
@@ -215,13 +216,8 @@ const categoryColors: Record<string, string> = {
 <template>
   <div class="min-h-[100dvh] p-4 sm:p-8">
     <!-- 标题 -->
-    <div class="flex items-center justify-between mb-6">
-      <div>
-        <h2 class="text-3xl font-bold text-[var(--color-wood)]"><IconMap class="inline-block mr-2 -mt-1" :size="26" />中国茶产区地图</h2>
-        <p class="text-sm text-[var(--color-wood-light)] mt-1">点击省份查看名茶与茶文化 · 四大茶区 {{ teaRegions.length }} 个产茶省份</p>
-      </div>
-      <button @click="$router.push('/')" class="inline-flex min-h-11 items-center text-[var(--color-wood-light)] hover:text-[var(--color-wood)] text-sm">返回首页</button>
-    </div>
+    <PageHeader icon="IconMap" title="中国茶产区地图" back-label="返回首页" tight
+      :subtitle="`点击省份查看名茶与茶文化 · 四大茶区 ${teaRegions.length} 个产茶省份`" />
 
     <!-- 四大茶区图例 -->
     <div class="flex flex-wrap gap-3 mb-6">

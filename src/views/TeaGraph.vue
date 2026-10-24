@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { PageHeader } from '@/components/ui'
 import { useRouter } from 'vue-router'
 import type { TeaRegion } from '@/data/tea-mountain-regions'
 import { TEA_REGIONS } from '@/data/tea-mountain-regions'
@@ -102,10 +103,7 @@ function selectTea(tea: Tea) {
 
 <template>
   <div class="min-h-[100dvh] p-4 sm:p-8">
-    <div class="flex items-center justify-between mb-6">
-      <h2 class="text-3xl font-bold text-[var(--color-wood)]"><IconShare2 class="inline-block -mt-1 w-7 h-7" /> 茶文化图谱</h2>
-      <button @click="router.push('/')" class="text-[var(--color-wood-light)] hover:text-[var(--color-wood)]">返回</button>
-    </div>
+    <PageHeader icon="IconShare2" title="茶文化图谱" tight />
 
     <!-- 选茶 -->
     <div class="mb-6">
