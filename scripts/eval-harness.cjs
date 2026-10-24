@@ -141,7 +141,10 @@ const noMigrate = /无(数据库)?迁移|零迁移|无迁移/.test(summaryText);
   const review = path.join(ch, 'review.md');
   if (fs.existsSync(review)) {
     const text = fs.readFileSync(review, 'utf8');
-    const m = text.match(/🔴\s*(?:(?<rnum>\d+)|(?:零|无))[^🟡]*?🟡\s*(?:(?<ynum>\d+)|(?:零|无))/);
+    // 取最后一个 🔴…🟡 匹配：评审记录惯例是 Findings 区先列「🔴 0 条 / 🟡 N 条（已修复）」摘要，
+    // 清零结论在文末 Verdict 区；取首个匹配会把发现摘要误当结论（rag-long-sentence 等既有切片全中招）。
+    const ms = [...text.matchAll(/🔴\s*(?:(?<rnum>\d+)|(?:零|无))[^🟡]*?🟡\s*(?:(?<ynum>\d+)|(?:零|无))/g)];
+    const m = ms.at(-1);
     clean = m ? Number(m.groups.rnum ?? 0) === 0 && Number(m.groups.ynum ?? 0) === 0 : false;
   }
   scores.iteration = clean ? 100 : 50;

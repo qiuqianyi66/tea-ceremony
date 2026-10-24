@@ -244,11 +244,16 @@ public class CultureSearchService {
         return out;
     }
 
+    /** 单次检索注入关键词上限（整词 token + bigram 补充合计），约束 likeClause OR 子句规模。 */
+    static final int MAX_KEYWORDS = 12;
+
     /** 中文连接词切分关键词 + 剥离尾部语气虚词；
      *  无连接词且为长句时，按虚词/疑问词二次拆词（实体词典近似，防"陆羽的茶经"整句 miss）。
      *  切分碎片过短或空时回退整句（保持原行为）。
+     *  bigram 召回补充：≥4 字 token 追加非重叠 2 字切片（"冲泡普洱熟茶"整词 ILIKE 必 miss，
+     *  普洱/熟茶 切片可命中）；整词在前、切片在后，总量受 MAX_KEYWORDS 约束。
      *  注意：? 是 regex 元字符必须转义；全角？！。无需转义。 */
-    private List<String> splitKeywords(String q) {
+    static List<String> splitKeywords(String q) {
         String trimmed = q.trim();
         String[] parts = trimmed.split("和|与|以及|还有|或|、|，|,|\\?|？|\\!|！|。|\\.|\\s+");
         List<String> tokens = new ArrayList<>();
@@ -261,17 +266,42 @@ public class CultureSearchService {
                 continue;
             }
             // 无连接词长句：虚词→空格二次拆词（剥离问句助词/疑问词，保留实体名）
-            for (String t : p.split("的|了|吗|呢|吧|啊|呀|哦|什么|怎么|为什么|如何|哪些|大概|讲|是|有|跟")) {
+            for (String t : p.split("的|了|吗|呢|吧|啊|呀|哦|什么|怎么|怎样|哪里|多少|请问|介绍|推荐|讲讲|说说|为什么|如何|哪些|大概|讲|是|有|跟")) {
                 String w = stripTailParticles(t.trim());
                 if (w.length() >= 2) tokens.add(w);
             }
         }
-        List<String> kws = tokens.stream().distinct().toList();
+        List<String> kws = new ArrayList<>(tokens.stream().distinct().toList());
+        for (String w : tokens) {
+            if (kws.size() >= MAX_KEYWORDS) {
+                break;
+            }
+            appendBigrams(kws, w);
+        }
         return kws.isEmpty() ? List.of(trimmed) : kws;
     }
 
+    /** ≥4 字 token 追加非重叠 2 字切片（奇数长度补尾部一片），去重后附在整词之后。 */
+    private static void appendBigrams(List<String> kws, String w) {
+        if (w.length() < 4) {
+            return;
+        }
+        for (int i = 0; i + 2 <= w.length() && kws.size() < MAX_KEYWORDS; i += 2) {
+            addIfAbsent(kws, w.substring(i, i + 2));
+        }
+        if (w.length() % 2 == 1 && kws.size() < MAX_KEYWORDS) {
+            addIfAbsent(kws, w.substring(w.length() - 2));
+        }
+    }
+
+    private static void addIfAbsent(List<String> kws, String g) {
+        if (!kws.contains(g)) {
+            kws.add(g);
+        }
+    }
+
     /** 剥离尾部语气虚词：陆羽的→陆羽（否则 ILIKE %陆羽的% 对 name=陆羽 miss，评测 LIB-002/003 抓出）。 */
-    private String stripTailParticles(String w) {
+    private static String stripTailParticles(String w) {
         String s = w;
         while (s.length() > 1 && "的了吗呢吧啊呀哦".indexOf(s.charAt(s.length() - 1)) >= 0) {
             s = s.substring(0, s.length() - 1);

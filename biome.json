@@ -25,7 +25,8 @@
       "!**/backups",
       "!**/.github",
       "!**/scripts",
-      "!public/pwa-icon.svg"
+      "!public/pwa-icon.svg",
+      "!src/data/china-map.json"
     ]
   },
   "formatter": {
