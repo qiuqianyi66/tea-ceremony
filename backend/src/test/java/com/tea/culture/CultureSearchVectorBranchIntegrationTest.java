@@ -7,6 +7,10 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.MeterRegistry;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.embedding.EmbeddingModel;
@@ -101,14 +105,17 @@ class CultureSearchVectorBranchIntegrationTest {
 
     @Test
     void semanticQueryHitsVectorChunkWhenKeywordMisses() throws Exception {
-        // 查询词避开真实种子词（'琉璃饮器' 无 ILIKE 命中）：语义查询经向量命中预插 chunk
+        // 预插 chunk（琉璃月盏）不在 teawares 表，只能经向量分支进入结果。
+        // bigram 召回后 ILIKE 也可能命中真实种子（如 "明如" 命中青瓷盖碗描述"明如镜"），
+        // 契约 = ILIKE 优先、向量补位，故断言"琉璃月盏出现在结果中"，不断言排位。
         ResponseEntity<String> res = rest.getForEntity(
                 "/api/v1/culture/search?q=有一种半透明如月光的琉璃饮器", String.class);
         assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
         JsonNode data = objectMapper.readTree(res.getBody()).path("data");
         assertThat(data.path("teawares").size()).isGreaterThan(0);
-        String first = data.path("teawares").get(0).path("name").asText();
-        assertThat(first).isEqualTo("琉璃月盏");
+        List<String> names = new ArrayList<>();
+        data.path("teawares").forEach(n -> names.add(n.path("name").asText()));
+        assertThat(names).contains("琉璃月盏");
     }
 
     @Test
