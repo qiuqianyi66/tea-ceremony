@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { EmptyState } from '@/components/ui'
+import { EmptyState, PageHeader, PillButton } from '@/components/ui'
 import { getScoreLevel } from '@/services/scoring'
 import { useProgressStore } from '@/stores/progress'
 import { useRecordStore } from '@/stores/record'
@@ -53,21 +53,12 @@ async function retrySync() {
 
 <template>
   <div class="min-h-[100dvh] p-4 sm:p-8">
-    <div class="flex items-center justify-between mb-8">
-      <h2 class="text-3xl font-bold text-[var(--color-wood)]">品鉴历史</h2>
-      <div class="flex items-center gap-4">
-        <button
-          class="inline-flex min-h-11 items-center text-xs px-3 rounded-full border border-[var(--color-wood-light)]/30 text-[var(--color-wood-light)] hover:bg-white/60 disabled:opacity-50"
-          :disabled="isSyncing"
-          @click="retrySync"
-        >{{ isSyncing ? '同步中…' : '重试同步' }}</button>
-        <button
-          class="inline-flex min-h-11 items-center text-xs px-3 rounded-full border border-[var(--color-wood-light)]/30 text-[var(--color-wood-light)] hover:bg-white/60"
-          @click="router.push('/growth')"
-        >成长看板</button>
-        <button @click="router.push('/')" class="inline-flex min-h-11 min-w-11 items-center justify-center text-[var(--color-wood-light)] hover:text-[var(--color-wood)]">返回</button>
-      </div>
-    </div>
+    <PageHeader title="品鉴历史">
+      <template #actions>
+        <PillButton :disabled="isSyncing" @click="retrySync">{{ isSyncing ? '同步中…' : '重试同步' }}</PillButton>
+        <PillButton @click="router.push('/growth')">成长看板</PillButton>
+      </template>
+    </PageHeader>
 
     <p v-if="syncMessage" class="text-xs text-[var(--color-wood-light)] mb-4">{{ syncMessage }}</p>
 
