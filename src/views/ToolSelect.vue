@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, reactive } from 'vue'
+import { computed } from 'vue'
+import { useImgFailed } from '@/composables/useImgFailed'
 import { useRouter } from 'vue-router'
 import { WATER_TYPES } from '@/data/constants'
 import { teawares } from '@/data/teawares'
@@ -17,10 +18,7 @@ const currentTeaName = computed(() => store.currentTea?.name ?? '未知')
 const currentTeaType = computed(() => store.currentTea?.type ?? '')
 
 // 茶器图加载失败记录：失败后降级为 lucide 图标
-const imgFailed = reactive<Record<string, boolean>>({})
-function markImgFailed(id: string) {
-  imgFailed[id] = true
-}
+const { imgFailed, markImgFailed } = useImgFailed()
 
 function selectWare(ware: TeaWare) {
   if (!progress.isTeaWareUnlocked(ware.id)) return

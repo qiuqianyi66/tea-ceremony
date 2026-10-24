@@ -2,7 +2,7 @@
 /**
  * 首页"今日宜饮"茶卡片
  */
-import { reactive } from 'vue'
+import { useImgFailed } from '@/composables/useImgFailed'
 import type { Tea } from '@/types/tea'
 
 defineProps<{ tea: Tea }>()
@@ -11,10 +11,7 @@ const emit = defineEmits<{
   share: [tea: Tea]
 }>()
 
-const imgFailed = reactive<Record<string, boolean>>({})
-function markImgFailed(id: string) {
-  imgFailed[id] = true
-}
+const { imgFailed, markImgFailed } = useImgFailed()
 </script>
 
 <template>
