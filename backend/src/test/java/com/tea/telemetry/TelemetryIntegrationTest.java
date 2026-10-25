@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tea.support.PostgresIntegrationTestBase;
 import com.tea.telemetry.entity.ErrorFingerprint;
 import com.tea.telemetry.repository.ErrorFingerprintRepository;
 import com.tea.telemetry.repository.TelemetryEventRepository;
@@ -21,10 +22,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
@@ -40,20 +37,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
                 "tea.ratelimit.ai-auth-max=1000000", "tea.ratelimit.login-max=1000000",
                 "tea.ratelimit.telemetry-anon-max=1000000"})
 @Testcontainers(disabledWithoutDocker = true)
-class TelemetryIntegrationTest {
-
-    @Container
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("pgvector/pgvector:pg16")
-            .withDatabaseName("tea")
-            .withUsername("tea")
-            .withPassword("tea");
-
-    @DynamicPropertySource
-    static void datasource(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
-        registry.add("spring.datasource.username", POSTGRES::getUsername);
-        registry.add("spring.datasource.password", POSTGRES::getPassword);
-    }
+class TelemetryIntegrationTest extends PostgresIntegrationTestBase {
 
     @Autowired
     private TestRestTemplate rest;

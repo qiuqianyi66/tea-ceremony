@@ -1,3 +1,9 @@
+---
+last_updated: 2026-10-24
+status: active
+owner: yanha
+---
+
 # eval-harness: project-audit-2026-10-24
 
 > 确定性评测（零 LLM）。--verify=on。日期 2026-10-24
