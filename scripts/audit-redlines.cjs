@@ -229,7 +229,7 @@ for (const f of [...vueFiles, ...collect('src', new Set(['.ts', '.js']))]) {
 for (const r of rendererHits) errors.push(`R14 ${r}`);
 
 // ---------- 人工核对提示（不可机械判定的红线） ----------
-warnings.push('人工核对（不可机械化）：R1 分层（ArchUnit 已机械化）/ R3 四层对象分离 / R5 幂等 client_id / R6 N+1 与分页 / R13 设计门禁 / R15 部署门禁（CI 13 job 覆盖）');
+warnings.push('人工核对（不可机械化）：R1 分层（ArchUnit 已机械化）/ R3 四层对象分离 / R5 幂等 client_id / R6 N+1 与分页 / R13 设计门禁 / R15 部署门禁（CI 14 job 覆盖）');
 
 // ---------- 输出 ----------
 console.log('=== 红线机械化审计（替代 red-line-auditor） ===');

@@ -183,6 +183,15 @@ nginx -t && nginx -s reload
    - `acme.sh --cron --force` → `tcp port 80 is already used`。
    - 解决：续期脚本先 `docker compose stop frontend`，续完再 `start`（停站约 30 秒，6.7 天一次，可接受）。
    - 更优雅的替代是改 webroot 模式（nginx 暴露 `/.well-known/acme-challenge/`），可做到零中断，本次未采用。
+   - **零中断切换配方（2026-10-22 补，仓库侧已就绪，服务器动作为 A 组外部事项）**：`nginx.conf` L30-35 已有 `location ^~ /.well-known/acme-challenge/`（root 指向容器内 `/var/www/certbot`，compose 挂载 `./certbot-www` 共享）。服务器侧只需把续期改成 webroot 模式并改 cron：
+     ```bash
+     # 首次签发换 webroot（-w 指向 nginx 容器内的 webroot 在宿主机的对应目录）
+     acme.sh --issue -w <compose目录>/certbot-www -d 42.121.125.4 --profile shortlived --server letsencrypt
+     # 续期脚本 renew-cert.sh 去掉 stop/start frontend，改为：
+     "/root/.acme.sh"/acme.sh --renew -d 42.121.125.4 --webroot <compose目录>/certbot-www \
+       && docker compose start frontend   # start 对已运行容器幂等，用于 reload 新证书
+     ```
+     切换前先在服务器确认 `./certbot-www` 挂载存在且 nginx 可写挑战文件；`--renew --force` 实测通过后再改 cron（现 cron `17 4 */2 * *`）。
 
 3. **reloadcmd 在停站续期时必然失败**
    - acme.sh 在证书写入瞬间就执行 reloadcmd，此时容器还是停的 → `service "frontend" is not running`。

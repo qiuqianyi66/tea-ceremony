@@ -1,29 +1,23 @@
 """Pydantic schema 聚合导出 — 按域分文件。
 
-拆分历史：原 schemas.py 单文件，按域拆为 tea/culture/record/user/garden。
+拆分历史：原 schemas.py 单文件，按域拆为 tea/record/user（culture/ware 两域随
+2026-10-22 D9 旧端点退役一并移除，见 docs/architecture/backend-migration-status.md §3）。
 对外保持 `from app.schemas import UserCreate, ...` 不变。
 """
 
-from app.schemas.culture import PersonBase, PersonResponse, PoemBase, PoemResponse
 from app.schemas.record import RecordCreate, RecordResponse
 from app.schemas.tea import RegionBase, RegionResponse, TeaBase, TeaResponse
 from app.schemas.user import TokenResponse, UserCreate, UserLogin, UserResponse
-from app.schemas.ware import TeaWareResponse
 
 __all__ = [
     "TeaBase",
     "TeaResponse",
     "RegionBase",
     "RegionResponse",
-    "PersonBase",
-    "PersonResponse",
-    "PoemBase",
-    "PoemResponse",
     "RecordCreate",
     "RecordResponse",
     "UserCreate",
     "UserLogin",
     "UserResponse",
     "TokenResponse",
-    "TeaWareResponse",
 ]

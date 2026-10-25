@@ -3,21 +3,21 @@ name: plan-open-items-2026-10-17
 description: 未完成事项统一规划（2026-10-17 复核 + 执行拆解）——把散在 25 份 PLAN/REQ/GAP 文档里的「未完成」逐条实测后汇成清单，每项给出步骤/验收/风险，并区分真未完成 / 等外部条件 / 待拍板 / 文档债。
 status: active
 owner: yanha
-last_updated: 2026-10-17
+last_updated: 2026-10-22
 ---
 
 # 未完成事项统一规划（2026-10-17 复核 + 执行拆解）
 
 > 用途：**未完成事项的唯一入口**。散在 `docs/plans/PLAN-*`、`docs/prd/REQ-*`、`docs/ENTERPRISE_GAP.md`、`docs/OPTIMIZATION_PLAN.md` 里的"未完成"，先读这里，别逐份翻。
 > 方法：25 份文档提取 86 条"未完成"声明 + 4 轮深度扫描（代码抑制标记 / 测试 skip / CI 弱化门禁 / 调度任务）→ **逐条实测复核**，不转抄文档结论。
-> 结论：**真未完成 0 项 / 等外部条件 4 条 / 待拍板 0 条 / 文档债 25 条 / 在途切片 1 个（§7）**。（2026-10-17 六次复核：A 类全部处置；D1/D2/D3/D5/D6/D7/D8 已全部拍板，D4 已定为「先拆 useAudio.ts」待开工）
+> 结论（2026-10-22 七次复核）：**真未完成 1 项（A8 RAG 命中率，2026-10-22 立项）/ 等外部条件 4 条 / 待拍板 0 条 / 文档债基本已清 / §7 在途切片四项已全部合入**。2026-10-17 六次复核基线：A 类全部处置；D1/D2/D3/D5/D6/D7/D8 已全部拍板；D4 已完成（PR #96）。
 
 ## 0. 一分钟结论
 
 1. 清单比文档薄：86 条声明里 **25 条是过期债**。A 类 6 项**全部处置完毕**：完成 3 项（A2/A5/A6）、本来就做过 1 项（A1）、用数据否掉 2 项（A4 令牌化、A3 前缀扩容）。
 2. **无技术阻塞**：4 条"等外部条件"各自只需一个动作（充值 / 域名 / 预算 / 拍板）。
 3. 唯一的结构性矛盾：**ADR-012 判"引入 Redis"（status: active），代码零实现**（`spring-data-redis` 不在 pom，0 处 RedisTemplate）。决策与实现脱节，需重新拍板。
-4. 优先级：先清文档债（半天）→ 再动代码。否则下一个会话会把 22 件已完成的事重做一遍。
+4. 优先级（2026-10-22 更新）：唯一待开工代码项是 A8（RAG 命中率，诊断不依赖外部条件）；文档债已基本清完，日常只需随状态当场更新本文件与 `TODO-PRIORITY.md`。
 
 ## 1. 真未完成（含执行拆解）
 
@@ -73,12 +73,35 @@ last_updated: 2026-10-17
 - 验收：无论做或不做，`docs/plans/out-of-scope.md` 有明确条目
 - 风险：JWT 库迁移影响认证承重墙 → 必须全量认证测试 + 令牌兼容性验证
 
+### A8 RAG 命中率提升（2026-10-22 立项；当前 AI 质量最大可量化短板）
+
+现状（实测）：`ragHitRate 0.16`（default 0.28 / expert 0.09）——`docs/ai-eval/reports/2026-10-18-full-judge.json` + 2026-10-19 巡检记录；advisor/taster/brewer/mentor 大量「知识库未命中，常识回答」。此前只写在「最近完成」里，无待办条目，等于没立项（2026-10-22 用户点名补立）。
+
+检索架构（实测，`CultureSearchService.java`）：8 表 ILIKE（`splitKeywords` 连接词切分 + 虚词剥离）+ `culture_chunks` pgvector 余弦 top-k **只补 ILIKE 未命中空位**；`EmbeddingModel` 不可用自动降级纯 ILIKE。代码注释已承认「ragHitRate 长期低位意味着多数调用未产生命中」。
+
+**静态分析发现（2026-10-22 读码，未运行验证，禁当结论）**：
+
+- F1 `teas` 表 ILIKE 只查 `name` 列（L83-86），其余 7 表均查 description 类字段——「哪种茶回甘」类问题中 teas 的描述关键词完全不参与匹配。
+- F2 向量分支只补空位（`mergeLists` L228：ILIKE 已满 5 条时直接返回）——ILIKE 返回 5 条弱相关结果时，语义命中的精准 chunk 被结构性堵死。这是「补缺」设计的固有上限。
+- F3 向量阈值 0.55 为经验值（L37），top 18（`VECTOR_TOP_N * 6`），阈值合理性无实测数据。
+- F4 expert 路径命中率（0.09）远低于 default（0.28）与 F1/F2 的推论方向一致（专家问答更具体，ILIKE 弱匹配更容易先占满 5 条）。
+
+待验证假设（按优先级，均未实测，禁当结论）：
+
+- H1 向量分支实际没跑：多候选装配 → `no_model` 降级（`CultureSearchService.java:150-155`），或 chunks 未回填 embedding / `status != 'ready'`。
+- H2 跑了但策略不合理：距离阈值、补缺时机（仅补空位）让语义召回使不上劲。
+- H3 语料覆盖/切分质量：评测问题对应知识点不在 chunks 内。
+
+- 步骤：①**已机械化（2026-10-22）**：`node scripts/diagnose-rag.cjs --db` 出 chunks 覆盖统计（total/ready/with_embedding/usable + source_type 分布 + 8 表行数），`--api` 把 50 条评测问题逐条打 `/api/v1/culture/search` 出未命中清单——本地可跑（需 PG + 后端，Docker 起没起决定能不能跑）；②对未命中清单人工标注「应有知识点」→ 定性 H2/H3；③按定性结果改一处、同口径重跑对比。
+- 验收：`ragHitRate` 可量化提升（建议目标 default ≥ 0.40 / expert ≥ 0.30）且全量分不降；向量分支 attempted 占比进巡检报表。
+- 风险：为提命中而提命中会污染质量基线——每处改动配单测，报告区分「口径变化」与「质量提升」；真嵌入验证依赖 DashScope 充值（§2），诊断步骤①②不依赖。
+
 ## 2. 等外部条件（不是没人做，是做不了）
 
 | 项 | 卡什么（实测） | 解锁动作 | 解锁后可做 |
 |---|---|---|---|
 | 评测 live 批 / 正式基线 | DashScope 2026-10-12 欠费（HTTP 400 `Arrearage`） | 阿里云百炼充值（¥50 量级够评测） | T08 pass³ 通义基线、T09 judge 校准补跑、v6 live 批、A3 缓存命中验证 |
-| P1-9 HTTPS 443 + HSTS | 公网是裸 IP `42.121.125.4`，无域名无证书 | 申请域名 + 签证书 | 证书挂载 → 443 → 80 跳转；HSTS 同步补 |
+| ~~P1-9 HTTPS 443 + HSTS~~ → **已完成（2026-10-18，走 IP 证书路线）** | Let's Encrypt shortlived IP 证书已签发（6.7 天），cron 每 2 天续期；2026-10-22 外网探针实证：`https://42.121.125.4` 200 + HSTS 在线。详见 `PLAN-ip-cert-2026-10-18.md` §7 | — | 剩余运维项：续期停站约 30s/次（未改 webroot 零中断模式） |
 | SFT T13 训练 | 预算未定（训练单价需登录百炼控制台确认） | 用户给预算上限 | 241 条语料直接训练 LoRA（单专家 mentor） |
 | 三大体积目录 86 MB（`.agents/skills` 34 / `docs/screenshots` 29.2 / `public/3d` 22.8） | 存储形态决策 | 拍板 | 仓库瘦身 |
 
@@ -89,11 +112,12 @@ last_updated: 2026-10-17
 | D1 | ~~T15 决定表剩余项照准~~ | **已照准（2026-10-17）**：做 4 / 降级 7 / 砍 0 按推荐执行；其中 K17/K21/P1-5/P1-6 已完成、P1-10 已于 10-13 完成 → 本表全部落地关闭 | — |
 | D2 | ~~SFT 语料量级~~ | **已拍板（2026-10-17）：241 条直接训练**（A 档），不扩 500+ | T13 待「百炼控制台确认单价 + 预算数字」后启动 |
 | D3 | ~~ADR-012 Redis + 语义缓存~~ | **已决策（ADR-021，2026-10-17）**：暂不引入 Redis，ADR-012 标 deprecated；语义缓存随「AI key + 真实流量」重启评估 | 反转条件：多实例水平扩展 / 语义缓存能算出净收益 / 简历目标重启 |
-| D4 | 超大单文件拆分 | **已拍板（2026-10-17）：先拆 `useAudio.ts`**（789 行）。拆解方案见下方 §7.1；`TeaBrewSceneInner.vue`(1322)/`BrewView.vue`(812) 单独一轮 | `useAudio` 有模块级单例（AudioContext/Howler）+ 单测 + 5 个消费方，属 L2 重构，需真实听测 |
+| D4 | 超大单文件拆分 | **已完成（2026-10-22 核实，PR #96，5a8f581）**：`useAudio.ts` 789 → 281 行，拆出 `composables/audio/{synthAmbient,howlerTracks,sfx,host}.ts` 四模块（实测四文件在位）；单例与对外 API 保留在 `useAudio.ts`。`TeaBrewSceneInner.vue`(1322)/`BrewView.vue`(812) 仍未拆（低优先，不阻塞） | 下一轮如需再拆，按「变什么拆什么」边界走 |
 | D5 | ~~SSE 流式输出立项~~ | **已拍板（2026-10-17）：暂缓**，记入 `out-of-scope.md` | 反转条件：AI 回答长度普遍 >400 字，或用户明确要求流式 |
 | D6 | ~~`filter-repo` 重写历史~~ | **已拍板（2026-10-17）：不做**，记入 `out-of-scope.md` | 反转条件：`.git` 超过 500MB 或需要公开分发 |
 | D7 | ~~A6 安全债：迁 PyJWT 还是维持非阻断~~ | **已结案：不修**（漏洞不可达，见 A6） | — |
 | D8 | ~~裸值治理策略（268 处硬编码色值）~~ | **已决策并落地（2026-10-17）**：新增 `ink-bright` 令牌收编最高频的 17 处（等值替换，零视觉变化）；其余维持「派生色允许裸值 + 注释」，不追求清零 | 实测 9/268 可等值替换；扩表须逐个确认语义，禁止为凑数换错令牌 |
+| D9 | ~~13 个未迁旧端点的结局（退役 or 补迁）~~ | **已执行（2026-10-22，用户拍板「全部退役」）**：删 6 文件 + 7 处同步（main/schemas/ai.py/3 测试/wiki/e2e/audit 脚本），wiki 登记 52→38，五门禁全绿；执行记录见 `docs/architecture/backend-migration-status.md` §3 | 反转：产品要文化浏览页/动态茶器/茶记生成 → 按新栈立项重做，不从旧代码迁移 |
 
 ## 4. 文档债：写着未完成，实测已完成（22 条，防下次重做）
 
@@ -126,9 +150,9 @@ last_updated: 2026-10-17
 ## 5. 执行顺序（含依赖）
 
 ```
-无待开工代码项。
+待开工代码项：A8（RAG 命中率，诊断步骤不依赖外部条件）。
 
-已完成：A2（PR #88）· A5（PR #87）· A6（PR #89 结案不修）· A1（本已做过）
+已完成：A2（PR #88）· A5（PR #87）· A6（PR #89 结案不修）· A1（本已做过）· A7/D4（PR #96）
 已否掉：A4（实测 9/268 → D8）· A3 前缀扩容（净亏 31% → 语义缓存并入 D3）
 ```
 
@@ -146,9 +170,9 @@ last_updated: 2026-10-17
 | `docs/ADR/ADR-012.md` | Redis 决策 | **status: active 但 0 实现 → D3 待重判** |
 | 各 `PLAN-*` | 单切片执行计划 | 已完成者按 §4 标 ✅，不再作为待办来源 |
 
-## 7. 在途切片登记与审查（2026-10-17，另一会话）
+## 7. 在途切片登记与审查（2026-10-17，另一会话）→ **四项已全部合入（2026-10-22 核实）**
 
-> 按 AGENTS §10「临时产物与在途工作不跨界处置」：本轮维护者**不修改、不删除**下列文件，只登记 + 出只读审查意见。
+> 原登记的四项在途工作已落地：nginx 配置 snippets 化（`nginx.conf:120` include + 各 location include 安全头）、`public/robots.txt` + `public/sitemap.xml`（实测在位）、ADR-022（`status: active`）+ `docs/reference/telemetry-contract.md` + 后端 telemetry 代码（5ccab4a，#108）。原只读审查意见 R1-R6 中：R1 已随（status 改 active）；R3 迁移已随遥测切片落地；R4/R5/R6 随契约与代码落地核对。审查意见原文保留如下备查。
 
 | 文件 | 内容 |
 |---|---|
@@ -170,7 +194,9 @@ last_updated: 2026-10-17
 | R5 | 🟢 范围 | `GET /slo`、`GET/PATCH /fingerprints` 需 JWT，但当前无运营看板消费方 | 确认是否有前端页面；没有就先只做 `POST /batch`，其余留到有读者时再加 |
 | R6 | 🟢 安全 | `POST /api/v1/telemetry/batch` 匿名可写 | 契约已写「≤50 条/请求 + 10 次/分钟」，需在代码落地（`RateLimitFilter` 加规则 + 请求体大小上限），不能只停在契约文本 |
 
-### A7 D4 落地：拆 `useAudio.ts`（789 行 → 4 文件，2-3d，L2，待开工）
+### A7 D4 落地：拆 `useAudio.ts`（789 行 → 4 文件，2-3d，L2）~~待开工~~ → **已完成（2026-10-22 核实）**
+
+> PR #96（5a8f581）已合入 main：`useAudio.ts` 281 行 + `composables/audio/{synthAmbient,howlerTracks,sfx,host}.ts` 四模块。原拆解边界（§7.1 表）与最终落地一致。后续如拆 `TeaBrewSceneInner.vue`/`BrewView.vue`，按同一「变什么拆什么」边界另立切片。
 
 现状（实测）：单文件 789 行，内含 state、AudioContext 管理、Howler 初始化、程序化雨/风声合成（约 110 行）、环境音切换与播放、SFX；模块级单例（`AudioContext`/`Howler` 实例）+ 单测 `__tests__/useAudio.spec.ts` + 5 个消费方（`BrewView`/`HomeView`/`TeaDragDrop`/`teaRoom` store/`TeaRoom`）。
 

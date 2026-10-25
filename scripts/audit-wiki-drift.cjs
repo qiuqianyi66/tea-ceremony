@@ -22,9 +22,10 @@ const errors = [];
 const warnings = [];
 
 // 旧栈 routers 文件 → 挂载前缀（app/main.py include_router 挂载点）
+// 2026-10-22 D9：teawares/culture 两 router 已退役删除，映射项移除（见 docs/architecture/backend-migration-status.md §3）
 const PY_PREFIX = {
-  teas: '/api/teas', teawares: '/api/teawares', records: '/api/records',
-  culture: '/api/culture', auth: '/api/auth', ai: '/api/ai',
+  teas: '/api/teas', records: '/api/records',
+  auth: '/api/auth', ai: '/api/ai',
 };
 
 function norm(p) {

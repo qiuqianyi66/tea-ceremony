@@ -1,12 +1,12 @@
 ---
-last_updated: 2026-09-11
+last_updated: 2026-10-23
 status: active
 owner: yanha
 ---
 
 # API 端点清单
 
-> 从 `backend/app/routers/*.py` 与 `backend/app/main.py` 反推，最后更新：2026-09-11。
+> 从 `backend/app/routers/*.py` 与 `backend/app/main.py` 反推，最后更新：2026-10-23。
 > 统一前缀 `/api`；鉴权方式：`Authorization: Bearer <access_token>`（除公开端点外必须携带）。
 > 统一错误格式：`{"detail": "<中文说明>", "code": "<机器码>", "status": <HTTP 状态码>}`。
 
@@ -25,12 +25,6 @@ owner: yanha
 |------|------|------|----------|------|
 | GET | `/api/teas/` | `type?`（六大茶类过滤） | `list[TeaResponse]` | — |
 | GET | `/api/teas/{tea_id}` | — | `TeaResponse` | 404 茶叶不存在（`NOT_FOUND`） |
-
-## 茶器 `/api/teawares`（公开）
-
-| 方法 | 路径 | 成功响应 |
-|------|------|----------|
-| GET | `/api/teawares/` | `list[TeaWareResponse]` |
 
 ## 品鉴记录 `/api/records`（需登录）
 
@@ -52,29 +46,20 @@ owner: yanha
 
 幂等 upsert：同 `user_id + client_id` 已存在则更新状态并返回原记录 id，否则新建。
 
-## 茶文化 `/api/culture`（公开）
+## 茶文化 `/api/culture`（旧 FastAPI）—— 已于 2026-10-22 D9 退役
 
-| 方法 | 路径 | 参数 | 成功响应 | 错误 |
-|------|------|------|----------|------|
-| GET | `/api/culture/regions` | `province?` | `list[RegionResponse]` | — |
-| GET | `/api/culture/regions/{region_id}` | — | `RegionResponse` | 404 产区不存在 |
-| GET | `/api/culture/people` | `dynasty?` | `list[PersonResponse]` | — |
-| GET | `/api/culture/people/{person_id}` | — | `PersonResponse` | 404 茶人不存在 |
-| GET | `/api/culture/poems` | `author?` | `list[PoemResponse]` | — |
-| GET | `/api/culture/poems/{poem_id}` | — | `PoemResponse` | 404 诗词不存在 |
-| GET | `/api/culture/processes` | — | 制茶工艺列表 | — |
-| GET | `/api/culture/processes/{process_id}` | — | 工艺详情 | 404 工艺不存在 |
-| GET | `/api/culture/teas/{tea_id}/detail` | — | 茶叶详情（含产区/工艺/关联） | 404 茶叶不存在 |
-| GET | `/api/culture/graph/{tea_id}` | — | 茶文化知识图谱 | 404 茶叶不存在 |
-| GET | `/api/culture/search` | `q`（默认空串） | 文化内容搜索结果 | — |
+> 11 个只读端点（regions/people/poems/processes/teas-detail/graph/search）随旧栈移除：0 前端消费方，
+> 文化数据改走新栈 `/api/v1/culture/search`（8 表 RAG）。退役决策与执行清单见
+> `docs/architecture/backend-migration-status.md` §3。若产品将来要做文化浏览页，按新栈 culture 域重做，不从旧代码迁移。
 
 ## 茶灵 AI `/api/ai`（公开，LLM 不可用时 502，前端降级规则回复）
 
 | 方法 | 路径 | 请求体 | 成功响应 | 错误 |
 |------|------|--------|----------|------|
-| POST | `/api/ai/recommend` | `{time, weather, mood}`（各 ≤20 字） | `{content}`（200） | 502 AI 服务暂不可用 |
-| POST | `/api/ai/note` | `{tea_name, score(0-10), dimensions}` | `{content}` | 502 |
 | POST | `/api/ai/chat` | `{messages: [{role, content}]}`（1-20 条，content ≤4000 字） | `{content}` | 502 |
+
+> recommend/note 两端点已于 2026-10-22 D9 退役（荐茶能力由新栈 advisor 专家覆盖；茶记无消费方）。
+> 旧 `/chat` 亦将随旧栈整体退役，生产调用走 `/api/v1/ai/chat`。
 
 ## 系统
 

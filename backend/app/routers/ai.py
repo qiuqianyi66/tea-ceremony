@@ -4,7 +4,8 @@
 - 统一超时 / 失败处理：第三方不可用时返回 502，前端据此降级到规则引擎。
 - 熔断（P1-13）：连续 5 次失败后开启 30s，期间不再调用 LLM，直接快速失败（<100ms），
   防止 DeepSeek 故障时所有请求都等 30s 超时形成雪崩；30s 后半开放行一次探测。
-- 端点：/api/ai/recommend（荐茶）、/api/ai/note（茶记）、/api/ai/chat（问答）。
+- 端点：/api/ai/chat（问答）。recommend/note 已于 2026-10-22 D9 退役
+  （荐茶能力由新栈 advisor 专家覆盖，见 docs/architecture/backend-migration-status.md §3）。
 """
 
 import asyncio
@@ -44,18 +45,6 @@ class ChatMessage(BaseModel):
 
 class ChatRequest(BaseModel):
     messages: list[ChatMessage] = Field(min_length=1, max_length=20)
-
-
-class RecommendRequest(BaseModel):
-    time: str = Field(min_length=1, max_length=20)
-    weather: str = Field(min_length=1, max_length=20)
-    mood: str = Field(min_length=1, max_length=20)
-
-
-class NoteRequest(BaseModel):
-    tea_name: str = Field(min_length=1, max_length=50)
-    score: float = Field(ge=0, le=10)
-    dimensions: dict = {}
 
 
 class AIResponse(BaseModel):
@@ -132,36 +121,6 @@ async def _proxy(messages: list[dict]) -> str:
         if ai_breaker.current_state == "half-open":
             ai_breaker.close()
     return content
-
-
-@router.post("/recommend", response_model=AIResponse)
-async def ai_recommend(data: RecommendRequest) -> AIResponse:
-    system = (
-        "你是「一盏茶」的茶灵 AI，精通中国茶道的老师傅。根据用户的时间、天气、心情推荐一款茶。"
-        "只用中文回答，语言优美雅致，不超过 80 字。"
-        "格式：推荐茶品：茶名 / 理由：一句话 / 冲泡建议：水温与浸泡时间。"
-    )
-    user = f"现在是{data.time}，天气{data.weather}，心情{data.mood}。推荐一款茶。"
-    content = await _proxy([
-        {"role": "system", "content": system},
-        {"role": "user", "content": user},
-    ])
-    return AIResponse(content=content)
-
-
-@router.post("/note", response_model=AIResponse)
-async def ai_note(data: NoteRequest) -> AIResponse:
-    system = (
-        "你是「一盏茶」的茶灵 AI，品茶大师。根据品鉴数据生成一段优美的茶记。"
-        "只用中文，语言古雅有韵味。格式：一句诗意的开头 + 2-3 句品鉴感受，不超过 60 字。"
-        "不要用评价性语言，用描述性语言。"
-    )
-    user = f"茶品：{data.tea_name}\n综合评分：{data.score}/10\n品鉴数据：{data.dimensions}\n请写一段品茶记。"
-    content = await _proxy([
-        {"role": "system", "content": system},
-        {"role": "user", "content": user},
-    ])
-    return AIResponse(content=content)
 
 
 @router.post("/chat", response_model=AIResponse)

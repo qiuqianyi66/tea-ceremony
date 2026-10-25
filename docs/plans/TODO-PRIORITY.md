@@ -1,7 +1,7 @@
 ---
 name: todo-priority
 description: 一盏茶跨会话状态活文档——状态速览 / 阻塞项 / 可直接开工 / 低优先 / 最近完成（防重做）/ 关键 ID 与命令。新会话先读本文件恢复上下文。
-last_updated: 2026-10-19
+last_updated: 2026-10-22
 status: active
 owner: yanha
 ---
@@ -9,16 +9,19 @@ owner: yanha
 # TODO-PRIORITY — 一盏茶 待办与跨会话状态总览（活文档）
 
 > 用途：跨会话状态交接，替代压缩摘要的不确定性。新会话先读本文件，再开工。
-> **未完成事项清单 → `docs/plans/PLAN-open-items-2026-10-17.md`**（2026-10-17 六次复核：**真未完成 0 项** / 等外部条件 4 条 / **待拍板 0 条** / 文档债 25 条已标注 / 在途切片 1 个）。本文件只留状态速览与命令，**不再各自维护待办清单**（避免又一份平行清单）。
+> **未完成事项清单 → `docs/plans/PLAN-open-items-2026-10-17.md`**（2026-10-22 七次复核：**真未完成 1 项（A8 RAG 命中率）** / 等外部条件 4 条 / **待拍板 0 条** / 文档债基本已清 / 在途切片四项已合入）。本文件只留状态速览与命令，**不再各自维护待办清单**（避免又一份平行清单）。
 > 维护规则：状态变化当场更新 `last_updated`；完成一项划一项；过期内容移入对应 PLAN/ADR/学习记录（`docs/plans/lessons.md`），不留死行。
 
-## 状态速览（2026-10-17 · 最近一次复核）
+## 状态速览（2026-10-22 · 最近一次复核）
 
+- **2026-10-22 治理与文档收敛**：①新增《安全 Harness 工程规范》（`docs/security-harness-engineering-spec.md`，威胁模型 T1-T8 + 控制矩阵五域全带 file:line 实测证据 + 新功能安全 checklist 10 项 + 缺口 G1-G7 附反转条件；AGENTS.md §7 加入口指针）；②RAG 命中率 0.16 正式立项（`PLAN-open-items` A8：诊断脚本 `diagnose-rag.cjs` 已机械化，目标 default ≥ 0.40 / expert ≥ 0.30）；③ITERATIONS 简历口径上移：v6 `overall 0.90`（judgeCoverage 1、50 条全量）为当前最新可引用，v5 0.80 转历史口径（用户授权拍板）；④文档债修复：D4/useAudio 拆分（PR #96）、§7 在途四项（nginx snippets/robots/sitemap/ADR-022+遥测契约）标注已合入、P1-9 HTTPS 过期记录改已完成；⑤后端迁移盘点首版（`docs/architecture/backend-migration-status.md`：旧栈 23 端点 10 已迁 / 13 未迁且 0 前端消费方，D9 决策表建议全部退役待拍板）。
+- **2026-10-22 深夜 D9 执行 + B8 拆分**：①**13 个旧端点全部退役**（用户拍板）：删 6 文件 + 7 处同步，wiki 登记 52→38，五门禁全绿；后端重写判据①③ 已满足，剩②（删 `backend/app` 整段 + CI 旧门禁）④（Alembic 退役）；②**B8 完成**：BrewView 812 → 354 行（4 composable + 2 组件）；`TeaBrewSceneInner.vue` 1322 → 1026 行（拆出 `brew/sceneLayout.ts` 布局工厂 + `brew/proceduralTextures.ts` 六纹理），type-check + build + 截图前后对比一致；3D 文件剩余部分（渲染管线/皮肤雨幕/粒子/主循环）留待下一切片，截图验证手段已备。
+- **2026-10-22 晚 B/C 组工程清收**：garden-sync 脚本新栈化 + 口令入环境变量；dependabot 补 maven；gitleaks 入 CI（14 job，分支保护同步）；nginx 显式 404 非 health 的 actuator；IP 证书 webroot 续期配方；RAG 诊断脚本 + 静态三疑点；**BrewView 812 → 354 行**（4 composable + 2 组件，验证全绿）；B8 剩余：`TeaBrewSceneInner.vue` 拆了一半（布局 + 纹理已出模块，剩渲染管线/皮肤/粒子/循环，需单独切片 + 截图验证）。
 - **2026-10-17 治理收敛（PR #78、#84、#87~#94）**：常驻层 25,887 → 18,893 token（−27%）；学习记录外置 `docs/plans/lessons.md`；AI 代理路径与 e2e 拦截对齐 `/api/v1/ai`（原 glob 从未匹配）；评测 v6 离线批（precondition 10/40 + RAG 未命中口径 + 机械化门禁）；A6 安全债结案（HS256 only → 漏洞不可达）；D3 决策不引入 Redis（ADR-021）；D8 新增 `ink-bright` 令牌收编 17 处裸值；未完成事项统一到 `PLAN-open-items`（六次复核后真未完成 0 项）。
 
 
 - main：**`a84439f`**（2026-10-13；含 PR #59-#63 五包深度优化、#64 yg-gateway 通道、#65 T08 结果、#66 SFT 语料 + L2/L7、#67 TODO 同步、#69/#70 网关部署收尾、晚间 README/env/T15 收尾）。自上版 `757c552` 起新增：**PR #59（需求分析）**、**#60（规范清单）**、**#61（前端体验）**、**#62（安全 4 高危）**、**#63（后端优化）**、**#64（yg-gateway 评测通道，a1ae68b）**、**#65（T08 pass³ 结果 + T09 评委发现，5949449）**、**#66（SFT 语料 241 条 + L2 密码强度 + L7 令牌轮换，3dfb30f）**、**#67（TODO-PRIORITY sync，519f8c3）**、**#69（key check 跟随激活 chat model，a317454）**、**#70（compose 加 yg-gateway service，c4f5acc）**。
-- **推送流程变更（2026-10-10，用户拍板）**：main 走 **PR-only**。新改动一律 `feature/xxx` / `fix/xxx` 分支 → push → 开 PR → **CI 13 job 全绿** → 合并。**禁再直推 main（bypass）**。PR #41/#42 已按此流程走通。
+- **推送流程变更（2026-10-10，用户拍板）**：main 走 **PR-only**。新改动一律 `feature/xxx` / `fix/xxx` 分支 → push → 开 PR → **CI 14 job 全绿** → 合并。**禁再直推 main（bypass）**。PR #41/#42 已按此流程走通。
 - **✅ 分支保护 CI 门禁已补回（2026-10-10，本会话）**：`required_status_checks` 原缺失（改规则时被一并取消，PR 可带红灯合并）；用 `PUT /branches/main/protection` 补回 **13 个 context**（与 ci.yml job `name` 逐字一致），`required_approving_review_count: 0` 保持。核对命令：`gh api repos/qiuqianyi66/tea-ceremony/branches/main/protection -q '.required_status_checks.contexts[]'`。
 - **✅ A4「cu 虚拟桌面」前提已证伪（2026-10-10，本会话）**：截图链路与 Judge 实跑**不需要 cu 桌面**，均可本地 headless 完成。已实跑通过：
   - `node scripts/verify-gardens.cjs` → **ERRORS: []**（4 园 × 晴/雨 8 张，已出图）
@@ -86,6 +89,7 @@ owner: yanha
 
 1. **Q1 真实用户试用**：✅ **已部署上线**（2026-10-13，`http://42.121.125.4`，ECS 免费试用 3 个月），见「最近完成」。待办只剩：发同学群收集反馈。
 2. **T15 C6 低优先甄别**：✅ **已产出决定表**（2026-10-13，`docs/plans/PLAN-t15-c6-triage-2026-10-13.md`：做 4 / 降级 7 / 砍 0，待拍板）；**D 系列低优先**（见下，可穿插）
+3. **A8 RAG 命中率提升**（2026-10-22 立项）：诊断已机械化——`node scripts/diagnose-rag.cjs --db/--api`（chunks 覆盖统计 + 50 条评测问题逐条检索命中清单）；静态分析发现 3 个结构性疑点（teas 表只查 name 列 / 向量只补空位 / 阈值 0.55 无实测）。本地可跑（需 PG + 后端，Docker 起没起决定能不能跑）；改动与验收见 `PLAN-open-items-2026-10-17.md` A8。
 
 ## C. 依赖卡点（备料可先行，执行要等）
 
@@ -96,11 +100,12 @@ owner: yanha
 ## D. 低优先（Phase 6 / 工程单遗留）
 
 - K17-K22：**K17 ✅ K18 ✅ K19 ✅（每周一 10:30 质量巡检 cron）K20 ✅ K21 ✅ K22 ✅（G24 ①无需补（E2E 规则自带边界）②③④⑤⑥ ✅ ⑦wiki-drift 二期响应契约 ✅ ⑧Debug 无明文 + AI onboard prompt ✅）**（2026-10-13）
-- **P1-1 ✅（request_id：RequestIdFilter + logback MDC + nginx $request_id，单测 4/4）P1-5 ✅ P1-6 ✅ P1-7 ✅（P-O2 不适用/P-O3 已落地/P-O4 来源卡片 ✅）P1-8 ✅（OPTIMIZATION_PLAN：navigateFallback 离线深链已配，vite.config.ts L103）P1-10 ✅ P1-13 ✅（AiCircuitBreaker 熔断：阈值 5/30s 窗，单测 5/5）P2-9 ✅（errorBuffer.ts 已实现，P1-10 原核对漏扫）**（2026-10-13）；**两个 P1-9 需带文档前缀区分**：OPTIMIZATION_PLAN P1-9（web-vitals 落 IndexedDB）✅ 已实现（src/services/vitals.ts）；T15 决定表 P1-9（HTTPS 443 证书）❌ 待域名解锁。茶园 S1 ✅（PR #40 已合 main，garden 端点 + 能量账本 ADR-015）。P1-2 Prometheus 维持不做（需新依赖 micrometer-registry-prometheus + 无消费端）
+- **P1-1 ✅（request_id：RequestIdFilter + logback MDC + nginx $request_id，单测 4/4）P1-5 ✅ P1-6 ✅ P1-7 ✅（P-O2 不适用/P-O3 已落地/P-O4 来源卡片 ✅）P1-8 ✅（OPTIMIZATION_PLAN：navigateFallback 离线深链已配，vite.config.ts L103）P1-10 ✅ P1-13 ✅（AiCircuitBreaker 熔断：阈值 5/30s 窗，单测 5/5）P2-9 ✅（errorBuffer.ts 已实现，P1-10 原核对漏扫）**（2026-10-13）；**两个 P1-9 需带文档前缀区分**：OPTIMIZATION_PLAN P1-9（web-vitals 落 IndexedDB）✅ 已实现（src/services/vitals.ts）；T15 决定表 P1-9（HTTPS 443 证书）✅ **已完成（2026-10-18，IP 证书路线，无需域名/备案；2026-10-22 外网探针实证 HSTS 在线，见 PLAN-ip-cert §7）**。茶园 S1 ✅（PR #40 已合 main，garden 端点 + 能量账本 ADR-015）。P1-2 Prometheus 维持不做（需新依赖 micrometer-registry-prometheus + 无消费端）
 - 技术债：~~mcp 双版本共存~~（✅ 2026-10-13 锁 io.modelcontextprotocol.sdk 0.17.0，集成测试 252 全绿）；启动 WARN 核查完成（无害：mcp BeanPostProcessor 顺序提示 + UserDetails 提示 + SyncMcpToolProvider 空工具提示）；Q2 C6 低优先甄别 = T15 C6 决定表（✅ 已完成）；集成测试首次真跑暴露三重欠账已修（test yml 重建 / 生产 compose gateway 污染修复）
 
 ## 最近完成（防重做：先查这里，勿从零重写）
 
+- **B/C 组清收（2026-10-22 晚）**：①garden-sync E2E 脚本对齐新栈（`/api/v1/auth` + ApiResponse 解包，PG 连接串改 `TEA_PG` 环境变量）；②dependabot 补 maven 生态（Java 依赖空白）；③gitleaks 密钥扫描入 CI（job 13→14，分支保护 context 已同步，只扫工作区——历史全量扫描待遗留口令轮换）；④nginx 显式 404 其余 `/actuator/*`（把「靠 fallback 隐式关闭」改显式决策，同 /mcp 教训）；⑤IP 证书 webroot 零中断续期配方已写进 `PLAN-ip-cert`（服务器动作归外部）；⑥RAG 诊断机械化 `scripts/diagnose-rag.cjs` + 静态分析三疑点（teas 只查 name / 向量只补空位 / 阈值 0.55）；⑦**BrewView.vue 812 → ~330 行**：拆出 4 个 composable（状态机/氛围/手势/展示派生）+ 2 个组件（皮肤切换/动画区域），type-check + build + BrewView 单测 6/6 全绿（本机 vitest 需 `--pool=vmThreads`，默认 forks 池在本机 Windows 坏，CI Linux 不受影响；vitals.spec 7 失败为干净 main 同现的环境遗留）。
 - **每周质量巡检**（2026-10-19，定时任务）：verify-harness `ERRORS: []`（修 1 处 WARNING：PLAN-ip-cert status `completed`→`deprecated` 入合法值域）；前端 Vitest 25 文件 / **238 tests 全过**；后端 Maven **451 tests / Failures 0**（9 Errors 为本地 Docker 未启动的 Testcontainers 环境性失败，Skipped 7）；**eval 未重跑**（本地 backend 未运行 + 10-18 已跑 full judge，引用 `docs/ai-eval/reports/2026-10-18-full-judge.json`：**overall 0.90 / judgeCoverage 1 / pass³ 41/50**，men 子集 0.88/6-8，已入 ITERATIONS v6）；RAG 命中率 **0.16**（default 0.28 / expert 0.09）为当前主要短板（advisor/taster/brewer/mentor 大量"知识库未命中，常识回答"）。
 - **网关部署配套收尾**（2026-10-13）：PR #69（key check 跟随激活 chat model，gateway profile，a317454）、#70（compose 加 yg-gateway service + backend gateway profile env，c4f5acc）已合 main；本地工作区清理（`build-corpus.cjs` 死代码删除、`raw-traces.json` 入 ignore）。
 - **2026-10-13 晚间收尾（直推 main，bypass 特例，a84439f）**：工作区清理（build-corpus.cjs 死代码 + raw-traces.json 入 ignore）、6 文档 frontmatter 修复、README 中英文更新（Spring Boot 新栈/Compose 部署/AI 五专家/工程治理章节）、.env.example 清旧栈 DeepSeek 残留、T15 C6 四维甄别决定表。治理检查 verify-harness ERRORS: []。
@@ -134,7 +139,7 @@ owner: yanha
 
 ```
 npm run quality                     # 提交前门禁（全绿要求）
-node scripts/verify-harness.cjs     # 治理一致性，期望 ERRORS: []（ADR 18 / CI 13 job / 技能 .agents 66 + .harness 33）
+node scripts/verify-harness.cjs     # 治理一致性，期望 ERRORS: []（ADR 26 / CI 14 job / 技能 .agents 66 + .harness 39）
 node scripts/audit-redlines.cjs     # 红线机械化审计，期望 ERRORS: []
 node scripts/audit-wiki-drift.cjs   # wiki 契约漂移审计，期望 ERRORS: []
 node scripts/validate-eval-cases.cjs  # 评测集结构校验（期望 VALID，T10 门禁）
