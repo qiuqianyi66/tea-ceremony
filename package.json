@@ -24,7 +24,7 @@
     "quality:full": "npm run quality && npm audit --registry=https://registry.npmjs.org"
   },
   "dependencies": {
-    "@tresjs/cientos": "^5.8.1",
+    "@tresjs/cientos": "^5.9.3",
     "@tresjs/core": "^5.9.3",
     "@tsparticles/preset-bubbles": "^4.3.2",
     "@tsparticles/preset-fire": "^4.3.2",
