@@ -6,6 +6,7 @@ import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tea.support.PostgresIntegrationTestBase;
 import io.micrometer.core.instrument.MeterRegistry;
 
 import java.util.ArrayList;
@@ -21,10 +22,6 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
@@ -38,22 +35,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
         properties = {"tea.ratelimit.ai-anon-max=1000000", "tea.ratelimit.ai-anon-daily-max=10000000",
                 "tea.ratelimit.ai-auth-max=1000000", "tea.ratelimit.login-max=1000000"})
 @Testcontainers
-class CultureSearchVectorBranchIntegrationTest {
+class CultureSearchVectorBranchIntegrationTest extends PostgresIntegrationTestBase {
 
     private static final int DIM = 1024; // 对齐 V3 culture_chunks.embedding vector(1024)
-
-    @Container
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("pgvector/pgvector:pg16")
-            .withDatabaseName("tea")
-            .withUsername("tea")
-            .withPassword("tea");
-
-    @DynamicPropertySource
-    static void datasource(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
-        registry.add("spring.datasource.username", POSTGRES::getUsername);
-        registry.add("spring.datasource.password", POSTGRES::getPassword);
-    }
 
     @Autowired
     private TestRestTemplate rest;

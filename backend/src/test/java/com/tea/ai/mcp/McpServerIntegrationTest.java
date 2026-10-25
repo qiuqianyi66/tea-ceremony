@@ -2,6 +2,7 @@ package com.tea.ai.mcp;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.tea.support.PostgresIntegrationTestBase;
 import io.modelcontextprotocol.spec.McpSchema;
 import io.modelcontextprotocol.server.McpSyncServer;
 import java.net.HttpURLConnection;
@@ -11,10 +12,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
@@ -26,20 +23,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
         properties = {"tea.ratelimit.ai-anon-max=1000000", "tea.ratelimit.ai-anon-daily-max=10000000",
                 "tea.ratelimit.ai-auth-max=1000000", "tea.ratelimit.login-max=1000000"})
 @Testcontainers
-class McpServerIntegrationTest {
-
-    @Container
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("pgvector/pgvector:pg16")
-            .withDatabaseName("tea")
-            .withUsername("tea")
-            .withPassword("tea");
-
-    @DynamicPropertySource
-    static void datasource(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
-        registry.add("spring.datasource.username", POSTGRES::getUsername);
-        registry.add("spring.datasource.password", POSTGRES::getPassword);
-    }
+class McpServerIntegrationTest extends PostgresIntegrationTestBase {
 
     @Autowired
     private McpSyncServer mcpServer;

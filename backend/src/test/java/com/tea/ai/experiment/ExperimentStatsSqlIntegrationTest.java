@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.tea.ai.entity.AiEvalTrace;
 import com.tea.ai.experiment.repository.AbExperimentRepository;
 import com.tea.ai.repository.AiEvalTraceRepository;
+import com.tea.support.PostgresIntegrationTestBase;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -12,10 +13,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
@@ -28,23 +25,10 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Testcontainers
-class ExperimentStatsSqlIntegrationTest {
+class ExperimentStatsSqlIntegrationTest extends PostgresIntegrationTestBase {
 
     private static final String TOOL_KEY = "ai.librarian.tool-calling";
     private static final String FALLBACK_KEY = "ai.fallback.rollout";
-
-    @Container
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("pgvector/pgvector:pg16")
-            .withDatabaseName("tea")
-            .withUsername("tea")
-            .withPassword("tea");
-
-    @DynamicPropertySource
-    static void datasource(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
-        registry.add("spring.datasource.username", POSTGRES::getUsername);
-        registry.add("spring.datasource.password", POSTGRES::getPassword);
-    }
 
     @Autowired
     private AbExperimentRepository experiments;

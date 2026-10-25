@@ -6,16 +6,13 @@ import com.tea.ai.dto.GoldenMetricsReport;
 import com.tea.ai.dto.GoldenMetricsReport.AgentMetrics;
 import com.tea.ai.entity.AiEvalTrace;
 import com.tea.ai.repository.AiEvalTraceRepository;
+import com.tea.support.PostgresIntegrationTestBase;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
@@ -30,20 +27,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
                 "tea.ratelimit.ai-auth-max=1000000", "tea.ratelimit.login-max=1000000",
                 "tea.ratelimit.telemetry-anon-max=1000000"})
 @Testcontainers(disabledWithoutDocker = true)
-class GoldenMetricsIntegrationTest {
-
-    @Container
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("pgvector/pgvector:pg16")
-            .withDatabaseName("tea")
-            .withUsername("tea")
-            .withPassword("tea");
-
-    @DynamicPropertySource
-    static void datasource(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
-        registry.add("spring.datasource.username", POSTGRES::getUsername);
-        registry.add("spring.datasource.password", POSTGRES::getPassword);
-    }
+class GoldenMetricsIntegrationTest extends PostgresIntegrationTestBase {
 
     @Autowired
     private AiEvalTraceRepository traceRepository;
