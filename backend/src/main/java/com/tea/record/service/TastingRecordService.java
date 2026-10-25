@@ -3,6 +3,7 @@ package com.tea.record.service;
 import com.tea.common.exception.BadRequestException;
 import com.tea.common.exception.ConflictException;
 import com.tea.common.exception.NotFoundException;
+import com.tea.common.request.Pagination;
 import com.tea.common.response.PageResult;
 import com.tea.garden.service.GardenEnergyService;
 import com.tea.record.dto.RecordCreateRequest;
@@ -27,8 +28,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class TastingRecordService {
-
-    private static final int MAX_SIZE = 100;
 
     private final TastingRecordRepository recordRepository;
     private final TeaRepository teaRepository;
@@ -79,12 +78,7 @@ public class TastingRecordService {
 
     @Transactional(readOnly = true)
     public PageResult<RecordVo> list(Integer userId, int page, int size) {
-        if (page < 1) {
-            throw new BadRequestException("page 必须 ≥ 1");
-        }
-        if (size < 1 || size > MAX_SIZE) {
-            throw new BadRequestException("size 必须在 1-100 之间");
-        }
+        Pagination.requireValid(page, size);
         Page<TastingRecord> result = recordRepository.findByUserIdOrderByCreatedAtDesc(
                 userId, PageRequest.of(page - 1, size));
         return PageResult.of(

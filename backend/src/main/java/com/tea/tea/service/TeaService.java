@@ -1,7 +1,7 @@
 package com.tea.tea.service;
 
-import com.tea.common.exception.BadRequestException;
 import com.tea.common.exception.NotFoundException;
+import com.tea.common.request.Pagination;
 import com.tea.common.response.PageResult;
 import com.tea.tea.entity.Tea;
 import com.tea.tea.repository.TeaRepository;
@@ -25,18 +25,11 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class TeaService {
 
-    private static final int MAX_SIZE = 100;
-
     private final TeaRepository teaRepository;
 
     @Transactional(readOnly = true)
     public PageResult<TeaVo> list(String category, String origin, int page, int size) {
-        if (page < 1) {
-            throw new BadRequestException("page 必须 ≥ 1");
-        }
-        if (size < 1 || size > MAX_SIZE) {
-            throw new BadRequestException("size 必须在 1-100 之间");
-        }
+        Pagination.requireValid(page, size);
         Specification<Tea> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
             if (category != null && !category.isBlank()) {
