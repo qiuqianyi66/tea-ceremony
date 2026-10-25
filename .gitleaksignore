@@ -1,0 +1,20 @@
+# .gitleaksignore —— 仅放行「工作区中的已知测试 fixture / 合成密钥」
+# 让 secret-scan (gitleaks) 门禁在首次运行时只对真实密钥变红。
+# 真实密钥（AI gateway key，值已从文档擦除）绝不放行，需人工轮换；git 历史中仍暴露。
+#
+# 指纹格式：<--source 相对路径>:<rule-id>:<line>
+# 由 gitleaks v8.30.1 实测输出，run: gitleaks detect --source . --no-git
+
+# --- ci.yml 自身测试环境变量（synthetic：ci-test-secret-...） ---
+.github/workflows/ci.yml:generic-api-key:231
+
+# --- Java 测试 fixture 的 SECRET（HS256 签名测试用的合成值） ---
+backend/src/test/java/com/tea/auth/service/AuthServiceTest.java:generic-api-key:34
+backend/src/test/java/com/tea/auth/security/JwtServiceTest.java:generic-api-key:14
+
+# --- 测试用 application.yml 的 secret / conftest 的 SECRET_KEY（fixture） ---
+backend/src/test/resources/application.yml:generic-api-key:59
+backend/tests/conftest.py:generic-api-key:16
+
+# --- TelemetrySanitizer 单测用的 jwt.io 范例 token（合成，仅测脱敏正则） ---
+backend/src/test/java/com/tea/telemetry/TelemetrySanitizerTest.java:jwt:36

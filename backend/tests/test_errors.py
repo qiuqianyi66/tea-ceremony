@@ -7,7 +7,7 @@ from app.errors import register_error_handlers
 
 
 def test_http_error_uses_unified_format(client: TestClient):
-    res = client.get("/api/culture/regions/999999")
+    res = client.get("/api/teas/999999")
     assert res.status_code == 404
     body = res.json()
     assert body["status"] == 404

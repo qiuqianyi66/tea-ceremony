@@ -67,7 +67,7 @@ OpenAI 兼容网关）可分 API key 给 tea 做评测。本方案把 yg-gateway
 Invoke-WebRequest http://127.0.0.1:7864/healthz
 
 # 2) 起评测后端（gateway profile）
-$env:AI_GATEWAY_API_KEY = "sk-eval-2c5ea4b879df1630"
+$env:AI_GATEWAY_API_KEY = $env:AI_GATEWAY_API_KEY  # 真实密钥已移除：从密钥管理（Vault/CI secret）注入，勿硬编码。git 历史中仍暴露，须到网关侧轮换该 key
 docker compose -f docker-compose.yml -f docker-compose.eval.yml up -d --build backend
 
 # 3) 小规模冒烟（先验证链路）

@@ -10,10 +10,11 @@ import { expect, test } from '@playwright/test'
 
 // 规则降级路径测试：显式拦截 /api/v1/ai/* 模拟「后端不可达」，
 // 不依赖本机/CI 是否真实运行后端——后端在跑时真实 LLM 回复无法确定性断言。
-// /api/culture/* 一并拦截：fetchRAGContext 的 RAG 检索在后端未起时会打 proxy error 噪音。
+// /api/v1/culture/* 一并拦截：fetchRAGContext 的 RAG 检索在后端未起时会打 proxy error 噪音
+// （2026-10-22：旧 /api/culture/* 路径随 D9 退役，改为新栈 /api/v1 前缀）。
 test.beforeEach(async ({ page }) => {
   await page.route('**/api/v1/ai/*', (route) => route.abort())
-  await page.route('**/api/culture/*', (route) => route.abort())
+  await page.route('**/api/v1/culture/*', (route) => route.abort())
 })
 
 test('AIAsk：空输入时发送按钮禁用', async ({ page }) => {

@@ -16,6 +16,8 @@ import zishaUrl from '@/assets/zisha-albedo.jpg'
 import { smoothstep, useBrewAnimation } from '@/composables/useBrewAnimation'
 import { BrewPhase } from '@/types/brewing'
 import { BREW_SKINS, type BrewSkin, type BrewSkinId } from './brewSkins'
+import { createBrewTextures } from './brew/proceduralTextures'
+import { createSceneLayout } from './brew/sceneLayout'
 
 // 场景背景由皮肤系统 applySkin 管理（程序化天幕渐变）。
 // 注意：直接在 setup 赋值 scene.background 不生效，需在 onRender 每帧强制设置（TresJS 渲染循环持有 scene）。
@@ -113,161 +115,62 @@ const anim = useBrewAnimation(
   toRef(props, 'pourProgress'),
 )
 
-// ==================== 坐标常量（position/scale 用 Vector3 实例；rotation 一律用数组） ====================
-// 构图：整套茶席沿 z 后移 SET_Z，远离相机，露出近景桌面边缘，
-// 形成「前景桌面 → 中景器具 → 远景茶室」三层纵深（近大远小更协调，也给上方 UI 让出空间）。
-const SET_Z = -0.7
-// 相机：降低并前移、视线中心下移，让桌面占据画面主体，压缩桌下深色地面的留白比例；
-// fov 略增到 42 让近景桌面更舒展（避免桌面只堆在上半幅、下方一大片死黑地面）。
-// 相机：第一人称 POV · 30° 高俯视（抖音短视频俯拍茶桌构图）。
-// look 压向桌面中心，抬高相机到 y=3.5、z=4.2：
-// 垂直差 3.5-1.15=2.35 / 水平差 4.2-0=4.2 → atan(0.56)≈29.2°。
-// 相机拉近让桌面占满画面下半，桌腿少露、桌下死黑减少。
-const camPos = new THREE.Vector3(0, 3.5, 4.2)
-const camLook = new THREE.Vector3(0, 1.15, 0)
-// 相机 fov：随视口宽高比适配。竖屏（手机 390×844 等）下水平视场自然收窄，
-// 固定 43 会把桌面两侧裁出画外，按 aspect 增大 fov 补偿横向视野；
-// 桌面 16:9 保持 43，窄屏上限 72（避免鱼眼失真）。
-const viewportAspect = ref(
-  typeof window !== 'undefined' ? window.innerWidth / window.innerHeight : 16 / 9,
-)
-function syncViewportAspect() {
-  viewportAspect.value = window.innerWidth / window.innerHeight
-}
-const camFov = computed(() => {
-  const aspect = viewportAspect.value
-  if (aspect >= 1) return 43
-  return Math.min(72, Math.round(43 * (1.6 / aspect) ** 0.35))
-})
-const keyLightPos = new THREE.Vector3(3.2, 5.5, 4)
-const rimLightPos = new THREE.Vector3(-3, 2, -2)
-const floorPos = new THREE.Vector3(0, -0.001, 1.5)
-const tablePos = new THREE.Vector3(0, 1.1, SET_Z)
-const clothPos = new THREE.Vector3(0, 1.19, SET_Z)
-const legPositions: THREE.Vector3[] = [
-  new THREE.Vector3(-2, 0.55, -0.9 + SET_Z),
-  new THREE.Vector3(2, 0.55, -0.9 + SET_Z),
-  new THREE.Vector3(-2, 0.55, 0.9 + SET_Z),
-  new THREE.Vector3(2, 0.55, 0.9 + SET_Z),
-]
-const gaiwanPos = new THREE.Vector3(-0.1, 1.19, SET_Z)
-const gaiwanScale = new THREE.Vector3(0.24, 0.24, 0.24)
-const liquidPos = new THREE.Vector3(0, 0.68, 0)
-// 盖碗盖子位置（闷泡时下移盖上碗口）。开盖只微抬、合盖盖沿与碗口齐平，
-// 避免旧值 0.98→0.68 的大行程让盖子悬空/合盖时像一颗大白球。
-const lidPosition = computed(
-  () => new THREE.Vector3(0, 0.92 - 0.18 * smoothstep(anim.steep.value), 0),
-)
+// ==================== 场景布局（2026-10-22 B8 拆至 ./brew/sceneLayout.ts） ====================
+// 坐标/缩放/旋转常量与动画联动量；anim 为 useBrewAnimation 实例（液面/倾斜/喝茶联动）
+const {
+  SET_Z,
+  camPos,
+  camLook,
+  syncViewportAspect,
+  camFov,
+  keyLightPos,
+  rimLightPos,
+  floorPos,
+  tablePos,
+  clothPos,
+  legPositions,
+  gaiwanPos,
+  gaiwanScale,
+  liquidPos,
+  lidPosition,
+  fairnessPos,
+  fairnessScale,
+  fairnessPts,
+  fairnessSpoutPos,
+  fairnessHandlePos,
+  fairnessLiquidPos,
+  fairnessLiquidScale,
+  fairnessLiquidOpacity,
+  fairnessRotation,
+  teacupScale,
+  teacupPts,
+  teacupPositions,
+  teaClothPos,
+  waterPotPos,
+  teaPickPos,
+  teacupLiquidPos,
+  teacupLiquidScale,
+  teacupLiquidOpacity,
+  teacupDrinkOffset,
+  teacupDrinkRotation,
+  pourOutStreamPos,
+  fairnessStreamPos,
+  kettlePos,
+  kettleScale,
+  kettleLidPos,
+  knobPos,
+  spoutPos,
+  handlePos,
+  stovePos,
+  stoveBasePos,
+  flameLightPos,
+  stoveGlowScale,
+  streamPos,
+  waterStreamPos,
+  liquidScale,
+  teaScoopPos,
+} = createSceneLayout(anim)
 
-// ==================== 公道杯（茶海，玻璃材质，出汤→分茶用） ====================
-// 比例修正：旧 scale 0.28 世界半径仅 0.126，远小于盖碗 0.288；真实公道杯与盖碗体量接近
-const fairnessPos = new THREE.Vector3(0.68, 1.19, 0.22 + SET_Z)
-const fairnessScale = new THREE.Vector3(0.4, 0.4, 0.4)
-const fairnessPts = [
-  new THREE.Vector2(0, 0),
-  new THREE.Vector2(0.3, 0.02),
-  new THREE.Vector2(0.42, 0.1),
-  new THREE.Vector2(0.45, 0.35),
-  new THREE.Vector2(0.42, 0.5),
-  new THREE.Vector2(0.35, 0.55),
-]
-const fairnessSpoutPos = new THREE.Vector3(0.48, 0.35, 0)
-const fairnessHandlePos = new THREE.Vector3(-0.45, 0.3, 0)
-const fairnessLiquidPos = new THREE.Vector3(0, 0.3, 0)
-// 公道杯液面（出汤时上升，分茶时下降）
-const fairnessLiquidScale = computed(() => {
-  const poured = 0.1 + smoothstep(anim.pourOut.value) * 0.8
-  const pouredOut = smoothstep(anim.fairnessPour.value) * 0.7
-  return new THREE.Vector3(1, Math.max(0.05, poured - pouredOut), 1)
-})
-const fairnessLiquidOpacity = computed(() => Math.min(1, anim.pourOut.value * 2))
-// 公道杯旋转（分茶时向品茗杯倾斜）
-const fairnessRotation = computed<[number, number, number]>(() => [
-  0,
-  0,
-  0.45 * smoothstep(anim.fairnessPour.value),
-])
-
-// ==================== 品茗杯×3（黑釉，公道杯前方一字排开） ====================
-// 比例修正：scale 0.3→0.37，与盖碗/公道杯体量更协调
-const teacupScale = new THREE.Vector3(0.37, 0.37, 0.37)
-const teacupPts = [
-  new THREE.Vector2(0, 0),
-  new THREE.Vector2(0.28, 0.02),
-  new THREE.Vector2(0.36, 0.12),
-  new THREE.Vector2(0.38, 0.28),
-  new THREE.Vector2(0.34, 0.38),
-  new THREE.Vector2(0.25, 0.42),
-]
-const teacupPositions: THREE.Vector3[] = [
-  new THREE.Vector3(1.2, 1.19, 0.55 + SET_Z),
-  new THREE.Vector3(1.5, 1.19, 0.05 + SET_Z),
-  new THREE.Vector3(1.2, 1.19, -0.42 + SET_Z),
-]
-// 中景道具：茶席后移后桌面中景偏空，补茶巾/水盂/茶拨/杯托丰富层次。
-// 均位于右侧品茗杯区，不挡左侧注水流与放茶动画（3D_SPEC：只做视觉层）。
-const teaClothPos = new THREE.Vector3(1.7, 1.194, -0.15 + SET_Z)
-const waterPotPos = new THREE.Vector3(1.78, 1.27, 0.28 + SET_Z)
-const teaPickPos = new THREE.Vector3(1.68, 1.206, -0.15 + SET_Z)
-const teacupLiquidPos = new THREE.Vector3(0, 0.2, 0)
-// 品茗杯液面（分茶时上升，喝茶时减少）
-const teacupLiquidScale = computed(() => {
-  const poured = 0.1 + smoothstep(anim.fairnessPour.value) * 0.7
-  const drunk = smoothstep(anim.drink.value) * 0.3
-  return new THREE.Vector3(1, Math.max(0.05, poured - drunk), 1)
-})
-const teacupLiquidOpacity = computed(() => Math.min(1, anim.fairnessPour.value * 2))
-// 品茗杯喝茶时的位移偏移（向上+向相机方向）
-const teacupDrinkOffset = computed(
-  () =>
-    new THREE.Vector3(0, 0.25 * smoothstep(anim.drink.value), -0.15 * smoothstep(anim.drink.value)),
-)
-// 品茗杯喝茶时的旋转（向后倾斜模拟端起）
-const teacupDrinkRotation = computed<[number, number, number]>(() => [
-  0.15 * smoothstep(anim.drink.value),
-  0,
-  0,
-])
-
-// 出汤水流位置：盖碗碗口到公道杯中心的中点（出汤动画）
-const pourOutStreamPos = computed(() => {
-  const gaiwanSpout = new THREE.Vector3(gaiwanPos.x + 0.3, gaiwanPos.y + 0.4, gaiwanPos.z)
-  const fairnessCenter = new THREE.Vector3(fairnessPos.x, fairnessPos.y + 0.3, fairnessPos.z)
-  return gaiwanSpout.clone().add(fairnessCenter).multiplyScalar(0.5)
-})
-// 分茶水流位置：公道杯壶嘴到中间品茗杯中心的中点（分茶动画）
-const fairnessStreamPos = computed(() => {
-  const fairnessSpout = new THREE.Vector3(fairnessPos.x + 0.4, fairnessPos.y + 0.35, fairnessPos.z)
-  const teacupCenter = teacupPositions[1]!.clone().add(new THREE.Vector3(0, 0.15, 0))
-  return fairnessSpout.clone().add(teacupCenter).multiplyScalar(0.5)
-})
-const kettlePos = new THREE.Vector3(-1.25, 1.465, SET_Z)
-const kettleScale = new THREE.Vector3(0.24, 0.24, 0.24)
-const kettleLidPos = new THREE.Vector3(0, 1.62, 0)
-const knobPos = new THREE.Vector3(0, 1.78, 0)
-const spoutPos = new THREE.Vector3(1.35, 1.05, 0)
-const handlePos = new THREE.Vector3(-1.35, 0.95, 0)
-const stovePos = new THREE.Vector3(-1.25, 1.19, SET_Z)
-const stoveBasePos = new THREE.Vector3(0, 0.1375, 0)
-const flameLightPos = new THREE.Vector3(0, 0.45, 0)
-const stoveGlowScale = new THREE.Vector3(1.1, 1.1, 1)
-const streamPos = new THREE.Vector3(0.1, 1.0, 0)
-// 注水流位置：壶嘴到盖碗中心的中点（入水动画用）
-const waterStreamPos = computed(() => {
-  const spoutWorld = new THREE.Vector3(kettlePos.x + 0.5, kettlePos.y + 0.3, kettlePos.z)
-  const gaiwanCenter = new THREE.Vector3(gaiwanPos.x, gaiwanPos.y + 0.3, gaiwanPos.z)
-  return spoutWorld.clone().add(gaiwanCenter).multiplyScalar(0.5)
-})
-// 盖碗液面 scale（入水时液面上升）
-const liquidScale = computed(
-  () => new THREE.Vector3(1, 0.3 + smoothstep(anim.pourWater.value) * 0.5, 1),
-)
-// 茶则位置（从旁侧移入盖碗上方，放茶动画）
-const teaScoopPos = computed(() => {
-  const start = new THREE.Vector3(1.8, 1.6, SET_Z)
-  const end = new THREE.Vector3(gaiwanPos.x + 0.2, gaiwanPos.y + 0.8, gaiwanPos.z)
-  return start.clone().lerp(end, smoothstep(anim.addLeaves.value))
-})
 // 茶叶粒子（放茶动画：80 个绿色粒子从盖碗上方落入）
 const TEA_LEAVES_COUNT = 80
 const teaLeavesPoints = shallowRef<THREE.Points | null>(null)
@@ -544,169 +447,9 @@ let steamTargetOpacity = 0.1
 let flameTargetIntensity = 0
 let tiltTarget = 0 // 茶壶倾斜角（出汤）
 
-// ==================== 程序化资源：软圆点纹理（蒸汽） ====================
-function makeSoftCircleTexture(): THREE.CanvasTexture {
-  const size = 64
-  const canvas = document.createElement('canvas')
-  canvas.width = size
-  canvas.height = size
-  const ctx = canvas.getContext('2d')!
-  const gradient = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2)
-  gradient.addColorStop(0, 'rgba(255,255,255,1)')
-  gradient.addColorStop(0.4, 'rgba(255,255,255,0.6)')
-  gradient.addColorStop(1, 'rgba(255,255,255,0)')
-  ctx.fillStyle = gradient
-  ctx.fillRect(0, 0, size, size)
-  return new THREE.CanvasTexture(canvas)
-}
-const softCircleTex = makeSoftCircleTexture()
-
-// ==================== 程序化资源：茶席质感与空间纵深纹理 ====================
-// 全部 Canvas 2D 程序化生成（零外部素材）：木纹 / 布褶高度图 / 陶土颗粒 / 挂轴 / 暖光斑
-function makeWoodTexture(): THREE.CanvasTexture {
-  const size = 512
-  const canvas = document.createElement('canvas')
-  canvas.width = size
-  canvas.height = size
-  const ctx = canvas.getContext('2d')!
-  // 底色：深胡桃木
-  ctx.fillStyle = '#4a3626'
-  ctx.fillRect(0, 0, size, size)
-  // 木纹年轮条纹（水平）
-  let y = 0
-  while (y < size) {
-    const l = 24 + Math.random() * 60
-    const g = ctx.createLinearGradient(0, y, 0, y + l)
-    g.addColorStop(0, 'rgba(255,235,200,0.10)')
-    g.addColorStop(0.5, 'rgba(255,235,200,0.20)')
-    g.addColorStop(1, 'rgba(40,26,16,0.25)')
-    ctx.fillStyle = g
-    ctx.fillRect(0, y, size, l)
-    y += l + Math.random() * 26
-  }
-  // 纵向细丝 + 噪点
-  for (let i = 0; i < 240; i++) {
-    ctx.fillStyle = `rgba(${40 + Math.random() * 60},${28 + Math.random() * 30},${14 + Math.random() * 20},${0.04 + Math.random() * 0.08})`
-    ctx.fillRect(Math.random() * size, Math.random() * size, 1.5, 6 + Math.random() * 26)
-  }
-  const tex = new THREE.CanvasTexture(canvas)
-  tex.wrapS = THREE.RepeatWrapping
-  tex.wrapT = THREE.RepeatWrapping
-  tex.colorSpace = THREE.SRGBColorSpace
-  return tex
-}
-
-function makeFabricBumpTexture(): THREE.CanvasTexture {
-  const size = 256
-  const canvas = document.createElement('canvas')
-  canvas.width = size
-  canvas.height = size
-  const ctx = canvas.getContext('2d')!
-  ctx.fillStyle = '#808080'
-  ctx.fillRect(0, 0, size, size)
-  // 随机皱纹（深浅灰模拟高度）
-  for (let i = 0; i < 60; i++) {
-    const x = Math.random() * size
-    const y = Math.random() * size
-    const len = 20 + Math.random() * 80
-    const v = 90 + Math.random() * 90
-    ctx.strokeStyle = `rgba(${v},${v},${v},0.5)`
-    ctx.lineWidth = 1.5 + Math.random() * 3
-    ctx.beginPath()
-    const x2 = x + (Math.random() - 0.5) * len
-    const y2 = y + (Math.random() - 0.5) * len * 0.4
-    ctx.moveTo(x, y)
-    ctx.quadraticCurveTo(
-      x + (Math.random() - 0.5) * len,
-      y + (Math.random() - 0.5) * len * 0.4,
-      x2,
-      y2,
-    )
-    ctx.stroke()
-  }
-  const tex = new THREE.CanvasTexture(canvas)
-  tex.wrapS = THREE.RepeatWrapping
-  tex.wrapT = THREE.RepeatWrapping
-  return tex
-}
-
-function makePotBumpTexture(): THREE.CanvasTexture {
-  const size = 256
-  const canvas = document.createElement('canvas')
-  canvas.width = size
-  canvas.height = size
-  const ctx = canvas.getContext('2d')!
-  ctx.fillStyle = '#808080'
-  ctx.fillRect(0, 0, size, size)
-  for (let i = 0; i < 1600; i++) {
-    const v = 110 + Math.random() * 110
-    ctx.fillStyle = `rgba(${v},${v},${v},0.25)`
-    ctx.beginPath()
-    ctx.arc(Math.random() * size, Math.random() * size, 0.6 + Math.random() * 1.6, 0, Math.PI * 2)
-    ctx.fill()
-  }
-  const tex = new THREE.CanvasTexture(canvas)
-  tex.wrapS = THREE.RepeatWrapping
-  tex.wrapT = THREE.RepeatWrapping
-  return tex
-}
-
-function makeScrollTexture(): THREE.CanvasTexture {
-  const w = 256
-  const h = 512
-  const canvas = document.createElement('canvas')
-  canvas.width = w
-  canvas.height = h
-  const ctx = canvas.getContext('2d')!
-  // 绢布底
-  const g = ctx.createLinearGradient(0, 0, w, 0)
-  g.addColorStop(0, '#d8cdb2')
-  g.addColorStop(0.5, '#efe6cf')
-  g.addColorStop(1, '#d3c7a8')
-  ctx.fillStyle = g
-  ctx.fillRect(0, 0, w, h)
-  // 绢纹噪点
-  for (let i = 0; i < 900; i++) {
-    ctx.fillStyle = `rgba(${160 + Math.random() * 60},${150 + Math.random() * 50},${120 + Math.random() * 40},${0.05})`
-    ctx.fillRect(Math.random() * w, Math.random() * h, 1, 1)
-  }
-  // 上下轴杆
-  ctx.fillStyle = '#4a2f1a'
-  ctx.fillRect(8, 0, w - 16, 18)
-  ctx.fillRect(8, h - 18, w - 16, 18)
-  // 竖排题字「一盏茶」
-  ctx.fillStyle = '#2e2418'
-  ctx.font = 'bold 64px "KaiTi","STKaiti","SimSun",serif'
-  ctx.textAlign = 'center'
-  ctx.fillText('一盏茶', w / 2, 150)
-  ctx.font = '28px "KaiTi","STKaiti","SimSun",serif'
-  ctx.fillStyle = '#4a3a28'
-  ctx.fillText('· 茶 室 ·', w / 2, 230)
-  const tex = new THREE.CanvasTexture(canvas)
-  tex.colorSpace = THREE.SRGBColorSpace
-  return tex
-}
-
-function makeWarmGlowTexture(): THREE.CanvasTexture {
-  const size = 128
-  const canvas = document.createElement('canvas')
-  canvas.width = size
-  canvas.height = size
-  const ctx = canvas.getContext('2d')!
-  const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2)
-  g.addColorStop(0, 'rgba(255,150,70,0.55)')
-  g.addColorStop(0.4, 'rgba(255,110,40,0.22)')
-  g.addColorStop(1, 'rgba(255,90,30,0)')
-  ctx.fillStyle = g
-  ctx.fillRect(0, 0, size, size)
-  return new THREE.CanvasTexture(canvas)
-}
-
-const woodTex = makeWoodTexture()
-const fabricBump = makeFabricBumpTexture()
-const potBump = makePotBumpTexture()
-const scrollTex = makeScrollTexture()
-const warmGlowTex = makeWarmGlowTexture()
+// ==================== 程序化纹理（2026-10-22 B8 拆至 ./brew/proceduralTextures.ts） ====================
+// 全部 Canvas 2D 程序化生成（零外部素材）：软圆点（蒸汽）/ 木纹 / 布褶高度图 / 陶土颗粒 / 挂轴 / 暖光斑
+const { softCircleTex, woodTex, fabricBump, potBump, scrollTex, warmGlowTex } = createBrewTextures()
 
 // ==================== 程序化资源：蒸汽粒子系统 ====================
 const STEAM_COUNT = 60
