@@ -34,7 +34,7 @@
     "@types/three": "^0.186.0",
     "canvas-confetti": "^1.9.4",
     "chart.js": "^4.5.1",
-    "dexie": "^4.4.5",
+    "dexie": "^4.4.7",
     "echarts": "^6.1.0",
     "howler": "^2.2.4",
     "js-yaml": "^5.4.3",
