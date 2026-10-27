@@ -1,7 +1,7 @@
 ---
 name: todo-priority
 description: 一盏茶跨会话状态活文档——状态速览 / 阻塞项 / 可直接开工 / 低优先 / 最近完成（防重做）/ 关键 ID 与命令。新会话先读本文件恢复上下文。
-last_updated: 2026-10-22
+last_updated: 2026-10-27
 status: active
 owner: yanha
 ---
@@ -12,8 +12,9 @@ owner: yanha
 > **未完成事项清单 → `docs/plans/PLAN-open-items-2026-10-17.md`**（2026-10-22 七次复核：**真未完成 1 项（A8 RAG 命中率）** / 等外部条件 4 条 / **待拍板 0 条** / 文档债基本已清 / 在途切片四项已合入）。本文件只留状态速览与命令，**不再各自维护待办清单**（避免又一份平行清单）。
 > 维护规则：状态变化当场更新 `last_updated`；完成一项划一项；过期内容移入对应 PLAN/ADR/学习记录（`docs/plans/lessons.md`），不留死行。
 
-## 状态速览（2026-10-22 · 最近一次复核）
+## 状态速览（2026-10-27 · 最近一次复核）
 
+- **2026-10-27 依赖整组 + 交接**：①main 实测 `d1fa158`（与远端一致），本会话合入 13 PR（#146/#147/#148/#149/#150/#152/#153/#154/#155/#159/#161/#163/#165，含 #165 vite-plugin-pwa 2.0 major）；②在途 PR #166（dexie 4.4.7 + vitest 5.0.5，整组重生成 lock 模式，取代 #157/#160），CI 13/14 绿、仅 axe-core pending，待绿后合并；③分支保护 required context 实测 **14**（gh api 核对，原记录 13 已过时）；④机械审计全绿：redlines / wiki-drift 38=38 / context-budget 19134≤19500（余量仅 366 token，常驻新增前须先评估）/ 评测集 VALID（50 条）/ verify-harness ERRORS:[]；⑤Mimosa 两批扫描 triage 完：tea 生产路径 0 findings（14 批全在 dev-dist 构建产物、离线 SFT 脚本、gitignored 的 deploy-gateway、浏览器侧 basis_transcoder 误报；122 批属其他项目 career-os/boss 工具/skill 库，其中 career-os/scripts/boss_web_configure.py:25 硬编码 api_key 需另行轮换）；⑥最新交接 `docs/HANDOFF-2026-10-27-a-deps-checkpoint-execution.md`（旧 9 份早已 deprecated）。
 - **2026-10-22 治理与文档收敛**：①新增《安全 Harness 工程规范》（`docs/security-harness-engineering-spec.md`，威胁模型 T1-T8 + 控制矩阵五域全带 file:line 实测证据 + 新功能安全 checklist 10 项 + 缺口 G1-G7 附反转条件；AGENTS.md §7 加入口指针）；②RAG 命中率 0.16 正式立项（`PLAN-open-items` A8：诊断脚本 `diagnose-rag.cjs` 已机械化，目标 default ≥ 0.40 / expert ≥ 0.30）；③ITERATIONS 简历口径上移：v6 `overall 0.90`（judgeCoverage 1、50 条全量）为当前最新可引用，v5 0.80 转历史口径（用户授权拍板）；④文档债修复：D4/useAudio 拆分（PR #96）、§7 在途四项（nginx snippets/robots/sitemap/ADR-022+遥测契约）标注已合入、P1-9 HTTPS 过期记录改已完成；⑤后端迁移盘点首版（`docs/architecture/backend-migration-status.md`：旧栈 23 端点 10 已迁 / 13 未迁且 0 前端消费方，D9 决策表建议全部退役待拍板）。
 - **2026-10-22 深夜 D9 执行 + B8 拆分**：①**13 个旧端点全部退役**（用户拍板）：删 6 文件 + 7 处同步，wiki 登记 52→38，五门禁全绿；后端重写判据①③ 已满足，剩②（删 `backend/app` 整段 + CI 旧门禁）④（Alembic 退役）；②**B8 完成**：BrewView 812 → 354 行（4 composable + 2 组件）；`TeaBrewSceneInner.vue` 1322 → 1026 行（拆出 `brew/sceneLayout.ts` 布局工厂 + `brew/proceduralTextures.ts` 六纹理），type-check + build + 截图前后对比一致；3D 文件剩余部分（渲染管线/皮肤雨幕/粒子/主循环）留待下一切片，截图验证手段已备。
 - **2026-10-22 晚 B/C 组工程清收**：garden-sync 脚本新栈化 + 口令入环境变量；dependabot 补 maven；gitleaks 入 CI（14 job，分支保护同步）；nginx 显式 404 非 health 的 actuator；IP 证书 webroot 续期配方；RAG 诊断脚本 + 静态三疑点；**BrewView 812 → 354 行**（4 composable + 2 组件，验证全绿）；B8 剩余：`TeaBrewSceneInner.vue` 拆了一半（布局 + 纹理已出模块，剩渲染管线/皮肤/粒子/循环，需单独切片 + 截图验证）。
@@ -160,7 +161,7 @@ mvn test -Dtest=LayerDependencyTest # 单跑 ArchUnit（6 条规则）
 - **GitHub push**：走 22 端口（443 会被网络重置），用一次性 `$env:GIT_SSH_COMMAND="ssh -o HostName=github.com -o Port=22"`。**merge main 走 PR**（见状态速览）；`approvals=0` 已解死锁。
 - **分支保护 CI 门禁（已补回）**：
   ```
-  gh api repos/qiuqianyi66/tea-ceremony/branches/main/protection -q '.required_status_checks.contexts[]'  # 期望 13 行
+  gh api repos/qiuqianyi66/tea-ceremony/branches/main/protection -q '.required_status_checks.contexts[]'  # 期望 14 行
   ```
   补回方法：`PUT /repos/{owner}/{repo}/branches/main/protection`（**PUT 整段覆盖**，不能只 PATCH 子端点——子端点不存在时 POST/PATCH 均 404）。payload 需含 `required_status_checks` + `required_pull_request_reviews` + 其余布尔开关。
 

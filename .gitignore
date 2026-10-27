@@ -100,6 +100,10 @@ verify_icons_*.png
 # WorkBuddy local memory (not project state)
 .workbuddy/
 
+# Mimosa 安全扫描工具运行产物（仓库内 hook-state/history，不入库；扫描报告在 ~/.mimosa/security-scans/）
+/.mimosa/
+/backend/.mimosa/
+
 # SFT 原始导出（可复现，不入库）
 scripts/sft/raw-traces.csv
 scripts/sft/raw-traces.json
