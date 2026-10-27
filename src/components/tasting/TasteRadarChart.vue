@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * 品鉴雷达图组件 - 基于 Chart.js + vue-chartjs
+ * 品鉴雷达图组件 - 基于 echarts（2026-10-27 由 chart.js/vue-chartjs 迁移，props 接口不变）
  *
  * 展示 8 维品鉴评分：
  * - 苦涩度、甜度、回甘、醇厚度、香气、汤感、身心、整体
@@ -8,31 +8,14 @@
  * 支持对比：当前品鉴 vs 该茶历史均值 vs 标准参考
  */
 
-import type { ChartDataset, ChartOptions, TooltipItem } from 'chart.js'
-import {
-  CategoryScale,
-  Chart as ChartJS,
-  Filler,
-  Legend,
-  LineElement,
-  PointElement,
-  RadialLinearScale,
-  Tooltip,
-} from 'chart.js'
-import { computed } from 'vue'
-import { Radar } from 'vue-chartjs'
+import * as echarts from 'echarts/core'
+import { RadarChart } from 'echarts/charts'
+import { LegendComponent, TooltipComponent } from 'echarts/components'
+import { CanvasRenderer } from 'echarts/renderers'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { colorTokens } from '@/styles/colorTokens'
 
-// 注册 Chart.js 组件
-ChartJS.register(
-  CategoryScale,
-  RadialLinearScale,
-  PointElement,
-  LineElement,
-  Filler,
-  Tooltip,
-  Legend,
-)
+echarts.use([RadarChart, LegendComponent, TooltipComponent, CanvasRenderer])
 
 // Props
 interface Props {
@@ -65,159 +48,115 @@ const DIMENSIONS = [
   { key: 'mind', label: '整体', color: colorTokens.ink },
 ] as const
 
-// 计算标签和数据
-const labels = computed(() => DIMENSIONS.map((d) => d.label))
-
 const currentData = computed(() => DIMENSIONS.map((d) => props.currentDimensions[d.key] ?? 0))
 
 const averageData = computed(() => DIMENSIONS.map((d) => props.averageDimensions?.[d.key] ?? 0))
 
-const referenceData = computed(
-  () => DIMENSIONS.map(() => 3), // 标准参考线：中性 3 分
-)
-
-// Chart.js 配置
-const chartOptions = computed<ChartOptions<'radar'>>(() => ({
-  responsive: true,
-  maintainAspectRatio: true,
-  plugins: {
-    legend: {
-      display: props.showComparison,
-      position: 'bottom' as const,
-      labels: {
-        usePointStyle: true,
-        padding: 16,
-        font: { size: 11, family: 'Noto Sans SC, sans-serif' },
-        color: colorTokens.ink,
-      },
-    },
-    tooltip: {
-      backgroundColor: 'rgba(29, 28, 28, 0.9)',
-      titleFont: { size: 12, family: 'Noto Sans SC, sans-serif' },
-      bodyFont: { size: 11, family: 'Noto Sans SC, sans-serif' },
-      padding: 12,
-      cornerRadius: 8,
-      callbacks: {
-        label: (context: TooltipItem<'radar'>) => {
-          const value = context.parsed.r
-          const dimension = DIMENSIONS[context.dataIndex]
-          return `${context.dataset.label}: ${value.toFixed(1)} / 5`
-        },
-      },
-    },
-  },
-  scales: {
-    r: {
-      min: 0,
-      max: 5,
-      ticks: {
-        stepSize: 1,
-        display: false,
-        backdropColor: 'transparent',
-      },
-      grid: {
-        // colorTokens.ink 的 alpha 变体（令牌表暂未含透明色，alpha 就地标注来源）
-        color: 'rgba(61, 50, 37, 0.1)',
-        circular: true,
-      },
-      angleLines: {
-        color: 'rgba(61, 50, 37, 0.15)',
-      },
-      pointLabels: {
-        font: { size: 11, family: 'Noto Serif SC, serif', weight: 500 },
-        color: colorTokens.ink,
-        padding: 12,
-      },
-    },
-  },
-  elements: {
-    line: {
-      tension: 0.3,
-      borderWidth: 2.5,
-      borderCapStyle: 'round' as const,
-    },
-    point: {
-      radius: 0,
-      hoverRadius: 6,
-      hoverBorderWidth: 3,
-    },
-  },
-  animation: {
-    duration: 800,
-    easing: 'easeOutQuart' as const,
-  },
-}))
-
-const chartData = computed(() => {
-  const datasets: ChartDataset<'radar', number[]>[] = [
+const chartOption = computed(() => {
+  const seriesData: Array<{
+    value: number[]
+    name: string
+    lineStyle?: { width?: number; type?: 'solid' | 'dashed' }
+    areaStyle?: { color: string }
+    itemStyle?: { color: string }
+    symbol?: string
+    symbolSize?: number
+  }> = [
     {
-      label: '本次品鉴',
-      data: currentData.value,
-      backgroundColor: 'rgba(200, 155, 60, 0.15)',
-      borderColor: '#C89B3C',
-      pointBackgroundColor: '#C89B3C',
-      pointBorderColor: colorTokens.paper,
-      pointHoverBackgroundColor: '#C89B3C',
-      pointHoverBorderColor: colorTokens.paper,
+      value: currentData.value,
+      name: '本次品鉴',
+      itemStyle: { color: '#C89B3C' },
+      areaStyle: { color: 'rgba(200, 155, 60, 0.15)' },
+      lineStyle: { width: 2.5 },
+      symbol: 'circle',
+      symbolSize: 3,
     },
   ]
-
   if (
     props.showComparison &&
     props.averageDimensions &&
     Object.keys(props.averageDimensions).length > 0
   ) {
-    datasets.push({
-      label: '历史均值',
-      data: averageData.value,
-      backgroundColor: 'rgba(93, 78, 55, 0.1)',
-      borderColor: colorTokens.wood,
-      borderDash: [6, 4],
-      pointBackgroundColor: colorTokens.wood,
-      pointBorderColor: colorTokens.paper,
-      pointHoverBackgroundColor: colorTokens.wood,
-      pointHoverBorderColor: colorTokens.paper,
+    seriesData.push({
+      value: averageData.value,
+      name: '历史均值',
+      itemStyle: { color: colorTokens.wood },
+      areaStyle: { color: 'rgba(93, 78, 55, 0.1)' },
+      lineStyle: { width: 2, type: 'dashed' },
+      symbol: 'circle',
+      symbolSize: 3,
     })
   }
-
-  // 标准参考线
-  datasets.push({
-    label: '标准参考',
-    data: referenceData.value,
-    backgroundColor: 'transparent',
-    borderColor: 'rgba(61, 50, 37, 0.2)',
-    borderDash: [3, 6],
-    borderWidth: 1.5,
-    pointRadius: 0,
-    pointHoverRadius: 0,
-    fill: false,
+  // 标准参考线：中性 3 分
+  seriesData.push({
+    value: DIMENSIONS.map(() => 3),
+    name: '标准参考',
+    itemStyle: { color: 'rgba(61, 50, 37, 0.35)' },
+    lineStyle: { width: 1.5, type: 'dashed' },
+    symbol: 'none',
   })
-
   return {
-    labels: labels.value,
-    datasets,
+    radar: {
+      indicator: DIMENSIONS.map((d) => ({ name: d.label, max: 5 })),
+      radius: '66%',
+      center: ['50%', '48%'],
+      splitNumber: 5,
+      axisName: {
+        color: colorTokens.ink,
+        fontFamily: 'Noto Serif SC, serif',
+        fontSize: 11,
+      },
+      splitLine: { lineStyle: { color: 'rgba(61, 50, 37, 0.1)' } },
+      axisLine: { lineStyle: { color: 'rgba(61, 50, 37, 0.15)' } },
+      splitArea: { show: false },
+    },
+    legend: {
+      show: props.showComparison,
+      bottom: 0,
+      icon: 'roundRect',
+      itemWidth: 12,
+      itemHeight: 4,
+      itemGap: 16,
+      textStyle: { color: colorTokens.ink, fontSize: 11, fontFamily: 'Noto Sans SC, sans-serif' },
+    },
+    tooltip: {
+      backgroundColor: 'rgba(29, 28, 28, 0.9)',
+      textStyle: { color: colorTokens.paper, fontSize: 11, fontFamily: 'Noto Sans SC, sans-serif' },
+    },
+    series: [{ type: 'radar' as const, data: seriesData, animationDuration: 800 }],
   }
+})
+
+const container = ref<HTMLDivElement | null>(null)
+let chart: echarts.ECharts | null = null
+let resizeObs: ResizeObserver | null = null
+
+onMounted(() => {
+  if (!container.value) return
+  chart = echarts.init(container.value)
+  chart.setOption(chartOption.value)
+  resizeObs = new ResizeObserver(() => chart?.resize())
+  resizeObs.observe(container.value)
+})
+
+watch(chartOption, (opt) => chart?.setOption(opt, true))
+
+onUnmounted(() => {
+  resizeObs?.disconnect()
+  chart?.dispose()
+  chart = null
 })
 </script>
 
 <template>
   <div class="taste-radar-chart" :style="{ width: size + 'px', height: size + 'px' }">
-    <Radar
-      :data="chartData"
-      :options="chartOptions"
-      class="w-full h-full"
-    />
+    <div ref="container" class="w-full h-full" />
   </div>
 </template>
 
 <style scoped>
 .taste-radar-chart {
   position: relative;
-}
-
-/* 图表容器样式 */
-:deep(.chartjs-radar) {
-  /* 自定义样式由 Chart.js options 控制 */
 }
 
 /* 响应式尺寸 */

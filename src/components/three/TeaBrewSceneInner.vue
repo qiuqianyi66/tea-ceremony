@@ -9,7 +9,6 @@
 
 import { useLoop, useTresContext } from '@tresjs/core'
 import * as THREE from 'three'
-import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 import { computed, onMounted, onUnmounted, ref, shallowRef, toRef, watch } from 'vue'
 import porcelainUrl from '@/assets/blue-white-porcelain.jpg'
 import zishaUrl from '@/assets/zisha-albedo.jpg'
@@ -18,6 +17,11 @@ import { BrewPhase } from '@/types/brewing'
 import { BREW_SKINS, type BrewSkin, type BrewSkinId } from './brewSkins'
 import { createBrewTextures } from './brew/proceduralTextures'
 import { createSceneLayout } from './brew/sceneLayout'
+import { createTeaLeaves, createSteamParticles } from './brew/brewParticles'
+import { createHandGroup } from './brew/handBuilder'
+import { bowlPts, potPts } from './brew/latheProfiles'
+import { setupRenderPipeline } from './brew/renderPipeline'
+import { createRain, makeSkyGradient } from './brew/skyEnvironment'
 
 // 场景背景由皮肤系统 applySkin 管理（程序化天幕渐变）。
 // 注意：直接在 setup 赋值 scene.background 不生效，需在 onRender 每帧强制设置（TresJS 渲染循环持有 scene）。
@@ -171,40 +175,18 @@ const {
   teaScoopPos,
 } = createSceneLayout(anim)
 
-// 茶叶粒子（放茶动画：80 个绿色粒子从盖碗上方落入）
+// 茶叶粒子（放茶动画：80 个绿色粒子从盖碗上方落入）——创建工厂见 ./brew/brewParticles
 const TEA_LEAVES_COUNT = 80
-const teaLeavesPoints = shallowRef<THREE.Points | null>(null)
-const teaLeavesVelocities: THREE.Vector3[] = []
-
-function initTeaLeaves() {
-  const positions = new Float32Array(TEA_LEAVES_COUNT * 3)
-  for (let i = 0; i < TEA_LEAVES_COUNT; i++) {
-    positions[i * 3] = gaiwanPos.x + 0.2 + (Math.random() - 0.5) * 0.3
-    positions[i * 3 + 1] = gaiwanPos.y + 0.8 + Math.random() * 0.1
-    positions[i * 3 + 2] = SET_Z + (Math.random() - 0.5) * 0.2
-    teaLeavesVelocities.push(
-      new THREE.Vector3(
-        (Math.random() - 0.5) * 0.3,
-        -0.5 - Math.random() * 0.5,
-        (Math.random() - 0.5) * 0.2,
-      ),
-    )
-  }
-  const geo = new THREE.BufferGeometry()
-  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-  const mat = new THREE.PointsMaterial({
-    color: '#5a7a3a',
-    size: 0.03,
-    transparent: true,
-    opacity: 0.9,
-  })
-  teaLeavesPoints.value = new THREE.Points(geo, mat)
-  teaLeavesPoints.value.visible = false
-}
+const { points: teaLeavesObj, velocities: teaLeavesVelocities } = createTeaLeaves(
+  TEA_LEAVES_COUNT,
+  gaiwanPos,
+  SET_Z,
+)
+const teaLeavesPoints = shallowRef<THREE.Points>(teaLeavesObj)
 
 onMounted(() => {
-  initTeaLeaves()
-  setupRenderPipeline()
+  const renderer = (sceneCtx.renderer as { instance?: THREE.WebGLRenderer }).instance
+  setupRenderPipeline(sceneCtx.scene.value, renderer, keyLight.value, SET_Z)
   applySkin(BREW_SKINS[props.skin ?? 'lake-rain'])
   syncViewportAspect()
   window.addEventListener('resize', syncViewportAspect)
@@ -215,139 +197,19 @@ onUnmounted(() => {
 })
 
 // ==================== 渲染管线：ACES 色调映射 + 软阴影 + 程序化 IBL ====================
-// 命令式设置（规避 TresJS 模板 prop 名差异）；只在真实浏览器挂载 3D 时执行。
-function setupRenderPipeline() {
-  // TresJS v5：useTresContext().renderer 是渲染器管理器（manager），真正的 WebGLRenderer
-  // 在 manager.instance 上（manager 创建时同步构造，onMounted 时已存在）。
-  // 若误把 manager 当渲染器：toneMapping/IBL 会设到空对象上完全不生效，
-  // 且 manager.shadowMap 为 undefined，访问 .type 会抛 TypeError（mounted hook 报错）。
-  const renderer = (sceneCtx.renderer as { instance?: THREE.WebGLRenderer }).instance
-  const scene = sceneCtx.scene.value
-  if (!scene) return
-  // 雾化伪景深：线性雾 near=7.8 / far=10.2。
-  // 茶席距相机约 8.1 → 约 12% 雾（夜色氛围，主体仍清晰）；
-  // 远景 cabinet/shelf/scroll 距相机约 9.6 → 约 75% 雾（明显虚化），
-  // 与 scene.background 夜色纹理自然融合。scene.background 本身不受雾影响。
-  scene.fog = new THREE.Fog(0x221810, 7.8, 10.2)
-  if (renderer) {
-    // 电影级 ACES 色调映射：暖光不过曝、暗部有层次；曝光补偿背景图被压暗的部分
-    renderer.toneMapping = THREE.ACESFilmicToneMapping
-    renderer.toneMappingExposure = 1.08
-    // three r185 起 PCFSoftShadowMap 已废弃（内部强制回退 PCFShadowMap 并告警），显式用 PCFShadowMap
-    renderer.shadowMap.type = THREE.PCFShadowMap
-    renderer.shadowMap.needsUpdate = true
-    // 程序化环境反射（IBL）：RoomEnvironment 是中性影棚环境，零外部素材；
-    // 经 PMREM 预滤波后赋给 scene.environment，所有 PBR 材质自动获得环境反光，
-    // 白瓷釉面/玻璃/紫砂不再是死面。暖调由灯光承担。
-    const pmrem = new THREE.PMREMGenerator(renderer)
-    const envScene = new RoomEnvironment()
-    const envTex = pmrem.fromScene(envScene, 0.04).texture
-    scene.environment = envTex
-    scene.environmentIntensity = 0.55
-    pmrem.dispose()
-  }
-  // 主方向光阴影相机：必须手动收紧，默认视锥覆盖范围与分辨率对本场景都不合适
-  const key = keyLight.value
-  if (key) {
-    key.target.position.set(0, 1.2, SET_Z)
-    scene.add(key.target)
-    const cam = key.shadow.camera
-    cam.near = 0.5
-    cam.far = 18
-    cam.left = -3
-    cam.right = 3
-    cam.top = 3
-    cam.bottom = -3
-    cam.updateProjectionMatrix()
-    key.shadow.mapSize.set(2048, 2048)
-    key.shadow.bias = -0.0002
-    key.shadow.normalBias = 0.02
-  }
-}
+// 实现已拆至 ./brew/renderPipeline.ts（onMounted 调用，见上）。
+
 // ==================== 环境皮肤（三套：暖灯茶室 / 山顶日出 / 湖畔烟雨） ====================
 // 皮肤只切氛围参数：背景 / 雾 / 灯光方向与色温 / 曝光 / 雨。器物三套共用，不动。
-const gradientCache = new Map<string, THREE.CanvasTexture>()
-function makeSkyGradient(top: string, bottom: string): THREE.CanvasTexture {
-  const key = `${top}|${bottom}`
-  const cached = gradientCache.get(key)
-  if (cached) return cached
-  const c = document.createElement('canvas')
-  c.width = 32
-  c.height = 256
-  const gctx = c.getContext('2d')!
-  const g = gctx.createLinearGradient(0, 0, 0, 256)
-  g.addColorStop(0, top)
-  g.addColorStop(1, bottom)
-  gctx.fillStyle = g
-  gctx.fillRect(0, 0, 32, 256)
-  const tex = new THREE.CanvasTexture(c)
-  tex.colorSpace = THREE.SRGBColorSpace
-  gradientCache.set(key, tex)
-  return tex
-}
+// 天幕渐变 makeSkyGradient 与雨丝 createRain 已拆至 ./brew/skyEnvironment.ts。
 
-// 程序化雨丝（湖畔烟雨皮肤用）：LineSegments 短竖线下落，零外部资源
+// 程序化雨丝（湖畔烟雨皮肤用）——创建工厂见 ./brew/skyEnvironment
 const RAIN_COUNT = 300
-const rainPositions = new Float32Array(RAIN_COUNT * 6)
-const rainSpeeds = new Float32Array(RAIN_COUNT)
-for (let i = 0; i < RAIN_COUNT; i++) {
-  const x = (Math.random() - 0.5) * 8
-  const y = Math.random() * 4 + 1
-  const z = (Math.random() - 0.5) * 6 - 1
-  rainPositions[i * 6] = x
-  rainPositions[i * 6 + 1] = y
-  rainPositions[i * 6 + 2] = z
-  rainPositions[i * 6 + 3] = x
-  rainPositions[i * 6 + 4] = y - 0.18
-  rainPositions[i * 6 + 5] = z
-  rainSpeeds[i] = 2 + Math.random() * 2
-}
-const rainGeometry = new THREE.BufferGeometry()
-rainGeometry.setAttribute('position', new THREE.BufferAttribute(rainPositions, 3))
-const rainLines = new THREE.LineSegments(
-  rainGeometry,
-  new THREE.LineBasicMaterial({ color: 0xb4c8d8, transparent: true, opacity: 0.32 }),
-)
-rainLines.visible = false
+const { rainLines, rainGeometry, rainPositions, rainSpeeds } = createRain(RAIN_COUNT)
 
 // ==================== 程序化真手（零外部模型：手掌盒体 + 胶囊手指 + 袖套） ====================
-// 只露手不露脸，从画面下方伸入；按动画信号换姿态，不绑骨骼、低多边形。
-const handGroup = new THREE.Group()
-const handSkinMat = new THREE.MeshStandardMaterial({
-  color: '#c89070',
-  roughness: 0.75,
-  envMapIntensity: 0.4,
-})
-const handSleeveMat = new THREE.MeshStandardMaterial({ color: '#2a3540', roughness: 0.9 })
-{
-  const palm = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.17, 0.045), handSkinMat)
-  palm.castShadow = true
-  handGroup.add(palm)
-  // 四指（关节简化为单节胶囊，指尖略向外散）
-  const fingerGeo = new THREE.CapsuleGeometry(0.018, 0.085, 4, 8)
-  const fingerXs = [-0.048, -0.016, 0.016, 0.048]
-  for (const fx of fingerXs) {
-    const f = new THREE.Mesh(fingerGeo, handSkinMat)
-    f.position.set(fx, 0.135, 0)
-    f.castShadow = true
-    handGroup.add(f)
-  }
-  // 拇指（斜伸）
-  const thumb = new THREE.Mesh(new THREE.CapsuleGeometry(0.02, 0.06, 4, 8), handSkinMat)
-  thumb.position.set(-0.085, -0.01, 0.02)
-  thumb.rotation.z = 0.9
-  thumb.castShadow = true
-  handGroup.add(thumb)
-  // 袖口（深靛蓝布袖，与茶巾同色；短一截让皮肤露出）
-  const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.09, 0.08, 16), handSleeveMat)
-  cuff.position.set(0, -0.14, 0)
-  handGroup.add(cuff)
-}
-// 手默认藏在画面下方镜头外
-handGroup.position.set(0, -0.5, 4.2)
-handGroup.rotation.x = -1.0
-handGroup.visible = true
-handGroup.scale.setScalar(0.9)
+// 构建已拆至 ./brew/handBuilder.ts；只露手不露脸，姿态由动画循环 lerp 驱动。
+const handGroup = createHandGroup()
 
 // 手部姿态目标（世界坐标；rest 在画面外下方）
 const handTarget = new THREE.Vector3(0, -0.5, 4.2)
@@ -451,58 +313,20 @@ let tiltTarget = 0 // 茶壶倾斜角（出汤）
 // 全部 Canvas 2D 程序化生成（零外部素材）：软圆点（蒸汽）/ 木纹 / 布褶高度图 / 陶土颗粒 / 挂轴 / 暖光斑
 const { softCircleTex, woodTex, fabricBump, potBump, scrollTex, warmGlowTex } = createBrewTextures()
 
-// ==================== 程序化资源：蒸汽粒子系统 ====================
-const STEAM_COUNT = 60
-const steamPositions = new Float32Array(STEAM_COUNT * 3)
-const steamVel = new Float32Array(STEAM_COUNT)
-const steamTop = new Float32Array(STEAM_COUNT)
-for (let i = 0; i < STEAM_COUNT; i++) {
-  // 蒸汽源偏向盖碗/公道杯区域（世界 x ≈ -0.1~0.7）
-  steamPositions[i * 3] = 0.25 + (Math.random() - 0.5) * 0.7
-  steamPositions[i * 3 + 1] = Math.random() * 1.2 + 2.4 // 起始在桌面附近
-  steamPositions[i * 3 + 2] = (Math.random() - 0.5) * 0.5 + SET_Z
-  steamVel[i] = 0.4 + Math.random() * 0.5
-  steamTop[i] = 3.4 + Math.random() * 1.6
-}
-const steamGeometry = new THREE.BufferGeometry()
-steamGeometry.setAttribute('position', new THREE.BufferAttribute(steamPositions, 3))
+// ==================== 程序化资源：蒸汽粒子系统（创建工厂见 ./brew/brewParticles） ====================
 // 蒸汽 Points 对象：TresJS 5.8 core 不再提供 TresPoints 标签，用原生 THREE.Points + primitive 挂载
 // （与茶叶粒子同一模式；材质由 steamMat ref 持有，动画循环逐帧更新 opacity/位置）
-const steamPoints = new THREE.Points(
-  steamGeometry,
-  new THREE.PointsMaterial({
-    size: 0.22,
-    map: softCircleTex,
-    // 蒸汽压暗一档：暖灯下纯白 additive 会在盖碗上炸成死白斑，改暖灰降低过曝
-    color: '#e0d4c0',
-    transparent: true,
-    opacity: 0.12,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false,
-    sizeAttenuation: true,
-  }),
-)
+const STEAM_COUNT = 60
+const {
+  points: steamPoints,
+  geometry: steamGeometry,
+  positions: steamPositions,
+  vel: steamVel,
+  top: steamTop,
+} = createSteamParticles(STEAM_COUNT, SET_Z, softCircleTex)
 steamMat.value = steamPoints.material as THREE.PointsMaterial
 
-// ==================== 程序化资源：Lathe 轮廓点 ====================
-// 盖碗碗身
-const bowlPts = [
-  new THREE.Vector2(0, 0),
-  new THREE.Vector2(0.9, 0.02),
-  new THREE.Vector2(1.05, 0.12),
-  new THREE.Vector2(1.2, 0.5),
-  new THREE.Vector2(1.15, 0.95),
-]
-// 茶壶壶身
-const potPts = [
-  new THREE.Vector2(0, 0),
-  new THREE.Vector2(1.05, 0.04),
-  new THREE.Vector2(1.3, 0.2),
-  new THREE.Vector2(1.45, 0.75),
-  new THREE.Vector2(1.3, 1.35),
-  new THREE.Vector2(1.05, 1.55),
-  new THREE.Vector2(0.62, 1.62),
-]
+// ==================== 程序化资源：Lathe 轮廓点（已拆至 ./brew/latheProfiles.ts） ====================
 
 // ==================== 阶段/数据联动 ====================
 function setSteamTarget(phase: BrewPhase, temp: number) {

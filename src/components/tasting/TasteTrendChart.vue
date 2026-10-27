@@ -1,25 +1,17 @@
 <script setup lang="ts">
 /**
- * 品鉴历史趋势图 - 基于 Chart.js
- * 展示：综合评分趋势、工艺系数趋势、各维度雷达图小图
+ * 品鉴历史趋势图 - 基于 echarts（2026-10-27 由 chart.js/vue-chartjs 迁移，props 接口不变）
+ * 展示：综合评分趋势、工艺系数趋势
  */
 
-import type { ChartOptions, TooltipItem } from 'chart.js'
-import {
-  CategoryScale,
-  Chart as ChartJS,
-  Filler,
-  Legend,
-  LinearScale,
-  LineElement,
-  PointElement,
-  Tooltip,
-} from 'chart.js'
-import { computed } from 'vue'
-import { Line } from 'vue-chartjs'
+import * as echarts from 'echarts/core'
+import { LineChart } from 'echarts/charts'
+import { GridComponent, LegendComponent, TooltipComponent } from 'echarts/components'
+import { CanvasRenderer } from 'echarts/renderers'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { colorTokens } from '@/styles/colorTokens'
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip, Legend)
+echarts.use([LineChart, GridComponent, LegendComponent, TooltipComponent, CanvasRenderer])
 
 interface Props {
   /** 历史记录列表 */
@@ -39,7 +31,7 @@ const props = withDefaults(defineProps<Props>(), {
   height: 200,
 })
 
-// 计算属性：最近 20 条记录
+// 最近 20 条记录
 const recentRecords = computed(() => [...props.records].reverse().slice(0, 20))
 
 const labels = computed(() =>
@@ -55,126 +47,95 @@ const processData = computed(
   () => recentRecords.value.map((r) => r.processFactor * 10), // 放大 10 倍便于同轴显示
 )
 
-// 配置
-const lineOptions = computed<ChartOptions<'line'>>(() => ({
-  responsive: true,
-  maintainAspectRatio: false,
-  interaction: {
-    mode: 'index' as const,
-    intersect: false,
+const chartOption = computed(() => ({
+  grid: { left: 28, right: 12, top: 30, bottom: 20 },
+  legend: {
+    top: 0,
+    icon: 'roundRect',
+    itemWidth: 12,
+    itemHeight: 4,
+    textStyle: { color: colorTokens.ink, fontSize: 10, fontFamily: 'Noto Sans SC, sans-serif' },
   },
-  plugins: {
-    legend: {
-      display: true,
-      position: 'top' as const,
-      labels: {
-        usePointStyle: true,
-        padding: 12,
-        font: { size: 10, family: 'Noto Sans SC, sans-serif' },
-        color: colorTokens.ink,
-      },
-    },
-    tooltip: {
-      backgroundColor: 'rgba(29, 28, 28, 0.9)',
-      titleFont: { size: 11, family: 'Noto Sans SC, sans-serif' },
-      bodyFont: { size: 10, family: 'Noto Sans SC, sans-serif' },
-      padding: 10,
-      cornerRadius: 8,
-      callbacks: {
-        label: (context: TooltipItem<'line'>) => {
-          const y = context.parsed.y
-          if (y === null) return ''
-          if (context.dataset.label === '工艺系数') {
-            return `${context.dataset.label}: ${(y / 10).toFixed(2)}`
-          }
-          return `${context.dataset.label}: ${y.toFixed(1)}`
-        },
-      },
+  tooltip: {
+    trigger: 'axis',
+    backgroundColor: 'rgba(29, 28, 28, 0.9)',
+    textStyle: { color: colorTokens.paper, fontSize: 11, fontFamily: 'Noto Sans SC, sans-serif' },
+    valueFormatter: (value: number | string, callbackParams: unknown) => {
+      // 工艺系数存的是 ×10 放大值，tooltip 还原
+      const p = callbackParams as { seriesName?: string } | undefined
+      if (p?.seriesName === '工艺系数') return `${(Number(value) / 10).toFixed(2)}`
+      return `${Number(value).toFixed(1)}`
     },
   },
-  scales: {
-    x: {
-      grid: { display: false },
-      ticks: {
-        font: { size: 9, family: 'Noto Sans SC, sans-serif' },
-        color: '#8B7355',
-        maxRotation: 0,
-        autoSkip: true,
-        maxTicksLimit: 8,
-      },
-    },
-    y: {
-      min: 0,
-      max: 10,
-      grid: {
-        color: 'rgba(61, 50, 37, 0.08)',
-        drawBorder: false,
-      },
-      ticks: {
-        stepSize: 1,
-        font: { size: 9, family: 'Noto Sans SC, sans-serif' },
-        color: '#8B7355',
-        callback: (value: string | number) => {
-          const v = Number(value)
-          return v === 10 ? '1.0' : `0.${v}`
-        },
-      },
+  xAxis: {
+    type: 'category' as const,
+    data: labels.value,
+    axisLine: { lineStyle: { color: 'rgba(61, 50, 37, 0.2)' } },
+    axisTick: { show: false },
+    axisLabel: { color: '#8B7355', fontSize: 9, fontFamily: 'Noto Sans SC, sans-serif' },
+  },
+  yAxis: {
+    type: 'value' as const,
+    min: 0,
+    max: 10,
+    splitLine: { lineStyle: { color: 'rgba(61, 50, 37, 0.08)' } },
+    axisLabel: {
+      color: '#8B7355',
+      fontSize: 9,
+      fontFamily: 'Noto Sans SC, sans-serif',
+      formatter: (value: number) => (value === 10 ? '1.0' : `0.${value}`),
     },
   },
-  elements: {
-    line: {
-      tension: 0.35,
-      borderWidth: 2.5,
-      borderCapStyle: 'round' as const,
-    },
-    point: {
-      radius: 3,
-      hoverRadius: 6,
-      hoverBorderWidth: 3,
-      borderWidth: 2,
-    },
-  },
-  animation: {
-    duration: 600,
-    easing: 'easeOutQuart' as const,
-  },
-}))
-
-const lineData = computed(() => ({
-  labels: labels.value,
-  datasets: [
+  series: [
     {
-      label: '综合评分',
+      name: '综合评分',
+      type: 'line' as const,
       data: scoresData.value,
-      backgroundColor: 'rgba(200, 155, 60, 0.12)',
-      borderColor: '#C89B3C',
-      pointBackgroundColor: '#C89B3C',
-      pointBorderColor: colorTokens.paper,
-      fill: true,
-      yAxisID: 'y',
+      smooth: 0.35,
+      symbol: 'circle',
+      symbolSize: 5,
+      lineStyle: { width: 2.5, color: '#C89B3C' },
+      itemStyle: { color: '#C89B3C', borderColor: colorTokens.paper, borderWidth: 2 },
+      areaStyle: { color: 'rgba(200, 155, 60, 0.12)' },
     },
     {
-      label: '工艺系数',
+      name: '工艺系数',
+      type: 'line' as const,
       data: processData.value,
-      backgroundColor: 'rgba(93, 78, 55, 0.08)',
-      borderColor: colorTokens.wood,
-      borderDash: [6, 4],
-      pointBackgroundColor: colorTokens.wood,
-      pointBorderColor: colorTokens.paper,
-      fill: false,
-      yAxisID: 'y',
+      smooth: 0.35,
+      symbol: 'circle',
+      symbolSize: 5,
+      lineStyle: { width: 2, type: 'dashed' as const, color: colorTokens.wood },
+      itemStyle: { color: colorTokens.wood, borderColor: colorTokens.paper, borderWidth: 2 },
     },
   ],
+  animationDuration: 600,
 }))
+
+const container = ref<HTMLDivElement | null>(null)
+let chart: echarts.ECharts | null = null
+let resizeObs: ResizeObserver | null = null
+
+onMounted(() => {
+  if (!container.value) return
+  chart = echarts.init(container.value)
+  chart.setOption(chartOption.value)
+  resizeObs = new ResizeObserver(() => chart?.resize())
+  resizeObs.observe(container.value)
+})
+
+watch(chartOption, (opt) => chart?.setOption(opt, true))
+
+onUnmounted(() => {
+  resizeObs?.disconnect()
+  chart?.dispose()
+  chart = null
+})
 </script>
 
 <template>
   <div class="taste-trend-chart" :style="{ height: height + 'px' }">
-    <Line
-      :data="lineData"
-      :options="lineOptions"
-      class="w-full h-full"
-    />
+    <div ref="container" class="w-full h-full" />
   </div>
 </template>
 
@@ -191,7 +152,7 @@ const lineData = computed(() => ({
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: #8B7355;
+  color: #8b7355;
   font-size: 14px;
 }
 </style>
