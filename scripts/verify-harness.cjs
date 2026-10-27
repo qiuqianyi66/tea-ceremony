@@ -234,6 +234,30 @@ for (const s of collectSkillFrontmatters()) {
   }
 }
 
+// 4h. 死技能审计：从未被任何路由表引用的技能（技能规范：README 不列 = 不存在；
+//     原仅做数量对账，新增目录但没人登记路由表时不会报错——此段机械化兜底）
+{
+  const routingText = [
+    '.agents/skills/README.md',
+    ...families.map(f => `.harness/skills/${f}/README.md`),
+  ].map(p => read(p)).filter(Boolean).join('\n');
+  const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const orphans = [];
+  for (const dir of SKILL_ROOTS) {
+    if (!fs.existsSync(dir)) continue;
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (!e.isDirectory() || !fs.existsSync(path.join(dir, e.name, 'SKILL.md'))) continue;
+      const bare = e.name.replace(/^\d{2}-/, '');
+      if (!new RegExp(`\\b${esc(bare)}\\b`).test(routingText)) {
+        orphans.push(`${path.relative(ROOT, dir).replace(/\\/g, '/')}/${bare}`);
+      }
+    }
+  }
+  if (orphans.length > 0) {
+    errors.push(`未被任何路由表引用的技能 ${orphans.length} 个：${orphans.join(', ')}（死技能审计：补路由表登记，或删除目录）`);
+  }
+}
+
 // 5. 关键路径引用存在性（AGENTS.md 中 docs/ .harness/ .agents/ scripts/ src/ backend/ 开头的反引号路径）
 const seen = new Set();
 const pathRefs = agents.match(/`((?:docs|\.harness|\.agents|scripts|src|backend)\/[^`]+)`/g) || [];
