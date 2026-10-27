@@ -14,6 +14,19 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
+// review.md 结论解析（纯函数，node --test 覆盖）：取文末最后一个 🔴…🟡 计数行判清零。
+// 评审惯例 Findings 区先列「🔴 0 条 / 🟡 N 条（已修复）」摘要，清零结论在文末 Verdict 区；
+// 取首个匹配会把发现摘要误当结论（#147 修复的 bug，回归锁见 scripts/tests/eval-harness.node-test.cjs）。
+function parseReviewClean(text) {
+  if (!text) return false;
+  const ms = [...text.matchAll(/🔴\s*(?:(?<rnum>\d+)|(?:零|无))[^🟡]*?🟡\s*(?:(?<ynum>\d+)|(?:零|无))/g)];
+  const m = ms.at(-1);
+  return m ? Number(m.groups.rnum ?? 0) === 0 && Number(m.groups.ynum ?? 0) === 0 : false;
+}
+
+module.exports = { parseReviewClean };
+
+if (require.main === module) {
 const root = path.resolve(__dirname, '..');
 const slice = process.argv[2];
 const verify = process.argv.includes('--verify');
@@ -137,16 +150,8 @@ const noMigrate = /无(数据库)?迁移|零迁移|无迁移/.test(summaryText);
 
 // ---- 6. 迭代能力 5%：review 清零 + 修复提交 ----
 {
-  let clean = false;
   const review = path.join(ch, 'review.md');
-  if (fs.existsSync(review)) {
-    const text = fs.readFileSync(review, 'utf8');
-    // 取最后一个 🔴…🟡 匹配：评审记录惯例是 Findings 区先列「🔴 0 条 / 🟡 N 条（已修复）」摘要，
-    // 清零结论在文末 Verdict 区；取首个匹配会把发现摘要误当结论（rag-long-sentence 等既有切片全中招）。
-    const ms = [...text.matchAll(/🔴\s*(?:(?<rnum>\d+)|(?:零|无))[^🟡]*?🟡\s*(?:(?<ynum>\d+)|(?:零|无))/g)];
-    const m = ms.at(-1);
-    clean = m ? Number(m.groups.rnum ?? 0) === 0 && Number(m.groups.ynum ?? 0) === 0 : false;
-  }
+  const clean = fs.existsSync(review) ? parseReviewClean(fs.readFileSync(review, 'utf8')) : false;
   scores.iteration = clean ? 100 : 50;
   note('迭代能力', scores.iteration, `review 结论行 🔴🟡 ${clean ? '清零' : '未清零/未找到'}`);
 }
@@ -185,3 +190,5 @@ const outDir = path.join(root, 'docs', 'agent-eval');
 fs.mkdirSync(outDir, { recursive: true });
 fs.writeFileSync(path.join(outDir, `${slice}-eval.md`), lines.join('\n'));
 process.exit(pass ? 0 : 1);
+}
+
