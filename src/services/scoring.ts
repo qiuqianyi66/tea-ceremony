@@ -3,7 +3,95 @@
  */
 
 import type { TasteDimensions } from '@/types/tasting'
+import { TeaType } from '@/types/tea'
 import type { TeaWare } from '@/types/teaware'
+
+/** 八维口感权重（顺序同 calculateOverallScore 的维度数组）。 */
+export type DimensionWeights = Record<
+  'bitterness' | 'sweetness' | 'aftertaste' | 'body' | 'aroma' | 'rhyme' | 'shape' | 'mind',
+  number
+>
+
+/** 等权基线（未指定茶类时行为与旧版完全一致）。 */
+const EQUAL_WEIGHTS: DimensionWeights = {
+  bitterness: 1,
+  sweetness: 1,
+  aftertaste: 1,
+  body: 1,
+  aroma: 1,
+  rhyme: 1,
+  shape: 1,
+  mind: 1,
+}
+
+/**
+ * 六大茶类八维权重表（v1 启发式，待 live 品鉴数据校准；见 ADR-027）。
+ * 权重按加权平均归一化，相对值即重要性：
+ * - bitterness 权重作用于反向后的"适口度"：绿茶微苦涩属正常（权重低），红茶要求顺滑（权重高）；
+ * - 青茶以香、回甘为王；黑茶以醇厚度为主；绿茶重鲜爽高扬；白茶重清甜毫香。
+ */
+export const TEA_CATEGORY_WEIGHTS: Partial<Record<TeaType, DimensionWeights>> = {
+  [TeaType.GREEN]: {
+    bitterness: 0.7,
+    sweetness: 1.2,
+    aftertaste: 1.2,
+    body: 0.9,
+    aroma: 1.5,
+    rhyme: 1.0,
+    shape: 0.9,
+    mind: 1.0,
+  },
+  [TeaType.WHITE]: {
+    bitterness: 0.6,
+    sweetness: 1.3,
+    aftertaste: 1.0,
+    body: 1.0,
+    aroma: 1.2,
+    rhyme: 1.0,
+    shape: 0.9,
+    mind: 1.0,
+  },
+  [TeaType.YELLOW]: {
+    bitterness: 0.8,
+    sweetness: 1.2,
+    aftertaste: 1.0,
+    body: 1.2,
+    aroma: 1.0,
+    rhyme: 1.0,
+    shape: 0.8,
+    mind: 1.0,
+  },
+  [TeaType.OOLONG]: {
+    bitterness: 0.8,
+    sweetness: 1.0,
+    aftertaste: 1.4,
+    body: 0.9,
+    aroma: 1.6,
+    rhyme: 1.2,
+    shape: 0.8,
+    mind: 1.0,
+  },
+  [TeaType.RED]: {
+    bitterness: 1.2,
+    sweetness: 1.5,
+    aftertaste: 1.2,
+    body: 1.3,
+    aroma: 1.0,
+    rhyme: 1.0,
+    shape: 0.8,
+    mind: 1.0,
+  },
+  [TeaType.DARK]: {
+    bitterness: 0.5,
+    sweetness: 0.8,
+    aftertaste: 1.2,
+    body: 1.5,
+    aroma: 1.2,
+    rhyme: 1.0,
+    shape: 0.8,
+    mind: 1.0,
+  },
+}
 
 /** 工艺系数分解（可解释：温度 / 时间 / 茶器 / 水 各因子） */
 export interface ProcessFactorParts {
@@ -90,17 +178,40 @@ export function explainProcessFactor(
   return computeProcessParts(actualTemp, bestTemp, actualTime, bestTime, teaWare, waterFactor)
 }
 
-/** 计算综合评分（1-10分） */
-export function calculateOverallScore(dimensions: TasteDimensions, processFactor: number): number {
+/** 计算综合评分（1-10分；可选茶类权重，缺省等权——向后兼容，见 ADR-027） */
+export function calculateOverallScore(
+  dimensions: TasteDimensions,
+  processFactor: number,
+  weights?: DimensionWeights,
+): number {
   const { bitterness, sweetness, aftertaste, body, aroma, rhyme, shape, mind } = dimensions
 
   // 苦涩度是反向维度：对绝大多数茶而言越不苦涩越好，用 (6 - bitterness) 转成"适口度"
   // （bitterness=1 → 5 分，bitterness=5 → 1 分），其余七维为正向。
   const palatability = 6 - bitterness
 
-  // 八维平均分（1-5）
-  const baseScore =
-    (palatability + sweetness + aftertaste + body + aroma + rhyme + shape + mind) / 8
+  const w = weights ?? EQUAL_WEIGHTS
+  const keys = [
+    'bitterness',
+    'sweetness',
+    'aftertaste',
+    'body',
+    'aroma',
+    'rhyme',
+    'shape',
+    'mind',
+  ] as const
+  const dimVals = [palatability, sweetness, aftertaste, body, aroma, rhyme, shape, mind]
+
+  // 八维加权平均（1-5；权重归一化，等权即旧版行为）
+  let weightedSum = 0
+  let totalWeight = 0
+  for (let i = 0; i < keys.length; i++) {
+    const k = keys[i]!
+    weightedSum += dimVals[i]! * w[k]
+    totalWeight += w[k]
+  }
+  const baseScore = weightedSum / totalWeight
 
   // 归一化到 1-10 分
   const normalizedScore = baseScore * 2
