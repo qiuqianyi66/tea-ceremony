@@ -6,7 +6,12 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { WATER_TYPES } from '@/data/constants'
-import { calculateOverallScore, calculateProcessFactor, generateRecordId } from '@/services/scoring'
+import {
+  calculateOverallScore,
+  calculateProcessFactor,
+  generateRecordId,
+  TEA_CATEGORY_WEIGHTS,
+} from '@/services/scoring'
 const loadStorage = () => import('@/services/storage')
 import type { TastingRecord } from '@/types/tasting'
 import type { Tea } from '@/types/tea'
@@ -56,7 +61,9 @@ export const useTeaStore = defineStore('tea', () => {
   }
 
   function calculateScore(): number {
-    return calculateOverallScore(tasteStore.dimensions, processFactor.value)
+    // 按当前茶的茶类取八维权重（无匹配茶类 → 等权，行为同旧版）；见 ADR-027
+    const weights = currentTea.value ? TEA_CATEGORY_WEIGHTS[currentTea.value.type] : undefined
+    return calculateOverallScore(tasteStore.dimensions, processFactor.value, weights)
   }
 
   async function saveRecord(

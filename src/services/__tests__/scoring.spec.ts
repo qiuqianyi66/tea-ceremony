@@ -10,8 +10,10 @@ import {
   explainProcessFactor,
   generateRecordId,
   getScoreLevel,
+  TEA_CATEGORY_WEIGHTS,
 } from '@/services/scoring'
 import type { TasteDimensions } from '@/types/tasting'
+import { TeaType } from '@/types/tea'
 import type { TeaWare } from '@/types/teaware'
 import { TeaWareType } from '@/types/teaware'
 
@@ -166,6 +168,61 @@ describe('calculateOverallScore 综合评分', () => {
     const mild = { ...fullDimensions, bitterness: 1 }
     const bitter = { ...fullDimensions, bitterness: 5 }
     expect(calculateOverallScore(mild, 1)).toBeGreaterThan(calculateOverallScore(bitter, 1))
+  })
+})
+
+describe('茶类八维权重（ADR-027）', () => {
+  it('不传权重 = 等权基线（向后兼容旧行为）', () => {
+    expect(calculateOverallScore(fullDimensions, 1)).toBe(
+      calculateOverallScore(fullDimensions, 1, undefined),
+    )
+  })
+
+  it('权重整体等比缩放不改变得分（归一化不变性）', () => {
+    const oolong = TEA_CATEGORY_WEIGHTS[TeaType.OOLONG]!
+    const scaled = Object.fromEntries(
+      Object.entries(oolong).map(([k, v]) => [k, v * 3.5]),
+    ) as typeof oolong
+    expect(calculateOverallScore(fullDimensions, 1, oolong)).toBe(
+      calculateOverallScore(fullDimensions, 1, scaled),
+    )
+  })
+
+  it('青茶权重放大香气维度：同样输入下高香得分更高', () => {
+    // 中等基线：除香气外都中等，香气 1 vs 5
+    const base: TasteDimensions = {
+      bitterness: 3,
+      sweetness: 3,
+      aftertaste: 3,
+      body: 3,
+      aroma: 1,
+      rhyme: 3,
+      shape: 3,
+      mind: 3,
+    }
+    const highAroma = { ...base, aroma: 5 }
+    const equal =
+      calculateOverallScore(highAroma, 1, undefined) - calculateOverallScore(base, 1, undefined)
+    const oolong =
+      calculateOverallScore(highAroma, 1, TEA_CATEGORY_WEIGHTS[TeaType.OOLONG]) -
+      calculateOverallScore(base, 1, TEA_CATEGORY_WEIGHTS[TeaType.OOLONG])
+    // 青茶香气权重 1.6 > 等权 1 → 香气提升带来的加分更大
+    expect(oolong).toBeGreaterThan(equal)
+  })
+
+  it('六大茶类权重表齐全且为正数', () => {
+    for (const t of [
+      TeaType.GREEN,
+      TeaType.WHITE,
+      TeaType.YELLOW,
+      TeaType.OOLONG,
+      TeaType.RED,
+      TeaType.DARK,
+    ]) {
+      const w = TEA_CATEGORY_WEIGHTS[t]
+      expect(w, `缺茶类 ${t}`).toBeDefined()
+      for (const v of Object.values(w!)) expect(v).toBeGreaterThan(0)
+    }
   })
 })
 
