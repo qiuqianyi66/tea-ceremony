@@ -112,7 +112,7 @@ last_updated: 2026-10-29
 - **现状**：基础设施全在位（pgvector/HNSW/回填管线/三级降级），缺本地 EmbeddingModel bean；注入点已解耦（CultureSearchService L63 与 ChunkBackfillService L31 均用 `ObjectProvider<EmbeddingModel>`，新增 bean 即被两处用上，不改检索/回填主逻辑）。
 - **方案要点**：
   1. 拍板 D1（§4）：embedding 模型选型。
-  2. 引入 `com.microsoft.onnxruntime:onnxruntime` 1.27.0（Maven Central 已确认）。
+  2. 引入 `com.microsoft.onnxruntime:onnxruntime` 1.27.0（Maven Central 已确认：https://central.sonatype.com/artifact/com.microsoft.onnxruntime/onnxruntime ；官方权重 https://huggingface.co/BAAI/bge-small-zh-v1.5 ，MIT 许可；社区 ONNX 导出 https://huggingface.co/jasonyang170/bge-small-zh-v1.5-ONNX ，约 200MB，第三方导出需自验归一化/tokenizer）。
   3. 自写 EmbeddingModel 适配 bean：ONNX 图 + tokenizer + L2 归一化（余弦依赖归一化，错配毁召回；社区 ONNX 导出需自验）。
   4. 按选型做 schema 动作：512 维 → 新迁移 `ALTER COLUMN vector(512)` + 重建 HNSW + 全量重嵌；1024 维 → 免改表。
   5. 模型文件放项目外受控目录，**禁止提交仓库**。
