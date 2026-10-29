@@ -7,6 +7,19 @@
 #     上线后先在 Grafana 观察一周、拿到 P50/P95 分布，再回来收紧。带着未校准的阈值上线，
 #     结果一定是长期告警疲劳——那时真正的故障就没人看了。
 #
+# 观察期校准计划（2026-10-29 记录；阈值数字一个不改，只定校准动作）：
+#   1. 观察窗：真实流量上线后在 Grafana 看板（deploy/grafana/dashboards/tea-ai-production.json）
+#      连续观察 7 天，记录以下基线：
+#      a) tea_ai_call_attempts_total 各 outcome（success/failure/timeout/fallback）日均占比；
+#      b) tea_ai_fallback_hit_total 占调用总量的日常比例；
+#      c) http_server_requests_seconds 的 5xx 日均占比、P95/P99 延迟分布；
+#      d) hikaricp_connections_pending 常态水位（是否长期 >0）、jvm 堆日常水位。
+#   2. 收紧规则：初始值偏宽（防误报优先）。校准按「日常波动上限 + 余量」收紧——
+#      例：错误率 = 日常 P99 占比 × 2，兜底命中率 = 日常占比 + 3 个百分点，
+#      拒绝直接抄业界默认值。
+#   3. 回写位置：校准后的数字连同日期写回本注释下方（新增「校准记录」小节），
+#      并 git commit；未校准前任何人不得凭感觉调阈值。
+#
 # 命名约定：Micrometer 的 `tea.ai.call.attempts` 导出到 Prometheus 是
 # `tea_ai_call_attempts_total`（点转下划线 + 计数器加 _total）。
 

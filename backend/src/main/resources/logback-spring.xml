@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- 日志 pattern 带 requestId（P1-1）：每行可串起单请求链路；无 requestId 时输出 '-' 占位。
      仅改 pattern 不引第三方依赖（JSON 编码器需 logstash 库，按红线不擅自新增依赖）。 -->
+<!-- 日志落盘决策（蓝图 D5，2026-10-29 记录）：
+     仅保留 CONSOLE appender，应用内不写日志文件、不引 JSON 编码器。
+     运行形态 = 容器，日志采集走 docker logs / 宿主机日志驱动，应用不重复落盘。
+     触发重估的条件：出现跨主机集中式日志检索需求（如要按 traceId 查历史请求）时，
+     再评估引入 logstash-logback-encoder 输出结构化 JSON——届时作为依赖显式评审后新增。 -->
 <configuration>
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>

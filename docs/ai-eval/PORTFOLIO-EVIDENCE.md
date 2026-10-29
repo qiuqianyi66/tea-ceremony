@@ -1,6 +1,6 @@
 ---
 title: Tea AI 工程深度证据（作品集/面试用）
-last_updated: 2026-10-28
+last_updated: 2026-10-29
 status: active
 owner: yanha
 scope: 简历与面试举证专用——数字只取 ITERATIONS.md 已记录版本，不编
@@ -70,3 +70,15 @@ Tea 不是「调 API 的聊天机器人」，而是一个**带可验证评测体
 - [x] ITERATIONS.md 追加 v8 版本行
 - [ ] 网关排查案例补 yg-gateway 配置还原证据（D:\yg-gateway\config.json.bak-20261028）
 - [ ] B3 自托管 embedding（bge-m3 ONNX + pgvector）落地后更新 RAG 数字——欠费下向量通道恢复的唯一路径
+
+## 6. 工程硬能力补缺记录（B4，2026-10-29，分支 feature/b4-hardening）
+
+> 口径：只做仓库内可做项；服务器侧项如实标注未做。证据 = commit + 实测命令。
+
+| 缺口 | 处置 | 证据 |
+|---|---|---|
+| nginx 443 /api/ 缺 X-Request-ID（PLAN-ip-cert L202 旧记录） | **核实已修复，未改配置**：443 server 块 include 单一来源 `nginx/snippets/app-locations.conf`，其 `/api/` 块本就有 `proxy_set_header X-Request-ID $request_id`（commit 7d3ebf5 P1-1 引入）；80 块仅 ACME+301、不代理 /api/。后端 `RequestIdFilter.java` 链路在。 | 读 nginx.conf L119-120 + app-locations.conf L72-85；`git log -S X-Request-ID -- nginx/` |
+| 告警阈值未校准（alerts.yml 自述初始值） | **未拍脑袋改数字**，只在文件头补「观察期校准计划」：7 天 Grafana 基线（outcome 占比/fallback 占比/5xx 占比/P99/连接池水位）→ 按日常波动×2 收紧 → 校准后连日期回写本文件。 | `deploy/prometheus/alerts.yml` 头注释 |
+| 日志仅控制台（logback 无文件 appender） | 记录蓝图 D5 决策：维持 docker logs 采集、应用不落盘、不引 logstash 编码器；触发重估条件=跨主机 traceId 检索需求。 | `backend/src/main/resources/logback-spring.xml` 注释块 |
+| 前端视图单测稀薄（31 spec 中 views 仅 3） | 新增 `src/views/__tests__/AIAsk.spec.ts`：空状态渲染 + 点建议→askTeaMaster mock 断言（用户气泡/AI 气泡/来源 chip）。mock 走 vi.hoisted 模式。 | `npx vitest run`：32 文件 280 测试全绿；type-check 过；biome 过 |
+| eval-harness 是否挂 CI | **已挂，无需改**：`.github/workflows/ci.yml` harness-consistency job 末步对 `.harness/changes/` 最新切片跑 `node scripts/eval-harness.cjs <slice>`（总分<60 阻断）。 | ci.yml L314-320 |
