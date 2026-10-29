@@ -5,12 +5,20 @@
 #  - 生产不激活本 profile，openai api-key 未配置即不装配，dashscope 承重墙不变；
 #  - 网关为 passthrough 模式：tea 的 system prompt 原样透传（不被网关 persona 替换）。
 spring:
+  # 2026-10-28 欠费治理：gateway profile 排除 dashscope embedding 自动配置。
+  # 根因：主配置 application.yml 用 env 注入真实 AI_DASHSCOPE_API_KEY → DashScopeEmbeddingAutoConfiguration
+  # 无条件装配 EmbeddingModel（spring.ai.model.embedding=none 挡不住 starter 的 bean 创建）→
+  # 每次 culture/search 调 text-embedding-v3 → 账户欠费实测 400 Arrearage → 纯延迟 + 日志噪音 + 无收益。
+  # 生产（非 gateway profile）不受影响，embedding 承重墙不变。
+  autoconfigure:
+    exclude:
+      - com.alibaba.cloud.ai.autoconfigure.dashscope.DashScopeEmbeddingAutoConfiguration
   ai:
     model:
       chat: openai
-      # embedding 显式禁用：DeepSeek/yg-gateway 无 embedding 端点；DashScope key 未配置/占位 disabled
-      # 时 DashScopeEmbeddingModel 仍装配并以字面 key 调百炼 → 401（2026-10-14 实测）。
-      # 禁用后 CultureSearchService 检索自动降级纯 ILIKE（检索不中断，对话 LLM 走网关不受影响）。
+      # embedding 保持禁用（2026-10-28 复核）：DashScope 账户欠费（实测 400 Arrearage），
+      # 装配 DashScopeEmbeddingModel 会让每次检索多一次失败的付费调用（延迟 + 无收益）；
+      # B1 类目检索优化（teas.category 直查）不依赖 embedding。向量 RAG 待自托管 embedding 通道再恢复。
       embedding: none
     openai:
       # 根地址即可：Spring AI OpenAiApi 自动追加 /v1/chat/completions（带 /v1 会拼成 /v1/v1/ 404/连接失败）

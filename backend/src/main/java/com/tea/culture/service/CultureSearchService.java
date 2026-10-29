@@ -81,9 +81,11 @@ public class CultureSearchService {
         List<String> patterns = splitKeywords(q);
 
         List<TeaItem> teas = jdbcTemplate.query(
-                "SELECT id, name FROM teas WHERE " + likeClause(List.of("name"), patterns.size()) + " LIMIT 5",
+                // 2026-10-28 RAG 命中率优化：name 之外匹配 category（问句用类目词"黑茶/绿茶"时，
+                // ILIKE 只查具体茶名必 miss——类目词直查 category 列命中该类茶）。
+                "SELECT id, name FROM teas WHERE " + likeClause(List.of("name", "category"), patterns.size()) + " LIMIT 5",
                 (rs, n) -> new TeaItem(rs.getInt("id"), rs.getString("name"), "tea"),
-                likeArgs(List.of("name"), patterns));
+                likeArgs(List.of("name", "category"), patterns));
 
         List<PersonItem> people = jdbcTemplate.query(
                 "SELECT id, name, dynasty FROM tea_people WHERE " + likeClause(List.of("name", "description"), patterns.size()) + " LIMIT 5",
@@ -117,9 +119,9 @@ public class CultureSearchService {
                 likeArgs(List.of("relation"), patterns));
 
         List<ProcessItem> processes = jdbcTemplate.query(
-                "SELECT id, name, tea_category FROM tea_processes WHERE " + likeClause(List.of("name", "summary"), patterns.size()) + " LIMIT 5",
+                "SELECT id, name, tea_category FROM tea_processes WHERE " + likeClause(List.of("name", "summary", "tea_category"), patterns.size()) + " LIMIT 5",
                 (rs, n) -> new ProcessItem(rs.getInt("id"), rs.getString("name"), rs.getString("tea_category"), "process"),
-                likeArgs(List.of("name", "summary"), patterns));
+                likeArgs(List.of("name", "summary", "tea_category"), patterns));
 
         // Phase 2（T05b）：向量分支补缺——语义结果只补 ILIKE 未命中的空位，各类型仍 ≤5
         List<VectorHit> vec = vectorHits(q);
@@ -247,6 +249,31 @@ public class CultureSearchService {
     /** 单次检索注入关键词上限（整词 token + bigram 补充合计），约束 likeClause OR 子句规模。 */
     static final int MAX_KEYWORDS = 12;
 
+    /**
+     * 类目口语别名 → 库内分类用词（teas.category / tea_processes.tea_category 取值）。
+     * 问句用口语词（"乌龙茶"）时 category 列存的是"青茶"，不映射必 miss（LIB-001/004 类问题）。
+     * 只追加不替换：原词（如"乌龙茶"）保留，可能命中 name 别名；追加词补 category 路径。
+     */
+    private static final Map<String, String> CATEGORY_ALIASES = Map.of(
+            "乌龙茶", "青茶",
+            "乌龙", "青茶",
+            "岩茶", "青茶");
+
+    /** 类目别名展开：在 MAX_KEYWORDS 约束内向关键词集追加库内分类用词。 */
+    static List<String> expandCategoryAliases(List<String> kws) {
+        List<String> out = new ArrayList<>(kws);
+        for (String w : kws) {
+            if (out.size() >= MAX_KEYWORDS) {
+                break;
+            }
+            String cat = CATEGORY_ALIASES.get(w);
+            if (cat != null && !out.contains(cat)) {
+                out.add(cat);
+            }
+        }
+        return out;
+    }
+
     /** 中文连接词切分关键词 + 剥离尾部语气虚词；
      *  无连接词且为长句时，按虚词/疑问词二次拆词（实体词典近似，防"陆羽的茶经"整句 miss）。
      *  切分碎片过短或空时回退整句（保持原行为）。
@@ -278,6 +305,7 @@ public class CultureSearchService {
             }
             appendBigrams(kws, w);
         }
+        kws = expandCategoryAliases(kws);
         return kws.isEmpty() ? List.of(trimmed) : kws;
     }
 

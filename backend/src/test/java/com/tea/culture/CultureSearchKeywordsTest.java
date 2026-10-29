@@ -62,4 +62,19 @@ class CultureSearchKeywordsTest {
         // 2 字 token 不产生 bigram（无额外切片）
         assertEquals(List.of("龙井", "普洱"), kws);
     }
+
+    @Test
+    void categoryAliasExpandsOolongToQing() {
+        // 2026-10-28 RAG 命中率优化：口语"乌龙茶"追加库内分类词"青茶"（teas.category 取值），
+        // 否则 ILIKE 只查 name 时类目词必 miss（LIB-001/004 类问题）。
+        List<String> kws = CultureSearchService.splitKeywords("乌龙茶和武夷岩茶有什么区别");
+        assertTrue(kws.contains("青茶"), "应追加分类词 青茶: " + kws);
+        assertTrue(kws.contains("乌龙茶"), "原词应保留: " + kws);
+    }
+
+    @Test
+    void categoryAliasExpansionRespectsCap() {
+        List<String> kws = CultureSearchService.splitKeywords("乌龙茶和乌龙和岩茶和铁观音和大红袍和肉桂和水仙和凤凰单丛怎么泡");
+        assertTrue(kws.size() <= CultureSearchService.MAX_KEYWORDS, "别名展开不得超上限，实际 " + kws.size());
+    }
 }
