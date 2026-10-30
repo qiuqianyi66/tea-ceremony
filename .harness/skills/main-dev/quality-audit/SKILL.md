@@ -2,6 +2,7 @@
 name: quality-audit
 description: 质量四性审计：规范性/维护性/安全性/可扩展性四批检查 + 修复清单 + 分批提交门禁。当用户要求质量审计、四性审计、规范性/安全性/维护性/可扩展性检查，或大提交与发布前质量门时触发。
 type: executable
+last-reviewed: 2026-10-29
 verification: node scripts/audit-redlines.cjs && node scripts/verify-harness.cjs
 ---
 

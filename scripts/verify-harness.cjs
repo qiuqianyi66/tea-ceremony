@@ -234,6 +234,32 @@ for (const s of collectSkillFrontmatters()) {
   }
 }
 
+// 4i. 技能 last-reviewed 审核日期（O-12，白皮书 O.1 元数据扩展融入；防静默失效）
+//    type: executable 必填 last-reviewed: YYYY-MM-DD；缺/格式非法/未来日期 = error；超 180 天 = warning
+const DAY_MS = 24 * 60 * 60 * 1000;
+for (const s of collectSkillFrontmatters()) {
+  const type = fmField(s.front, 'type');
+  if (type !== 'executable') continue;
+  const lr = fmField(s.front, 'last-reviewed');
+  if (!lr) {
+    errors.push(`❌ ${s.rel} type: executable 缺 last-reviewed 审核日期。\n✅ FIX: 补 frontmatter last-reviewed: YYYY-MM-DD（最近人工审核日期）。\n📖 See: .harness/rules/技能规范.md §2（O-12）`);
+    continue;
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(lr)) {
+    errors.push(`❌ ${s.rel} last-reviewed 格式非法：${lr}。\n✅ FIX: 改为 YYYY-MM-DD。\n📖 See: .harness/rules/技能规范.md §2（O-12）`);
+    continue;
+  }
+  const d = new Date(lr + 'T00:00:00');
+  if (isNaN(d.getTime()) || d > new Date()) {
+    errors.push(`❌ ${s.rel} last-reviewed 非有效日期或为未来：${lr}。\n✅ FIX: 填真实人工审核日期。\n📖 See: .harness/rules/技能规范.md §2（O-12）`);
+    continue;
+  }
+  const ageDays = Math.floor((Date.now() - d.getTime()) / DAY_MS);
+  if (ageDays > 180) {
+    warnings.push(`${s.rel} last-reviewed 距今 ${ageDays} 天未人工审核（>180 天，防静默失效：规则漂移/技能断链当场不报错、几周后才显形）——请人工复核正文与引用后更新日期`);
+  }
+}
+
 // 4h. 死技能审计：从未被任何路由表引用的技能（技能规范：README 不列 = 不存在；
 //     原仅做数量对账，新增目录但没人登记路由表时不会报错——此段机械化兜底）
 {

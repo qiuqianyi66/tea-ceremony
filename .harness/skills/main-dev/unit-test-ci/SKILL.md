@@ -2,6 +2,7 @@
 name: unit-test-ci
 description: CI 门禁验证——跑前端 quality 门禁 + 后端测试 + 迁移往返，全绿才可进评审。流水线阶段 5-6。
 type: executable
+last-reviewed: 2026-10-29
 verification: npm run quality
 ---
 
