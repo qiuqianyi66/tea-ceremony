@@ -184,6 +184,12 @@ public class OnnxEmbeddingModel implements EmbeddingModel {
             }
             ids.addAll(wordpiece(piece));
         }
+        // token 级硬截断：单 piece 的 wordpiece 可能一次吐出超过预算的 token（长 JSON 串无空格），
+        // BERT position embedding 上限 512——超了会让 /embeddings/Add_1 广播崩溃
+        // （实测 7 条 chunk=514 token → batch 整批失败落 pending）。
+        if (ids.size() - 1 > budget) {
+            ids = new ArrayList<>(ids.subList(0, budget + 1)); // 保留 [CLS] + 前 budget 个 token
+        }
         ids.add(sepId);
         return ids;
     }
