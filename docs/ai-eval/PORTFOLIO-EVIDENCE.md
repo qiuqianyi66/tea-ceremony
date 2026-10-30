@@ -1,6 +1,6 @@
 ---
 title: Tea AI 工程深度证据（作品集/面试用）
-last_updated: 2026-10-28
+last_updated: 2026-10-30
 status: active
 owner: yanha
 scope: 简历与面试举证专用——数字只取 ITERATIONS.md 已记录版本，不编
@@ -26,7 +26,8 @@ Tea 不是「调 API 的聊天机器人」，而是一个**带可验证评测体
 | 对话记忆 | `ChatMemoryService`（会话级上下文注入） | chat 请求带 history |
 | 熔断 + 降级 | 后端 CircuitBreaker/降级链 + 前端 `teaAI.ts` | 30s AI 超时 / 5s RAG 超时 / 规则回复兜底 |
 | AB 实验 | 后端分流 | /api/v1/ai/chat 分流记录 |
-| MCP Server | `CultureSearchTool`（SSE /mcp 端点） | 检索工具暴露为 MCP 协议 |
+| MCP Server | `ai/mcp/McpToolConfig`（SSE /mcp 端点） | 3 个工具：cultureSearch（P1-1）+ brew_params / brew_advice（P2.2）；`McpServerIntegrationTest.p22ExposesAtLeastThreeTools` 锁定 |
+| 多工具 Agent（进程内 function calling） | `ai/tool/` 4 工具 + `MultiToolAgent` 门面挂透明代理 | userId 服务端绑定防越权；工具失败回落无工具直答，502 降级链不变（见 §3.4） |
 | 管理 backfill 管道（含安全审计） | /api/v1/admin/** + X-Admin-Token | Fail-closed，未配 token 全部 401 |
 | 网关通道与人设链路排查 | 前端→yg-gateway→上游 LLM | 见 §3 案例 |
 
@@ -60,9 +61,16 @@ Tea 不是「调 API 的聊天机器人」，而是一个**带可验证评测体
 - 诚实归因：评测集上 RAG 0.38 前后持平（B1 影响的类目词 case 未成规模），0.16→0.38 提升来自评测链路修复（认证档 30/min 无 429 污染 + 端口对齐 7863）；B1 价值经运行时验证（黑茶/乌龙/紫砂手工命中，此前必 miss）。
 - 举证价值：展示**先实测根因、不硬套方案、欠费就换零成本通道、数字如实归因**的工程取舍。
 
+### 3.4 多工具 Agent：工具挂哪、不挂哪（边界纪律，B1.2 / P2.2，2026-10-30）
+- 机制：4 个 Spring AI `@Tool` 工具——culture_query（试点已有）+ brew_params（茶库参数/类目基准/投茶量估算）+ my_tasting_records（本人记录+均分）+ brew_advice（参数+历史+文化备注组合）；`MultiToolAgent` 门面每请求按 userId 绑定后挂到透明代理 ChatClient，AiChatService 只依赖门面一个 bean。
+- 安全：userId 从不由模型参数传入——`boundTo` 在请求发起时服务端绑定，模型无法伪造越权读他人记录；未绑定的记录工具直接回「未登录」文案。
+- 降级：工具路径 BadGateway → 回落无工具直答（与 LibrarianAgent 工具灰度同纪律）；工具内部异常吞掉转错误文案，绝不让整轮对话 500。
+- MCP 边界：/mcp 只暴露无会话状态的 3 个工具（cultureSearch / brew_params / brew_advice）；my_tasting_records 不对外（外部 MCP 无登录态，单例永远回「未登录」= 死工具）。
+- 证据：`mvn test` 536 全绿（含 McpServerIntegrationTest 断言 /mcp ≥3 工具 + SSE 匿名握手；AiChatService 熔断/降级 8+5+27 用例全过）；评测集新增 CHA-010/011/012 三条工具考点，**仅 dry-run 管道验证（12 条解析无崩）**——真实 LLM 工具调用命中率未实测（需 live 容器 + 有效 key，欠费环境不硬跑）。
+
 ## 4. 一句话可复述的「深度证明」
 
-「Tea 的 AI 层不是堆 prompt：它有一个 50 条评测集 + LLM 独立评委 + 覆盖口径纪律（judgeCoverage=1）的自评系统，把整体分从 0.81 推到 0.95、program 正确率推到 1.0，并用 RAG 命中率单独追踪检索短板；每个机制（专家路由/记忆/熔断/MCP/backfill 审计）都有代码、测试和真实排查案例。」
+「Tea 的 AI 层不是堆 prompt：它有一个 50 条评测集 + LLM 独立评委 + 覆盖口径纪律（judgeCoverage=1）的自评系统，把整体分从 0.81 推到 0.95、program 正确率推到 1.0，并用 RAG 命中率单独追踪检索短板；每个机制（专家路由/记忆/熔断/MCP/多工具/backfill 审计）都有代码、测试和真实排查案例。」
 
 ## 5. 待补充
 
@@ -70,3 +78,4 @@ Tea 不是「调 API 的聊天机器人」，而是一个**带可验证评测体
 - [x] ITERATIONS.md 追加 v8 版本行
 - [ ] 网关排查案例补 yg-gateway 配置还原证据（D:\yg-gateway\config.json.bak-20261028）
 - [ ] B3 自托管 embedding（bge-m3 ONNX + pgvector）落地后更新 RAG 数字——欠费下向量通道恢复的唯一路径
+- [ ] P2.2 多工具 live 评测：容器 + 有效 key 就位后跑 CHA-010/011/012，实测工具调用命中率（当前仅 dry-run 管道验证）
