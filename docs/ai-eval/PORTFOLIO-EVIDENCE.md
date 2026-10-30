@@ -1,6 +1,6 @@
 ---
 title: Tea AI 工程深度证据（作品集/面试用）
-last_updated: 2026-10-28
+last_updated: 2026-10-30
 status: active
 owner: yanha
 scope: 简历与面试举证专用——数字只取 ITERATIONS.md 已记录版本，不编
@@ -25,6 +25,7 @@ Tea 不是「调 API 的聊天机器人」，而是一个**带可验证评测体
 | RAG 检索（当前 ILIKE + 类目直查） | `CultureSearchService` | teas/people/regions/poems/teawares/etiquettes/processes 七表；B1 加 category 直查 + 类目别名 |
 | 对话记忆 | `ChatMemoryService`（会话级上下文注入） | chat 请求带 history |
 | 熔断 + 降级 | 后端 CircuitBreaker/降级链 + 前端 `teaAI.ts` | 30s AI 超时 / 5s RAG 超时 / 规则回复兜底 |
+| SSE 文本流式（B1.3） | `POST /api/v1/ai/chat/stream`（SseEmitter，MVC 栈不引 WebFlux）+ 前端 fetch+getReader | 逐 chunk `{"d":...}` 增量渲染；末帧 `{"meta":{sessionId}}` + `[DONE]`；预流失败回退整段；服务层 6 测试（FrameSink seam） |
 | AB 实验 | 后端分流 | /api/v1/ai/chat 分流记录 |
 | MCP Server | `CultureSearchTool`（SSE /mcp 端点） | 检索工具暴露为 MCP 协议 |
 | 管理 backfill 管道（含安全审计） | /api/v1/admin/** + X-Admin-Token | Fail-closed，未配 token 全部 401 |
@@ -59,6 +60,15 @@ Tea 不是「调 API 的聊天机器人」，而是一个**带可验证评测体
 - 对策分层：A 向量 RAG（被欠费阻塞，未硬上）→ **B1 纯文本类目直查**（零成本立即可用：teas 查询加 category 匹配 + 类目别名乌龙茶/岩茶→青茶 + 别名展开上限约束）→ B3 自托管 embedding（bge-m3 ONNX + pgvector，预留）。
 - 诚实归因：评测集上 RAG 0.38 前后持平（B1 影响的类目词 case 未成规模），0.16→0.38 提升来自评测链路修复（认证档 30/min 无 429 污染 + 端口对齐 7863）；B1 价值经运行时验证（黑茶/乌龙/紫砂手工命中，此前必 miss）。
 - 举证价值：展示**先实测根因、不硬套方案、欠费就换零成本通道、数字如实归因**的工程取舍。
+
+### 3.4 SSE 文本流式（B1.3）：结算时机与「流失败回退整段」承重墙
+- **端点**：新增 `POST /api/v1/ai/chat/stream`，返回 `SseEmitter`——刻意留在 MVC 栈（不引 WebFlux 依赖），用 `streamExecutor`（daemon 缓存线程池）跑 LLM 生成。帧协议极简：`{"d":"<增量>"}` 文本 delta → 结束帧 `{"meta":{"sessionId":n}}` → `[DONE]`；中途错误帧 `{"error":"BAD_GATEWAY"}`。
+- **结算时机（PR #43 教训重演）**：用量（AiUsageLogger）/ Trace（TraceRecorder.complete|fail）/ 熔断计数**全部移到流结束事件**才结算——建立 emitter 时或首 chunk 就结算会在客户端断连/上游中途失败时静默丢数据。成功路径在 `blockLast()` 后统一结算，异常路径在 catch 里 `onFailure + trace.fail`。
+- **预流 vs 流中失败分治**：越权 404 / 配额 429 / 无 key / 熔断未命中兜底——在建立 emitter **之前**以普通 HTTP 状态抛出，前端据状态回退整段；熔断命中本地规则库则作为单 chunk 下发。这样「回退整段」只在真失败时发生，正常用户拿到逐字流。
+- **前端承重墙**：`teaAI.ts` 用 `fetch + ReadableStream.getReader()`（不用 EventSource——要 POST body + Authorization 头），30s **空闲**超时（每个 chunk 重置）；**预流非 2xx / 网络 / 超时 / 无内容自动回退整段 `/v1/ai/chat`**（与评测器同口径，评测器继续走整段，口径不分裂）；停止按钮 `AbortController` 中止后保留已出内容、不回退重发。
+- **测试 seam**：包级可见 `streamExecutor`（测试换成 `Runnable::run` 同步跑）+ `testFrames`（帧收集进 List，免起 MVC handler）；6 个用例覆盖逐 chunk 顺序 / 空 chunk 跳过 / 空正文 502 / 上游异常 error 帧 / key 缺失 / 熔断命中规则单 chunk。
+- **诚实归因**：本期只打通**文本流**；五专家 SYSTEM_PROMPT + RAG 人设注入与 tool_calls 流事件留待后续（流式端到端管道先通）。ArchUnit「controller 必返 ApiResponse」规则为 SseEmitter 加了唯一显式例外。服务端 `chat/stream` 第一版曾留下未定义方法 + 不可达重复块（编译不过），本次收尾修复并补齐测试。
+- 举证价值：能讲清流式 ≠ 把整段拆两半——关键在**结算时机（防静默丢数据）、预流/流中失败分治、与既有整段链路的平滑回退**，而不是简单换个 API。
 
 ## 4. 一句话可复述的「深度证明」
 
