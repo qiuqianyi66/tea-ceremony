@@ -25,6 +25,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.function.BiFunction;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -35,6 +37,7 @@ import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.metadata.Usage;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 /**
  * AI 聊天服务（M5-S2：五专家派发 + 透明代理回落 + 会话记忆旁路）。
@@ -50,6 +53,19 @@ public class AiChatService {
 
     /** 多轮锚定上限（与 ChatMemoryService.ANCHOR_LIMIT 一致）。 */
     private static final int ANCHOR_LIMIT = 20;
+
+    /** 流式 SSE 超时（ms）：覆盖 LLM 首 chunk + 生成；前端 30s 超时，后端留余量。 */
+    private static final long STREAM_TIMEOUT_MS = 60_000L;
+
+    /**
+     * 流式工作线程池：SseEmitter 建立后 LLM 生成在独立线程跑（MVC 异步）。
+     * daemon 线程，不阻塞 JVM 退出；包级可见便于单测替换为同步执行（Runnable::run）。
+     */
+    Executor streamExecutor = Executors.newCachedThreadPool(r -> {
+        Thread t = new Thread(r, "ai-sse-stream");
+        t.setDaemon(true);
+        return t;
+    });
 
     private final ChatClient chatClient;
     private final AiUsageLogger usageLogger;
@@ -133,6 +149,35 @@ public class AiChatService {
     }
 
     public AiChatVo chat(Integer userId, AiChatRequest req) {
+        Prepared p = prepare(userId, req);
+        // P1-13 熔断：OPEN 窗口内快速失败（不调 LLM）。多级兜底第二级在此先试本地规则库，未命中才 502
+        if (!circuitBreaker.allowCall()) {
+            return fallbackOrThrow(p.anchored(), p.sessionId(), p.trace(), p.degradeAllowed(),
+                    new BadGatewayException("AI 服务暂时不可用（熔断保护中）"));
+        }
+        try {
+            AiChatVo vo = dispatch(p.type(), userId, p.anchored());
+            circuitBreaker.onSuccess();
+            traceRecorder.complete(p.trace(), vo);
+            if (p.sessionId() != null) {
+                persist(p.sessionId(), "assistant", vo.content(), p.agentLabel());
+                // degraded 一并透传：专家层若已降级，绑定会话后不能把标记丢掉
+                return new AiChatVo(vo.content(), vo.sources(), p.sessionId(),
+                        vo.tokensIn(), vo.tokensOut(), vo.latencyMs(), vo.degraded());
+            }
+            return vo;
+        } catch (BadGatewayException e) {
+            circuitBreaker.onFailure();
+            return fallbackOrThrow(p.anchored(), p.sessionId(), p.trace(), p.degradeAllowed(), e);
+        }
+    }
+
+    /**
+     * 整段 / 流式两条链路共享的入口前序（行为等价抽取，不改语义）：
+     * 防越权 → 路由/复杂度 → 多轮锚定 → 会话解析 → 配额（429）→ 用户消息落库（F-8）→
+     * 实验灰度 → Trace 入口埋点（T07）。熔断与 LLM 调用各链路自行处理。
+     */
+    private Prepared prepare(Integer userId, AiChatRequest req) {
         // 防越权前置：带 sessionId 且登录 → 归属校验先行（非本人 404，不浪费 LLM 调用）
         if (userId != null && req.sessionId() != null) {
             memoryService.requireSession(userId, req.sessionId());
@@ -143,61 +188,208 @@ public class AiChatService {
         if (level == ComplexityLevel.SIMPLE && (req.agent() == null || req.agent().isBlank())) {
             type = null;
         }
-        // F-6 多轮锚定（278 Save Plan）：有 sessionId → 历史前插进请求 messages（COMPLEX 收紧至 5 条=上下文压缩）
+        // F-6 多轮锚定：有 sessionId → 历史前插（COMPLEX 收紧至 5 条=上下文压缩）
         AiChatRequest anchored = anchor(userId, req, level);
-        // F-8 降级不丢用户消息：dispatch 前先落库（LLM 失败/502 时用户消息已提交，响应仍走既有降级抛出路径）
+        // F-8：dispatch 前先落用户消息（LLM 失败/502 时用户消息已提交）
         Integer sessionId = resolveSession(userId, req, type);
-        // F-6 会话配额（ADR-018）：仅对「登录 + sessionId」生效；前端匿名调用 sessionId==null 直接放行。
-        // 超限走 429（QuotaExceededException），与 BadGatewayException（502 上游不可用）语义区分。
+        // F-6 会话配额（ADR-018）：超限 429，与 502 语义区分
         if (!callQuota.tryAcquire(sessionId)) {
             throw new QuotaExceededException("本轮对话已达上限（" + callQuota.maxCalls() + " 次），请开新会话继续");
         }
-        persist(sessionId, "user", lastUserMessage(req), agentOf(type, req));
-        // ADR-024 灰度：assignActive 为空 = 实验未运行 → 保持现状（兜底开启）；
-        // 返回 control = 实验明确把这批主体划到旧路径（只回 502，不走规则库）。
-        // 这个区分是必须的：若用 assign()，未配置实验也会得到 control，等于上线一个新实验
-        // 反而把已有兜底关掉。
+        String agentLabel = agentOf(type, req);
+        persist(sessionId, "user", lastUserMessage(req), agentLabel);
+        // ADR-024 灰度：assignActive 为空 = 实验未运行 → 兜底开启；control = 明确划旧路径（只 502）
         String subject = subjectOf(userId, sessionId);
         Map<String, String> experiments = new LinkedHashMap<>();
         Optional<String> rollout = experimentService.assignActive(FALLBACK_ROLLOUT_EXPERIMENT, subject);
         rollout.ifPresent(v -> experiments.put(FALLBACK_ROLLOUT_EXPERIMENT, v));
         String variant = rollout.orElse(null);
-        // degradeAllowed 只看兜底实验：它是「上游失败后是否走规则库」的唯一开关，
-        // 不能因为其它实验（如 librarian 工具调用）的变体不同而改变兜底行为。
+        // degradeAllowed 只看兜底实验：上游失败后是否走规则库的唯一开关
         boolean degradeAllowed = variant == null || ExperimentService.TREATMENT.equals(variant);
-        // 只在真的会走 librarian 的请求上评估 tool-calling 实验：其它专家不受它影响，
-        // 若一律记录归属，实验指标里会混进没有经过该开关的流量，对比结果失真。
+        // 只在真的会走 librarian 的请求上评估 tool-calling 实验，避免指标混入无关流量
         if (type == AgentType.LIBRARIAN) {
-            // 这里与 LibrarianAgent 内部各算一次：分桶是确定性哈希（同 expKey + 同主体恒定同结果），
-            // 且 assignActive 有 30 秒快照缓存，重复调用不额外打库；换来的是两条链路口径一致，
-            // 不需要把结果从 Agent 反传回服务层（那要改 Agent 返回值形状，影响面更大）。
             experimentService.assignActive(LibrarianAgent.TOOL_CALLING_EXPERIMENT, subject)
                     .ifPresent(v -> experiments.put(LibrarianAgent.TOOL_CALLING_EXPERIMENT, v));
         }
-        // T07 评测 Trace：入口埋点（input/context/plan 层，含复杂度档位与多实验归属），dispatch 后 complete/fail（ADR-016）。
-        // 顶层 variant/experiment 继续写兜底实验：历史行与既有查询口径不变。
+        // T07 Trace 入口埋点（含复杂度档位与多实验归属），dispatch 后 complete/fail
         AiEvalTrace trace = traceRecorder.begin(sessionId, type, req, anchored, level, variant,
                 variant == null ? null : FALLBACK_ROLLOUT_EXPERIMENT, experiments);
-        // P1-13 熔断：OPEN 窗口内快速失败（不调 LLM）。多级兜底第二级在此先试本地规则库，未命中才 502
+        return new Prepared(userId, anchored, sessionId, type, trace, degradeAllowed, agentLabel);
+    }
+
+    /** 入口前序产物：两条链路（整段/流式）共享，避免配额/实验/Trace 口径分叉。 */
+    private record Prepared(Integer userId, AiChatRequest anchored, Integer sessionId,
+                            AgentType type, AiEvalTrace trace, boolean degradeAllowed,
+                            String agentLabel) {
+    }
+
+    /**
+     * 流式聊天（SSE，F-1）。与整段 {@link #chat} 共享入口前序（路由/锚定/配额/落用户消息/Trace），
+     * LLM 走透明车道转发全部锚定消息（含前端 system prompt）逐 chunk 下发。
+     *
+     * <p>预流失败（越权 404 / 配额 429 / 无 key / 熔断未命中兜底）在建立 emitter 前以普通 HTTP
+     * 状态抛出，前端据状态回退整段路径（承重墙 F-4）；熔断命中本地规则库则作为单 chunk 下发。</p>
+     *
+     * <p>边界（本期）：服务端专家人设注入（五专家 SYSTEM_PROMPT + RAG）仅在整段路径；
+     * 流式端到端管道先打通，专家人设/工具流留待与 tool_calls 流事件一并集成。</p>
+     */
+    public SseEmitter chatStream(Integer userId, AiChatRequest req) {
+        Prepared p = prepare(userId, req);
+        // 透明车道 key 门禁（与 transparentChat 同规则）：预流同步失败 → 502
+        String key = "openai".equals(modelChat) ? openaiApiKey : dashscopeApiKey;
+        if (key == null || key.isBlank() || "disabled".equals(key)) {
+            throw new BadGatewayException("AI 服务未配置（缺少 API key）");
+        }
+        // 熔断：与整段同语义——命中规则库 → 单 chunk 下发；否则 502 让前端回退。
+        // 放在建立主 emitter 之前：未命中兜底的预流失败以普通 HTTP 状态抛出（前端据状态回退整段路径）。
         if (!circuitBreaker.allowCall()) {
-            return fallbackOrThrow(anchored, sessionId, trace, degradeAllowed,
-                    new BadGatewayException("AI 服务暂时不可用（熔断保护中）"));
-        }
-        try {
-            AiChatVo vo = dispatch(type, userId, anchored);
-            circuitBreaker.onSuccess();
-            traceRecorder.complete(trace, vo);
-            if (sessionId != null) {
-                persist(sessionId, "assistant", vo.content(), agentOf(type, req));
-                // degraded 一并透传：专家层若已降级，绑定会话后不能把标记丢掉
-                return new AiChatVo(vo.content(), vo.sources(), sessionId,
-                        vo.tokensIn(), vo.tokensOut(), vo.latencyMs(), vo.degraded());
+            BadGatewayException breaker = new BadGatewayException("AI 服务暂时不可用（熔断保护中）");
+            traceRecorder.fail(p.trace(), breaker);
+            if (p.degradeAllowed()) {
+                Optional<String> rule = localFallbackService.answerFor(lastUserMessage(p.anchored()));
+                if (rule.isPresent()) {
+                    SseEmitter fallback = new SseEmitter(STREAM_TIMEOUT_MS);
+                    persist(p.sessionId(), "assistant", rule.get(), "fallback");
+                    try {
+                        emitRuleAnswer(sink(fallback), p.sessionId(), rule.get());
+                    } catch (Exception e) {
+                        log.warn("send fallback stream frame failed: {}", e.getMessage());
+                    }
+                    fallback.complete();
+                    return fallback;
+                }
             }
-            return vo;
-        } catch (BadGatewayException e) {
-            circuitBreaker.onFailure();
-            return fallbackOrThrow(anchored, sessionId, trace, degradeAllowed, e);
+            throw breaker;
         }
+        SseEmitter emitter = new SseEmitter(STREAM_TIMEOUT_MS);
+        streamExecutor.execute(() -> runStream(emitter, p));
+        return emitter;
+    }
+
+    /** SSE 帧出口（测试 seam）：正式写 SseEmitter；单测替换为 List 收集，免 MVC handler。 */
+    @FunctionalInterface
+    private interface FrameSink {
+        void emit(String frame) throws Exception;
+    }
+
+    /** 包级可见测试 seam：非空时所有 SSE 帧写入这里（而非 SseEmitter），便于断言帧序列。 */
+    List<String> testFrames;
+
+    private FrameSink sink(SseEmitter emitter) {
+        return frame -> {
+            if (testFrames != null) {
+                testFrames.add(frame);
+            } else {
+                emitter.send(SseEmitter.event().data(frame));
+            }
+        };
+    }
+
+    /** 流式 worker：逐 chunk 下发文本，结束时结算计量/Trace/会话落库。异常帧带 error 字段。 */
+    private void runStream(SseEmitter emitter, Prepared p) {
+        FrameSink sink = sink(emitter);
+        List<Message> messages = toSpringMessages(p.anchored().messages());
+        long start = System.currentTimeMillis();
+        StringBuilder out = new StringBuilder();
+        final ChatResponse[] last = new ChatResponse[1];
+        try {
+            chatClient.prompt().messages(messages).stream().chatResponse()
+                    .doOnNext(resp -> {
+                        last[0] = resp;
+                        String text = chunkText(resp);
+                        if (!text.isEmpty()) {
+                            out.append(text);
+                            try {
+                                sink.emit("{\"d\":\"" + jsonEscape(text) + "\"}");
+                            } catch (Exception e) {
+                                // 客户端断连/写失败 → 终止流
+                                throw new IllegalStateException(e);
+                            }
+                        }
+                    })
+                    .blockLast();
+            String content = out.toString();
+            if (content.isBlank()) {
+                throw new BadGatewayException("AI 服务返回为空");
+            }
+            long latency = System.currentTimeMillis() - start;
+            ChatResponse resp = last[0];
+            Integer tokensIn = null;
+            Integer tokensOut = null;
+            if (resp != null && resp.getMetadata() != null && resp.getMetadata().getUsage() != null) {
+                Usage usage = resp.getMetadata().getUsage();
+                tokensIn = usage.getPromptTokens();
+                tokensOut = usage.getCompletionTokens();
+            }
+            AiChatVo vo = new AiChatVo(content, null, p.sessionId(), tokensIn, tokensOut, (int) latency);
+            // 计量旁路：失败不影响已下发的流
+            try {
+                usageLogger.save(p.userId(), p.anchored(), resp, (int) latency);
+            } catch (Exception e) {
+                log.warn("save usage log (stream) failed: {}", e.getMessage());
+            }
+            circuitBreaker.onSuccess();
+            traceRecorder.complete(p.trace(), vo);
+            if (p.sessionId() != null) {
+                persist(p.sessionId(), "assistant", content, p.agentLabel());
+            }
+            emitMetaAndDone(sink, p.sessionId());
+        } catch (Exception e) {
+            circuitBreaker.onFailure();
+            traceRecorder.fail(p.trace(), e instanceof BadGatewayException bg ? bg
+                    : new BadGatewayException("AI 流式调用失败: " + e.getMessage()));
+            try {
+                sink.emit("{\"error\":\"BAD_GATEWAY\"}");
+            } catch (Exception ignore) {
+                // 客户端已断连，无需再通知
+            }
+        } finally {
+            emitter.complete();
+        }
+    }
+
+    /** 熔断命中规则库：单 chunk 兜底答复（delta + meta + DONE）。 */
+    private static void emitRuleAnswer(FrameSink sink, Integer sessionId, String content) throws Exception {
+        sink.emit("{\"d\":\"" + jsonEscape(content) + "\"}");
+        emitMetaAndDone(sink, sessionId);
+    }
+
+    /** 结束帧：meta（sessionId 供前端续用）+ {@code data: [DONE]}（F-1）。 */
+    private static void emitMetaAndDone(FrameSink sink, Integer sessionId) throws Exception {
+        String meta = sessionId == null ? "{}" : "{\"sessionId\":" + sessionId + "}";
+        sink.emit("{\"meta\":" + meta + "}");
+        sink.emit("[DONE]");
+    }
+
+    /** chunk 文本提取：Spring AI 流式每个 chunk 可能只带增量文本或仅元数据/usage，空链返回空串（不抛）。 */
+    private static String chunkText(ChatResponse resp) {
+        var result = resp == null ? null : resp.getResult();
+        var output = result == null ? null : result.getOutput();
+        String text = output == null ? null : output.getText();
+        return text == null ? "" : text;
+    }
+
+    /** 最小 JSON 字符串转义（SSE delta 手拼 JSON，避免引入 ObjectMapper 接线）。 */
+    private static String jsonEscape(String s) {
+        StringBuilder sb = new StringBuilder(s.length() + 8);
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            switch (c) {
+                case '"' -> sb.append("\\\"");
+                case '\\' -> sb.append("\\\\");
+                case '\n' -> sb.append("\\n");
+                case '\r' -> sb.append("\\r");
+                case '\t' -> sb.append("\\t");
+                default -> {
+                    if (c < 0x20) {
+                        sb.append(String.format("\\u%04x", (int) c));
+                    } else {
+                        sb.append(c);
+                    }
+                }
+            }
+        }
+        return sb.toString();
     }
 
     /** 分桶主体：优先登录用户（体验稳定），其次会话（游客可分桶，且不会因换设备跳到另一组）。 */

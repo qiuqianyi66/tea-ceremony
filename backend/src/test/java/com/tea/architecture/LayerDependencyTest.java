@@ -101,6 +101,14 @@ public class LayerDependencyTest {
         .should(new ArchCondition<>("返回 ApiResponse<?>") {
             @Override
             public void check(JavaMethod method, ConditionEvents events) {
+                // SSE 流式端点：返回的是事件流（chunked），无法包成单个 ApiResponse JSON；
+                // 这是 §7 响应契约的唯一显式例外——Controller 仍只做参数与响应，逻辑在 Service。
+                if (method.getRawReturnType().getName()
+                        .equals("org.springframework.web.servlet.mvc.method.annotation.SseEmitter")) {
+                    events.add(SimpleConditionEvent.satisfied(method,
+                        "SSE 流式端点返回 SseEmitter（事件流，非 ApiResponse 契约）"));
+                    return;
+                }
                 if (!method.getRawReturnType().getName().equals("com.tea.common.response.ApiResponse")) {
                     events.add(SimpleConditionEvent.violated(method,
                         "❌ Controller 方法返回 " + method.getReturnType().getName() + "，非 ApiResponse。\n"
