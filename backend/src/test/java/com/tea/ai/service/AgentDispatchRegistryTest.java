@@ -13,6 +13,7 @@ import com.tea.ai.agent.TasterAgent;
 import com.tea.ai.experiment.service.ExperimentService;
 import com.tea.ai.fallback.LocalFallbackService;
 import com.tea.ai.resilience.AiCallTestSupport;
+import com.tea.ai.tool.MultiToolAgent;
 import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -38,7 +39,7 @@ class AgentDispatchRegistryTest {
                 mock(BrewerAgent.class), mock(MentorAgent.class),
                 mock(AiCallQuota.class), mock(AiCircuitBreaker.class),
                 AiCallTestSupport.executor(), mock(LocalFallbackService.class),
-                mock(ExperimentService.class)));
+                mock(ExperimentService.class), mock(MultiToolAgent.class)));
     }
 
     @Test

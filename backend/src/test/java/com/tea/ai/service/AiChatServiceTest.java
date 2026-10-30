@@ -26,6 +26,7 @@ import com.tea.ai.dto.ChatMessageDto;
 import com.tea.ai.entity.AiChatMessage;
 import com.tea.ai.entity.AiChatSession;
 import com.tea.ai.resilience.AiCallTestSupport;
+import com.tea.ai.tool.MultiToolAgent;
 import com.tea.ai.vo.AiChatVo;
 import com.tea.common.exception.BadGatewayException;
 import com.tea.common.exception.BadRequestException;
@@ -61,6 +62,8 @@ class AiChatServiceTest {
     private final AiUsageLogger usageLogger = mock(AiUsageLogger.class);
     private final ChatMemoryService memoryService = mock(ChatMemoryService.class);
     private final TraceRecorder traceRecorder = mock(TraceRecorder.class);
+    /** P2.2 多工具门面：既有用例不测工具挂载本身，给空工具数组即可（透明链不断）。 */
+    private final MultiToolAgent multiToolAgent = mock(MultiToolAgent.class);
     /** 既有用例默认不限配额（0 = 不限），保持本文件原语义；配额专项用例见 AiCallQuotaTest。 */
     private final AiCallQuota unlimitedQuota = new AiCallQuota(0);
     /** P1-13 熔断：既有用例用未熔断实例（阈值 5，正常放行），保持原行为；熔断专项用例单独构造。 */
@@ -82,7 +85,8 @@ class AiChatServiceTest {
                 orchestrator, usageLogger, traceRecorder, memoryService,
                 librarian, advisor, taster, brewer, mentor,
                 unlimitedQuota, breaker,
-                AiCallTestSupport.executor(), AiCallTestSupport.noFallback(), AiCallTestSupport.noExperiment());
+                AiCallTestSupport.executor(), AiCallTestSupport.noFallback(), AiCallTestSupport.noExperiment(),
+                multiToolAgent);
     }
 
     private static AiChatRequest req(String agent) {
@@ -431,6 +435,9 @@ class AiChatServiceTest {
         when(builder.build()).thenReturn(chatClient);
         when(chatClient.prompt()).thenReturn(reqSpec);
         when(reqSpec.messages(anyList())).thenReturn(reqSpec);
+        // P2.2：透明路径在 messages 后多一步 .tools(...)，钉住它返回 reqSpec，链条才落到既有 call stub
+        when(multiToolAgent.toolsFor(any())).thenReturn(new Object[0]);
+        when(reqSpec.tools(any(Object[].class))).thenReturn(reqSpec);
         when(reqSpec.call()).thenReturn(callSpec);
         when(callSpec.chatResponse()).thenReturn(response);
         when(response.getMetadata()).thenReturn(metadata);
