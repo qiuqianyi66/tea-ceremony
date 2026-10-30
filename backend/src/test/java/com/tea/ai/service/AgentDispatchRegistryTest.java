@@ -34,6 +34,7 @@ class AgentDispatchRegistryTest {
                 mock(ChatClient.Builder.class), "dashscope", "disabled", "sk-openai-test",
                 mock(AgentOrchestrator.class), mock(AiUsageLogger.class), mock(TraceRecorder.class),
                 mock(ChatMemoryService.class),
+                mock(UserMemoryService.class), mock(UserMemoryExtractor.class),
                 mock(LibrarianAgent.class), mock(AdvisorAgent.class), mock(TasterAgent.class),
                 mock(BrewerAgent.class), mock(MentorAgent.class),
                 mock(AiCallQuota.class), mock(AiCircuitBreaker.class),

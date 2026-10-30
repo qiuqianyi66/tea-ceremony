@@ -55,6 +55,8 @@ public class AiChatService {
     private final AiUsageLogger usageLogger;
     private final AgentOrchestrator orchestrator;
     private final ChatMemoryService memoryService;
+    private final UserMemoryService userMemoryService;
+    private final UserMemoryExtractor userMemoryExtractor;
     private final TraceRecorder traceRecorder;
     private final LibrarianAgent librarianAgent;
     private final AdvisorAgent advisorAgent;
@@ -110,6 +112,8 @@ public class AiChatService {
         this.usageLogger = deps.usageLogger();
         this.orchestrator = deps.orchestrator();
         this.memoryService = deps.memoryService();
+        this.userMemoryService = deps.userMemoryService();
+        this.userMemoryExtractor = deps.userMemoryExtractor();
         this.traceRecorder = deps.traceRecorder();
         this.librarianAgent = deps.librarianAgent();
         this.advisorAgent = deps.advisorAgent();
@@ -236,25 +240,40 @@ public class AiChatService {
         return new AiChatVo(content, List.of("本地规则库"), sessionId, null, null, null, true);
     }
 
-    /** F-6 多轮锚定：登录 + 有 sessionId → 读历史（归属已在 chat() 入口 requireSession 校验，这里直接取消息，免二次查库）转 ChatMessageDto 前插；其余原样返回。COMPLEX → 只取最后 5 条（上下文压缩，T09）。 */
+    /**
+     * 上下文前插（F-6 多轮锚定 + F-B2 跨会话画像）：
+     * <ul>
+     *   <li>新会话开场（登录且无 sessionId）：把 user_memory 提炼摘要作为 system 消息前插——
+     *       只放合并摘要，不回灌原始对话；旧会话内不重复注入；</li>
+     *   <li>已有会话（登录且有 sessionId）：历史 ≤20 条前插（归属已在 chat() 入口 requireSession 校验）。
+     *       COMPLEX → 只取最后 5 条（上下文压缩，T09）。</li>
+     * </ul>
+     * 其余场景（游客/空历史）原样返回。
+     */
     private AiChatRequest anchor(Integer userId, AiChatRequest req, ComplexityLevel level) {
-        if (userId == null || req.sessionId() == null) {
-            return req;
-        }
-        List<AiChatMessage> history = memoryService.history(req.sessionId(), ANCHOR_LIMIT);
-        if (history == null || history.isEmpty()) {
-            return req;
-        }
         List<ChatMessageDto> prefix = new ArrayList<>();
-        int maxHistory = level == ComplexityLevel.COMPLEX ? 5 : 20;
-        int from = Math.max(0, history.size() - maxHistory);
-        for (int i = from; i < history.size(); i++) {
-            AiChatMessage m = history.get(i);
-            if (m.getContent() == null || m.getContent().isBlank()) {
-                continue;
+        // F-B2 跨会话画像：新会话开场注入提炼摘要
+        if (userId != null && req.sessionId() == null) {
+            String memory = userMemoryService.summaryForPrompt(userId);
+            if (memory != null && !memory.isBlank()) {
+                prefix.add(new ChatMessageDto("system", memory));
             }
-            if ("user".equals(m.getRole()) || "assistant".equals(m.getRole())) {
-                prefix.add(new ChatMessageDto(m.getRole(), m.getContent()));
+        }
+        // F-6 多轮锚定：已有会话读历史
+        if (userId != null && req.sessionId() != null) {
+            List<AiChatMessage> history = memoryService.history(req.sessionId(), ANCHOR_LIMIT);
+            if (history != null && !history.isEmpty()) {
+                int maxHistory = level == ComplexityLevel.COMPLEX ? 5 : 20;
+                int from = Math.max(0, history.size() - maxHistory);
+                for (int i = from; i < history.size(); i++) {
+                    AiChatMessage m = history.get(i);
+                    if (m.getContent() == null || m.getContent().isBlank()) {
+                        continue;
+                    }
+                    if ("user".equals(m.getRole()) || "assistant".equals(m.getRole())) {
+                        prefix.add(new ChatMessageDto(m.getRole(), m.getContent()));
+                    }
+                }
             }
         }
         if (prefix.isEmpty()) {
@@ -273,11 +292,26 @@ public class AiChatService {
         if (req.sessionId() != null) {
             return req.sessionId();
         }
+        // F-B2 旧会话收尾：开新会话前 best-effort 抽取上一个会话的画像；失败仅 warn，不阻塞聊天承重墙
+        extractPreviousSessionMemory(userId);
         try {
             return memoryService.createSession(userId, topicOf(req), agentOf(type, req)).getId();
         } catch (Exception e) {
             log.warn("create chat session failed: {}", e.getMessage());
             return null;
+        }
+    }
+
+    /** 抽取用户最近一个会话（=刚结束的上一会话）的画像。无历史会话直接跳过。 */
+    private void extractPreviousSessionMemory(Integer userId) {
+        try {
+            List<AiChatSession> recent = memoryService.sessions(userId);
+            if (recent.isEmpty()) {
+                return;
+            }
+            userMemoryExtractor.extractFromSession(userId, recent.get(0).getId());
+        } catch (Exception e) {
+            log.warn("extract previous session memory failed: {}", e.getMessage());
         }
     }
 
