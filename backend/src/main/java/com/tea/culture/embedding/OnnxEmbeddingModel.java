@@ -170,6 +170,14 @@ public class OnnxEmbeddingModel implements EmbeddingModel {
         return encode(List.of(text)).get(0);
     }
 
+    /** BAAI bge v1.5 官方检索指令（FlagEmbedding 用法）：query 侧加前缀、passage 侧不加。 */
+    private static final String QUERY_INSTRUCTION = "为这个句子生成表示以用于检索相关文章：";
+
+    /** query 专用编码（检索侧）：加 BAAI 官方指令前缀后编码。passage 落库走 {@link #encode(String)} 不加前缀。 */
+    public float[] embedQuery(String text) {
+        return encode(QUERY_INSTRUCTION + text);
+    }
+
     // ---- tokenizer（BERT Chinese：lowercase + CJK 逐字 + WordPiece）----
 
     /** 整句 → [CLS] ids [SEP]，按 MAX_SEQ_LEN-2 截断。 */

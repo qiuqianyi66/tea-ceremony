@@ -88,6 +88,22 @@ class OnnxEmbeddingModelTest {
         assertTrue(cosSyn > 0.5, "同义句余弦应达到合理水平(>0.5)，实际=" + cosSyn);
     }
 
+    @Test
+    void embedQueryAddsBaaIInstructionPrefix() {
+        // BAAI 官方：query 侧必须带「为这个句子生成表示以用于检索相关文章：」前缀（passage 侧不带）
+        float[] q = model.embedQuery("黑茶怎么泡最好喝");
+        float[] p = model.encode("黑茶怎么泡最好喝");
+        assertEquals(1024, q.length, "query 向量维度必须 1024");
+        boolean differs = false;
+        for (int i = 0; i < q.length; i++) {
+            if (Math.abs(q[i] - p[i]) > 1e-6f) {
+                differs = true;
+                break;
+            }
+        }
+        assertTrue(differs, "query 前缀必须改变向量（否则前缀未生效，检索侧与 passage 侧同分布）");
+    }
+
     private static double cosine(float[] a, float[] b) {
         double dot = 0;
         for (int i = 0; i < a.length; i++) {
