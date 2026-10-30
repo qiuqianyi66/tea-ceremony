@@ -40,7 +40,6 @@ Tea 不是「调 API 的聊天机器人」，而是一个**带可验证评测体
 
 > **B1 诚实结论**：B1（类目直查）在评测集上未提升 RAG 命中率（0.38 持平）——评测集类目词 case 未成规模；但运行时手工验证命中真实生效（"黑茶怎么泡"→5 黑茶、"乌龙茶和武夷岩茶"→青茶、"紫砂壶泡黑茶"→teawares 2）。RAG 0.16→0.38 的主因是评测链路修复（认证档 30/min 无 429 + 端口对齐实测网关），不是 B1。
 > 注：2026-10-28 另修复欠费下每次检索白调 DashScope embedding 的问题（gateway profile 排除 `DashScopeEmbeddingAutoConfiguration`，容器日志实测 400 Arrearage 消失）。
-> **向量检索未上线**：DashScope embedding 通道因账户欠费阻塞（实测 400 Arrearage）；B3 自托管 embedding（bge-m3 ONNX + pgvector）规划中。当前线上检索 = ILIKE 文本层 + B1 类目直查，向量 RAG 未参与回答生成。
 
 ## 3. 面试叙事案例（真实排查，可深挖）
 
