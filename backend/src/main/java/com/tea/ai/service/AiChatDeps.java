@@ -9,6 +9,7 @@ import com.tea.ai.agent.TasterAgent;
 import com.tea.ai.experiment.service.ExperimentService;
 import com.tea.ai.fallback.LocalFallbackService;
 import com.tea.ai.resilience.AiCallExecutor;
+import com.tea.ai.tool.MultiToolAgent;
 import org.springframework.ai.chat.client.ChatClient;
 
 /**
@@ -40,6 +41,9 @@ public record AiChatDeps(
 
         // ---- 记忆：会话归属校验、多轮锚定、消息落库 ----
         ChatMemoryService memoryService,
+        // ---- 跨会话画像（F-B2）：新会话开场注入摘要 + 旧会话结束 best-effort 抽取 ----
+        UserMemoryService userMemoryService,
+        UserMemoryExtractor userMemoryExtractor,
 
         // ---- 五专家（派发目标）----
         LibrarianAgent librarianAgent,
@@ -55,5 +59,8 @@ public record AiChatDeps(
         // ---- 兜底与实验：上游不可用时的第二级兜底（本地规则库）+ 兜底灰度范围 ----
         AiCallExecutor aiCallExecutor,
         LocalFallbackService localFallbackService,
-        ExperimentService experimentService) {
+        ExperimentService experimentService,
+
+        // ---- 多工具（P2.2）：透明代理挂载的进程内 function calling 门面 ----
+        MultiToolAgent multiToolAgent) {
 }

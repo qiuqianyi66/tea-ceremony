@@ -16,6 +16,7 @@ import com.tea.ai.entity.AiEvalTrace;
 import com.tea.ai.experiment.service.ExperimentService;
 import com.tea.ai.fallback.LocalFallbackService;
 import com.tea.ai.resilience.AiCallExecutor;
+import com.tea.ai.tool.MultiToolAgent;
 import com.tea.ai.util.ChatResponseText;
 import com.tea.ai.vo.AiChatVo;
 import com.tea.common.exception.BadGatewayException;
@@ -55,6 +56,8 @@ public class AiChatService {
     private final AiUsageLogger usageLogger;
     private final AgentOrchestrator orchestrator;
     private final ChatMemoryService memoryService;
+    private final UserMemoryService userMemoryService;
+    private final UserMemoryExtractor userMemoryExtractor;
     private final TraceRecorder traceRecorder;
     private final LibrarianAgent librarianAgent;
     private final AdvisorAgent advisorAgent;
@@ -91,6 +94,8 @@ public class AiChatService {
     private final LocalFallbackService localFallbackService;
     /** A/B 实验（ADR-024）：控制「后端规则兜底」的灰度范围。 */
     private final ExperimentService experimentService;
+    /** 多工具门面（P2.2）：透明代理挂载的进程内 function calling；工具路径失败回落无工具直答。 */
+    private final MultiToolAgent multiToolAgent;
 
     /** 兜底灰度的实验键（实验未创建/未运行时保持现状：兜底开启）。 */
     static final String FALLBACK_ROLLOUT_EXPERIMENT = "ai.fallback.rollout";
@@ -110,6 +115,8 @@ public class AiChatService {
         this.usageLogger = deps.usageLogger();
         this.orchestrator = deps.orchestrator();
         this.memoryService = deps.memoryService();
+        this.userMemoryService = deps.userMemoryService();
+        this.userMemoryExtractor = deps.userMemoryExtractor();
         this.traceRecorder = deps.traceRecorder();
         this.librarianAgent = deps.librarianAgent();
         this.advisorAgent = deps.advisorAgent();
@@ -124,6 +131,7 @@ public class AiChatService {
         this.aiCallExecutor = deps.aiCallExecutor();
         this.localFallbackService = deps.localFallbackService();
         this.experimentService = deps.experimentService();
+        this.multiToolAgent = deps.multiToolAgent();
         this.experts = Map.of(
                 AgentType.LIBRARIAN, librarianAgent::chat,
                 AgentType.ADVISOR, advisorAgent::chat,
@@ -236,25 +244,40 @@ public class AiChatService {
         return new AiChatVo(content, List.of("本地规则库"), sessionId, null, null, null, true);
     }
 
-    /** F-6 多轮锚定：登录 + 有 sessionId → 读历史（归属已在 chat() 入口 requireSession 校验，这里直接取消息，免二次查库）转 ChatMessageDto 前插；其余原样返回。COMPLEX → 只取最后 5 条（上下文压缩，T09）。 */
+    /**
+     * 上下文前插（F-6 多轮锚定 + F-B2 跨会话画像）：
+     * <ul>
+     *   <li>新会话开场（登录且无 sessionId）：把 user_memory 提炼摘要作为 system 消息前插——
+     *       只放合并摘要，不回灌原始对话；旧会话内不重复注入；</li>
+     *   <li>已有会话（登录且有 sessionId）：历史 ≤20 条前插（归属已在 chat() 入口 requireSession 校验）。
+     *       COMPLEX → 只取最后 5 条（上下文压缩，T09）。</li>
+     * </ul>
+     * 其余场景（游客/空历史）原样返回。
+     */
     private AiChatRequest anchor(Integer userId, AiChatRequest req, ComplexityLevel level) {
-        if (userId == null || req.sessionId() == null) {
-            return req;
-        }
-        List<AiChatMessage> history = memoryService.history(req.sessionId(), ANCHOR_LIMIT);
-        if (history == null || history.isEmpty()) {
-            return req;
-        }
         List<ChatMessageDto> prefix = new ArrayList<>();
-        int maxHistory = level == ComplexityLevel.COMPLEX ? 5 : 20;
-        int from = Math.max(0, history.size() - maxHistory);
-        for (int i = from; i < history.size(); i++) {
-            AiChatMessage m = history.get(i);
-            if (m.getContent() == null || m.getContent().isBlank()) {
-                continue;
+        // F-B2 跨会话画像：新会话开场注入提炼摘要
+        if (userId != null && req.sessionId() == null) {
+            String memory = userMemoryService.summaryForPrompt(userId);
+            if (memory != null && !memory.isBlank()) {
+                prefix.add(new ChatMessageDto("system", memory));
             }
-            if ("user".equals(m.getRole()) || "assistant".equals(m.getRole())) {
-                prefix.add(new ChatMessageDto(m.getRole(), m.getContent()));
+        }
+        // F-6 多轮锚定：已有会话读历史
+        if (userId != null && req.sessionId() != null) {
+            List<AiChatMessage> history = memoryService.history(req.sessionId(), ANCHOR_LIMIT);
+            if (history != null && !history.isEmpty()) {
+                int maxHistory = level == ComplexityLevel.COMPLEX ? 5 : 20;
+                int from = Math.max(0, history.size() - maxHistory);
+                for (int i = from; i < history.size(); i++) {
+                    AiChatMessage m = history.get(i);
+                    if (m.getContent() == null || m.getContent().isBlank()) {
+                        continue;
+                    }
+                    if ("user".equals(m.getRole()) || "assistant".equals(m.getRole())) {
+                        prefix.add(new ChatMessageDto(m.getRole(), m.getContent()));
+                    }
+                }
             }
         }
         if (prefix.isEmpty()) {
@@ -273,11 +296,26 @@ public class AiChatService {
         if (req.sessionId() != null) {
             return req.sessionId();
         }
+        // F-B2 旧会话收尾：开新会话前 best-effort 抽取上一个会话的画像；失败仅 warn，不阻塞聊天承重墙
+        extractPreviousSessionMemory(userId);
         try {
             return memoryService.createSession(userId, topicOf(req), agentOf(type, req)).getId();
         } catch (Exception e) {
             log.warn("create chat session failed: {}", e.getMessage());
             return null;
+        }
+    }
+
+    /** 抽取用户最近一个会话（=刚结束的上一会话）的画像。无历史会话直接跳过。 */
+    private void extractPreviousSessionMemory(Integer userId) {
+        try {
+            List<AiChatSession> recent = memoryService.sessions(userId);
+            if (recent.isEmpty()) {
+                return;
+            }
+            userMemoryExtractor.extractFromSession(userId, recent.get(0).getId());
+        } catch (Exception e) {
+            log.warn("extract previous session memory failed: {}", e.getMessage());
         }
     }
 
@@ -342,12 +380,7 @@ public class AiChatService {
 
         List<Message> messages = toSpringMessages(req.messages());
         long start = System.currentTimeMillis();
-        // 透明代理这一跳的容错全交给 AiCallExecutor（硬超时 + 重试 + 熔断按 lane=chat 隔离）；
-        // 失败已由执行器统一转 502，这里不再二次 try/catch，避免把业务异常也吞成 502。
-        ChatResponse response = aiCallExecutor.execute("chat", () -> chatClient.prompt()
-                .messages(messages)
-                .call()
-                .chatResponse(), null);
+        ChatResponse response = callTransparentWithTools(userId, messages);
         int latency = (int) (System.currentTimeMillis() - start);
 
         String content = ChatResponseText.requireNonBlank(response);
@@ -362,6 +395,29 @@ public class AiChatService {
         Integer tokensIn = usage == null ? null : usage.getPromptTokens();
         Integer tokensOut = usage == null ? null : usage.getCompletionTokens();
         return new AiChatVo(content, null, null, tokensIn, tokensOut, latency);
+    }
+
+    /**
+     * 透明代理的 LLM 调用（P2.2：挂载多工具门面）。
+     *
+     * <p>工具路径失败（模型/网关不支持 tool calling，或工具执行期上游异常被执行器统一转 502）
+     * → 回落无工具直答：回答不中断、502 降级链语义不变（与 LibrarianAgent 工具灰度回落同纪律）。
+     * 只 catch {@link BadGatewayException}：配额 429 是请求本身被拒，换路径重跑只会再烧一次配额。</p>
+     */
+    private ChatResponse callTransparentWithTools(Integer userId, List<Message> messages) {
+        try {
+            return aiCallExecutor.execute("chat", () -> chatClient.prompt()
+                    .messages(messages)
+                    .tools(multiToolAgent.toolsFor(userId))
+                    .call()
+                    .chatResponse(), null);
+        } catch (BadGatewayException e) {
+            log.warn("透明代理多工具路径失败，回落无工具直答：{}", e.getMessage());
+            return aiCallExecutor.execute("chat", () -> chatClient.prompt()
+                    .messages(messages)
+                    .call()
+                    .chatResponse(), null);
+        }
     }
 
     private List<Message> toSpringMessages(List<ChatMessageDto> dtos) {
