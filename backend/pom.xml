@@ -124,6 +124,14 @@
             <artifactId>spring-ai-starter-model-openai</artifactId>
             <version>1.1.2</version>
         </dependency>
+        <!-- 自托管 embedding（B1.1 向量 RAG）：onnxruntime 原生推理 bge-large-zh-v1.5 ONNX（1024 维，
+            对齐 culture_chunks.embedding vector(1024) + V3 HNSW 索引，免迁移）。1.20.0 稳定版，Java 8+ 兼容（本工程 21）。
+            DashScope 欠费停充，embedding 通道全本地化，零外部调用。 -->
+        <dependency>
+            <groupId>com.microsoft.onnxruntime</groupId>
+            <artifactId>onnxruntime</artifactId>
+            <version>1.20.0</version>
+        </dependency>
 
         <!-- 测试：单元 + 集成（Testcontainers Postgres） -->
         <dependency>

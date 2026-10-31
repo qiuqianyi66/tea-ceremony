@@ -1,5 +1,6 @@
 package com.tea.culture.service;
 
+import com.tea.culture.embedding.OnnxEmbeddingModel;
 import com.tea.culture.vo.CultureSearchResult;
 import com.tea.culture.vo.EtiquetteItem;
 import com.tea.culture.vo.PersonItem;
@@ -200,7 +201,9 @@ public class CultureSearchService {
         }
         meterRegistry.counter("tea.culture.search.vector.cache", "outcome", "miss").increment();
         try {
-            float[] fresh = model.embed(q);
+            // query 侧走 BAAI 官方检索指令（OnnxEmbeddingModel.embedQuery），passage 落库不受影响；
+            // 非自托管模型（理论残留）保持原语义
+            float[] fresh = (model instanceof OnnxEmbeddingModel oem) ? oem.embedQuery(q) : model.embed(q);
             embeddingCache.put(q, fresh.clone());
             return fresh;
         } catch (Exception e) {
