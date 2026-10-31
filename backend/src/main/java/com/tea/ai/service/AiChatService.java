@@ -16,6 +16,7 @@ import com.tea.ai.entity.AiEvalTrace;
 import com.tea.ai.experiment.service.ExperimentService;
 import com.tea.ai.fallback.LocalFallbackService;
 import com.tea.ai.resilience.AiCallExecutor;
+import com.tea.ai.tool.MultiToolAgent;
 import com.tea.ai.util.ChatResponseText;
 import com.tea.ai.vo.AiChatVo;
 import com.tea.common.exception.BadGatewayException;
@@ -106,6 +107,8 @@ public class AiChatService {
     private final LocalFallbackService localFallbackService;
     /** A/B 实验（ADR-024）：控制「后端规则兜底」的灰度范围。 */
     private final ExperimentService experimentService;
+    /** 多工具门面（P2.2）：透明代理挂载的进程内 function calling；工具路径失败回落无工具直答。 */
+    private final MultiToolAgent multiToolAgent;
 
     /** 兜底灰度的实验键（实验未创建/未运行时保持现状：兜底开启）。 */
     static final String FALLBACK_ROLLOUT_EXPERIMENT = "ai.fallback.rollout";
@@ -141,6 +144,7 @@ public class AiChatService {
         this.aiCallExecutor = deps.aiCallExecutor();
         this.localFallbackService = deps.localFallbackService();
         this.experimentService = deps.experimentService();
+        this.multiToolAgent = deps.multiToolAgent();
         this.experts = Map.of(
                 AgentType.LIBRARIAN, librarianAgent::chat,
                 AgentType.ADVISOR, advisorAgent::chat,
@@ -565,12 +569,7 @@ public class AiChatService {
 
         List<Message> messages = toSpringMessages(req.messages());
         long start = System.currentTimeMillis();
-        // 透明代理这一跳的容错全交给 AiCallExecutor（硬超时 + 重试 + 熔断按 lane=chat 隔离）；
-        // 失败已由执行器统一转 502，这里不再二次 try/catch，避免把业务异常也吞成 502。
-        ChatResponse response = aiCallExecutor.execute("chat", () -> chatClient.prompt()
-                .messages(messages)
-                .call()
-                .chatResponse(), null);
+        ChatResponse response = callTransparentWithTools(userId, messages);
         int latency = (int) (System.currentTimeMillis() - start);
 
         String content = ChatResponseText.requireNonBlank(response);
@@ -585,6 +584,29 @@ public class AiChatService {
         Integer tokensIn = usage == null ? null : usage.getPromptTokens();
         Integer tokensOut = usage == null ? null : usage.getCompletionTokens();
         return new AiChatVo(content, null, null, tokensIn, tokensOut, latency);
+    }
+
+    /**
+     * 透明代理的 LLM 调用（P2.2：挂载多工具门面）。
+     *
+     * <p>工具路径失败（模型/网关不支持 tool calling，或工具执行期上游异常被执行器统一转 502）
+     * → 回落无工具直答：回答不中断、502 降级链语义不变（与 LibrarianAgent 工具灰度回落同纪律）。
+     * 只 catch {@link BadGatewayException}：配额 429 是请求本身被拒，换路径重跑只会再烧一次配额。</p>
+     */
+    private ChatResponse callTransparentWithTools(Integer userId, List<Message> messages) {
+        try {
+            return aiCallExecutor.execute("chat", () -> chatClient.prompt()
+                    .messages(messages)
+                    .tools(multiToolAgent.toolsFor(userId))
+                    .call()
+                    .chatResponse(), null);
+        } catch (BadGatewayException e) {
+            log.warn("透明代理多工具路径失败，回落无工具直答：{}", e.getMessage());
+            return aiCallExecutor.execute("chat", () -> chatClient.prompt()
+                    .messages(messages)
+                    .call()
+                    .chatResponse(), null);
+        }
     }
 
     private List<Message> toSpringMessages(List<ChatMessageDto> dtos) {
