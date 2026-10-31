@@ -2,6 +2,7 @@
 name: 3d-scene
 description: 3D 茶席场景——TresJS/Three 维护，只做视觉层不改状态机，资源按需加载 + KTX2。tea 专属 18。
 type: executable
+last-reviewed: 2026-10-29
 verification: node scripts/verify-gardens.cjs && node scripts/verify-pavilion.cjs
 ---
 
