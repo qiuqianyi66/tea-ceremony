@@ -24,6 +24,7 @@ import com.tea.ai.entity.AiEvalTrace;
 import com.tea.ai.experiment.service.ExperimentService;
 import com.tea.ai.repository.AiEvalTraceRepository;
 import com.tea.ai.resilience.AiCallTestSupport;
+import com.tea.ai.tool.MultiToolAgent;
 import com.tea.ai.vo.AiChatVo;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.util.LinkedHashMap;
@@ -76,9 +77,11 @@ class AiChatServiceExperimentAttributionTest {
         when(traceRepository.save(any(AiEvalTrace.class))).thenAnswer(inv -> inv.getArgument(0));
         return new AiChatService(new AiChatDeps(builder, "dashscope", "test-key", "sk-openai-test",
                 orchestrator, usageLogger, traceRecorder, memoryService,
+                mock(UserMemoryService.class), mock(UserMemoryExtractor.class),
                 librarian, advisor, taster, brewer, mentor,
                 new AiCallQuota(0), new AiCircuitBreaker(5, 30_000),
-                AiCallTestSupport.executor(), AiCallTestSupport.noFallback(), experimentService));
+                AiCallTestSupport.executor(), AiCallTestSupport.noFallback(), experimentService,
+                mock(MultiToolAgent.class)));
     }
 
     private static AiChatRequest req(String agent) {

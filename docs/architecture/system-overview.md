@@ -26,7 +26,7 @@ flowchart TB
     subgraph server["Docker Compose 编排（现行）"]
         nginx["Nginx（frontend 镜像内）<br/>SPA fallback + /api 反代 + 静态资源"]
         api["Spring Boot 后端（java -jar，Flyway 自动迁移）"]
-        db[("PostgreSQL 16 + pgvector（db 服务）")]
+        db[("PostgreSQL 16（pgvector 扩展已装；向量检索预留，embedding 回填中）")]
         nginx --> api
         api --> db
     end
@@ -70,8 +70,8 @@ flowchart LR
 | 茶园 | `stores/garden.ts` | `GardenEnergyService` + `GardenPlantService` | 3D 景观 + 能量收集/阶段推进（S1，PR #40 已合入 main：f600967） |
 | 记录 | `stores/record.ts` | `TastingRecordService` | 品鉴历史 CRUD + 离线同步队列 |
 | 认证 | `stores/ui.ts`（会话） | `AuthService` + `JwtService` | 注册/登录/JWT（Spring Security） |
-| 茶文化 | `services/`（读取） | `CultureSearchService` | 产区/茶人/茶诗/搜索（RAG 检索） |
-| 茶灵 AI | `services/teaAI.ts` | `AiChatService` | 五专家路由 + RAG + 降级承重墙 |
+| 茶文化 | `services/`（读取） | `CultureSearchService` | 产区/茶人/茶诗/搜索（当前 ILIKE 文本层 + B1 类目直查；向量 RAG 预留中，自托管 embedding 落地中） |
+| 茶灵 AI | `services/teaAI.ts` | `AiChatService` | 五专家路由 + 文本检索（向量 RAG 预留）+ 降级承重墙 |
 | 遥测 | — | `TelemetryIngestService` + `TelemetryRetentionService` + `ErrorFingerprintService` + `FingerprintService` + `SloEvaluationService` | 指标摄取/保留、错误指纹、SLO 评估 |
 | 器具 | — | ware 域（并入 tea 相关服务） | 茶器数据（重写中覆盖） |
 
@@ -107,7 +107,7 @@ sequenceDiagram
 flowchart LR
     A["前端 teaAI.ts"] --> B["POST /api/v1/ai/chat"]
     B --> C{"AgentOrchestrator 路由"}
-    C -- 关键词命中文化 --> D["LIBRARIAN（RAG 检索）"]
+    C -- 关键词命中文化 --> D["LIBRARIAN（ILIKE 文本 + B1 类目直查）"]
     C -- 其他 --> E["透明代理（默认 CHAT）"]
     F{"后端可用？"}
     B --> F
@@ -152,7 +152,7 @@ backend/（Spring Boot，Maven）
     ├── ai/         AI 茶灵（五专家 / 编排 / 记忆 / 工具 / 计量）
     ├── auth/       认证（Security + JWT）
     ├── common/     通用（ApiResponse / 异常）
-    ├── culture/    文化检索（RAG）
+    ├── culture/    文化检索（ILIKE 文本 + B1 类目直查；向量 RAG 预留）
     ├── garden/     茶园能量账本（S1）
     ├── record/     品鉴记录
     ├── tea/        茶叶目录

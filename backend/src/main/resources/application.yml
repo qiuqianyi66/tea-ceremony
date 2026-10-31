@@ -5,6 +5,10 @@ spring:
   # ①openAiEmbeddingModel 与 dashscope 双装配 → @MockBean/ObjectProvider 歧义；
   # ②audio/image/moderation 工厂方法无 key 即启动失败（测试环境无 openai key 全炸）。
   # 评测只需 openai chat（网关仅 /v1/chat/completions），其余模态一律排除，零损失。
+  # B1.1 加固（2026-10-30）：同时排除 DashScopeEmbeddingAutoConfiguration——自托管 ONNX 是生产唯一
+  # EmbeddingModel（OnnxEmbeddingConfig @Primary + getIfUnique 消费）；否则配真 AI_DASHSCOPE_API_KEY 时
+  # dashscope embedding bean 无条件装配（key disabled 也装配）→ 双 bean → CultureSearchService 降级纯 ILIKE，
+  # 且欠费账户每次检索多一次失败付费调用（gateway profile 已实测 starter 无条件装配，2026-10-28 记录）。
   autoconfigure:
     exclude:
       - org.springframework.ai.model.openai.autoconfigure.OpenAiEmbeddingAutoConfiguration
@@ -12,6 +16,7 @@ spring:
       - org.springframework.ai.model.openai.autoconfigure.OpenAiAudioTranscriptionAutoConfiguration
       - org.springframework.ai.model.openai.autoconfigure.OpenAiImageAutoConfiguration
       - org.springframework.ai.model.openai.autoconfigure.OpenAiModerationAutoConfiguration
+      - com.alibaba.cloud.ai.autoconfigure.dashscope.DashScopeEmbeddingAutoConfiguration
   # T11 AI（DashScope）：默认占位 disabled，防 starter 无 key 自动配置启动失败
   # （DashScopeAgentAutoConfiguration 强制 key）；AiChatService 检测 disabled/空 → 502 触发前端降级；
   # 生产经环境变量 AI_DASHSCOPE_API_KEY 注入真实 key（官方约定变量名）
@@ -24,8 +29,9 @@ spring:
       api-key: ${AI_DASHSCOPE_API_KEY:disabled}
       # 百炼工作空间专属 endpoint（sk-ws- key 必须配专属 base-url；根地址即可，completionsPath 自带 /api/v1）
       base-url: ${AI_DASHSCOPE_BASE_URL:https://dashscope.aliyuncs.com}
-      # Phase 2 知识注入（T05）：embedding 模型对齐 V3 culture_chunks.embedding vector(1024)
-      # （text-embedding-v3 默认 1024 维；无 key 时 starter 不提供 EmbeddingModel bean，回填自动降级 pending）
+      # embedding 不再走 DashScope（B1.1 自托管 ONNX 接管）：DashScopeEmbeddingAutoConfiguration 已排除（见上），
+      # 生产唯一 EmbeddingModel = OnnxEmbeddingModel（tea.embedding.onnx.model-path 配置 + @Primary，见 OnnxEmbeddingConfig）。
+      # 此配置块保留仅为历史兼容，实际不生效；若未来切回远程 embedding，改排除列表而非本块。
       embedding:
         options:
           model: ${AI_EMBEDDING_MODEL:text-embedding-v3}

@@ -13,7 +13,8 @@ backend/src/test/java/com/tea/auth/service/AuthServiceTest.java:generic-api-key:
 backend/src/test/java/com/tea/auth/security/JwtServiceTest.java:generic-api-key:14
 
 # --- 测试用 application.yml 的 secret / conftest 的 SECRET_KEY（fixture） ---
-backend/src/test/resources/application.yml:generic-api-key:59
+# B1.1 加排除项后 jwt 测试密钥行号由 59 变 62（本文件结构变动时需同步此指纹）
+backend/src/test/resources/application.yml:generic-api-key:62
 backend/tests/conftest.py:generic-api-key:16
 
 # --- TelemetrySanitizer 单测用的 jwt.io 范例 token（合成，仅测脱敏正则） ---

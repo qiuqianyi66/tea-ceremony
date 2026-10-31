@@ -432,17 +432,18 @@ function isLoggedIn(): boolean {
   return !!t && t !== 'dev-token'
 }
 
-/**
- * 茶灵问答（F-A1）。agent 缺省/'auto' → 不传 agent 字段，后端按隐式路由（文化意图→librarian，其余透明代理）；
- * 显式传专家 → 后端路由到该专家（F-M5-7 前端适配）。
- * 承重墙不变：网络不可用/502/无内容 → 规则降级（ruleBasedReply，sources 空）。
- * P-O4：返回 {content, sources}——sources=知识来源数组（RAG 命中时后端返回，降级为空）。
- */
-export async function askTeaMaster(
+/** 茶灵问答请求装配（整段/流式共用，保证两条链路口径一致）：RAG 上下文 + system prompt + 登录态分流 + headers/body。 */
+interface PreparedChat {
+  headers: Record<string, string>
+  body: Record<string, unknown>
+  loggedIn: boolean
+}
+
+async function prepareChatRequest(
   question: string,
-  history: ChatMessage[] = [],
-  agent: TeaAgent = 'auto',
-): Promise<TeaReply> {
+  history: ChatMessage[],
+  agent: TeaAgent,
+): Promise<PreparedChat> {
   // 先尝试获取 RAG 上下文
   const ragContext = await fetchRAGContext(question)
   const systemPrompt = ragContext
@@ -477,10 +478,14 @@ export async function askTeaMaster(
   if (agent !== 'auto') {
     body.agent = agent
   }
+  return { headers, body, loggedIn }
+}
 
+/** 整段请求（/v1/ai/chat）：网络不可用/502/空正文 → 规则降级；429 清 sessionId。承重墙不变。 */
+async function postWhole(question: string, prepared: PreparedChat): Promise<TeaReply> {
   const res = await aiFetch<{ content?: string; sessionId?: number; sources?: string[] | null }>(
     `${API_BASE}/v1/ai/chat`,
-    { method: 'POST', headers, body: JSON.stringify(body) },
+    { method: 'POST', headers: prepared.headers, body: JSON.stringify(prepared.body) },
   )
 
   const payload = res?.data
@@ -495,12 +500,147 @@ export async function askTeaMaster(
     return { content: ruleBasedReply(question), sources: [] }
   }
   // F-2 登录用户：后端返回新会话 id → 持久化，下次续用（配额按 sessionId 计数）
-  if (loggedIn && payload.sessionId) {
+  if (prepared.loggedIn && payload.sessionId) {
     saveAiSessionId(payload.sessionId)
   }
   void track({ category: 'ai', event: 'ai_ask', label: 'ask', result: 'success' })
   // P-O4：解包 sources（透明代理/无命中为 null → 空数组）
   return { content, sources: payload.sources ?? [] }
+}
+
+/**
+ * 茶灵问答（F-A1，整段）。agent 缺省/'auto' → 不传 agent 字段，后端按隐式路由；显式传专家 → 路由到该专家。
+ * 承重墙不变：网络不可用/502/无内容 → 规则降级（ruleBasedReply，sources 空）。
+ * P-O4：返回 {content, sources}。
+ */
+export async function askTeaMaster(
+  question: string,
+  history: ChatMessage[] = [],
+  agent: TeaAgent = 'auto',
+): Promise<TeaReply> {
+  const prepared = await prepareChatRequest(question, history, agent)
+  return postWhole(question, prepared)
+}
+
+/**
+ * B1.3 流式问答（SSE）：fetch + ReadableStream.getReader 逐 chunk 渲染（不用 EventSource——要 POST body + Authorization 头）。
+ *
+ * <p>承重墙 F-4：预流失败（非 2xx）/ 网络 / 超时 / 流未出任何内容 → 自动回退整段 {@link askTeaMaster} 路径，
+ * 评测器与旧前端口径不受影响。30s 空闲超时（每个 chunk 重置）沿用 AI_TIMEOUT_MS；用户主动停止（signal abort）
+ * 保留已出内容、不回退整段。</p>
+ *
+ * @param onDelta 每收到一个增量文本块就回调（AIAsk.vue 逐 token 渲染）
+ * @param signal  外部 AbortSignal（停止按钮）；缺省纯流式
+ */
+export async function askTeaMasterStream(
+  question: string,
+  history: ChatMessage[] = [],
+  agent: TeaAgent = 'auto',
+  onDelta: (chunk: string) => void = () => {},
+  signal?: AbortSignal,
+): Promise<TeaReply> {
+  const prepared = await prepareChatRequest(question, history, agent)
+  try {
+    const streamed = await postStream(prepared, onDelta, signal)
+    if (streamed) {
+      return streamed
+    }
+  } catch {
+    // 落到整段回退
+  }
+  // 流失败 → 整段路径（与 askTeaMaster 同口径，含规则降级承重墙）
+  return postWhole(question, prepared)
+}
+
+/**
+ * 打流式端点并逐帧解析。返回 null 表示「该回退整段」（预流非 2xx / 网络超时 / 无内容）；
+ * 返回 TeaReply 表示流式成功或用户主动停止后的已出内容。
+ */
+async function postStream(
+  prepared: PreparedChat,
+  onDelta: (chunk: string) => void,
+  signal?: AbortSignal,
+): Promise<TeaReply | null> {
+  const controller = new AbortController()
+  let userStopped = false
+  const onExternalAbort = () => {
+    userStopped = true
+    controller.abort()
+  }
+  signal?.addEventListener('abort', onExternalAbort)
+
+  let idleTimer = setTimeout(() => controller.abort(), AI_TIMEOUT_MS)
+  const resetIdle = () => {
+    clearTimeout(idleTimer)
+    idleTimer = setTimeout(() => controller.abort(), AI_TIMEOUT_MS)
+  }
+
+  let content = ''
+  let sessionId: number | undefined
+  try {
+    const res = await fetch(`${API_BASE}/v1/ai/chat/stream`, {
+      method: 'POST',
+      headers: { ...prepared.headers, Accept: 'text/event-stream' },
+      body: JSON.stringify(prepared.body),
+      signal: controller.signal,
+    })
+    // 预流失败（404/429/502 等）：未建立流 → 回退整段
+    if (!res.ok || !res.body) {
+      return null
+    }
+    resetIdle()
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    let buf = ''
+    for (;;) {
+      const { done: eof, value } = await reader.read()
+      if (eof) break
+      buf += decoder.decode(value, { stream: true })
+      // SSE 事件以空行分隔；逐块取出 data: 行
+      for (;;) {
+        const sep = buf.indexOf('\n\n')
+        if (sep < 0) break
+        const block = buf.slice(0, sep)
+        buf = buf.slice(sep + 2)
+        const line = block.split('\n').find((l) => l.startsWith('data:'))
+        if (!line) continue
+        const data = line.slice(5).trim()
+        if (data === '[DONE]') continue
+        let frame: { d?: string; meta?: { sessionId?: number }; error?: string }
+        try {
+          frame = JSON.parse(data)
+        } catch {
+          continue
+        }
+        if (typeof frame.d === 'string' && frame.d) {
+          content += frame.d
+          onDelta(frame.d)
+          resetIdle()
+        } else if (frame.meta && typeof frame.meta.sessionId === 'number') {
+          sessionId = frame.meta.sessionId
+        } else if (frame.error) {
+          // 流中途出错：已有内容则保留（避免重复整段）；无内容 → 回退整段
+          if (!content) return null
+        }
+      }
+    }
+    // 流正常结束但没出任何字 → 回退整段
+    if (!content) return null
+    if (prepared.loggedIn && sessionId != null) saveAiSessionId(sessionId)
+    void track({ category: 'ai', event: 'ai_ask', label: 'ask', result: 'success' })
+    return { content, sources: [] }
+  } catch {
+    // 用户主动停止：保留已出内容（哪怕空），不回退整段
+    if (userStopped) {
+      if (content && prepared.loggedIn && sessionId != null) saveAiSessionId(sessionId)
+      return { content, sources: [] }
+    }
+    // 超时 / 网络 / 断连 → 回退整段
+    return null
+  } finally {
+    clearTimeout(idleTimer)
+    signal?.removeEventListener('abort', onExternalAbort)
+  }
 }
 
 export function getSuggestion(): string[] {

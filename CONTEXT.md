@@ -16,11 +16,11 @@
 | 工艺系数 | 水温、投茶量、时间、茶器、水源对评分的修正系数（0.8-1.2） | `src/services/scoring.ts` |
 | 离线优先 | 数据先写 IndexedDB，再异步同步后端 | `src/services/storage/` |
 | 同步状态 | pending / synced / failed 三态 | `src/types/tasting.ts` |
-| AI 茶灵 | 五专家（单请求单专家路由）+ 茶文化 RAG + LLM 对话（走后端代理），网络不可用时降级规则回复 | `src/services/teaAI.ts` + `backend/.../ai/` |
+| AI 茶灵 | 五专家 + 茶文化 RAG + LLM 对话（走后端代理），离线降级规则回复 | `src/services/teaAI.ts` + `backend/.../ai/` |
 | 茶器 | 泡茶器具（盖碗、紫砂壶、玻璃杯等），影响工艺系数 | `src/data/teawares.ts` |
 | 水源 | 冲泡用水（纯净水、矿泉水、山泉水），影响工艺系数 | `src/data/constants.ts` |
-| 业务异常 | service 层抛出的统一异常（BadRequest 400 / Unauthorized 401 / NotFound 404 / Conflict 409），Controller 不直接抛 HTTPException | `backend/src/main/java/com/tea/common/` |
-| Service 层 | 后端业务逻辑下沉层：CRUD、幂等、密码哈希、JWT 签发；Controller 只做参数与响应 | `backend/src/main/java/com/tea/` |
+| 业务异常 | service 统一异常（400/401/404/409），Controller 不抛 HTTPException | `backend/src/main/java/com/tea/common/` |
+| Service 层 | 业务逻辑层：CRUD/幂等/哈希/JWT；Controller 只做参数与响应 | `backend/src/main/java/com/tea/` |
 | 幂等创建 | 品鉴记录 / 茶园种植按 `user_id + client_id` 去重，重复提交返回同一条 | `backend/src/main/java/com/tea/record/` |
 | 目标用户 | 茶小白 / 有品茶习惯的人 / 冥想·慢生活人群；功能取舍以「三类用户能否完成一席完整茶事」为准 | 定位见 README |
 
@@ -46,6 +46,7 @@
 | ADR-022 | 匿名遥测上报（部分取代 ADR-006 的「不上报」） | ADR-023 | AI 多级兜底与分链路熔断 |
 | ADR-024 | A/B 实验与异常自动回滚 | ADR-025 | Prometheus 指标导出与告警栈 |
 | ADR-026 | AI 回答质量评分（quality_layer） | ADR-027 | 品鉴综合评分按六大茶类加权 |
+| ADR-028 | 跨会话用户画像（user_memory 单表 key-value） | | |
 
 新决策一律写入 `docs/ADR/ADR-0XX.md`，禁止塞进本文档。
 
@@ -54,7 +55,7 @@
 ## 架构关键词
 
 - 前端：Vue 3.5 + TS 6（strict）+ Pinia 4 + Tailwind 4 + Vite 8 + TresJS 5.8 / Three 0.185 + Dexie 4 + ECharts 6 / Chart.js 4，Node 22.18+
-- 后端（新栈）：Spring Boot 3.5 + Spring Data JPA + Spring AI Alibaba（DashScope）+ Flyway + PostgreSQL 16 + pgvector，Java 17+；旧栈 FastAPI 0.115 + SQLAlchemy 2.0（async）+ Alembic 仅维护不新增
+- 后端（新栈）：Spring Boot 3.5 + Spring Data JPA + Spring AI Alibaba（DashScope）+ Flyway + PostgreSQL 16 + pgvector，Java 17+；旧栈 FastAPI 0.115 仅维护不新增
 - 分层：前端 `views → stores → services`；后端 `Controller → Service → Repository`，Controller 只做参数与响应；AI 请求必须走后端代理 `/api/v1/ai/*`，禁止浏览器直连
 - 部署：Docker Compose 编排（db / backend / frontend），旧 Windows 原生脚本保留参考；详见 `DEPLOY.md`
 - 详细架构、目录速查与数据流：`docs/architecture/system-overview.md`
@@ -66,6 +67,6 @@
 - [ ] 第六阶段「简历与面试材料」未做（用户明确不做，暂缓）
 - [ ] 演示短视频未做（用户暂缓）
 - [ ] 生产级收敛 P2（回归测试体系剩余 / 部署运维 PRD 化）待排期
-- 测试基线（2026-09-20）：Vitest 142 用例 / Playwright 34 例 / pytest 51 过 3 跳；迁移测试本地跑只需 `TEST_DATABASE_URL` 指向本地 PG（CI 用 Postgres service）
+- 迁移测试本地跑只需 `TEST_DATABASE_URL` 指向本地 PG（CI 用 Postgres service）；最新测试基线见 `CHANGELOG.md`
 - 到期需复核的架构前提：Redis 四场景（ADR-012 **已被 ADR-021 取代：代码零实现，暂不引入**）、pgvector 混合检索（ADR-013）
 - 已完成里程碑（AI 代理收敛、公开品鉴分享、TresJS 3D 茶席、生产级收敛 P1）见 `CHANGELOG.md` 与对应 ADR
