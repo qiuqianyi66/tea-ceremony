@@ -12,9 +12,8 @@ spring:
       - org.springframework.ai.model.openai.autoconfigure.OpenAiAudioTranscriptionAutoConfiguration
       - org.springframework.ai.model.openai.autoconfigure.OpenAiImageAutoConfiguration
       - org.springframework.ai.model.openai.autoconfigure.OpenAiModerationAutoConfiguration
-      # B1.1 加固（2026-10-30）：与主配置同步排除 DashScope embedding——测试环境同样要求
-      # OnnxEmbeddingModel 为唯一 EmbeddingModel（@Primary + getIfUnique 消费），否则双 bean 使
-      # @MockBean EmbeddingModel / 向量集成测试的 getIfUnique 均失效（dashscope starter key disabled 也装配）。
+      # B1.1：与主配置同步排除 DashScope embedding，测试环境同样要求 OnnxEmbeddingModel 为唯一 EmbeddingModel
+      - com.alibaba.cloud.ai.autoconfigure.dashscope.DashScopeEmbeddingAutoConfiguration
   ai:
     model:
       # 默认 ChatModel 固定 dashscope（@Primary），消除 openai starter 引入后的双 ChatModel 歧义
