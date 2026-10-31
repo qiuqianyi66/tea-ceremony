@@ -46,6 +46,7 @@
 | ADR-022 | 匿名遥测上报（部分取代 ADR-006 的「不上报」） | ADR-023 | AI 多级兜底与分链路熔断 |
 | ADR-024 | A/B 实验与异常自动回滚 | ADR-025 | Prometheus 指标导出与告警栈 |
 | ADR-026 | AI 回答质量评分（quality_layer） | ADR-027 | 品鉴综合评分按六大茶类加权 |
+| ADR-028 | 跨会话用户画像（user_memory 单表 key-value） | | |
 
 新决策一律写入 `docs/ADR/ADR-0XX.md`，禁止塞进本文档。
 

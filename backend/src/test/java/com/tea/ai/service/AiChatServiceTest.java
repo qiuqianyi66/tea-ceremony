@@ -3,6 +3,7 @@ package com.tea.ai.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -38,6 +39,7 @@ import org.springframework.ai.chat.client.ChatClient.CallResponseSpec;
 import org.springframework.ai.chat.client.ChatClient.ChatClientRequestSpec;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.metadata.ChatResponseMetadata;
 import org.springframework.ai.chat.model.ChatResponse;
@@ -60,6 +62,8 @@ class AiChatServiceTest {
     private final MentorAgent mentor = mock(MentorAgent.class);
     private final AiUsageLogger usageLogger = mock(AiUsageLogger.class);
     private final ChatMemoryService memoryService = mock(ChatMemoryService.class);
+    private final UserMemoryService userMemoryService = mock(UserMemoryService.class);
+    private final UserMemoryExtractor userMemoryExtractor = mock(UserMemoryExtractor.class);
     private final TraceRecorder traceRecorder = mock(TraceRecorder.class);
     /** 既有用例默认不限配额（0 = 不限），保持本文件原语义；配额专项用例见 AiCallQuotaTest。 */
     private final AiCallQuota unlimitedQuota = new AiCallQuota(0);
@@ -80,6 +84,7 @@ class AiChatServiceTest {
     private AiChatDeps deps(String modelChat, String dashscopeKey, String openaiKey, AiCircuitBreaker breaker) {
         return new AiChatDeps(builder, modelChat, dashscopeKey, openaiKey,
                 orchestrator, usageLogger, traceRecorder, memoryService,
+                userMemoryService, userMemoryExtractor,
                 librarian, advisor, taster, brewer, mentor,
                 unlimitedQuota, breaker,
                 AiCallTestSupport.executor(), AiCallTestSupport.noFallback(), AiCallTestSupport.noExperiment());
@@ -478,5 +483,94 @@ class AiChatServiceTest {
 
         assertThat(closedBreaker.currentFailures()).isZero();
         assertThat(closedBreaker.isOpen()).isFalse();
+    }
+
+    // ---- F-B2 跨会话记忆注入（ADR-028） ----
+
+    @Test
+    void newSessionInjectsUserMemoryAsSystemMessage() {
+        // 登录用户开新会话（sessionId=null）：user_memory 摘要作为 system 消息前插
+        mockTransparentReply("透明回答");
+        when(orchestrator.routeToAgent(any())).thenReturn(null);
+        when(orchestrator.complexity(any())).thenReturn(ComplexityLevel.SIMPLE);
+        String memory = "关于这位茶客，我们已知（回答时自然照应）：\n- 忌口：忌绿茶";
+        when(userMemoryService.summaryForPrompt(1)).thenReturn(memory);
+        when(memoryService.sessions(1)).thenReturn(List.of());
+        AiChatSession session = new AiChatSession();
+        session.setId(7);
+        when(memoryService.createSession(eq(1), any(), eq("chat"))).thenReturn(session);
+
+        service("test-key").chat(1, new AiChatRequest(
+                List.of(new ChatMessageDto("user", "喝什么好")), "chat", null));
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<Message>> captor = ArgumentCaptor.forClass(List.class);
+        verify(reqSpec).messages(captor.capture());
+        List<Message> sent = captor.getValue();
+        assertEquals(2, sent.size());
+        // 第一条 = system 注入的记忆摘要；第二条 = 用户本轮消息
+        assertTrue(sent.get(0) instanceof SystemMessage, "首条应为 system 记忆注入");
+        assertEquals(memory, ((SystemMessage) sent.get(0)).getText());
+        assertEquals("喝什么好", ((UserMessage) sent.get(1)).getText());
+    }
+
+    @Test
+    void blankUserMemoryMeansNoSystemInjection() {
+        // 无画像（summaryForPrompt 返回空串）→ 不注入 system 消息
+        mockTransparentReply("透明回答");
+        when(orchestrator.routeToAgent(any())).thenReturn(null);
+        when(orchestrator.complexity(any())).thenReturn(ComplexityLevel.SIMPLE);
+        when(userMemoryService.summaryForPrompt(1)).thenReturn("");
+        when(memoryService.sessions(1)).thenReturn(List.of());
+        AiChatSession session = new AiChatSession();
+        session.setId(7);
+        when(memoryService.createSession(eq(1), any(), eq("chat"))).thenReturn(session);
+
+        service("test-key").chat(1, new AiChatRequest(
+                List.of(new ChatMessageDto("user", "喝什么好")), "chat", null));
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<Message>> captor = ArgumentCaptor.forClass(List.class);
+        verify(reqSpec).messages(captor.capture());
+        List<Message> sent = captor.getValue();
+        assertEquals(1, sent.size());
+        assertTrue(sent.get(0) instanceof UserMessage, "无画像时不应注入 system 消息");
+    }
+
+    @Test
+    void existingSessionDoesNotInjectUserMemory() {
+        // 已有会话（sessionId 非空）：只锚定历史，不重复注入 user_memory 摘要
+        mockTransparentReply("锚定回答");
+        AiChatRequest r = new AiChatRequest(List.of(new ChatMessageDto("user", "继续")), "chat", 3);
+        when(orchestrator.routeToAgent(r)).thenReturn(AgentType.CHAT);
+        when(orchestrator.complexity(r)).thenReturn(ComplexityLevel.SIMPLE);
+        when(memoryService.requireSession(1, 3)).thenReturn(new AiChatSession());
+        when(memoryService.history(eq(3), eq(20))).thenReturn(List.of());
+
+        service("test-key").chat(1, r);
+
+        // 已有会话路径不调用 summaryForPrompt（画像只在新会话开场注入一次）
+        verify(userMemoryService, never()).summaryForPrompt(any());
+    }
+
+    @Test
+    void newSessionTriggersBestEffortMemoryExtraction() {
+        // 登录用户开新会话前：best-effort 抽取上一个旧会话的画像（失败不阻塞）
+        mockTransparentReply("透明回答");
+        when(orchestrator.routeToAgent(any())).thenReturn(null);
+        when(orchestrator.complexity(any())).thenReturn(ComplexityLevel.SIMPLE);
+        when(userMemoryService.summaryForPrompt(1)).thenReturn("");
+        AiChatSession prev = new AiChatSession();
+        prev.setId(99);
+        when(memoryService.sessions(1)).thenReturn(List.of(prev));
+        AiChatSession session = new AiChatSession();
+        session.setId(7);
+        when(memoryService.createSession(eq(1), any(), eq("chat"))).thenReturn(session);
+
+        service("test-key").chat(1, new AiChatRequest(
+                List.of(new ChatMessageDto("user", "新开会话")), "chat", null));
+
+        // 对最近一个旧会话（id=99）做一次抽取
+        verify(userMemoryExtractor).extractFromSession(1, 99);
     }
 }
