@@ -66,6 +66,16 @@ class McpServerIntegrationTest extends PostgresIntegrationTestBase {
     }
 
     @Test
+    void p22ExposesAtLeastThreeTools() {
+        // P2.2：/mcp 暴露 ≥3 工具——cultureSearch（P1-1）+ brew_params + brew_advice（P2.2）。
+        // my_tasting_records 不在此列：外部 MCP 无登录会话，单例永远回「未登录」，是死工具。
+        List<String> names = mcpServer.listTools().stream().map(McpSchema.Tool::name).toList();
+
+        assertThat(names).contains("cultureSearch", "brew_params", "brew_advice");
+        assertThat(names.size()).as("/mcp 工具总数应 ≥3").isGreaterThanOrEqualTo(3);
+    }
+
+    @Test
     void cultureSearchToolQueriesSeededDatabase() {
         // 经 @Tool 方法直查种子数据（V2 种子：龙井在库）
         String out = cultureSearchTool.cultureSearch("龙井");

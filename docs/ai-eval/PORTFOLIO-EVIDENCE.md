@@ -27,7 +27,8 @@ Tea 不是「调 API 的聊天机器人」，而是一个**带可验证评测体
 | 跨会话长期记忆（F-B2 / ADR-028） | `UserMemoryService` + `UserMemoryExtractor` + V12 `user_memory` 表 | 单表 key-value（preference/restriction/habit 三类摘要），新会话开场注入 system prompt，旧会话结束 best-effort LLM 抽取合并写回；隐私红线：不存敏感信息、可查看可删除、越权归属校验 |
 | 熔断 + 降级 | 后端 CircuitBreaker/降级链 + 前端 `teaAI.ts` | 30s AI 超时 / 5s RAG 超时 / 规则回复兜底 |
 | AB 实验 | 后端分流 | /api/v1/ai/chat 分流记录 |
-| MCP Server | `CultureSearchTool`（SSE /mcp 端点） | 检索工具暴露为 MCP 协议 |
+| MCP Server | `ai/mcp/McpToolConfig`（SSE /mcp 端点） | 3 个工具：cultureSearch（P1-1）+ brew_params / brew_advice（P2.2）；`McpServerIntegrationTest.p22ExposesAtLeastThreeTools` 锁定 |
+| 多工具 Agent（进程内 function calling） | `ai/tool/` 4 工具 + `MultiToolAgent` 门面挂透明代理 | userId 服务端绑定防越权；工具失败回落无工具直答，502 降级链不变（见 §3.4） |
 | 管理 backfill 管道（含安全审计） | /api/v1/admin/** + X-Admin-Token | Fail-closed，未配 token 全部 401 |
 | 网关通道与人设链路排查 | 前端→yg-gateway→上游 LLM | 见 §3 案例 |
 
@@ -65,7 +66,14 @@ Tea 不是「调 API 的聊天机器人」，而是一个**带可验证评测体
 - **v9 诚实归因**：RAG 0.38→0.48（+0.10）是向量层真实增量（recall@k=3/3 佐证语义 chunk 开始被召回）；但 overall 0.95→0.86 **不是向量的锅**——judgeCoverage 0.97 + TAS/MEN advisory 单轮 judge 波动 + CHA-008 单例 http=0 + 网关 10-29 key 轮换环境噪声。运行时回归全过（metrics: vector attempted/rows 正常，0 degraded）。
 - 举证价值：展示**欠费就自托管、维度匹配免迁移、降级链保留、数字分层归因不贪功**的工程取舍。
 
-### 3.4 跨会话长期记忆（user_memory 单表 key-value）
+### 3.4 多工具 Agent：工具挂哪、不挂哪（边界纪律，B1.2 / P2.2，2026-10-30）
+- 机制：4 个 Spring AI `@Tool` 工具——culture_query（试点已有）+ brew_params（茶库参数/类目基准/投茶量估算）+ my_tasting_records（本人记录+均分）+ brew_advice（参数+历史+文化备注组合）；`MultiToolAgent` 门面每请求按 userId 绑定后挂到透明代理 ChatClient，AiChatService 只依赖门面一个 bean。
+- 安全：userId 从不由模型参数传入——`boundTo` 在请求发起时服务端绑定，模型无法伪造越权读他人记录；未绑定的记录工具直接回「未登录」文案。
+- 降级：工具路径 BadGateway → 回落无工具直答（与 LibrarianAgent 工具灰度同纪律）；工具内部异常吞掉转错误文案，绝不让整轮对话 500。
+- MCP 边界：/mcp 只暴露无会话状态的 3 个工具（cultureSearch / brew_params / brew_advice）；my_tasting_records 不对外（外部 MCP 无登录态，单例永远回「未登录」= 死工具）。
+- 证据：`mvn test` 536 全绿（含 McpServerIntegrationTest 断言 /mcp ≥3 工具 + SSE 匿名握手；AiChatService 熔断/降级 8+5+27 用例全过）；评测集新增 CHA-010/011/012 三条工具考点，**仅 dry-run 管道验证（12 条解析无崩）**——真实 LLM 工具调用命中率未实测（需 live 容器 + 有效 key，欠费环境不硬跑）。
+
+### 3.5 跨会话长期记忆（user_memory 单表 key-value）
 - **问题**：会话级记忆（ai_chat_messages）只在单会话内生效——用户在会话 A 说「我忌绿茶」，会话 B 开场茶灵不记得。F-B2 要求跨会话记住稳定偏好，且守隐私红线（可查看/可删除/不存敏感信息）。
 - **方案**：`user_memory(user_id, key, value, source_session_id)` 单表，`key ∈ {preference, restriction, habit}`，`uk(user_id, key)` 每用户每类恒一行。LLM 把「旧摘要 + 本会话新内容」合并成一句新摘要 UPDATE 回去，不追加行（摘要不膨胀）。
 - **写入时机**：用户开新会话（无 sessionId）时，对最近一个旧会话做一次 best-effort LLM 抽取；失败仅 warn，不阻塞聊天承重墙（与 persist/计量旁路同语义）。
@@ -77,11 +85,12 @@ Tea 不是「调 API 的聊天机器人」，而是一个**带可验证评测体
 
 ## 4. 一句话可复述的「深度证明」
 
-「Tea 的 AI 层不是堆 prompt：它有一个 50 条评测集 + LLM 独立评委 + 覆盖口径纪律（judgeCoverage=1）的自评系统，把整体分从 0.81 推到 0.95、program 正确率推到 1.0，并用 RAG 命中率单独追踪检索短板；每个机制（专家路由/记忆/熔断/MCP/backfill 审计）都有代码、测试和真实排查案例。」
+「Tea 的 AI 层不是堆 prompt：它有一个 50 条评测集 + LLM 独立评委 + 覆盖口径纪律（judgeCoverage=1）的自评系统，把整体分从 0.81 推到 0.95、program 正确率推到 1.0，并用 RAG 命中率单独追踪检索短板；每个机制（专家路由/记忆/熔断/MCP/多工具/backfill 审计）都有代码、测试和真实排查案例。」
 
 ## 5. 待补充
 
 - [x] v8-postB1 数字回填（§2 表格，0.95 / 持平 0.38）
 - [x] ITERATIONS.md 追加 v8 版本行
 - [ ] 网关排查案例补 yg-gateway 配置还原证据（D:\yg-gateway\config.json.bak-20261028）
-- [x] B1.1 自托管 embedding（bge-large-zh-v1.5 ONNX + pgvector）落地（2026-10-30，v9：RAG 0.38→0.48，见 §3.3）——欠费下向量通道恢复的唯一路径
+- [x] B1.1 自托管 embedding（bge-large-zh-v1.5 ONNX + pgvector）落地（2026-10-30，v9：RAG 0.38→0.48，见 §3.3）——欠费下向量通道恢复的唯一路径；蓝图预留的 bge-m3 方案被拒（推理更重，见 ADR-029）
+- [ ] P2.2 多工具 live 评测：容器 + 有效 key 就位后跑 CHA-010/011/012，实测工具调用命中率（当前仅 dry-run 管道验证）

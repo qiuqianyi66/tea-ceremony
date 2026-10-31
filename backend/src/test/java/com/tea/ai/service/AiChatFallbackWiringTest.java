@@ -24,6 +24,7 @@ import com.tea.ai.entity.AiEvalTrace;
 import com.tea.ai.experiment.service.ExperimentService;
 import com.tea.ai.fallback.LocalFallbackService;
 import com.tea.ai.resilience.AiCallTestSupport;
+import com.tea.ai.tool.MultiToolAgent;
 import com.tea.ai.vo.AiChatVo;
 import com.tea.common.exception.BadGatewayException;
 import com.tea.common.exception.QuotaExceededException;
@@ -66,7 +67,8 @@ class AiChatFallbackWiringTest {
                 mock(UserMemoryService.class), mock(UserMemoryExtractor.class),
                 librarian, advisor, taster, brewer, mentor,
                 quota, breaker,
-                AiCallTestSupport.executor(), fallback, experimentService));
+                AiCallTestSupport.executor(), fallback, experimentService,
+                mock(MultiToolAgent.class)));
     }
 
     private static AiChatRequest ask(String text) {
