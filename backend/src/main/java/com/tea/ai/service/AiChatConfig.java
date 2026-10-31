@@ -38,6 +38,8 @@ public class AiChatConfig {
                                  AiUsageLogger usageLogger,
                                  TraceRecorder traceRecorder,
                                  ChatMemoryService memoryService,
+                                 UserMemoryService userMemoryService,
+                                 UserMemoryExtractor userMemoryExtractor,
                                  LibrarianAgent librarianAgent,
                                  AdvisorAgent advisorAgent,
                                  TasterAgent tasterAgent,
@@ -52,6 +54,7 @@ public class AiChatConfig {
                 chatClientBuilder, modelChat, dashscopeApiKey, openaiApiKey,
                 orchestrator, usageLogger, traceRecorder,
                 memoryService,
+                userMemoryService, userMemoryExtractor,
                 librarianAgent, advisorAgent, tasterAgent, brewerAgent, mentorAgent,
                 callQuota, circuitBreaker,
                 aiCallExecutor, localFallbackService, experimentService);
