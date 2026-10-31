@@ -31,7 +31,7 @@
 - **完整流程闭环**：备器 → 煮水 → 温杯 → 醒茶 → 冲泡 → 观色 → 闻香 → 品味，八维口感评分 × 冲泡工艺系数
 - **离线优先**：Dexie.js + IndexedDB，品鉴记录先落本地，断网也能泡，联网后自动同步
 - **可分享**：一键生成带二维码的品鉴卡 PNG / 只读分享链接，把这席茶送给朋友
-- **AI 茶灵**：五角色专家（选茶 / 冲泡 / 品鉴 / 茶文化 / 成长导师）+ RAG 向量检索，回答附知识来源引用卡片（可溯源），断网自动降级到规则回复
+- **AI 茶灵**：五角色专家（选茶 / 冲泡 / 品鉴 / 茶文化 / 成长导师）+ 多工具 Agent + SSE 流式回复 + 跨会话长期记忆；RAG 向量检索（自托管本地 embedding，答案可溯源），断网自动降级到规则回复
 
 ## 核心界面
 
@@ -59,23 +59,23 @@
 | --- | --- |
 | 前端 | Vue 3 + TypeScript（strict）+ Pinia + Vue Router + Tailwind CSS + Vite |
 | 3D | Three.js / TresJS（KTX2 压缩贴图 + basis transcode） |
-| 数据 | Dexie.js + IndexedDB（离线优先，`sync_status` 重试队列）；PostgreSQL + pgvector（RAG 向量检索） |
+| 数据 | Dexie.js + IndexedDB（离线优先，`sync_status` 重试队列）；PostgreSQL + pgvector（RAG 向量检索）+ user_memory（跨会话记忆） |
 | 后端 | Spring Boot 3.5 + Spring Data JPA + Spring AI Alibaba + Flyway（旧 FastAPI 仅维护） |
-| AI | 后端代理 `/api/v1/ai/*`（浏览器禁止直连第三方），RAG 向量检索 + 五角色专家，DashScope，失败降级到规则引擎；熔断保护 + request_id 请求链路贯穿 |
+| AI | 后端代理 `/api/v1/ai/*`（浏览器禁止直连第三方）；五角色专家 + 多工具 Agent + SSE 流式回复 + 跨会话长期记忆；RAG 向量检索（自托管 bge-large-zh-v1.5 ONNX 本地嵌入 + pgvector cosine，DashScope 远程备降）；熔断降级 + request_id 请求链路贯穿 |
 | 部署 | Docker Compose（frontend / backend / postgres / nginx），公网 ECS 在线，GitHub Pages 静态 Demo |
-| 测试 | Vitest + fake-indexeddb、Playwright E2E + axe、Maven（211 tests + Testcontainers + ArchUnit）、pytest（旧栈） |
-| CI | GitHub Actions 13 job：类型检查+build+smoke / Vitest / Biome / 依赖审计 / E2E / a11y / pytest / Spring Boot Maven / 迁移往返 / Compose 校验 / harness 一致性 |
+| 测试 | Vitest + fake-indexeddb、Playwright E2E + axe、Maven 全量测试（Testcontainers + ArchUnit + LayerDependency）、pytest（旧栈） |
+| CI | GitHub Actions 14 job：类型检查+build+smoke / Vitest / Biome / 依赖审计 / gitleaks 密钥扫描 / E2E / axe 可访问性 / 后端语法 / pytest / ruff+bandit / Spring Boot Maven / 迁移往返 / Compose 校验 / harness 一致性 |
 
 ## 工程质量与治理
 
 流程、规范、验证都写成代码，机器可查，不靠自觉。
 
 - **AI 协作规则**：`AGENTS.md` 定义红线、开发流程与三轨道分诊（Fast / Guided / Controlled），先拆解、再动手、后验证
-- **架构决策记录**：ADR-001~020，每个架构选择写「选 A 理由 + 否 B 理由 + 反转条件」；被砍的方案也留档（如 Graph 编排，四维甄别 0/4）
-- **技能体系**：66 个通用 + 39 个领域技能，按需加载，README 路由表治理
-- **CI 合并门禁**：13 job 全绿才合并——类型检查 / 单测 / lint / 依赖审计 / E2E / a11y / 后端双栈测试 / 迁移往返 / Compose 校验 / harness 一致性
-- **确定性体检**：`verify-harness.cjs`（ADR/CI/技能/路径一致性，期望 ERRORS: []）、`audit-redlines.cjs`（红线机械化）、`audit-wiki-drift.cjs`（API 契约双向核对）
-- **AI 评测闭环**：50 条评测集 + LLM-as-Judge（人工复核一致率 95%）+ 全量真实分 v8 0.95（50 条 full-judge，LLM-as-Judge），判分口径可追溯
+- **架构决策记录**：ADR-001~029（29 个），每个架构选择写「选 A 理由 + 否 B 理由 + 反转条件」；被砍的方案也留档（如 Graph 编排，四维甄别 0/4）；最近的决策覆盖自托管本地 embedding（ADR-029）与跨会话长期记忆（ADR-028）
+- **技能体系**：66 个通用/领域技能（`.agents/skills`）+ 39 个流程族技能（`.harness/skills`），按需加载，README 路由表治理
+- **CI 合并门禁**：14 job 全绿才合并——类型检查 / 单测 / lint / 依赖审计 / gitleaks / E2E / a11y / 后端双栈测试 / 迁移往返 / Compose 校验 / harness 一致性
+- **确定性体检**：`verify-harness.cjs`（ADR/CI/技能/路径一致性，期望 ERRORS: []）、`audit-redlines.cjs`（红线机械化）、`audit-wiki-drift.cjs`（API 契约双向核对）、`audit-context-budget.cjs`（常驻上下文 token 预算）
+- **AI 评测闭环**：50 条评测集 + LLM-as-Judge 全量判分；v9 全量真实分 0.86（2026-10-30，judgeCoverage 0.97）、RAG 命中率 0.48（recall@k=3/3）；口径纪律：只引用 judgeCoverage ≥ 0.95 的版本（v8 0.95 基线可查）
 - **分支保护**：main 只走 PR，CI 全绿才合并
 
 ## 快速开始
@@ -90,7 +90,7 @@ npm run dev
 完整全栈（Docker Compose：PostgreSQL + Spring Boot 后端）：
 
 ```bash
-Copy-Item .env.example .env   # 编辑 POSTGRES_PASSWORD、JWT_SECRET、DB_PASSWORD
+cp .env.example .env        # Windows PowerShell 用 Copy-Item .env.example .env；编辑 POSTGRES_PASSWORD、JWT_SECRET、DB_PASSWORD
 docker compose up -d --build
 # 前端 http://localhost:5173，后端 http://localhost:18080
 ```
