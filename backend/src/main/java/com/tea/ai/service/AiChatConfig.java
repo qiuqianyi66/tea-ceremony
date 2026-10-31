@@ -9,6 +9,7 @@ import com.tea.ai.agent.TasterAgent;
 import com.tea.ai.experiment.service.ExperimentService;
 import com.tea.ai.fallback.LocalFallbackService;
 import com.tea.ai.resilience.AiCallExecutor;
+import com.tea.ai.tool.MultiToolAgent;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -49,7 +50,8 @@ public class AiChatConfig {
                                  AiCircuitBreaker circuitBreaker,
                                  AiCallExecutor aiCallExecutor,
                                  LocalFallbackService localFallbackService,
-                                 ExperimentService experimentService) {
+                                 ExperimentService experimentService,
+                                 MultiToolAgent multiToolAgent) {
         return new AiChatDeps(
                 chatClientBuilder, modelChat, dashscopeApiKey, openaiApiKey,
                 orchestrator, usageLogger, traceRecorder,
@@ -57,6 +59,7 @@ public class AiChatConfig {
                 userMemoryService, userMemoryExtractor,
                 librarianAgent, advisorAgent, tasterAgent, brewerAgent, mentorAgent,
                 callQuota, circuitBreaker,
-                aiCallExecutor, localFallbackService, experimentService);
+                aiCallExecutor, localFallbackService, experimentService,
+                multiToolAgent);
     }
 }
