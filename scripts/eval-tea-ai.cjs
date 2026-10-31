@@ -129,7 +129,12 @@ async function main() {
       judgeScores: r.judgeScores ?? null,
       points: explainPoints(caseDef, r),
     }))
-    const run = { id: caseDef.id, file, type: caseDef.type, precondition: caseDef.precondition ?? null, input: caseDef.input.slice(0, 60), score: round(scores[0] ?? 0), programOnlyScore: programOnlyScore === null ? null : round(programOnlyScore), judgePointCount, judgeFilledCount, passResult: pk, httpStatus: last.httpStatus, contentSnippet: (last.content || '').slice(0, 80), sources: Array.isArray(last.sources) ? last.sources.length : null, tokensIn: last.tokensIn ?? null, tokensOut: last.tokensOut ?? null, latencyMs: last.latencyMs ?? null, points: pointDetail, iterations: iterationDetail, defaultPath: DEFAULT_PATH_FILES.has(path.basename(file, '.yaml')) }
+    // B1.1 RAG 召回质量字段：sourceNames 落名（不只计数）；kbDependent = case 要求知识库命中；
+    // ragCited = 回答正文是否真的提到至少一个 source 名（召回了但模型不引用 = 白召回）。
+    const sourceNames = Array.isArray(last.sources) ? last.sources.filter((s) => typeof s === 'string' && s) : []
+    const kbDependent = (caseDef.points || []).some((p) => typeof p.name === 'string' && p.name.includes('知识库命中'))
+    const ragCited = sourceNames.some((n) => (last.content || '').includes(n))
+    const run = { id: caseDef.id, file, type: caseDef.type, precondition: caseDef.precondition ?? null, input: caseDef.input.slice(0, 60), score: round(scores[0] ?? 0), programOnlyScore: programOnlyScore === null ? null : round(programOnlyScore), judgePointCount, judgeFilledCount, passResult: pk, httpStatus: last.httpStatus, contentSnippet: (last.content || '').slice(0, 80), sources: Array.isArray(last.sources) ? last.sources.length : null, sourceNames: sourceNames.length > 0 ? sourceNames : null, kbDependent, ragCited: sourceNames.length > 0 ? ragCited : null, tokensIn: last.tokensIn ?? null, tokensOut: last.tokensOut ?? null, latencyMs: last.latencyMs ?? null, points: pointDetail, iterations: iterationDetail, defaultPath: DEFAULT_PATH_FILES.has(path.basename(file, '.yaml')) }
     runs.push(run)
     if (run.score < 1) failures.push({ id: caseDef.id, type: caseDef.type, score: run.score, input: caseDef.input, httpStatus: run.httpStatus, contentSnippet: run.contentSnippet, sources: run.sources, points: pointDetail, iterations: iterationDetail })
   }
@@ -320,6 +325,10 @@ function printSummary(report) {
   if (typeof a.ragHitRate === 'number') {
     const bp = a.ragHitRateByPath
     console.log(`RAG 命中率: 全量 ${a.ragHitRate} | 默认路径 ${bp.defaultPath} | 专家路径 ${bp.expertPath}`)
+  }
+  // B1.1 RAG 召回质量：KB 依赖 case recall@k + 来源引用率
+  if (typeof a.ragRecallK === 'number') {
+    console.log(`RAG recall@k（该召回的 KB 题）: ${a.ragRecallK} (${a.ragRecallKDetail}) | 来源引用率: ${a.ragCitationRate ?? 'null'}`)
   }
   console.log(`system prompt: ${report.config.systemPrompt}`)
   console.log(`报告: ${path.relative(ROOT, outPath(report))}`)

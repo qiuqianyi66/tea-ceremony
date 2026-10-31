@@ -164,6 +164,25 @@ function aggregate(runs, k = 3) {
   const ragHitRateByPath = { defaultPath: ragHit(defRuns), expertPath: ragHit(expRuns) }
   // ---- /T07 ----
 
+  // ---- B1.1 RAG 召回质量（recall@k + 引用率）----
+  // ragHitRate 只看「是否返回了来源」，不看来源对不对、有没有被用上——B1.1 自托管 embedding
+  // 上线后需要更狠的口径：
+  //   1) ragRecallK：KB 依赖 case（points 含「知识库命中」program 考点）中 sources>0 的占比
+  //      —— 不是所有 50 条都该走检索（chat 透明代理/常识题不该硬拉），只考核「该召回的召没召回」；
+  //   2) ragCitationRate：有 sources 的 run 中，回答正文实际提到至少一个 source 名的占比
+  //      —— 召回了但模型压根不引用 = 检索白做（悬空引用卡片）。
+  // run 上需有 kbDependent(bool) / sourceNames(string[]) / ragCited(bool)，缺字段时指标为 null（口径不臆测）。
+  const kbRuns = runs.filter((r) => r.kbDependent === true)
+  const ragRecallK = kbRuns.length === 0
+    ? null
+    : round(kbRuns.filter((r) => typeof r.sources === 'number' && r.sources > 0).length / kbRuns.length)
+  const kbHit = kbRuns.filter((r) => typeof r.sources === 'number' && r.sources > 0).length
+  const withSources = runs.filter((r) => Array.isArray(r.sourceNames) && r.sourceNames.length > 0)
+  const ragCitationRate = withSources.length === 0
+    ? null
+    : round(withSources.filter((r) => r.ragCited === true).length / withSources.length)
+  // ---- /B1.1 ----
+
   // 效率成本（F-A3 四类指标之一）：从每条 run 的 tokens/latency 回填，空值跳过
   const withLatency = runs.filter((r) => typeof r.latencyMs === 'number')
   const withTokensIn = runs.filter((r) => typeof r.tokensIn === 'number')
@@ -189,6 +208,10 @@ function aggregate(runs, k = 3) {
     // T07 RAG 命中率（sources 非空占比；null=无观测计未命中）
     ragHitRate,
     ragHitRateByPath,
+    // B1.1 RAG 召回质量：KB 依赖 case 召回率 + 来源引用率（缺数据为 null）
+    ragRecallK,
+    ragRecallKDetail: kbRuns.length === 0 ? null : `${kbHit}/${kbRuns.length}`,
+    ragCitationRate,
   }
 }
 

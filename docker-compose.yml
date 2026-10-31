@@ -77,6 +77,13 @@ services:
       AI_GATEWAY_API_KEY: ${AI_GATEWAY_API_KEY:?AI_GATEWAY_API_KEY must be set}
       AI_GATEWAY_MODEL: ${AI_GATEWAY_MODEL:-cn:deepseek-v4.1-flash}
       AI_DASHSCOPE_API_KEY: ${AI_DASHSCOPE_API_KEY:-disabled}
+      # B1.1 自托管 embedding：bge-large-zh-v1.5 ONNX（宿主机目录只读挂载进容器）。
+      # 变量名须对齐 relaxed binding：TEA_EMBEDDING_ONNX_MODEL_PATH → tea.embedding.onnx.model-path。
+      # 未设置/目录缺失时 OnnxEmbeddingConfig 不建 bean → 检索自动降级纯 ILIKE（承重墙不变）。
+      TEA_EMBEDDING_ONNX_MODEL_PATH: ${TEA_EMBEDDING_ONNX_MODEL_PATH:-/models}
+    volumes:
+      # 模型文件在仓库外（禁提交）：宿主机 D:\models\bge-large-zh-v1.5-onnx → 容器 /models:ro
+      - ${TEA_ONNX_MODEL_HOST_DIR:-D:\models\bge-large-zh-v1.5-onnx}:/models:ro
     depends_on:
       db:
         condition: service_healthy
