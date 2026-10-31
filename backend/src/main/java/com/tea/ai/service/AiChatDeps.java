@@ -40,6 +40,9 @@ public record AiChatDeps(
 
         // ---- 记忆：会话归属校验、多轮锚定、消息落库 ----
         ChatMemoryService memoryService,
+        // ---- 跨会话画像（F-B2）：新会话开场注入摘要 + 旧会话结束 best-effort 抽取 ----
+        UserMemoryService userMemoryService,
+        UserMemoryExtractor userMemoryExtractor,
 
         // ---- 五专家（派发目标）----
         LibrarianAgent librarianAgent,

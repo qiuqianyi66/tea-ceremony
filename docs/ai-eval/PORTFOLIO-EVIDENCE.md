@@ -24,6 +24,7 @@ Tea 不是「调 API 的聊天机器人」，而是一个**带可验证评测体
 | pass^k 判定 | 评测器（--iterations k） | v7 men 子集 8 条 pass³ 6/8 |
 | RAG 检索（当前 ILIKE + 类目直查） | `CultureSearchService` | teas/people/regions/poems/teawares/etiquettes/processes 七表；B1 加 category 直查 + 类目别名 |
 | 对话记忆 | `ChatMemoryService`（会话级上下文注入） | chat 请求带 history |
+| 跨会话长期记忆（F-B2 / ADR-028） | `UserMemoryService` + `UserMemoryExtractor` + V12 `user_memory` 表 | 单表 key-value（preference/restriction/habit 三类摘要），新会话开场注入 system prompt，旧会话结束 best-effort LLM 抽取合并写回；隐私红线：不存敏感信息、可查看可删除、越权归属校验 |
 | 熔断 + 降级 | 后端 CircuitBreaker/降级链 + 前端 `teaAI.ts` | 30s AI 超时 / 5s RAG 超时 / 规则回复兜底 |
 | SSE 文本流式（B1.3） | `POST /api/v1/ai/chat/stream`（SseEmitter，MVC 栈不引 WebFlux）+ 前端 fetch+getReader | 逐 chunk `{"d":...}` 增量渲染；末帧 `{"meta":{sessionId}}` + `[DONE]`；预流失败回退整段；服务层 6 测试（FrameSink seam） |
 | AB 实验 | 后端分流 | /api/v1/ai/chat 分流记录 |
@@ -69,6 +70,16 @@ Tea 不是「调 API 的聊天机器人」，而是一个**带可验证评测体
 - **测试 seam**：包级可见 `streamExecutor`（测试换成 `Runnable::run` 同步跑）+ `testFrames`（帧收集进 List，免起 MVC handler）；6 个用例覆盖逐 chunk 顺序 / 空 chunk 跳过 / 空正文 502 / 上游异常 error 帧 / key 缺失 / 熔断命中规则单 chunk。
 - **诚实归因**：本期只打通**文本流**；五专家 SYSTEM_PROMPT + RAG 人设注入与 tool_calls 流事件留待后续（流式端到端管道先通）。ArchUnit「controller 必返 ApiResponse」规则为 SseEmitter 加了唯一显式例外。服务端 `chat/stream` 第一版曾留下未定义方法 + 不可达重复块（编译不过），本次收尾修复并补齐测试。
 - 举证价值：能讲清流式 ≠ 把整段拆两半——关键在**结算时机（防静默丢数据）、预流/流中失败分治、与既有整段链路的平滑回退**，而不是简单换个 API。
+
+### 3.5 跨会话长期记忆（user_memory 单表 key-value）
+- **问题**：会话级记忆（ai_chat_messages）只在单会话内生效——用户在会话 A 说「我忌绿茶」，会话 B 开场茶灵不记得。F-B2 要求跨会话记住稳定偏好，且守隐私红线（可查看/可删除/不存敏感信息）。
+- **方案**：`user_memory(user_id, key, value, source_session_id)` 单表，`key ∈ {preference, restriction, habit}`，`uk(user_id, key)` 每用户每类恒一行。LLM 把「旧摘要 + 本会话新内容」合并成一句新摘要 UPDATE 回去，不追加行（摘要不膨胀）。
+- **写入时机**：用户开新会话（无 sessionId）时，对最近一个旧会话做一次 best-effort LLM 抽取；失败仅 warn，不阻塞聊天承重墙（与 persist/计量旁路同语义）。
+- **注入面**：新会话开场把三类摘要拼成一段 system prompt 前插，**不回灌原始对话消息**——原始消息含闲聊碎片与可能的敏感自述，摘要由 LLM 按「不记录姓名/账号」指令压缩，注入面最小。
+- **隐私红线**：抽取 prompt 明令不记录姓名/电话/账号；`source_session_id` 不建 FK（会话删除后画像保留直到用户显式删除）；`UserMemoryService.list/delete` 一律带 userId 归属校验。
+- **L3 三件套**：ADR-028（选型+回滚）+ Flyway V12 迁移 + `UserMemoryMigrationRoundTripTest`（Testcontainers 真 PG：upgrade→rollback DROP→reapply V12→功能可用+CHECK 约束拒绝非法 key）。
+- **测试证据**：`AiChatServiceTest` 新增 4 个用例——新会话注入 system 摘要 / 空画像不注入 / 已有会话不重复注入 / 新会话触发 best-effort 抽取；全量 540 tests 0 failures。
+- **诚实归因**：v1 不做查看/删除端点（ADR-028 明确「留待前端接入切片」），服务层 list/delete 已备但无 controller 暴露；抽取依赖 LLM 质量，记错的修正路径是用户显式删除该类。
 
 ## 4. 一句话可复述的「深度证明」
 
