@@ -59,13 +59,10 @@ public class AiChatService {
 
     /**
      * 流式工作线程池：SseEmitter 建立后 LLM 生成在独立线程跑（MVC 异步）。
-     * daemon 线程，不阻塞 JVM 退出；包级可见便于单测替换为同步执行（Runnable::run）。
+     * 虚拟线程（R8 禁 Executors 快捷工厂，与 AiCallExecutor 同法）；不阻塞 JVM 退出；
+     * 包级可见便于单测替换为同步执行（Runnable::run）。
      */
-    Executor streamExecutor = Executors.newCachedThreadPool(r -> {
-        Thread t = new Thread(r, "ai-sse-stream");
-        t.setDaemon(true);
-        return t;
-    });
+    Executor streamExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
     private final ChatClient chatClient;
     private final AiUsageLogger usageLogger;

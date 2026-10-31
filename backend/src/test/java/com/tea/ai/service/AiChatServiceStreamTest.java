@@ -59,6 +59,8 @@ class AiChatServiceStreamTest {
     private final AgentOrchestrator orchestrator = mock(AgentOrchestrator.class);
     private final AiUsageLogger usageLogger = mock(AiUsageLogger.class);
     private final ChatMemoryService memoryService = mock(ChatMemoryService.class);
+    private final UserMemoryService userMemoryService = mock(UserMemoryService.class);
+    private final UserMemoryExtractor userMemoryExtractor = mock(UserMemoryExtractor.class);
     private final TraceRecorder traceRecorder = mock(TraceRecorder.class);
     private final LibrarianAgent librarian = mock(LibrarianAgent.class);
     private final AdvisorAgent advisor = mock(AdvisorAgent.class);
@@ -82,6 +84,7 @@ class AiChatServiceStreamTest {
     private AiChatService newService(String modelChat, String dashscopeKey, String openaiKey) {
         AiChatDeps deps = new AiChatDeps(builder, modelChat, dashscopeKey, openaiKey,
                 orchestrator, usageLogger, traceRecorder, memoryService,
+                userMemoryService, userMemoryExtractor,
                 librarian, advisor, taster, brewer, mentor,
                 quota, breaker,
                 AiCallTestSupport.executor(), fallback, AiCallTestSupport.noExperiment());
