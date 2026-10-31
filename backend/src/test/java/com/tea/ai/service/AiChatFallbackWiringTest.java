@@ -64,6 +64,7 @@ class AiChatFallbackWiringTest {
         // 参数顺序与 AiChatDeps 字段一致（模型 / 编排 / 记忆 / 专家 / 配额与熔断 / 兜底与实验）
         return new AiChatService(new AiChatDeps(builder, "dashscope", "disabled", "sk-openai-test",
                 orchestrator, usageLogger, traceRecorder, memoryService,
+                mock(UserMemoryService.class), mock(UserMemoryExtractor.class),
                 librarian, advisor, taster, brewer, mentor,
                 quota, breaker,
                 AiCallTestSupport.executor(), fallback, experimentService,

@@ -77,6 +77,7 @@ class AiChatServiceExperimentAttributionTest {
         when(traceRepository.save(any(AiEvalTrace.class))).thenAnswer(inv -> inv.getArgument(0));
         return new AiChatService(new AiChatDeps(builder, "dashscope", "test-key", "sk-openai-test",
                 orchestrator, usageLogger, traceRecorder, memoryService,
+                mock(UserMemoryService.class), mock(UserMemoryExtractor.class),
                 librarian, advisor, taster, brewer, mentor,
                 new AiCallQuota(0), new AiCircuitBreaker(5, 30_000),
                 AiCallTestSupport.executor(), AiCallTestSupport.noFallback(), experimentService,
