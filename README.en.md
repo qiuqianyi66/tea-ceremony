@@ -31,7 +31,7 @@ Most "tea culture" apps stop at articles and photos. Tea Ceremony turns culture 
 - **Full loop**: prepare → boil → warm → awaken → brew → observe color → smell → taste, scored by an 8-dimension mouthfeel model × brewing-craft coefficient
 - **Offline-first**: Dexie.js + IndexedDB, records land locally first, sync when back online
 - **Shareable**: one-tap tasting card with QR code / read-only share link / PNG — send this session to a friend
-- **AI tea spirit**: five specialist roles (tea selection / brewing / tasting / tea culture / growth mentor) + RAG vector retrieval, gracefully falling back to rule-based replies when offline
+- **AI tea spirit**: five specialist roles (tea selection / brewing / tasting / tea culture / growth mentor) + multi-tool agent + SSE streaming replies + cross-session long-term memory; RAG vector retrieval with self-hosted local embedding (answers are traceable), gracefully falling back to rule-based replies when offline
 
 ## Screens
 
@@ -57,23 +57,23 @@ No ads, no paywall, self-hostable, offline-capable.
 | --- | --- |
 | Frontend | Vue 3 + TypeScript (strict) + Pinia + Vue Router + Tailwind CSS + Vite |
 | 3D | Three.js / TresJS (KTX2 compressed textures, basis transcoder) |
-| Data | Dexie.js + IndexedDB (offline-first, `sync_status` retry queue); PostgreSQL + pgvector (RAG vector retrieval) |
+| Data | Dexie.js + IndexedDB (offline-first, `sync_status` retry queue); PostgreSQL + pgvector (RAG vector retrieval) + user_memory (cross-session memory) |
 | Backend | Spring Boot 3.5 + Spring Data JPA + Spring AI Alibaba + Flyway (legacy FastAPI maintenance-only) |
-| AI | Backend proxy only (`/api/v1/ai/*`, browser never calls third-party AI directly), RAG vector retrieval + five specialist roles, DashScope, rule-based fallback |
+| AI | Backend proxy only (`/api/v1/ai/*`, browser never calls third-party AI directly); five specialist roles + multi-tool agent + SSE streaming + cross-session memory; RAG vector retrieval (self-hosted bge-large-zh-v1.5 ONNX local embedding + pgvector cosine, DashScope remote fallback); circuit-breaker fallback + request_id tracing |
 | Deploy | Docker Compose (frontend / backend / postgres / nginx), public ECS online, GitHub Pages static demo |
-| Tests | Vitest + fake-indexeddb, Playwright E2E + axe, Maven (211 tests + Testcontainers + ArchUnit), pytest (legacy) |
-| CI | GitHub Actions, 13 jobs: type-check+build+smoke / Vitest / Biome / dependency audit / E2E / a11y / pytest / Spring Boot Maven / migration round-trip / compose validation / harness consistency |
+| Tests | Vitest + fake-indexeddb, Playwright E2E + axe, full Maven suite (Testcontainers + ArchUnit + LayerDependency), pytest (legacy) |
+| CI | GitHub Actions, 14 jobs: type-check+build+smoke / Vitest / Biome / dependency audit / gitleaks / E2E / axe a11y / backend syntax / pytest / ruff+bandit / Spring Boot Maven / migration round-trip / compose validation / harness consistency |
 
 ## Engineering quality & governance
 
 Process, rules and verification are written as code. Machines check them, not willpower.
 
 - **AI collaboration rules**: `AGENTS.md` defines red lines, the dev process and a three-track triage (Fast / Guided / Controlled) — decompose first, then act, then verify
-- **Architecture decision records**: ADR-001~020, every choice documented with "why A, why not B, when to reverse"; rejected options stay on record too (e.g. Graph orchestration, 0/4 after four-dimension screening)
-- **Skill system**: 66 generic + 39 domain skills, loaded on demand, governed by README routing tables
-- **CI merge gate**: all 13 jobs green before merge — type-check / unit / lint / dependency audit / E2E / a11y / backend dual-stack tests / migration round-trip / compose validation / harness consistency
-- **Deterministic health checks**: `verify-harness.cjs` (ADR/CI/skills/paths consistency, expects ERRORS: []), `audit-redlines.cjs` (red-line mechanization), `audit-wiki-drift.cjs` (API contract cross-check)
-- **AI eval loop**: 50-case eval set + LLM-as-Judge (95% agreement with human review) + full real score v8 0.95 (50-case full-judge, LLM-as-Judge), scoring methodology traceable
+- **Architecture decision records**: ADR-001~029 (29 records), every choice documented with "why A, why not B, when to reverse"; rejected options stay on record too (e.g. Graph orchestration, 0/4 after four-dimension screening); the newest cover self-hosted local embedding (ADR-029) and cross-session memory (ADR-028)
+- **Skill system**: 66 general/domain skills (`.agents/skills`) + 39 process-family skills (`.harness/skills`), loaded on demand, governed by README routing tables
+- **CI merge gate**: all 14 jobs green before merge — type-check / unit / lint / dependency audit / gitleaks / E2E / a11y / backend dual-stack tests / migration round-trip / compose validation / harness consistency
+- **Deterministic health checks**: `verify-harness.cjs` (ADR/CI/skills/paths consistency, expects ERRORS: []), `audit-redlines.cjs` (red-line mechanization), `audit-wiki-drift.cjs` (API contract cross-check), `audit-context-budget.cjs` (resident-context token budget)
+- **AI eval loop**: 50-case eval set + LLM-as-Judge full scoring; v9 full real score 0.86 (2026-10-30, judgeCoverage 0.97), RAG hit rate 0.48 (recall@k=3/3); methodology rule: only versions with judgeCoverage ≥ 0.95 are citable (v8 0.95 baseline on record)
 - **Branch protection**: main is PR-only, merge requires a green CI
 
 ## Quick start
@@ -88,7 +88,7 @@ npm run dev
 Full stack (Docker Compose: PostgreSQL + Spring Boot backend):
 
 ```bash
-Copy-Item .env.example .env   # edit POSTGRES_PASSWORD, JWT_SECRET, DB_PASSWORD
+cp .env.example .env        # on Windows PowerShell: Copy-Item .env.example .env; edit POSTGRES_PASSWORD, JWT_SECRET, DB_PASSWORD
 docker compose up -d --build
 # frontend http://localhost:5173, backend http://localhost:18080
 ```
