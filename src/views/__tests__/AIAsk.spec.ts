@@ -61,7 +61,13 @@ describe('AIAsk', () => {
     await flushPromises()
 
     expect(askTeaMasterMock).toHaveBeenCalledTimes(1)
-    expect(askTeaMasterMock).toHaveBeenCalledWith('今天适合喝什么茶？', expect.any(Array), 'auto', expect.any(Function), expect.any(AbortSignal))
+    expect(askTeaMasterMock).toHaveBeenCalledWith(
+      '今天适合喝什么茶？',
+      expect.any(Array),
+      'auto',
+      expect.any(Function),
+      expect.any(AbortSignal),
+    )
     expect(wrapper.find('.ai-user-bubble').text()).toContain('今天适合喝什么茶？')
     expect(wrapper.find('.ai-ai-bubble').text()).toContain('龙井适合今天喝')
     expect(wrapper.find('.ai-source-chip').text()).toContain('茶·龙井')
