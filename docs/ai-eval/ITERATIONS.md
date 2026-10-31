@@ -29,7 +29,7 @@ owner: yanha
 | **v3** | **2026-10-10** | **`--judge` 全量实跑（50 条 × 2 次调用，judgeCoverage = 1）** | **0.81（全量真实）** | **0.77** | **0.79** | **1.00** | **37/50** | 首版全量真实分 |
 | **v4** | **2026-10-10** | **判分器四项修复**：F1 逐考点明细落盘 + F2 六境基准对齐产品（`行茶/见性/归真`→`悟香/品境/茶心`）+ F3 茶类归属支持茶名反查 + F4 judge verdict 严格解析 | **0.83** | **0.84** | **0.79** | **0.88** | **37/50** | 判分可信，但见 §v4 有效性缺陷 |
 | **v5** | **2026-10-10** | **B + A 阶段**：B 前端专家选择（F-M5-7，四专家真实可达）+ A 评测保真度（带 `AI_SYSTEM_PROMPT` + 按路径分账） | **0.80** | **0.77** | **0.83** | **0.88** | **35/50** | ✅ 可引用（历史口径，judgeCoverage 0.96） |
-| **v6** | **2026-10-18** | **全量 judge 复跑（50 条，iterations=1，judgeCoverage = 1，带 system prompt）** | **0.90（全量真实）** | **0.87** | **0.92** | **1.00** | **41/50** | 较 v5 +0.10，当前最新可引用；men 子集 0.88（8 条）；RAG 命中率 0.16 为短板 |
+| **v6** | **2026-10-18** | **全量 judge 复跑（50 条，iterations=1，judgeCoverage = 1，带 system prompt）** | **0.90（全量真实）** | **0.87** | **0.92** | **1.00** | **41/50** | 较 v5 +0.10；men 子集 0.88（8 条）；RAG 命中率 0.16 为短板（2026-10-28 起最新可引用为 v8，见末行） |
 | **v7** | **2026-10-19** | **men 子集 pass³ 复跑（8 条，iterations=3，judgeCoverage = 1）** | **1.00（仅 men 子集 8 条，非全量）** | **1.00** | **1.00** | **1.00** | **6/8（pass³）** | 只覆盖 men 子集，**不可与 v5/v6 的 50 条全量口径比**；RAG 命中率 0.13 |
 | **v8** | **2026-10-28** | **评测链路修复重跑（50 条 full-judge，deepseek 通道）**：认证档 30/min 无 429 污染 + 端口对齐实测网关（7864→7863）+ B1 类目直查（teas.category + 乌龙别名） | **0.95（全量真实）** | **1.00** | **1.00** | **1.00** | **45/50** | 两轮：pre-B1（21:15，与并发实例重叠 8 分钟，参考）overall 0.95 / RAG 0.38；post-B1（22:06，干净单实例）overall 0.95 / RAG 0.38。**B1 未改变评测集 RAG 命中率**（类目词 case 未成规模），default 0.93→0.95 / expert 0.97→0.95 属噪声；RAG 0.16→0.38 提升主因是链路修复（非 B1）。B1 运行时命中经手工验证（黑茶 5 / 乌龙别名 / 紫砂 2），详见 PORTFOLIO-EVIDENCE.md |
 | **v9** | **2026-10-30** | **B1.1 自托管 ONNX 向量 RAG 上线**：onnxruntime-java + bge-large-zh-v1.5（1024 维，匹配 culture_chunks.embedding vector(1024)+V3 HNSW，零 schema 迁移）；327/327 chunk 本地嵌入落库；pgvector cosine 与 ILIKE 融合去重；DashScope 欠费通道彻底摘除（日志 0 Arrearage） | **0.86（全量真实，judgeCoverage 0.97）** | **0.86** | **0.88** | **0.88** | **38/50** | **RAG 命中率 0.38→0.48（+0.10），新指标 recall@k=1.0（3/3 KB 依赖题全部召回），来源引用率 0**。overall 回落 0.95→0.86 诚实归因：非向量链路回归——① judgeCoverage 0.97（v8=1.0）2 题未判；② 失败集中在 TAS/MEN advisory 题 judge 给 0.5（单轮 LLM-judge 随机波动，v5→v6 同口径波动 ±0.06）；③ CHA-008 adversarial http=0（该次网关调用失败单例）。RAG +0.10 才是本版真实增量：此前仅 ILIKE+类目直查，现在语义相似 chunk 也能召回。环境注记：跑测时网关 key 已轮换（10-29 opsagent），用 override 注入新 key + host.docker.internal:7863；v8→v9 之间网关侧也有变更，overall 差含此噪声 |
@@ -38,7 +38,7 @@ owner: yanha
 > 注 2：**v1/v2 两行均为 `judge off` 的 program-only 口径**（judgeCoverage = 0），见上方口径说明。
 > 注 3：v3 的 `programOnly = 0.86`（v2 同口径 0.96 → 0.86 有回落，主因 taster/mentor 无记录类考点，见下归因）；**效率维** avgLatency 6710ms / avgTokensIn 176 / avgTokensOut 228（41 条样本）。
 > 注 4：**v3/v4 与 v5 不可直接比**——v3/v4 是裸调（不带 system prompt）+ 前端不传 agent；v5 起对齐真实调用（带 prompt + 专家可达）。v5 的 0.80 与 v3/v4 的 0.81/0.83 之间的差**不是退步**，是口径修正（详见 §v5）。
-> 注 5：**v7 不是全量版本**。它是 men 子集（8 条）在 `--iterations 3` 下的结果，overall 1.00 只在 8 条样本上成立（pass³ 6/8），**不得与 v5/v6 的 50 条全量分并列比较，也不得写进简历**。同一 men 子集在 10-18 的 `iterations=1` 下为 0.88——两次除 iterations 外日期也不同，差值落在噪声范围内，与本文档既有结论一致：**pass^k 需 `--iterations 3` 才有统计意义**。**全量最新可引用仍是 v6 的 0.90。**
+> 注 5：**v7 不是全量版本**。它是 men 子集（8 条）在 `--iterations 3` 下的结果，overall 1.00 只在 8 条样本上成立（pass³ 6/8），**不得与 v5/v6 的 50 条全量分并列比较，也不得写进简历**。同一 men 子集在 10-18 的 `iterations=1` 下为 0.88——两次除 iterations 外日期也不同，差值落在噪声范围内，与本文档既有结论一致：**pass^k 需 `--iterations 3` 才有统计意义**。**全量最新可引用为 v8 的 0.95（2026-10-28，50 条 full-judge，deepseek 网关通道，RAG 命中率 0.38）。**
 
 ## v5 保真度对齐（B + A 阶段，2026-10-10）
 
@@ -186,14 +186,14 @@ v3 时的归因是从 80 字符 snippet 猜的，三处错：
 ## 简历 STAR 模板（数字取自本表）
 
 > ⚠️ **引用前必读**：只可引用 `judgeCoverage ≥ 0.95` 的**全量真实分**版本。
-> **当前最新可引用：v6 `overall 0.90`**（2026-10-18，50 条全量，judgeCoverage = 1，pass³ 41/50）；历史可引用 v3 0.81 / v5 0.80。
+> **当前最新可引用：v8 `overall 0.95`**（2026-10-28，50 条 full-judge，deepseek 网关通道，judgeCoverage = 1，pass¹ 45/50，RAG 命中率 0.38）；历史可引用 v6 0.90 / v5 0.80 / v3 0.81。
 > v1/v2 的 0.82/0.96 是 program-only 口径，**不可引用**；v7 是 men 子集 8 条，**不可与全量分并列**（注 5）。
 > 且须注意下面的「评测有效性缺陷」——当前分数测的是后端能力，不是 C 端体验。
 
 ```
 AI 茶灵五专家 Agent ｜独立负责
 搭建评测体系：50 条评测集（典型 60% / 边界 24% / 对抗 16%）+ 四层归因 + 考点加权 + veto + pass^k；
-LLM-as-Judge 全量实跑：overall 0.90（judgeCoverage 1，50 条非抽查，pass³ 41/50）；
+LLM-as-Judge 全量实跑：overall 0.95（judgeCoverage 1，50 条 full-judge，pass¹ 45/50，RAG 命中率 0.38，deepseek 网关通道）；
 默认路径 0.79（自动档即命中）/ 专家路径 0.81（需主动选专家）——分账输出，不混口径；
 补全五专家前端入口（F-M5-7）：后端自 S2 已路由四专家，前端从不传 agent，导致 41/50 条评测
   测的是用户走不到的路径——先让功能真实可达，再让评测对齐真实调用；
@@ -203,8 +203,8 @@ LLM-as-Judge 全量实跑：overall 0.90（judgeCoverage 1，50 条非抽查，p
 评测抓到 RAG 长句召回真 bug（整句 ILIKE miss → 连接词切分+虚词剥离参数化检索）。
 ```
 
-- **可引用数字**：**v6 `overall 0.90`**（结果质量 0.87 / 过程质量 0.92 / 安全稳定 1.00，pass³ 41/50，judgeCoverage 1，50 条全量）；历史口径 v5 `overall 0.80`（judgeCoverage 0.96）/ v3 0.81。
-- **口径纪律**：只引用 `judgeCoverage ≥ 0.95` 的版本（当前 v3/v4/v5/v6）；v1/v2 的 program-only 数字禁止出现在简历；v7 仅 men 子集不得与全量并列。
+- **可引用数字**：**v8 `overall 0.95`**（结果质量 1.00 / 过程质量 1.00 / 安全稳定 1.00，programOnly 1.00，pass¹ 45/50，RAG 命中率 0.38，judgeCoverage 1，50 条 full-judge，deepseek 网关通道）；历史口径 v6 `overall 0.90` / v5 `overall 0.80`（judgeCoverage 0.96）/ v3 0.81。
+- **口径纪律**：只引用 `judgeCoverage ≥ 0.95` 的版本（当前 v3/v4/v5/v6/v8）；v1/v2 的 program-only 数字禁止出现在简历；v7 仅 men 子集不得与全量并列。
 - **诚实边界**（面试可讲，属加分）：v4/v5 两次自查出并更正了自己的归因错误——
   ①「评测不带 prompt 影响所有考点」→ 实测只影响透明代理路径（专家路径忽略前端 messages）；
   ②「41 条不可达」→ 分账口径写错（`chat.yaml` 属可达，是「自动」档回落）。

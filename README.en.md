@@ -73,7 +73,7 @@ Process, rules and verification are written as code. Machines check them, not wi
 - **Skill system**: 66 generic + 39 domain skills, loaded on demand, governed by README routing tables
 - **CI merge gate**: all 13 jobs green before merge — type-check / unit / lint / dependency audit / E2E / a11y / backend dual-stack tests / migration round-trip / compose validation / harness consistency
 - **Deterministic health checks**: `verify-harness.cjs` (ADR/CI/skills/paths consistency, expects ERRORS: []), `audit-redlines.cjs` (red-line mechanization), `audit-wiki-drift.cjs` (API contract cross-check)
-- **AI eval loop**: 50-case eval set + LLM-as-Judge (95% agreement with human review) + full real score v3 0.81, scoring methodology traceable
+- **AI eval loop**: 50-case eval set + LLM-as-Judge (95% agreement with human review) + full real score v8 0.95 (50-case full-judge, LLM-as-Judge), scoring methodology traceable
 - **Branch protection**: main is PR-only, merge requires a green CI
 
 ## Quick start
@@ -106,7 +106,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). Issue and PR templates are in place.
 ## Roadmap
 
 - Replace placeholder teaware with real photography
-- Expand tea catalog from 40 to 100+ Chinese teas
+- Expand tea catalog from 66 to 100+ Chinese teas
 - Two-person shared sessions (evolve the read-only share card into a live tea party)
 - Production Sentry error tracking + Redis rate limiting
 
