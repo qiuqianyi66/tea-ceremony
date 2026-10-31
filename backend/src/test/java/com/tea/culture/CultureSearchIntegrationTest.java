@@ -102,6 +102,28 @@ class CultureSearchIntegrationTest extends PostgresIntegrationTestBase {
     }
 
     @Test
+    void categoryKeywordHitsTeasByCategory() throws Exception {
+        // 2026-10-28 RAG 命中率优化：问句用类目词（"黑茶"），ILIKE 只查 name（具体茶名）必 miss；
+        // 现在 teas 检索追加 category 列，类目词直接命中该类茶（V2 种子含黑茶类）。
+        ResponseEntity<String> res = rest.getForEntity("/api/v1/culture/search?q=黑茶怎么泡", String.class);
+        assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode body = objectMapper.readTree(res.getBody());
+        assertThat(body.path("code").asText()).isEqualTo("OK");
+        JsonNode teas = body.path("data").path("teas");
+        assertThat(teas.size()).isGreaterThan(0);
+    }
+
+    @Test
+    void oolongAliasHitsQingTeas() throws Exception {
+        // 口语"乌龙茶" → 类目别名追加"青茶"（teas.category 用词），ILIKE 命中青茶类茶。
+        ResponseEntity<String> res = rest.getForEntity("/api/v1/culture/search?q=乌龙茶和武夷岩茶有什么区别", String.class);
+        assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode body = objectMapper.readTree(res.getBody());
+        JsonNode teas = body.path("data").path("teas");
+        assertThat(teas.size()).isGreaterThan(0);
+    }
+
+    @Test
     void aiChatWithoutKeyReturns502() {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);

@@ -6,6 +6,9 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: gateway
       # 容器内访问宿主评测网关：Docker Desktop 的 host.docker.internal 解析到宿主 127.0.0.1
-      AI_GATEWAY_BASE_URL: ${AI_GATEWAY_BASE_URL:-http://host.docker.internal:7864}
+      # 2026-10-28 实测：yg-gateway 监听 7863（OpenAI 兼容主端口），7864 未监听；默认值对齐实测。
+      AI_GATEWAY_BASE_URL: ${AI_GATEWAY_BASE_URL:-http://host.docker.internal:7863}
       AI_GATEWAY_API_KEY: ${AI_GATEWAY_API_KEY:?AI_GATEWAY_API_KEY must be set}
       AI_GATEWAY_MODEL: ${AI_GATEWAY_MODEL:-cn:deepseek-v4.1-flash}
+      # 2026-10-28 RAG 落地：backfill/管理端点鉴权令牌（Fail-closed，未配则 /api/v1/admin/** 401）
+      ADMIN_API_TOKEN: ${ADMIN_API_TOKEN:-}
