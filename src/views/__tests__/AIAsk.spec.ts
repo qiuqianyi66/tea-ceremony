@@ -6,7 +6,7 @@ import { createMemoryHistory, createRouter } from 'vue-router'
 const { askTeaMasterMock } = vi.hoisted(() => ({ askTeaMasterMock: vi.fn() }))
 
 vi.mock('@/services/teaAI', () => ({
-  askTeaMaster: askTeaMasterMock,
+  askTeaMasterStream: askTeaMasterMock,
   TEA_AGENTS: [
     { value: 'auto', label: '自动', icon: 'Sparkles' },
     { value: 'advisor', label: '荐茶', icon: 'Leaf' },
@@ -53,7 +53,7 @@ describe('AIAsk', () => {
     expect(wrapper.find('.ai-ai-bubble').exists()).toBe(false)
   })
 
-  it('点建议按钮后调用 askTeaMaster 并渲染用户气泡与 AI 回复气泡（含来源 chip）', async () => {
+  it('点建议按钮后调用 askTeaMasterStream 并渲染用户气泡与 AI 回复气泡（含来源 chip）', async () => {
     askTeaMasterMock.mockResolvedValue({ content: '龙井适合今天喝', sources: ['茶·龙井'] })
     const wrapper = await mountChat()
 
@@ -61,7 +61,7 @@ describe('AIAsk', () => {
     await flushPromises()
 
     expect(askTeaMasterMock).toHaveBeenCalledTimes(1)
-    expect(askTeaMasterMock).toHaveBeenCalledWith('今天适合喝什么茶？', expect.any(Array), 'auto')
+    expect(askTeaMasterMock).toHaveBeenCalledWith('今天适合喝什么茶？', expect.any(Array), 'auto', expect.any(Function), expect.any(AbortSignal))
     expect(wrapper.find('.ai-user-bubble').text()).toContain('今天适合喝什么茶？')
     expect(wrapper.find('.ai-ai-bubble').text()).toContain('龙井适合今天喝')
     expect(wrapper.find('.ai-source-chip').text()).toContain('茶·龙井')
