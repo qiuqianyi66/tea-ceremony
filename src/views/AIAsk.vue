@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { nextTick, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { askTeaMaster, TEA_AGENTS, type TeaAgent } from '@/services/teaAI'
+import { askTeaMasterStream, TEA_AGENTS, type TeaAgent } from '@/services/teaAI'
 import { track } from '@/services/tracking'
 
 const router = useRouter()
@@ -23,6 +23,14 @@ const loading = ref(false)
 const scrollRef = ref<HTMLElement | null>(null)
 /** F-M5-7 专家选择：默认「自动」= 不传 agent（隐式路由，零回归） */
 const agent = ref<TeaAgent>('auto')
+/** B1.3 流式：首 token 到达后置 true（用于关掉三点等待动画）。 */
+const firstToken = ref(false)
+/** 流式中止控制器（停止按钮）。 */
+let streamCtl: AbortController | null = null
+
+function stopStream() {
+  streamCtl?.abort()
+}
 
 const suggestions = [
   '今天适合喝什么茶？',
@@ -44,6 +52,7 @@ async function sendMessage(text?: string) {
   messages.value.push({ role: 'user', content: msg, sources: [] })
   input.value = ''
   loading.value = true
+  firstToken.value = false
   await scrollToBottom()
 
   const history = messages.value.slice(-6).map((m) => ({
@@ -51,9 +60,29 @@ async function sendMessage(text?: string) {
     content: m.content,
   }))
 
-  const reply = await askTeaMaster(msg, history, agent.value)
-  messages.value.push({ role: 'ai', content: reply.content, sources: reply.sources })
+  // B1.3 流式：预先 push 一个空 AI 气泡，delta 就地追加渲染；整段回退时覆写其内容
+  const aiMsg: ChatMsg = { role: 'ai', content: '', sources: [] }
+  messages.value.push(aiMsg)
+  streamCtl = new AbortController()
+  const reply = await askTeaMasterStream(
+    msg,
+    history,
+    agent.value,
+    (delta) => {
+      firstToken.value = true
+      aiMsg.content += delta
+      void scrollToBottom()
+    },
+    streamCtl.signal,
+  )
+  aiMsg.content = reply.content
+  aiMsg.sources = reply.sources
+  // 空气泡（用户秒停 / 流未出字）：撤掉，避免留一个空白 AI 气泡
+  if (!aiMsg.content) {
+    messages.value.pop()
+  }
   loading.value = false
+  streamCtl = null
   await scrollToBottom()
 }
 </script>
@@ -104,8 +133,8 @@ async function sendMessage(text?: string) {
         <div v-else class="ai-user-bubble">{{ msg.content }}</div>
       </div>
 
-      <!-- AI 输入中 -->
-      <div v-if="loading" class="ai-row justify-start">
+      <!-- AI 输入中（首 token 到达前；流式开始后由内容气泡取代） -->
+      <div v-if="loading && !firstToken" class="ai-row justify-start">
         <IconBot class="ai-avatar" />
         <div class="ai-ai-bubble ai-thinking">
           <span class="ai-dot"></span><span class="ai-dot"></span><span class="ai-dot"></span>
@@ -126,10 +155,13 @@ async function sendMessage(text?: string) {
       <form @submit.prevent="sendMessage()" class="ai-form">
         <input v-model="input" maxlength="500" autocomplete="off"
           placeholder="问茶灵一个问题..."
-          class="ai-input" />
-        <button type="submit" :disabled="loading || !input.trim()"
+          class="ai-input" :disabled="loading" />
+        <button v-if="!loading" type="submit" :disabled="!input.trim()"
           class="ai-send-btn">
           发送
+        </button>
+        <button v-else type="button" @click="stopStream" class="ai-send-btn ai-stop-btn">
+          停止
         </button>
       </form>
     </footer>
@@ -300,4 +332,11 @@ async function sendMessage(text?: string) {
 }
 .ai-send-btn:hover:not(:disabled) { background: #d4b87a; }
 .ai-send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+/* B1.3 停止按钮：同尺寸，描边区别于发送 */
+.ai-stop-btn {
+  background: transparent;
+  border: 1px solid rgba(201, 169, 110, 0.6);
+  color: rgba(201, 169, 110, 0.95);
+}
+.ai-stop-btn:hover { background: rgba(201, 169, 110, 0.12); }
 </style>

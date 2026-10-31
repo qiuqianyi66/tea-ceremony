@@ -26,6 +26,7 @@ Tea 不是「调 API 的聊天机器人」，而是一个**带可验证评测体
 | 对话记忆 | `ChatMemoryService`（会话级上下文注入） | chat 请求带 history |
 | 跨会话长期记忆（F-B2 / ADR-028） | `UserMemoryService` + `UserMemoryExtractor` + V12 `user_memory` 表 | 单表 key-value（preference/restriction/habit 三类摘要），新会话开场注入 system prompt，旧会话结束 best-effort LLM 抽取合并写回；隐私红线：不存敏感信息、可查看可删除、越权归属校验 |
 | 熔断 + 降级 | 后端 CircuitBreaker/降级链 + 前端 `teaAI.ts` | 30s AI 超时 / 5s RAG 超时 / 规则回复兜底 |
+| SSE 文本流式（B1.3） | `POST /api/v1/ai/chat/stream`（SseEmitter，MVC 栈不引 WebFlux）+ 前端 fetch+getReader | 逐 chunk `{"d":...}` 增量渲染；末帧 `{"meta":{sessionId}}` + `[DONE]`；预流失败回退整段；服务层 6 测试（FrameSink seam） |
 | AB 实验 | 后端分流 | /api/v1/ai/chat 分流记录 |
 | MCP Server | `ai/mcp/McpToolConfig`（SSE /mcp 端点） | 3 个工具：cultureSearch（P1-1）+ brew_params / brew_advice（P2.2）；`McpServerIntegrationTest.p22ExposesAtLeastThreeTools` 锁定 |
 | 多工具 Agent（进程内 function calling） | `ai/tool/` 4 工具 + `MultiToolAgent` 门面挂透明代理 | userId 服务端绑定防越权；工具失败回落无工具直答，502 降级链不变（见 §3.4） |
@@ -73,7 +74,16 @@ Tea 不是「调 API 的聊天机器人」，而是一个**带可验证评测体
 - MCP 边界：/mcp 只暴露无会话状态的 3 个工具（cultureSearch / brew_params / brew_advice）；my_tasting_records 不对外（外部 MCP 无登录态，单例永远回「未登录」= 死工具）。
 - 证据：`mvn test` 536 全绿（含 McpServerIntegrationTest 断言 /mcp ≥3 工具 + SSE 匿名握手；AiChatService 熔断/降级 8+5+27 用例全过）；评测集新增 CHA-010/011/012 三条工具考点，**仅 dry-run 管道验证（12 条解析无崩）**——真实 LLM 工具调用命中率未实测（需 live 容器 + 有效 key，欠费环境不硬跑）。
 
-### 3.5 跨会话长期记忆（user_memory 单表 key-value）
+### 3.5 SSE 文本流式（B1.3）：结算时机与「流失败回退整段」承重墙
+- **端点**：新增 `POST /api/v1/ai/chat/stream`，返回 `SseEmitter`——刻意留在 MVC 栈（不引 WebFlux 依赖），用 `streamExecutor`（虚拟线程池，R8 合规）跑 LLM 生成。帧协议极简：`{"d":"<增量>"}` 文本 delta → 结束帧 `{"meta":{"sessionId":n}}` → `[DONE]`；中途错误帧 `{"error":"BAD_GATEWAY"}`。
+- **结算时机（PR #43 教训重演）**：用量（AiUsageLogger）/ Trace（TraceRecorder.complete|fail）/ 熔断计数**全部移到流结束事件**才结算——建立 emitter 时或首 chunk 就结算会在客户端断连/上游中途失败时静默丢数据。成功路径在 `blockLast()` 后统一结算，异常路径在 catch 里 `onFailure + trace.fail`。
+- **预流 vs 流中失败分治**：越权 404 / 配额 429 / 无 key / 熔断未命中兜底——在建立 emitter **之前**以普通 HTTP 状态抛出，前端据状态回退整段；熔断命中本地规则库则作为单 chunk 下发。这样「回退整段」只在真失败时发生，正常用户拿到逐字流。
+- **前端承重墙**：`teaAI.ts` 用 `fetch + ReadableStream.getReader()`（不用 EventSource——要 POST body + Authorization 头），30s **空闲**超时（每个 chunk 重置）；**预流非 2xx / 网络 / 超时 / 无内容自动回退整段 `/v1/ai/chat`**（与评测器同口径，评测器继续走整段，口径不分裂）；停止按钮 `AbortController` 中止后保留已出内容、不回退重发。
+- **测试 seam**：包级可见 `streamExecutor`（测试换成 `Runnable::run` 同步跑）+ `testFrames`（帧收集进 List，免起 MVC handler）；6 个用例覆盖逐 chunk 顺序 / 空 chunk 跳过 / 空正文 502 / 上游异常 error 帧 / key 缺失 / 熔断命中规则单 chunk。
+- **诚实归因**：本期只打通**文本流**；五专家 SYSTEM_PROMPT + RAG 人设注入与 tool_calls 流事件留待后续（流式端到端管道先通）。ArchUnit「controller 必返 ApiResponse」规则为 SseEmitter 加了唯一显式例外。服务端 `chat/stream` 第一版曾留下未定义方法 + 不可达重复块（编译不过），本次收尾修复并补齐测试。
+- 举证价值：能讲清流式 ≠ 把整段拆两半——关键在**结算时机（防静默丢数据）、预流/流中失败分治、与既有整段链路的平滑回退**，而不是简单换个 API。
+
+### 3.6 跨会话长期记忆（user_memory 单表 key-value）
 - **问题**：会话级记忆（ai_chat_messages）只在单会话内生效——用户在会话 A 说「我忌绿茶」，会话 B 开场茶灵不记得。F-B2 要求跨会话记住稳定偏好，且守隐私红线（可查看/可删除/不存敏感信息）。
 - **方案**：`user_memory(user_id, key, value, source_session_id)` 单表，`key ∈ {preference, restriction, habit}`，`uk(user_id, key)` 每用户每类恒一行。LLM 把「旧摘要 + 本会话新内容」合并成一句新摘要 UPDATE 回去，不追加行（摘要不膨胀）。
 - **写入时机**：用户开新会话（无 sessionId）时，对最近一个旧会话做一次 best-effort LLM 抽取；失败仅 warn，不阻塞聊天承重墙（与 persist/计量旁路同语义）。
