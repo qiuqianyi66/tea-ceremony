@@ -23,6 +23,7 @@ import com.tea.ai.dto.ChatMessageDto;
 import com.tea.ai.experiment.service.ExperimentService;
 import com.tea.ai.fallback.LocalFallbackService;
 import com.tea.ai.resilience.AiCallTestSupport;
+import com.tea.ai.tool.MultiToolAgent;
 import com.tea.common.exception.BadGatewayException;
 import java.util.ArrayList;
 import java.util.List;
@@ -61,6 +62,7 @@ class AiChatServiceStreamTest {
     private final ChatMemoryService memoryService = mock(ChatMemoryService.class);
     private final UserMemoryService userMemoryService = mock(UserMemoryService.class);
     private final UserMemoryExtractor userMemoryExtractor = mock(UserMemoryExtractor.class);
+    private final MultiToolAgent multiToolAgent = mock(MultiToolAgent.class);
     private final TraceRecorder traceRecorder = mock(TraceRecorder.class);
     private final LibrarianAgent librarian = mock(LibrarianAgent.class);
     private final AdvisorAgent advisor = mock(AdvisorAgent.class);
@@ -87,7 +89,8 @@ class AiChatServiceStreamTest {
                 userMemoryService, userMemoryExtractor,
                 librarian, advisor, taster, brewer, mentor,
                 quota, breaker,
-                AiCallTestSupport.executor(), fallback, AiCallTestSupport.noExperiment());
+                AiCallTestSupport.executor(), fallback, AiCallTestSupport.noExperiment(),
+                multiToolAgent);
         AiChatService service = new AiChatService(deps);
         // 同步执行 + 帧收集 seam
         service.streamExecutor = Runnable::run;
