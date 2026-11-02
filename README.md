@@ -109,7 +109,7 @@ tea-ceremony/
 │   └── src/test/               # Testcontainers + ArchUnit + LayerDependency
 ├── docs/                       # ADR-001~029、计划、评测证据
 ├── .agents/skills/            # 66 个通用/领域技能
-├── .harness/                   # 39 个流程族技能 + 规则 + Wiki 四件套
+├── .harness/                   # 43 个流程族技能 + 规则 + Wiki 四件套
 ├── deploy/                     # Docker Compose、nginx、观测栈
 └── .github/workflows/ci.yml    # 14 job 合并门禁
 ```

@@ -56,7 +56,7 @@
 
 0. **开工自查**：先 `git log --oneline -10` 查目标功能是否已实现；已实现 → 补缺验证，禁止从零重写。
 1. **分诊 + 拆解**（§0 第 7 条）：先判定轨道（下 §4.1），再把问题拆成子问题。复杂需求拆解格式固定为：**现状（实测）→ 根因 → 子问题清单 → 待验证项**。拆解未产出，禁止进入编码。
-2. **理解上下文**——读相关文件 + 匹配技能 `SKILL.md` 后再动手。**技能匹配两类（先判哪类，再加载）**：①**流程驱动**——按当前阶段查 `.harness/skills/main-dev/README.md` 路由表（走到阶段 4 → coding-skill，阶段 5 → unit-test-write）；②**任务驱动**——按产出物性质触发，不看阶段（产出对外文字 → `tea-voice`；用户点名 caveman → `caveman-review`；要求架构体检 → `arch-deepen`）。两份总表：`.agents/skills/README.md`（66 个，通用+领域）+ 三族 README（流程族 39 个）。**README 不列 = 技能不存在**。
+2. **理解上下文**——读相关文件 + 匹配技能 `SKILL.md` 后再动手。**技能匹配两类（先判哪类，再加载）**：①**流程驱动**——按当前阶段查 `.harness/skills/main-dev/README.md` 路由表（走到阶段 4 → coding-skill，阶段 5 → unit-test-write）；②**任务驱动**——按产出物性质触发，不看阶段（产出对外文字 → `tea-voice`；用户点名 caveman → `caveman-review`；要求架构体检 → `arch-deepen`）。两份总表：`.agents/skills/README.md`（66 个，通用+领域）+ 四族 README（流程族 43 个）。**README 不列 = 技能不存在**。
 3. **需求分析**——新功能 / 需求变更 / 行为改动先过 `request-analysis`（F 编号 + Given-When-Then + 范围边界 + 影响分析）。轻量路径按 §4.1 合并。
 4. **方案设计**——Controlled 轨道先过 `plan-control`（风险评分 + 方案 + 取舍 + 回滚 + Not Doing）；Guided 轨道出 Mini Plan。
 5. **修改**——按 §5 纪律，只动必须动的。
@@ -201,7 +201,7 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量�
 - `.harness/wiki/` — AI 编码上下文四件套（业务模型 / 接口协议 / 数据模型 / 领域术语），编码前按需读 ≤3 份
 - `.harness/changes/_template/` — 变更追踪模板（summary + db-migrations + rollback），与 git 分支同名
 - `.claude/agents/` — 三子代理（code-reviewer / consistency-verifier / red-line-auditor；Claude Code 专用。豆包环境等效：expert-reviewer / audit-wiki-drift.cjs + verify-harness.cjs / audit-redlines.cjs，见开发流程规范 §子代理）
-- `.harness/skills/` — 技能全套 39 个（main-dev 14 / biz-dev 19 / trouble-shooting 6），每族带 README 路由表，按需渐进式加载（request-analysis 规则 + Wiki ≤3、coding-skill ≤4）
+- `.harness/skills/` — 技能全套 43 个（main-dev 14 / biz-dev 19 / trouble-shooting 6），每族带 README 路由表，按需渐进式加载（request-analysis 规则 + Wiki ≤3、coding-skill ≤4）
 - `.github/workflows/ci.yml` — CI 合并门禁（含 compose-validate / harness 一致性）
 - `docs/agent-eval-baseline.md` — AI 协作评估基线（通用+专项维度、抽样会话评分流程、评估证据沉淀）
 
