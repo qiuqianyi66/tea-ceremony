@@ -1,11 +1,6 @@
 # Tea Ceremony · 一盏茶
 
-> One tea, one room, one quiet moment.
-
-An immersive online tea ceremony: enter the room, pick a tea, boil water, brew, and taste — a complete gongfu cha session in the browser.
-Not an encyclopedia, not a timer. A digital tea room you can actually walk into.
-
-**A 3D table makes every step visible; eight-dimension scoring makes every session memorable; offline-first means this tea never waits on connectivity.**
+> An immersive online tea ceremony app: **Vue 3 + Spring Boot 3 + Spring AI Alibaba full-stack project** with a 3D tea table, offline-first PWA, self-hosted RAG vector retrieval, SSE streaming AI chat, and cross-session long-term memory. One tea, one room, one quiet moment.
 
 [![License MIT](https://img.shields.io/badge/License-MIT-9E8050?style=for-the-badge&labelColor=1C1C1C)](LICENSE)
 [![Built with Vue 3 · Spring Boot 3](https://img.shields.io/badge/Built_with-Vue_3_%C2%B7_Spring_Boot_3-5D4E37?style=for-the-badge&labelColor=1C1C1C)](https://vuejs.org/)
@@ -14,26 +9,47 @@ Not an encyclopedia, not a timer. A digital tea room you can actually walk into.
 
 [![CI](https://github.com/qiuqianyi66/tea-ceremony/actions/workflows/ci.yml/badge.svg)](https://github.com/qiuqianyi66/tea-ceremony/actions/workflows/ci.yml)
 
-[中文](README.md) · **English** · [Overview](#what-it-is) · [Screens](#screens) · [Stack](#stack) · [Quick start](#quick-start) · [Deploy](DEPLOY.md) · [Design spec](DESIGN_SPEC.md)
+[中文](README.md) · **English**
 
-## Try it now
+## Table of contents
 
-👉 **Live demo (no signup, works offline)**：[qiuqianyi66.github.io/tea-ceremony](https://qiuqianyi66.github.io/tea-ceremony/)
-👉 **Full version (with backend, public deployment)**：[https://42.121.125.4](https://42.121.125.4/)
-
-![Tea Ceremony · cover](docs/screenshots/og-cover.png)
+- [What it is](#what-it-is)
+- [Try it](#try-it)
+- [Key features](#key-features)
+- [Screenshots](#screenshots)
+- [Tech stack](#tech-stack)
+- [AI capabilities](#ai-capabilities)
+- [Project structure](#project-structure)
+- [Quick start](#quick-start)
+- [Engineering quality](#engineering-quality)
+- [FAQ](#faq)
+- [Roadmap](#roadmap)
+- [Credits](#credits)
+- [License](#license)
 
 ## What it is
 
-Most "tea culture" apps stop at articles and photos. Tea Ceremony turns culture into something you *do*:
+Tea Ceremony is not an encyclopedia and not a timer. It is a digital tea room you can actually walk into.
+
+Full loop: enter the room → pick a tea → prepare teaware → boil water → brew → tasting record → personal growth. Frontend renders an interactive 3D tea table with Vue 3 + Three.js; backend serves RAG Q&A and a multi-tool agent with Spring Boot 3.5 + Spring AI Alibaba; PostgreSQL + pgvector powers vector retrieval.
+
+## Try it
+
+- **Live demo (no signup, works offline)**: [qiuqianyi66.github.io/tea-ceremony](https://qiuqianyi66.github.io/tea-ceremony/)
+- **Full version (with backend, public deployment)**: [https://42.121.125.4](https://42.121.125.4/)
+
+![Tea Ceremony · cover](docs/screenshots/og-cover.png)
+
+## Key features
 
 - **3D tea table**: TresJS / Three.js renders a wooden table with real teaware — steam on pour, liquor color on outflow, time / solar term / themed room shaping the mood
 - **Full loop**: prepare → boil → warm → awaken → brew → observe color → smell → taste, scored by an 8-dimension mouthfeel model × brewing-craft coefficient
-- **Offline-first**: Dexie.js + IndexedDB, records land locally first, sync when back online
-- **Shareable**: one-tap tasting card with QR code / read-only share link / PNG — send this session to a friend
-- **AI tea spirit**: five specialist roles (tea selection / brewing / tasting / tea culture / growth mentor) + multi-tool agent + SSE streaming replies + cross-session long-term memory; RAG vector retrieval with self-hosted local embedding (answers are traceable), gracefully falling back to rule-based replies when offline
+- **Offline-first PWA**: Dexie.js + IndexedDB, records land locally first, sync when back online via `sync_status` retry queue
+- **Shareable**: one-tap tasting card with QR code / read-only share link / PNG
+- **AI tea spirit**: five specialist roles + multi-tool agent + SSE streaming replies + cross-session long-term memory; RAG answers are traceable
+- **Engineering**: 14 CI merge-gate jobs, 29 ADRs, ArchUnit layered tests, Testcontainers integration tests, full observability and security headers
 
-## Screens
+## Screenshots
 
 | Immersive home | 3D brewing | Tasting card |
 | --- | --- | --- |
@@ -43,38 +59,52 @@ Most "tea culture" apps stop at articles and photos. Tea Ceremony turns culture 
 ![pour](docs/screenshots/brew-3d-done.png)
 ![growth](docs/screenshots/growth-desktop.png)
 
-## Who it's for
-
-1. **Tea beginners** who want guidance and atmosphere, not a wall of taxonomy
-2. **Regular drinkers** who want to record and build a personal archive
-3. **Slow-living folks** who want a five-minute, undistracted break
-
-No ads, no paywall, self-hostable, offline-capable.
-
-## Stack
+## Tech stack
 
 | Layer | Tech |
 | --- | --- |
-| Frontend | Vue 3 + TypeScript (strict) + Pinia + Vue Router + Tailwind CSS + Vite |
-| 3D | Three.js / TresJS (KTX2 compressed textures, basis transcoder) |
-| Data | Dexie.js + IndexedDB (offline-first, `sync_status` retry queue); PostgreSQL + pgvector (RAG vector retrieval) + user_memory (cross-session memory) |
-| Backend | Spring Boot 3.5 + Spring Data JPA + Spring AI Alibaba + Flyway (legacy FastAPI maintenance-only) |
-| AI | Backend proxy only (`/api/v1/ai/*`, browser never calls third-party AI directly); five specialist roles + multi-tool agent + SSE streaming + cross-session memory; RAG vector retrieval (self-hosted bge-large-zh-v1.5 ONNX local embedding + pgvector cosine, DashScope remote fallback); circuit-breaker fallback + request_id tracing |
-| Deploy | Docker Compose (frontend / backend / postgres / nginx), public ECS online, GitHub Pages static demo |
-| Tests | Vitest + fake-indexeddb, Playwright E2E + axe, full Maven suite (Testcontainers + ArchUnit + LayerDependency), pytest (legacy) |
-| CI | GitHub Actions, 14 jobs: type-check+build+smoke / Vitest / Biome / dependency audit / gitleaks / E2E / axe a11y / backend syntax / pytest / ruff+bandit / Spring Boot Maven / migration round-trip / compose validation / harness consistency |
+| Frontend | Vue 3.5 + TypeScript 6 (strict) + Pinia 4 + Vue Router + Tailwind CSS 4 + Vite 8 |
+| 3D | Three.js 0.185 + TresJS 5.8 (KTX2 compressed textures, basis transcoder) |
+| Client data | Dexie.js + IndexedDB (offline-first) |
+| Backend | Spring Boot 3.5 + Spring Data JPA + Spring AI Alibaba + Flyway migrations |
+| AI framework | Spring AI Alibaba (multi-tool agent, SSE streaming, Advisor memory) |
+| Vector | PostgreSQL + pgvector (HNSW index, cosine distance) |
+| Local embedding | Self-hosted bge-large-zh-v1.5 ONNX (1024 dim, onnxruntime 1.20.0) |
+| Legacy backend | FastAPI (maintenance-only, no new features) |
+| Deploy | Docker Compose (frontend / backend / postgres / nginx) |
+| Static host | GitHub Pages (frontend demo) |
+| Tests | Vitest + Playwright E2E + axe a11y + Maven Testcontainers + ArchUnit |
+| CI | GitHub Actions 14 jobs (type-check / Vitest / Biome / gitleaks / E2E / a11y / backend Maven / pytest / migration round-trip / compose validation / harness consistency) |
 
-## Engineering quality & governance
+## AI capabilities
 
-Process, rules and verification are written as code. Machines check them, not willpower.
+- **Five specialist roles**: tea picker, brewer, taster, culture scholar, growth mentor
+- **Multi-tool agent**: Spring AI Alibaba Tool Calling, backend registers tools the model can invoke
+- **SSE streaming**: frontend `EventSource` receives the token stream, typewriter replies
+- **Cross-session long-term memory**: `user_memory` table stores user profile, injected into system prompt on the next session
+- **Self-hosted RAG**: 8 culture tables are chunked → ONNX embedding → pgvector cosine retrieval → prompt context; answers carry source citations
+- **Circuit breaker**: the browser never calls third-party AI directly; all requests go through the `/api/v1/ai/*` backend proxy; offline falls back to local rule-based replies
+- **Eval loop**: 50-case eval set + LLM-as-Judge full scoring; v9 real score **0.86** (2026-10-30, judgeCoverage 0.97), RAG hit rate **0.48** (recall@k=3/3)
 
-- **AI collaboration rules**: `AGENTS.md` defines red lines, the dev process and a three-track triage (Fast / Guided / Controlled) — decompose first, then act, then verify
-- **Architecture decision records**: ADR-001~029 (29 records), every choice documented with "why A, why not B, when to reverse"; rejected options stay on record too (e.g. Graph orchestration, 0/4 after four-dimension screening); the newest cover self-hosted local embedding (ADR-029) and cross-session memory (ADR-028)
-- **Skill system**: 66 general/domain skills (`.agents/skills`) + 39 process-family skills (`.harness/skills`), loaded on demand, governed by README routing tables
-- **CI merge gate**: all 14 jobs green before merge — type-check / unit / lint / dependency audit / gitleaks / E2E / a11y / backend dual-stack tests / migration round-trip / compose validation / harness consistency
-- **Deterministic health checks**: `verify-harness.cjs` (ADR/CI/skills/paths consistency, expects ERRORS: []), `audit-redlines.cjs` (red-line mechanization), `audit-wiki-drift.cjs` (API contract cross-check), `audit-context-budget.cjs` (resident-context token budget)
-- **AI eval loop**: 50-case eval set + LLM-as-Judge full scoring; v9 full real score 0.86 (2026-10-30, judgeCoverage 0.97), RAG hit rate 0.48 (recall@k=3/3); methodology rule: only versions with judgeCoverage ≥ 0.95 are citable (v8 0.95 baseline on record)
-- **Branch protection**: main is PR-only, merge requires a green CI
+## Project structure
+
+```
+tea-ceremony/
+├── src/                        # Vue 3 frontend (Vite)
+│   ├── views/                  # Pages (3D brewing, AI chat, growth, share…)
+│   ├── stores/                 # Pinia (auth / progress / brew / tasting)
+│   ├── services/               # Backend proxy + offline fallback
+│   ├── components/three/      # TresJS tea table (visual layer only, no state)
+│   └── router/                 # 21 routes
+├── backend/                    # Spring Boot 3.5 backend
+│   ├── src/main/java/com/tea/  # Controller → Service → Repository
+│   └── src/test/               # Testcontainers + ArchUnit + LayerDependency
+├── docs/                       # ADR-001~029, plans, eval evidence
+├── .agents/skills/            # 66 general / domain skills
+├── .harness/                   # 39 process-family skills + rules + wiki
+├── deploy/                     # Docker Compose, nginx, observability
+└── .github/workflows/ci.yml    # 14-job merge gate
+```
 
 ## Quick start
 
@@ -98,10 +128,38 @@ Backend tests: `cd backend && mvn -q test` (legacy FastAPI stack: `python -m pyt
 
 Docs: [DEPLOY.md](DEPLOY.md) · [CONTEXT.md](CONTEXT.md) · [DESIGN_SPEC.md](DESIGN_SPEC.md) · [3D_SPEC.md](3D_SPEC.md)
 
-## Contributing
+## Engineering quality
 
-Start with a Good First Issue — adding a tea, translating a string, writing a test, drawing an icon all count.
-See [CONTRIBUTING.md](CONTRIBUTING.md). Issue and PR templates are in place.
+Process, rules and verification are written as code. Machines check them, not willpower.
+
+- **AI collaboration rules**: `AGENTS.md` defines red lines, dev process and a three-track triage (Fast / Guided / Controlled)
+- **Architecture decision records**: ADR-001~029, every choice documented with "why A, why not B, when to reverse"; the newest cover self-hosted local embedding (ADR-029) and cross-session memory (ADR-028)
+- **CI merge gate**: all 14 jobs green before merge; main is PR-only
+- **Deterministic health checks**: `verify-harness.cjs` / `audit-redlines.cjs` / `audit-wiki-drift.cjs` / `audit-context-budget.cjs`, wired into CI
+- **Layering**: ArchUnit enforces Controller → Service → Repository one-way dependency
+
+## FAQ
+
+**Q: What is the tech stack?**
+A: Vue 3.5 + TypeScript + Pinia + Tailwind + Vite frontend; Spring Boot 3.5 + Spring AI Alibaba + PostgreSQL/pgvector backend; Three.js for 3D; Docker Compose deployment; GitHub Actions CI.
+
+**Q: How is the AI implemented?**
+A: Spring AI Alibaba provides the multi-tool agent, SSE streaming replies and Advisor memory. RAG embeds culture knowledge with self-hosted bge-large-zh-v1.5 ONNX, stores vectors in pgvector, and retrieves by cosine. User profile is stored in the `user_memory` table for cross-session reuse.
+
+**Q: Does it work offline?**
+A: Yes. The frontend is offline-first with Dexie.js + IndexedDB; tasting records write locally first and sync when back online via the `sync_status` retry queue. When AI is unavailable, the UI falls back to local rule-based replies.
+
+**Q: Is the backend Spring Boot or FastAPI?**
+A: The primary backend is Spring Boot 3.5 (Spring Data JPA + Spring AI Alibaba + Flyway). The legacy FastAPI stack is maintenance-only, no new features.
+
+**Q: How do I run it locally?**
+A: Frontend only: `npm install && npm run dev`. Full stack: `cp .env.example .env` then `docker compose up -d --build`.
+
+**Q: Why self-hosted embedding instead of DashScope?**
+A: The DashScope account is out of credit and unrecoverable; self-hosted ONNX is the only path to re-enable vector RAG. See ADR-029 (model: bge-large-zh-v1.5, 1024-dim, no schema migration needed).
+
+**Q: How is it deployed?**
+A: Docker Compose orchestrates four containers (frontend / backend / postgres / nginx); the static frontend demo is deployed to GitHub Pages. See [DEPLOY.md](DEPLOY.md) for the full flow.
 
 ## Roadmap
 
@@ -112,7 +170,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). Issue and PR templates are in place.
 
 ## Credits
 
-Home hero `src/assets/tea-mountain-hero.jpg`: photographer Tanmoy281, via [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Darjeeling-tea-plantation.jpg), [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/deed.zh); resized and tone-mapped for morning-mist effect.
+Home hero `src/assets/tea-mountain-hero.jpg`: photographer Tanmoy281, via [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Darjeeling-tea-plantation.jpg), [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/deed.en); resized and tone-mapped for a morning-mist effect.
 Tea photography: Pexels, commercially licensed.
 
 ## License
