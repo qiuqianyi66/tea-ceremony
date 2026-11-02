@@ -80,8 +80,8 @@ for (const f of javaFiles) {
   const clsMatch = text.match(/@RequestMapping\("([^"]+)"\)/);
   const clsPrefix = clsMatch ? norm(clsMatch[1]) : '';
   if (clsPrefix && !clsPrefix.startsWith('/api')) continue;   // 非 API 控制器跳过
-  for (const m of text.matchAll(/@(Get|Post|Put|Delete|Patch)Mapping(?:\("([^"]*)"\))?/g)) {
-    const mpRaw = m[2] === undefined ? '' : m[2].replace(/\/+$/, '');
+  for (const m of text.matchAll(/@(Get|Post|Put|Delete|Patch)Mapping(?:\(\s*(?:"([^"]*)"|value\s*=\s*"([^"]*)")(?:[^)]*)?\))?/g)) {
+    const mpRaw = (m[2] ?? m[3] ?? '').replace(/\/+$/, '');
     let full;
     if (mpRaw.startsWith('/api')) full = norm(mpRaw);          // 绝对路径注解
     else if (clsPrefix) {
@@ -138,6 +138,7 @@ if (unregistered.length > 5) warnings.push(`代码端点未登记契约：另有
 const respErrors = [];
 for (const w of wikiEndpoints) {
   if (!w.path.startsWith('/api/v1')) continue;   // 二期只核新栈
+  if (/text\/event-stream|SSE|SseEmitter|\[DONE\]/.test(w.response)) continue;  // SSE 流式端点豁免 ApiResponse 包装形态
   if (!/ApiResponse/.test(w.response)) {
     respErrors.push(`新栈契约响应未用 ApiResponse 包装：${w.path}（api-contract.md 第 ${w.line} 行，写 ${w.response}；新栈统一 ApiResponse{data:...}）`);
     continue;
