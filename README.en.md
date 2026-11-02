@@ -2,6 +2,14 @@
 
 > An immersive online tea ceremony app: **Vue 3 + Spring Boot 3 + Spring AI Alibaba full-stack project** with a 3D tea table, offline-first PWA, self-hosted RAG vector retrieval, SSE streaming AI chat, and cross-session long-term memory. One tea, one room, one quiet moment.
 
+Imagine: open the browser, wooden table, Yixing clay teapot, 85°C spring water pouring in, steam rising, liquor color deepening. After the session, eight-dimension mouthfeel scores are recorded; next time the AI tea spirit remembers your taste.
+
+**Who are you?**
+
+| Just want to try | Developer running it locally | Checking the stack / resume project |
+| --- | --- | --- |
+| 👉 [Live demo](https://qiuqianyi66.github.io/tea-ceremony/) (works offline) | 👉 [Quick start](#quick-start) | 👉 [Tech stack](#tech-stack) · [AI capabilities](#ai-capabilities) · [Engineering quality](#engineering-quality) |
+
 [![License MIT](https://img.shields.io/badge/License-MIT-9E8050?style=for-the-badge&labelColor=1C1C1C)](LICENSE)
 [![Built with Vue 3 · Spring Boot 3](https://img.shields.io/badge/Built_with-Vue_3_%C2%B7_Spring_Boot_3-5D4E37?style=for-the-badge&labelColor=1C1C1C)](https://vuejs.org/)
 [![Domain Immersive Tea Ceremony](https://img.shields.io/badge/Domain-Immersive_Tea_Ceremony-6B7D5A?style=for-the-badge&labelColor=1C1C1C)](README.en.md)
@@ -125,6 +133,20 @@ docker compose up -d --build
 
 Common: `npm run type-check` · `npm run test` · `npm run build` · `npm run test:e2e`
 Backend tests: `cd backend && mvn -q test` (legacy FastAPI stack: `python -m pytest tests -q`)
+
+### Environment variables
+
+Full list in [.env.example](.env.example). Core required:
+
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `POSTGRES_PASSWORD` | Yes | PostgreSQL password; keep consistent with `DB_PASSWORD` |
+| `DB_URL` / `DB_USER` / `DB_PASSWORD` | Yes | Spring Boot datasource (use `db:5432` inside Docker Compose) |
+| `JWT_SECRET` | Yes | JWT signing key, ≥32 bytes; backend fails to start if missing (fail-closed) |
+| `AI_GATEWAY_API_KEY` | Yes | Production AI gateway key; Compose hard-fails if missing |
+| `ADMIN_API_TOKEN` | No | Separate token for admin endpoints; `/api/v1/admin/**` returns 401 if unset |
+| `AI_DASHSCOPE_API_KEY` | No | DashScope remote fallback; otherwise self-hosted ONNX + gateway |
+| `VITE_API_URL` | No | Frontend→backend URL, default `/api` (Nginx proxy) |
 
 Docs: [DEPLOY.md](DEPLOY.md) · [CONTEXT.md](CONTEXT.md) · [DESIGN_SPEC.md](DESIGN_SPEC.md) · [3D_SPEC.md](3D_SPEC.md)
 
