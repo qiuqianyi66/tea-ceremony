@@ -2,6 +2,14 @@
 
 > 沉浸式在线茶道应用：**Vue 3 + Spring Boot 3 + Spring AI Alibaba 全栈项目**，含 3D 茶席、离线优先 PWA、自托管 RAG 向量检索、SSE 流式 AI 对话与跨会话长期记忆。一席茶，一方天地，一念清心。
 
+想象一下：打开浏览器，木桌、紫砂壶、85℃ 山泉水缓缓注入，蒸汽升起，汤色渐透。结束后八维口感打个分，下次 AI 茶灵记得你的口味偏好。这就是「一盏茶」。
+
+**你是谁？**
+
+| 我是来体验的 | 我是开发者要跑起来 | 我在看技术栈/简历项目 |
+| --- | --- | --- |
+| 👉 [在线 Demo](https://qiuqianyi66.github.io/tea-ceremony/)（离线可用）| 👉 [快速开始](#快速开始) | 👉 [技术栈](#技术栈) · [AI 能力](#ai-能力) · [工程质量与治理](#工程质量与治理) |
+
 [![License MIT](https://img.shields.io/badge/License-MIT-9E8050?style=for-the-badge&labelColor=1C1C1C)](LICENSE)
 [![Built with Vue 3 · Spring Boot 3](https://img.shields.io/badge/Built_with-Vue_3_%C2%B7_Spring_Boot_3-5D4E37?style=for-the-badge&labelColor=1C1C1C)](https://vuejs.org/)
 [![Domain Immersive Tea Ceremony](https://img.shields.io/badge/Domain-Immersive_Tea_Ceremony-6B7D5A?style=for-the-badge&labelColor=1C1C1C)](README.md)
@@ -125,6 +133,20 @@ docker compose up -d --build
 
 常用命令：`npm run type-check` · `npm run test` · `npm run build` · `npm run test:e2e`
 后端测试：`cd backend && mvn -q test`（旧 FastAPI 栈：`python -m pytest tests -q`）
+
+### 环境变量
+
+完整列表见 [.env.example](.env.example)，核心必填项：
+
+| 变量 | 必填 | 说明 |
+| --- | --- | --- |
+| `POSTGRES_PASSWORD` | 是 | PostgreSQL 密码，建议与 `DB_PASSWORD` 一致 |
+| `DB_URL` / `DB_USER` / `DB_PASSWORD` | 是 | Spring Boot 数据源（Docker Compose 内用 `db:5432`） |
+| `JWT_SECRET` | 是 | JWT 签名密钥，≥32 字节；未注入后端启动即失败（fail-closed） |
+| `AI_GATEWAY_API_KEY` | 是 | 生产 AI 网关密钥；Compose 硬强制，缺失直接拒绝启动 |
+| `ADMIN_API_TOKEN` | 否 | 管理端点独立令牌；未配置时 `/api/v1/admin/**` 全部 401 |
+| `AI_DASHSCOPE_API_KEY` | 否 | DashScope 远程备降 key；不填则走自托管 ONNX + 网关 |
+| `VITE_API_URL` | 否 | 前端后端地址，默认 `/api`（Nginx 代理） |
 
 完整部署、架构说明、设计规范见：[DEPLOY.md](DEPLOY.md) · [CONTEXT.md](CONTEXT.md) · [DESIGN_SPEC.md](DESIGN_SPEC.md) · [3D_SPEC.md](3D_SPEC.md)
 

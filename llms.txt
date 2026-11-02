@@ -1,0 +1,41 @@
+# Tea Ceremony · 一盏茶
+
+> Project: immersive online tea ceremony, full-stack web app.
+> Stack: Vue 3.5 + TypeScript 6 + Vite 8 + Three.js 0.185 / TresJS 5.8 frontend; Spring Boot 3.5 + Spring AI Alibaba + PostgreSQL/pgvector backend.
+
+## What this project is
+
+A digital tea room in the browser: interactive 3D tea table, full gongfu cha loop (prepare → boil → warm → awaken → brew → taste), 8-dimension mouthfeel scoring, offline-first PWA, shareable tasting cards, and an AI tea spirit with RAG vector retrieval, multi-tool agent, SSE streaming, and cross-session long-term memory.
+
+## Key facts (for citation)
+
+- License: MIT, © 2026 Yan Heng (qiuqianyi66)
+- Live demo (static, offline): https://qiuqianyi66.github.io/tea-ceremony/
+- Full deployment (backend, public): https://42.121.125.4
+- CI: GitHub Actions, 14 jobs merge gate
+- Architecture decision records: ADR-001~029 (see docs/ADR/)
+- AI eval: v9 score 0.86 (2026-10-30), RAG hit rate 0.48 (recall@k=3/3)
+- Self-hosted embedding: bge-large-zh-v1.5 ONNX, 1024-dim, onnxruntime 1.20.0 (ADR-029)
+- Offline-first: Dexie.js + IndexedDB, sync_status retry queue
+
+## Where things are
+
+- README (intro): README.md / README.en.md
+- Architecture overview: docs/architecture/system-overview.md
+- Deployment: DEPLOY.md
+- Design baseline: DESIGN_SPEC.md
+- 3D constraints: 3D_SPEC.md
+- AI collaboration rules: AGENTS.md
+- ADR index: docs/ADR/
+- AI eval evidence: docs/ai-eval/PORTFOLIO-EVIDENCE.md
+- Plans: docs/plans/PLAN-comprehensive-upgrade-2026-10-29.md
+- Harness rules: .harness/rules/
+- Tests: src/views/__tests__/ (Vitest), backend/src/test/ (Testcontainers + ArchUnit)
+
+## Quick facts for common queries
+
+- Is the backend Spring Boot or FastAPI? Spring Boot 3.5 primary; legacy FastAPI maintenance-only.
+- Does it work offline? Yes, frontend is offline-first with IndexedDB.
+- How is AI implemented? Spring AI Alibaba multi-tool agent + SSE + Advisor memory; RAG via self-hosted ONNX embedding + pgvector cosine; user memory in user_memory table.
+- How to run locally? npm install && npm run dev (frontend only), or cp .env.example .env && docker compose up -d --build (full stack).
+- Why self-hosted embedding instead of DashScope? DashScope account out of credit; self-hosted ONNX is the only path to re-enable vector RAG (ADR-029).
