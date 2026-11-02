@@ -203,7 +203,7 @@ const { imgFailed: wareImgFailed, markImgFailed: markWareImgFailed } = useImgFai
 
     <!-- 已解锁茶器 -->
     <div>
-      <SectionHeader size="base" :level="3" icon="IconCupSoda">我的茶器</SectionHeader>
+      <SectionHeader size="base" :level="3" icon="IconCupSoda"> 我的茶器</SectionHeader>
       <div class="grid grid-cols-3 sm:grid-cols-6 gap-3">
         <Card flat padding="sm" v-for="ware in unlockedWares" :key="ware.id" class="text-center">
           <img v-if="ware.image && !wareImgFailed[ware.id]" :src="ware.image" loading="lazy"

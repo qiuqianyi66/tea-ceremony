@@ -121,7 +121,7 @@ const typeCoverage = computed(() => Math.round((tastedTypes.value.size / 6) * 10
 
     <!-- 近期茶记 -->
     <div>
-      <SectionHeader size="base" :level="3" icon="IconBookOpen">近期茶记</SectionHeader>
+      <SectionHeader size="base" :level="3" icon="IconBookOpen"> 近期茶记</SectionHeader>
       <div v-if="store.history.length === 0" class="text-center text-[var(--color-wood-light)] py-8">
         <p>还没有品鉴记录</p>
         <button @click="router.push('/select')" class="mt-2 inline-flex min-h-11 items-center text-[var(--color-tea-gold)] hover:underline">开始品茶</button>
@@ -145,7 +145,7 @@ const typeCoverage = computed(() => Math.round((tastedTypes.value.size / 6) * 10
 
     <!-- 隐私：匿名运行数据开关（ADR-022）。关掉即停止采集与上报，本地已存数据不删 -->
     <div>
-      <SectionHeader size="base" :level="3" icon="IconActivity">隐私</SectionHeader>
+      <SectionHeader size="base" :level="3" icon="IconActivity"> 隐私</SectionHeader>
       <Card flat>
         <div class="flex items-start justify-between gap-4">
           <div class="min-w-0">

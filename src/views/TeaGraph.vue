@@ -156,7 +156,7 @@ function selectTea(tea: Tea) {
 
     <!-- 关联详情 -->
     <Card flat v-if="selectedTea">
-      <SectionHeader size="base" :level="3" icon="IconBookOpen">文化关联</SectionHeader>
+      <SectionHeader size="base" :level="3" icon="IconBookOpen"> 文化关联</SectionHeader>
       <div class="space-y-2 text-sm">
         <div class="flex justify-between py-1 border-b border-[var(--color-paper)]">
           <span class="text-[var(--color-wood-light)]">茶类</span>
