@@ -108,6 +108,6 @@ describe('storage JSON 读写', () => {
         throw new Error('denied')
       },
     })
-    expect(removeKey('tea:any')).toBe(false)
+    expect(removeKey('tea:denied')).toBe(false)
   })
 })
