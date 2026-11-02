@@ -136,6 +136,7 @@ description: tea 接口协议——现有端点、统一约定（前缀/鉴权/�
 | 方法 | 路径 | 请求体 | 成功响应 | 错误 |
 |---|---|---|---|---|
 | POST | `/api/v1/ai/chat` | `{messages:[{role(system/user/assistant), content≤4000}]`（1-20 条）；`agent?` ≤50（枚举：chat/advisor/taster/librarian/brewer/mentor；S2 全量生效）；`sessionId?`（≥1，M5-S2 会话记忆：带值=续写会话，缺省=登录用户开新会话） | `ApiResponse<{content, sources?, sessionId?, degraded?}>` 200（sources=知识来源数组，透明代理为 null；sessionId=登录用户会话 id，游客/落库失败为 null；**degraded=true 表示答复来自本地规则库而非模型**，缺省不出现） | 400 校验失败/未知 agent PARAM_INVALID；404 会话不存在或非本人（sessionId 越权）；**502 BAD_GATEWAY**（无 key/上游失败且本地规则库未命中） |
+| POST | `/api/v1/ai/chat/stream` | 同 `/chat` 请求体（F-1 流式） | SSE（`text/event-stream`）：逐 chunk 下发文本，末事件 `data: [DONE]`；预流失败（无 key/熔断/越权/配额）在建立 emitter 前以 HTTP 状态抛出，前端回退整段 `/chat`（承重墙 F-4 不拆分） | 400 / 404 / 429 / 502 |
 | POST | `/api/v1/ai/sessions` | `{topic?≤100, agent?≤50}` | `ApiResponse<{id, topic, agent, createdAt, updatedAt}>` 200（仅登录） | 400 / 401 |
 | GET | `/api/v1/ai/sessions` | — | `ApiResponse<[{id, topic, agent, createdAt, updatedAt}]>` 200（仅本人，updated_at 倒序） | 401 |
 | GET | `/api/v1/ai/sessions/{id}/messages` | — | `ApiResponse<[{id, role, content, agent, tokens, createdAt}]>` 200（created_at 正序，含全部消息） | 401 / 404 |

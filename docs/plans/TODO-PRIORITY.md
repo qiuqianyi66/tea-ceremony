@@ -1,7 +1,7 @@
 ---
 name: todo-priority
 description: 一盏茶跨会话状态活文档——状态速览 / 阻塞项 / 可直接开工 / 低优先 / 最近完成（防重做）/ 关键 ID 与命令。新会话先读本文件恢复上下文。
-last_updated: 2026-10-27
+last_updated: 2026-11-02
 status: active
 owner: yanha
 ---
@@ -12,7 +12,9 @@ owner: yanha
 > **未完成事项清单 → `docs/plans/PLAN-open-items-2026-10-17.md`**（2026-10-22 七次复核：**真未完成 1 项（A8 RAG 命中率）** / 等外部条件 4 条 / **待拍板 0 条** / 文档债基本已清 / 在途切片四项已合入）。本文件只留状态速览与命令，**不再各自维护待办清单**（避免又一份平行清单）。
 > 维护规则：状态变化当场更新 `last_updated`；完成一项划一项；过期内容移入对应 PLAN/ADR/学习记录（`docs/plans/lessons.md`），不留死行。
 
-## 状态速览（2026-10-27 · 最近一次复核）
+## 状态速览（2026-11-02 · 每周环境审查复核）
+
+- **2026-11-02 每周环境审查（定时任务）**：①机械审计全绿——verify-harness ERRORS:[] / redlines ERRORS:[] / wiki-drift 39=39 / frontmatter 170/170。**当场修 2 处内容漂移**：`/api/v1/ai/chat/stream`（b13 流式，10-31 合入）未登记 api-contract + `audit-wiki-drift.cjs` 不识 `@PostMapping(value=...)` 写法（误归并到类基路径）→ 契约补行 + 脚本正则与 SSE 豁免；system-overview 内容级修复 4 处（Service 23→24 +UserMemoryService、Flyway V1~V4→V1~V12 且 V11 空号、ADR-001~015→029、AI 流式一行）。②构建测试：前端 `npm run quality` 全绿；后端 `mvn clean test` **509 run / 0 fail / 10 Errors（全 *IntegrationTest，Docker 引擎未启动环境性，同 10-19/10-25 模式）/ 8 Skipped**，ArchUnit 1/1 通过；**本地 `mvn test` 不带 clean 会因 target 残留本地未跟踪旧 class（BertTokenizer/EmbeddingServiceTest，10-30 实验文件未入库）surefire 发现失败**（已 clean 验证；CI 干净检出不受影响）。③依赖安全：npm audit 15（3 low/12 moderate）全在构建链（vite-plugin-pwa→workbox-build→ajv/js-beautify/ejs），CI high 门禁绿，`--force` 修复=降级 2.0→1.1 不可取 → **P2 决策：npm overrides 或接受文档化**；后端声明依赖 pip-audit 4 包 29 漏洞（starlette 0.38.6【14，fix≥0.40 需升 fastapi，旧栈仅维护边界】/ python-jose【1，无 fix，库停维】/ pyasn1+ecdsa 已知残留 CI 注释在案）→ **P2 决策：旧栈升级路线**；**venv 与 requirements 漂移**（lock 过期：alembic 1.13.0 vs txt 1.20.1、bcrypt 4.0.1 vs 5.0.0、psycopg2 2.9.9 vs 2.9.13；venv 含未声明 pillow 12.3.0【39 漏洞】/ pytest 8.4.2 vs dev 9.1.1）→ **P2 决策：重生成 lock + pip-sync**。④环境残留：Docker 引擎未启动，容器核对阻塞（历史 Exited postgres:16 记录仍存疑）；**9 个已合并分支未清理**（本地 3 + `.tmp/upgrade-*` worktree 8 + 远端 9）→ **P2 决策：清理方式 + 远端删除确认**；backend 日志/缓存全 gitignore 无入库。⑤文档惯例：`docs/PLAN-comprehensive-upgrade-2026-10-29.md` 等 10-29 计划类文件落在 docs/ 根而非 plans/ → **P3 备注**（历史 research/HANDOFF 惯例 vs 新 plans/ 约定，迁移与否待定）。
 
 - **2026-10-27 依赖整组 + 交接**：①main 实测 `d1fa158`（与远端一致），本会话合入 13 PR（#146/#147/#148/#149/#150/#152/#153/#154/#155/#159/#161/#163/#165，含 #165 vite-plugin-pwa 2.0 major）；②在途 PR #166（dexie 4.4.7 + vitest 5.0.5，整组重生成 lock 模式，取代 #157/#160），CI 13/14 绿、仅 axe-core pending，待绿后合并；③分支保护 required context 实测 **14**（gh api 核对，原记录 13 已过时）；④机械审计全绿：redlines / wiki-drift 38=38 / context-budget 19134≤19500（余量仅 366 token，常驻新增前须先评估）/ 评测集 VALID（50 条）/ verify-harness ERRORS:[]；⑤Mimosa 两批扫描 triage 完：tea 生产路径 0 findings（14 批全在 dev-dist 构建产物、离线 SFT 脚本、gitignored 的 deploy-gateway、浏览器侧 basis_transcoder 误报；122 批属其他项目 career-os/boss 工具/skill 库，其中 career-os/scripts/boss_web_configure.py:25 硬编码 api_key 需另行轮换）；⑥最新交接 `docs/HANDOFF-2026-10-27-a-deps-checkpoint-execution.md`（旧 9 份早已 deprecated）。
 - **2026-10-22 治理与文档收敛**：①新增《安全 Harness 工程规范》（`docs/security-harness-engineering-spec.md`，威胁模型 T1-T8 + 控制矩阵五域全带 file:line 实测证据 + 新功能安全 checklist 10 项 + 缺口 G1-G7 附反转条件；AGENTS.md §7 加入口指针）；②RAG 命中率 0.16 正式立项（`PLAN-open-items` A8：诊断脚本 `diagnose-rag.cjs` 已机械化，目标 default ≥ 0.40 / expert ≥ 0.30）；③ITERATIONS 简历口径上移：v6 `overall 0.90`（judgeCoverage 1、50 条全量）为当前最新可引用，v5 0.80 转历史口径（用户授权拍板）；④文档债修复：D4/useAudio 拆分（PR #96）、§7 在途四项（nginx snippets/robots/sitemap/ADR-022+遥测契约）标注已合入、P1-9 HTTPS 过期记录改已完成；⑤后端迁移盘点首版（`docs/architecture/backend-migration-status.md`：旧栈 23 端点 10 已迁 / 13 未迁且 0 前端消费方，D9 决策表建议全部退役待拍板）。

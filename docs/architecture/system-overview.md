@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-10-19
+last_updated: 2026-11-02
 status: active
 owner: yanha
 ---
@@ -7,7 +7,7 @@ owner: yanha
 # 系统架构总览
 
 > 「一盏茶」沉浸式在线茶道应用 — 前后端架构、业务域划分与核心数据流。
-> 最后更新：2026-10-19（后端 Spring Boot 重写中：主仓库已实现 10 域 23 Service；旧 FastAPI 仅维护不新增，结构见 `.harness/rules/工程结构.md`）
+> 最后更新：2026-11-02（后端 Spring Boot 重写中：主仓库已实现 10 域 24 Service；旧 FastAPI 仅维护不新增，结构见 `.harness/rules/工程结构.md`）
 
 ## 1. 分层架构
 
@@ -56,7 +56,7 @@ flowchart LR
 ```
 
 - **Controller 只做三件事**：声明路径与鉴权、调用 service、声明响应模型。分层由 ArchUnit 机械化强制（`LayerDependencyTest`，CI Maven test 门禁）。
-- **Service 承载业务规则**：已实现 10 域 23 Service（ai 10 / auth 2 / culture 2 / garden 2 / record 1 / tea 1 / telemetry 5；清单：ExperimentGuardService / ExperimentService / LocalFallbackService / GoldenMetricsService / QualityJudgeService / QualityMetricsService / AiChatService / AiUsageSummaryService / ChatMemoryService / PromptService / JwtService / AuthService / ChunkBackfillService / CultureSearchService / GardenEnergyService / GardenPlantService / TastingRecordService / TeaService / ErrorFingerprintService / FingerprintService / SloEvaluationService / TelemetryIngestService / TelemetryRetentionService；实测口径 `backend/src/main/java` 下 `*Service*.java`）。
+- **Service 承载业务规则**：已实现 10 域 24 Service（ai 10 / auth 2 / culture 2 / garden 2 / record 1 / tea 1 / telemetry 5 / memory 1；清单：ExperimentGuardService / ExperimentService / LocalFallbackService / GoldenMetricsService / QualityJudgeService / QualityMetricsService / AiChatService / AiUsageSummaryService / ChatMemoryService / PromptService / JwtService / AuthService / ChunkBackfillService / CultureSearchService / GardenEnergyService / GardenPlantService / TastingRecordService / TeaService / ErrorFingerprintService / FingerprintService / SloEvaluationService / TelemetryIngestService / TelemetryRetentionService / UserMemoryService；实测口径 `backend/src/main/java` 下 `*Service*.java`）。
 - **统一异常**：Service 抛 BusinessError 子类，全局转 `ApiResponse<T>` 的 `{code, message}` 中文响应。
 - **认证**：Spring Security + JWT（BCrypt 哈希）；旧 FastAPI 栈（routers/services/models/schemas + BusinessError）仅维护不新增。
 
@@ -117,7 +117,7 @@ flowchart LR
     H --> I
 ```
 
-- 浏览器不直连第三方 AI；`POST /api/v1/ai/chat` 统一代理（前端 `askTeaMaster` / `generateTastingNote` / 荐茶内部走 chat）。
+- 浏览器不直连第三方 AI；`POST /api/v1/ai/chat` 统一代理（前端 `askTeaMaster` / `generateTastingNote` / 荐茶内部走 chat）；流式走 `POST /api/v1/ai/chat/stream`（SSE，F-1，预流失败回退整段 `/chat`，承重墙不拆分）。
 - 五专家：CHAT / ADVISOR / TASTER / LIBRARIAN / BREWER / MENTOR（单请求单专家路由，非接力流水线）。
 - 会话记忆（`ChatMemoryService`，历史锚定 ≤20 条）+ Prompt 版本化（`PromptService`，agent_prompts 表）+ 计量（ai_usage_logs）+ 降级（502 → 规则回复，承重墙不可动）。
 
@@ -158,10 +158,10 @@ backend/（Spring Boot，Maven）
     ├── tea/        茶叶目录
     ├── telemetry/  遥测（指标摄取/错误指纹/SLO）
     ├── ware/       茶器
-    └── resources/db/migration/   Flyway 迁移（V1~V4）
+    └── resources/db/migration/   Flyway 迁移（V1~V12，V11 空号未分配）
 
 docs/
-├── ADR/            架构决策记录（ADR-001~015，独立文件）
+├── ADR/            架构决策记录（ADR-001~029，独立文件）
 ├── architecture/   系统架构总览
 ├── prd/            需求分析（REQ-*）
 ├── plans/          迭代计划（PLAN-* / TODO-PRIORITY）

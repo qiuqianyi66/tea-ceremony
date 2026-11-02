@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-10-16
+last_updated: 2026-11-02
 status: active
 owner: tea-harness
 ---
@@ -89,3 +89,4 @@ owner: tea-harness
 
 - **`cmd | tail` 吞退出码，一天内第二次踩坑（2026-10-25，后端去重会话）**：早上在 quality 门禁上刚踩过并用 `PIPESTATUS` 拿到真值；几小时后跑 `mvn test 2>&1 | tail -30`，看着"exit 0"宣布通过——实际 surefire 里 13 个集成测试类 9 Errors + 4 Skipped，全量是红的。铁律：**任何带管道的长命令，退出码一律 `echo "exit=${PIPESTATUS[0]}"` 显式打印，或把输出重定向到文件后 `$?` 判定**；"Build 成功"的判断源只能是 mvn 自己的 `BUILD SUCCESS` 行 + 真实退出码，不是 shell 返回值。
 - **全量测试突然集体失败，先证环境再疑代码（2026-10-25，Docker 引擎会话中途死亡）**：测试容器基类迁移后全量跑挂 13 个类，报错全是 `Could not find a valid Docker environment`——表面看是"我的改动搞坏了测试"，实际是 Docker Desktop 引擎在 12:31-12:39 之间死掉（当时 `docker info` 还返回过版本号，341 个系统管道里 0 个 docker_*）。诊断手段：`docker ps && echo ok`（会失败但别看漏输出）、PowerShell 列 `\.\pipe\` 过滤 docker。铁律：**同类错误集中在"基础设施连接层"且跨 13 个不相关测试类 → 先验证引擎活性，再看代码**；改测试基建的 PR 必须在引擎健康时全量真跑一次再下结论（Skipped ≠ 通过，与 2026-10-18 遥测教训同源）。
+- **`mvn test` 发现失败（0 run）先查 target 残留，再判回归（2026-11-02，每周环境审查）**：本地未跟踪实验文件（BertTokenizer/EmbeddingServiceTest，10-30 自研 embedding 早期版本，未入库后被删）的旧 .class 留在 `target/test-classes/`，surefire 扫描到 → `NoClassDefFoundError: com.tea.culture.embedding.BertTokenizer`，**0 tests run 的发现失败**（不是断言失败）。CI 干净检出永远中不了招，本地 `mvn test`（无 clean）必现。铁律：**mvn 全量报「发现失败/0 run」时，先 `mvn clean` 复跑再疑代码**（与 10-25「先证环境再疑代码」同族；同族教训：10-13 target 残留覆盖主配置）。另一同轮发现：`audit-wiki-drift.cjs` 只认 `@PostMapping("...")` 裸路径，`@PostMapping(value = "...")` 写法被归并到类基路径（AiChatController `/chat/stream` 误报成 `/api/v1/ai`）——**新增端点若用 value= 形式，契约登记后审计仍可能误报**，脚本已支持两种写法 + SSE 端点豁免 ApiResponse 包装校验（2026-11-02 修复）。
