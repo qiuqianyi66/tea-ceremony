@@ -2,7 +2,13 @@
  * 日期 / 数字格式化单测。时间断言一律用本地构造的 Date，避免时区耦合。
  */
 import { describe, expect, it } from 'vitest'
-import { formatCompactNumber, formatDate, formatNumber, formatRelativeTime } from '@/utils/format'
+import {
+  formatCompactNumber,
+  formatDate,
+  formatDateShort,
+  formatNumber,
+  formatRelativeTime,
+} from '@/utils/format'
 
 describe('formatDate', () => {
   const sample = new Date(2024, 0, 5, 8, 9, 7)
@@ -85,5 +91,23 @@ describe('formatCompactNumber', () => {
     expect(formatCompactNumber(-12345)).toBe('-1.2万')
     expect(formatCompactNumber(0)).toBe('0')
     expect(formatCompactNumber(Number.NaN)).toBe('0')
+  })
+})
+
+describe('formatDateShort', () => {
+  it('输出不补零的中文短日期', () => {
+    expect(formatDateShort(new Date(2026, 10, 2))).toBe('2026/11/2')
+    expect(formatDateShort(new Date(2024, 0, 5))).toBe('2024/1/5')
+  })
+
+  it('接受时间戳与可解析字符串', () => {
+    const stamp = new Date(2026, 10, 2).getTime()
+    expect(formatDateShort(stamp)).toBe('2026/11/2')
+    expect(formatDateShort(new Date(2026, 10, 2).toISOString())).toBe('2026/11/2')
+  })
+
+  it('非法输入返回空串', () => {
+    expect(formatDateShort('not-a-date')).toBe('')
+    expect(formatDateShort(Number.NaN)).toBe('')
   })
 })

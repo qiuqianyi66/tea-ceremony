@@ -1,29 +1,33 @@
 <script setup lang="ts">
 /**
- * 卡片 — 毛玻璃容器（DESIGN_SPEC §五 GlassPanel）：glass-panel + 圆角 xl + 柔和阴影。
+ * 卡片 — 毛玻璃容器（DESIGN_SPEC §五 GlassPanel）：glass-panel + 圆角 xl。
  *
- * 插槽：header / default / footer，均可省略。
- * 禁止卡片套卡片、玻璃拟态装饰（禁令速查）；阴影用 Tailwind 的 soft 档（shadow-sm/lg），
- * 禁零偏移彩色光晕。
+ * 收敛全站逐字重复的面板类串（原 `glass-panel rounded-xl p-4` 手写 21 处）。
+ * 插槽：header / default / footer，均可省略。禁止卡片套卡片、玻璃拟态装饰。
+ *
+ * padding：none / sm(p-3) / md(p-4) / lg(p-8)；md 与历史手写档一致，替换时不改观感。
+ * flat：去掉柔和阴影。历史面板本无阴影，替换时传 flat 保持视觉不变；新代码默认带阴影。
  */
 withDefaults(
   defineProps<{
-    /** 内边距档位；none 用于图片 / 图表贴边场景 */
     padding?: 'none' | 'sm' | 'md' | 'lg'
     /** 悬停抬升（列表里可点的卡片用） */
     hoverable?: boolean
+    /** 无阴影（对齐历史面板观感） */
+    flat?: boolean
   }>(),
-  { padding: 'md', hoverable: false },
+  { padding: 'md', hoverable: false, flat: false },
 )
 
-const PADDINGS = { none: 'p-0', sm: 'p-3', md: 'p-5', lg: 'p-8' } as const
+const PADDINGS = { none: 'p-0', sm: 'p-3', md: 'p-4', lg: 'p-8' } as const
 </script>
 
 <template>
   <section
-    class="glass-panel rounded-xl shadow-sm"
+    class="glass-panel rounded-xl"
     :class="[
       PADDINGS[padding],
+      flat ? '' : 'shadow-sm',
       hoverable ? 'transition-shadow duration-300 hover:shadow-lg' : '',
     ]"
   >

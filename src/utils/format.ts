@@ -38,6 +38,17 @@ export function formatDate(input: Date | string | number, pattern = 'YYYY-MM-DD'
   return pattern.replace(PATTERN_TOKEN, (token) => tokens[token] ?? token)
 }
 
+/**
+ * 短日期：`2026/11/2`（不补零，中文界面惯例）。
+ * 取代散落各处的 `new Date(x).toLocaleDateString()`——后者输出随运行时 locale 变，
+ * 既不可测也不可控。非法输入返回空串。
+ */
+export function formatDateShort(input: Date | string | number): string {
+  const date = toDate(input)
+  if (date === null) return ''
+  return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`
+}
+
 const MINUTE = 60_000
 const HOUR = 60 * MINUTE
 const DAY = 24 * HOUR

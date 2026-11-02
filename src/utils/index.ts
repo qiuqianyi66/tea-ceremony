@@ -4,6 +4,7 @@
 export * from './array'
 export * from './debounce'
 export * from './format'
+export * from './math'
 export * from './storage'
 export * from './string'
 export * from './throttle'
