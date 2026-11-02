@@ -3,6 +3,8 @@
  * 依据：docs/reference/telemetry-contract.md + ADR-022
  */
 
+import { clamp } from '@/utils/math'
+
 // ============ 传输 ============
 
 /** 单请求事件上限（契约 §1：≤50 条/请求） */
@@ -28,7 +30,7 @@ export const MAX_ATTEMPTS = BACKOFF_MS.length + 1
 
 /** 取第 attempts 次失败对应的退避毫秒数（索引夹紧，越界取首项） */
 export function backoffDelay(attempts: number): number {
-  const index = Math.min(Math.max(attempts, 0), BACKOFF_MS.length - 1)
+  const index = clamp(attempts, 0, BACKOFF_MS.length - 1)
   return BACKOFF_MS[index] ?? BACKOFF_MS[0]
 }
 

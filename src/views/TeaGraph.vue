@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { PageHeader } from '@/components/ui'
+import { Card, PageHeader, SectionHeader } from '@/components/ui'
 import { useRouter } from 'vue-router'
 import type { TeaRegion } from '@/data/tea-mountain-regions'
 import { TEA_REGIONS } from '@/data/tea-mountain-regions'
@@ -155,8 +155,8 @@ function selectTea(tea: Tea) {
     </div>
 
     <!-- 关联详情 -->
-    <div v-if="selectedTea" class="glass-panel rounded-xl p-4">
-      <h3 class="text-base font-bold text-[var(--color-wood)] mb-3"><IconBookOpen class="inline-block -mt-1 w-4 h-4" /> 文化关联</h3>
+    <Card flat v-if="selectedTea">
+      <SectionHeader size="base" :level="3" icon="IconBookOpen"> 文化关联</SectionHeader>
       <div class="space-y-2 text-sm">
         <div class="flex justify-between py-1 border-b border-[var(--color-paper)]">
           <span class="text-[var(--color-wood-light)]">茶类</span>
@@ -185,6 +185,6 @@ function selectTea(tea: Tea) {
           </div>
         </div>
       </div>
-    </div>
+    </Card>
   </div>
 </template>

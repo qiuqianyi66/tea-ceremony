@@ -1,5 +1,6 @@
 import { type Ref, ref } from 'vue'
 import { BrewPhase } from '@/types/brewing'
+import { clamp, clamp01 } from '@/utils/math'
 
 /**
  * 泡茶动画状态
@@ -27,7 +28,7 @@ export function lerp(a: number, b: number, t: number): number {
 
 /** smoothstep 缓动（开始和结束平滑，避免突兀） */
 export function smoothstep(t: number): number {
-  const clamped = Math.max(0, Math.min(1, t))
+  const clamped = clamp01(t)
   return clamped * clamped * (3 - 2 * clamped)
 }
 
@@ -81,7 +82,7 @@ export function useBrewAnimation(
       : 0
     // 用户拖拽进度接管（READY 阶段向右拖壶嘴注水）：取拖拽与 phase 自动值的较大者
     const drag = pourWaterOverride?.value ?? 0
-    if (drag > 0) targets.pourWater = Math.max(targets.pourWater, Math.min(1, drag))
+    if (drag > 0) targets.pourWater = clamp(drag, targets.pourWater, 1)
     // 放茶：醒茶/浸泡阶段有茶叶
     targets.addLeaves = [BrewPhase.RINSING, BrewPhase.STEEPING].includes(p) ? 1 : 0
     // 闷泡：浸泡阶段盖子盖上

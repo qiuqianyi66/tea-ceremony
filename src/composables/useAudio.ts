@@ -18,6 +18,7 @@
  */
 
 import { getCurrentInstance, onUnmounted } from 'vue'
+import { clamp01 } from '@/utils/math'
 import { audioHost, state } from './audio/host'
 import type { AmbientTrack } from './audio/host'
 import {
@@ -125,7 +126,7 @@ function stopAmbient() {
 // ============ 音量控制 ============
 
 function setMasterVolume(v: number) {
-  const vol = Math.max(0, Math.min(1, v))
+  const vol = clamp01(v)
   state.value.masterVolume = vol
   setHowlerMasterVolume(vol)
   setAmbientHowlVolume(state.value.ambientVolume * vol)
@@ -134,13 +135,13 @@ function setMasterVolume(v: number) {
 }
 
 function setSfxVolume(v: number) {
-  const vol = Math.max(0, Math.min(1, v))
+  const vol = clamp01(v)
   state.value.sfxVolume = vol
   setSfxHowlVolume(vol * state.value.masterVolume)
 }
 
 function setAmbientVolume(v: number) {
-  const vol = Math.max(0, Math.min(1, v))
+  const vol = clamp01(v)
   state.value.ambientVolume = vol
   setAmbientHowlVolume(vol * state.value.masterVolume)
   syncSynthAmbientVolume()

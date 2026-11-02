@@ -14,6 +14,7 @@ import porcelainUrl from '@/assets/blue-white-porcelain.jpg'
 import zishaUrl from '@/assets/zisha-albedo.jpg'
 import { smoothstep, useBrewAnimation } from '@/composables/useBrewAnimation'
 import { BrewPhase } from '@/types/brewing'
+import { clamp01 } from '@/utils/math'
 import { BREW_SKINS, type BrewSkin, type BrewSkinId } from './brewSkins'
 import { createBrewTextures } from './brew/proceduralTextures'
 import { createSceneLayout } from './brew/sceneLayout'
@@ -334,7 +335,7 @@ function setSteamTarget(phase: BrewPhase, temp: number) {
   switch (phase) {
     case BrewPhase.HEATING:
       steamTargetOpacity = temp > 60 ? 0.25 + (temp / Math.max(target, 1)) * 0.15 : 0.1
-      flameTargetIntensity = Math.min(1, temp / Math.max(target, 1))
+      flameTargetIntensity = clamp01(temp / Math.max(target, 1))
       break
     case BrewPhase.WARMING:
     case BrewPhase.RINSING:

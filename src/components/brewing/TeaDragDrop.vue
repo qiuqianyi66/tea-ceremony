@@ -12,6 +12,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import draggable from 'vuedraggable'
 import { playTeaDrop } from '@/composables/useAudio'
 import { useBrewStore } from '@/stores/brew'
+import { clamp } from '@/utils/math'
 import type { Tea } from '@/types/tea'
 import type { TeaWare } from '@/types/teaware'
 
@@ -158,11 +159,11 @@ const vesselDropOptions = {
 
 // 调整克数
 function adjustWeight(delta: number) {
-  teaAmount.value = Math.max(1, Math.min(8, teaAmount.value + delta))
+  teaAmount.value = clamp(teaAmount.value + delta, 1, 8)
 }
 
 function setWeightDirect(value: number) {
-  teaAmount.value = Math.max(1, Math.min(8, value))
+  teaAmount.value = clamp(value, 1, 8)
 }
 
 // 键盘调整克数

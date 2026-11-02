@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ECharts, EChartsOption } from 'echarts'
-import { PageHeader } from '@/components/ui'
+import { Card, PageHeader } from '@/components/ui'
 import { MapChart } from 'echarts/charts'
 import { TooltipComponent } from 'echarts/components'
 import * as echarts from 'echarts/core'
@@ -308,8 +308,8 @@ const categoryColors: Record<string, string> = {
         <IconMountain :size="20" class="inline-block mr-1 -mt-1" />{{ selectedProvince }} 核心茶山产区（{{ selectedMountains.length }}）
       </h3>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div v-for="m in selectedMountains" :key="m.id"
-          class="glass-panel rounded-xl p-4 hover:shadow-md transition-all">
+        <Card flat v-for="m in selectedMountains" :key="m.id"
+          class="hover:shadow-md transition-all">
           <div class="flex items-start justify-between mb-2">
             <div>
               <h4 class="font-bold text-[var(--color-wood)]">{{ m.name }}</h4>
@@ -323,7 +323,7 @@ const categoryColors: Record<string, string> = {
               {{ tea }}
             </span>
           </div>
-        </div>
+        </Card>
       </div>
     </div>
 
@@ -333,9 +333,9 @@ const categoryColors: Record<string, string> = {
         <IconMountain :size="20" class="inline-block mr-1 -mt-1" />全国核心茶山产区（{{ TEA_REGIONS.length }}）
       </h3>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        <div v-for="m in TEA_REGIONS" :key="m.id"
+        <Card flat v-for="m in TEA_REGIONS" :key="m.id"
           @click="selectedProvince = provinceFullName[m.province] || null"
-          class="glass-panel rounded-xl p-4 cursor-pointer hover:shadow-md hover:border-[var(--color-tea-gold)] transition-all">
+          class="cursor-pointer hover:shadow-md hover:border-[var(--color-tea-gold)] transition-all">
           <div class="flex items-start justify-between mb-2">
             <div>
               <h4 class="font-bold text-sm text-[var(--color-wood)]">{{ m.name }}</h4>
@@ -349,7 +349,7 @@ const categoryColors: Record<string, string> = {
               {{ tea }}
             </span>
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   </div>

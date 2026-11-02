@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { PageHeader } from '@/components/ui'
+import { Card, PageHeader, SectionHeader } from '@/components/ui'
 import { useImgFailed } from '@/composables/useImgFailed'
 import { useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
@@ -126,33 +126,32 @@ const { imgFailed: wareImgFailed, markImgFailed: markWareImgFailed } = useImgFai
 
     <!-- 统计卡片 -->
     <div class="grid grid-cols-3 gap-3 mb-8">
-      <div class="glass-panel rounded-xl p-4 text-center">
+      <Card flat class="text-center">
         <p class="text-2xl font-bold text-[var(--color-tea-gold)]">{{ tastedCount }}</p>
         <p class="text-xs text-[var(--color-wood-light)]">已品鉴 / {{ totalTeas }} 款</p>
-      </div>
-      <div class="glass-panel rounded-xl p-4 text-center">
+      </Card>
+      <Card flat class="text-center">
         <p class="text-2xl font-bold text-[var(--color-tea-gold)]">{{ avgScore }}</p>
         <p class="text-xs text-[var(--color-wood-light)]">平均评分</p>
-      </div>
-      <div class="glass-panel rounded-xl p-4 text-center">
+      </Card>
+      <Card flat class="text-center">
         <p class="text-2xl font-bold text-[var(--color-tea-gold)]">{{ bestScore }}</p>
         <p class="text-xs text-[var(--color-wood-light)]">最高评分</p>
-      </div>
+      </Card>
     </div>
 
     <!-- 茶类进度 -->
     <div class="mb-8">
-      <h3 class="text-base font-bold text-[var(--color-wood)] mb-3">六大茶类</h3>
+      <SectionHeader size="base" :level="3">六大茶类</SectionHeader>
       <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
-        <div v-for="(stat, type) in typeStats" :key="type"
-          class="glass-panel rounded-xl p-3 text-center">
+        <Card flat padding="sm" v-for="(stat, type) in typeStats" :key="type" class="text-center">
           <p class="text-sm font-bold text-[var(--color-wood)]">{{ type }}</p>
           <p class="text-lg font-bold text-[var(--color-tea-gold)]">{{ stat.tasted }}/{{ stat.total }}</p>
           <div class="w-full h-1 bg-white rounded-full mt-1 overflow-hidden">
             <div class="h-full bg-[var(--color-tea-gold)] rounded-full transition-all"
               :style="{ width: `${(stat.tasted / stat.total) * 100}%` }"></div>
           </div>
-        </div>
+        </Card>
       </div>
     </div>
 
@@ -204,16 +203,15 @@ const { imgFailed: wareImgFailed, markImgFailed: markWareImgFailed } = useImgFai
 
     <!-- 已解锁茶器 -->
     <div>
-      <h3 class="text-base font-bold text-[var(--color-wood)] mb-3"><IconCupSoda class="inline-block -mt-1 w-4 h-4" /> 我的茶器</h3>
+      <SectionHeader size="base" :level="3" icon="IconCupSoda"> 我的茶器</SectionHeader>
       <div class="grid grid-cols-3 sm:grid-cols-6 gap-3">
-        <div v-for="ware in unlockedWares" :key="ware.id"
-          class="glass-panel rounded-xl p-3 text-center">
+        <Card flat padding="sm" v-for="ware in unlockedWares" :key="ware.id" class="text-center">
           <img v-if="ware.image && !wareImgFailed[ware.id]" :src="ware.image" loading="lazy"
             @error="markWareImgFailed(ware.id)" class="w-12 h-12 object-cover rounded-full mx-auto mb-1" :alt="ware.name" />
           <component v-else :is="`Icon${ware.icon}`" class="w-8 h-8 mx-auto mb-1 text-[var(--color-tea-gold)]" />
           <p class="text-xs font-bold text-[var(--color-wood)]">{{ ware.name }}</p>
           <p class="text-[10px] text-[var(--color-wood-light)]">{{ ware.material }}</p>
-        </div>
+        </Card>
       </div>
       <div v-if="teawares.length > unlockedWares.length" class="mt-3 text-center">
         <p class="text-xs text-[var(--color-wood-light)]">

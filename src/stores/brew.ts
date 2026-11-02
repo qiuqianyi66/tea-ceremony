@@ -6,6 +6,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { BrewState } from '@/types/brewing'
 import { BrewPhase } from '@/types/brewing'
+import { clamp } from '@/utils/math'
 
 export const useBrewStore = defineStore('brew', () => {
   const state = ref<BrewState>({
@@ -30,11 +31,11 @@ export const useBrewStore = defineStore('brew', () => {
   }
 
   function setTeaWeight(weight: number) {
-    state.value.teaWeight = Math.max(1, Math.min(8, weight))
+    state.value.teaWeight = clamp(weight, 1, 8)
   }
 
   function setTargetTemp(temp: number) {
-    state.value.targetTemp = Math.max(20, Math.min(100, temp))
+    state.value.targetTemp = clamp(temp, 20, 100)
   }
 
   function startHeating() {

@@ -2,6 +2,7 @@ import { computed, ref, watch } from 'vue'
 import { getSoupColor } from '@/data/teas'
 import type { useTeaStore } from '@/stores/tea'
 import { BrewPhase } from '@/types/brewing'
+import { clamp01 } from '@/utils/math'
 import { colorTokens } from '@/styles/colorTokens'
 import type { Ref } from 'vue'
 
@@ -35,7 +36,7 @@ export function useBrewPresentation(
 
   const flameHeight = computed(() => {
     if (brewState.phase !== BrewPhase.HEATING) return 0
-    return Math.min(1, (brewState.currentTemp / Math.max(brewState.targetTemp, 1)) * 1.5)
+    return clamp01((brewState.currentTemp / Math.max(brewState.targetTemp, 1)) * 1.5)
   })
 
   const currentInfusion = computed(() => brewState.infusionsDone + 1)

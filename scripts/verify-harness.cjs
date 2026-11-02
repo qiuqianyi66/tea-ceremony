@@ -3,7 +3,7 @@
  * Harness 一致性体检（doc-gardening，Harness 285「熵管理」落地 / PLAN P1-R4）。
  *
  * 检查 AGENTS.md 声明的治理数字 vs 仓库实际，漂移即报错：
- *   ADR 编号连续性 + 声明值 / CI job 数 / 技能数（.agents 66、.harness 32 三族）
+ *   ADR 编号连续性 + 声明值 / CI job 数 / 技能数（.agents 66、.harness 43 四族）
  *   各族 README 声明数 + .agents 路由表双向核对（README 不列 = 不存在）
  *   关键路径引用（docs/ .harness/ .agents/ scripts/ src/ backend/）存在性
  *   wiki 四件套 / changes 三件套+review 门禁 / docs/skills 审查页 / .claude agents
@@ -99,7 +99,7 @@ if (skillsClaim && agentsSkillDirs !== parseInt(skillsClaim[1], 10)) {
   errors.push(`AGENTS.md 声明 .agents/skills 技能 ${skillsClaim[1]} 个，实际 ${agentsSkillDirs} 个`);
 }
 
-const families = ['main-dev', 'biz-dev', 'trouble-shooting'];
+const families = ['main-dev', 'biz-dev', 'trouble-shooting', 'prompt-templates'];
 const famCounts = {};
 for (const fam of families) famCounts[fam] = countSkillDirs(path.join(ROOT, `.harness/skills/${fam}`));
 const harnessTotal = families.reduce((s, f) => s + famCounts[f], 0);

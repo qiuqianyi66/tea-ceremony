@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { Card, SectionHeader } from '@/components/ui'
 import { useImgFailed } from '@/composables/useImgFailed'
 import { useRouter } from 'vue-router'
 import { WATER_TYPES } from '@/data/constants'
@@ -63,7 +64,7 @@ function confirm() {
 
     <!-- 茶器选择 -->
     <div class="w-full max-w-lg mb-8">
-      <h3 class="text-base font-bold text-[var(--color-wood)] mb-3"><IconCupSoda class="inline-block -mt-1" /> 茶器</h3>
+      <SectionHeader size="base" :level="3" icon="IconCupSoda"> 茶器</SectionHeader>
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <button
           v-for="ware in teawares" :key="ware.id"
@@ -93,7 +94,7 @@ function confirm() {
 
     <!-- 水源选择 -->
     <div class="w-full max-w-lg mb-8">
-      <h3 class="text-base font-bold text-[var(--color-wood)] mb-3"><IconDroplet class="inline-block -mt-1" /> 水源</h3>
+      <SectionHeader size="base" :level="3" icon="IconDroplet"> 水源</SectionHeader>
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <button
           v-for="w in WATER_TYPES" :key="w.id"
@@ -111,7 +112,7 @@ function confirm() {
 
     <!-- 目标水温 -->
     <div class="w-full max-w-lg mb-8">
-      <h3 class="text-base font-bold text-[var(--color-wood)] mb-3"><IconThermometer class="inline-block -mt-1" /> 目标水温</h3>
+      <SectionHeader size="base" :level="3" icon="IconThermometer"> 目标水温</SectionHeader>
       <label class="block text-sm text-[var(--color-wood)] mb-2">
         目标水温：<strong>{{ brew.state.targetTemp }}°C</strong>
         <span v-if="store.currentTea" class="text-[var(--color-tea-gold)]">
@@ -133,7 +134,7 @@ function confirm() {
 
     <!-- 投茶量 -->
     <div class="w-full max-w-lg mb-8">
-      <h3 class="text-base font-bold text-[var(--color-wood)] mb-3"><IconLeaf class="inline-block -mt-1" /> 投茶量</h3>
+      <SectionHeader size="base" :level="3" icon="IconLeaf"> 投茶量</SectionHeader>
       <label class="block text-sm text-[var(--color-wood)] mb-2">
         投茶量：<strong>{{ brew.state.teaWeight }}g</strong>
         <span class="text-[var(--color-tea-gold)]">（建议 3g）</span>
@@ -151,12 +152,12 @@ function confirm() {
     </div>
 
     <!-- 选中预览 -->
-    <div v-if="store.selectedTeaWare" class="glass-panel rounded-xl p-3 mb-6 w-full max-w-lg text-sm">
+    <Card flat padding="sm" v-if="store.selectedTeaWare" class="mb-6 w-full max-w-lg text-sm">
       <p class="text-[var(--color-wood)]">
         <IconCheckCircle class="inline-block -mt-0.5 text-[var(--color-tea-gold)]" /> {{ store.selectedTeaWare.name }} · {{ store.selectedTeaWare.material }}
       </p>
       <p class="text-xs text-[var(--color-wood-light)] mt-1">{{ store.selectedTeaWare.description }}</p>
-    </div>
+    </Card>
 
     <!-- 按钮 -->
     <button @click="confirm" :disabled="!store.selectedTeaWare"

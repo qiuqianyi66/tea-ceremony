@@ -5,6 +5,7 @@
 import type { TasteDimensions } from '@/types/tasting'
 import { TeaType } from '@/types/tea'
 import type { TeaWare } from '@/types/teaware'
+import { clamp } from '@/utils/math'
 
 /** 八维口感权重（顺序同 calculateOverallScore 的维度数组）。 */
 export type DimensionWeights = Record<
@@ -220,7 +221,7 @@ export function calculateOverallScore(
   const finalScore = normalizedScore * processFactor
 
   // 保留一位小数，范围 1-10
-  return Math.round(Math.max(1, Math.min(10, finalScore)) * 10) / 10
+  return Math.round(clamp(finalScore, 1, 10) * 10) / 10
 }
 
 /** 获取评分等级（色值在 cream #FAF6F0 上对比度 ≥ 4.5:1，达标见 P0-3 审计） */

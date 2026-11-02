@@ -5,6 +5,7 @@ import { getScoreLevel } from '@/services/scoring'
 import { buildShareUrl, encodeShareData, toShareData } from '@/services/share'
 import { colorTokens } from '@/styles/colorTokens'
 import type { TastingRecord } from '@/types/tasting'
+import { formatDateShort } from '@/utils/format'
 
 const props = defineProps<{
   record: TastingRecord
@@ -125,11 +126,7 @@ async function downloadCard() {
   ctx.fillText(props.record.teaName, 78, 180)
   ctx.fillStyle = colorTokens.woodLight
   ctx.font = '24px sans-serif'
-  ctx.fillText(
-    `${new Date(props.record.date).toLocaleDateString()}  ·  第 ${props.record.infusions} 泡`,
-    80,
-    225,
-  )
+  ctx.fillText(`${formatDateShort(props.record.date)}  ·  第 ${props.record.infusions} 泡`, 80, 225)
 
   ctx.fillStyle = scoreLevel.color
   ctx.font = 'bold 100px sans-serif'
@@ -212,7 +209,7 @@ async function downloadCard() {
         <p class="text-xs tracking-[0.24em] text-[var(--color-tea-gold)]">一盏茶 · TASTING NOTE</p>
         <h3 class="text-2xl font-bold font-serif text-[var(--color-wood)] mt-2">{{ record.teaName }}</h3>
         <p class="text-xs text-[var(--color-wood-light)] mt-1">
-          {{ new Date(record.date).toLocaleDateString() }} · 第 {{ record.infusions }} 泡
+          {{ formatDateShort(record.date) }} · 第 {{ record.infusions }} 泡
         </p>
       </div>
       <div class="text-right shrink-0">

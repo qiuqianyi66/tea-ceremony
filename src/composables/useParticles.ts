@@ -13,6 +13,7 @@ import { type Container, type Engine, type ISourceOptions, tsParticles } from '@
 import { loadBubblesPreset } from '@tsparticles/preset-bubbles'
 import { loadFirePreset } from '@tsparticles/preset-fire'
 import { onUnmounted, ref } from 'vue'
+import { clamp01 } from '@/utils/math'
 
 // ============ 类型定义 ============
 
@@ -209,7 +210,7 @@ export function useParticleSystem(
 
   /** 启动火焰 (电陶炉加热) */
   function startFire(intensity = 1) {
-    state.value.flameIntensity = Math.max(0, Math.min(1, intensity))
+    state.value.flameIntensity = clamp01(intensity)
     return createContainer('fire')
   }
 
@@ -225,7 +226,7 @@ export function useParticleSystem(
 
   /** 启动蒸汽/茶雾 (冲泡/出汤时) */
   function startSteam(intensity = 1) {
-    state.value.steamIntensity = Math.max(0, Math.min(1, intensity))
+    state.value.steamIntensity = clamp01(intensity)
     return createContainer('steam')
   }
 
@@ -256,7 +257,7 @@ export function useParticleSystem(
 
   /** 设置火焰强度 (0-1) */
   function setFlameIntensity(v: number) {
-    state.value.flameIntensity = Math.max(0, Math.min(1, v))
+    state.value.flameIntensity = clamp01(v)
     if (container && state.value.mode === 'fire') {
       container.options.particles.number.value = Math.round(60 * state.value.flameIntensity)
       container.refresh()
@@ -265,7 +266,7 @@ export function useParticleSystem(
 
   /** 设置蒸汽强度 (0-1) */
   function setSteamIntensity(v: number) {
-    state.value.steamIntensity = Math.max(0, Math.min(1, v))
+    state.value.steamIntensity = clamp01(v)
     if (container && state.value.mode === 'steam') {
       container.options.particles.number.value = Math.round(15 * state.value.steamIntensity)
       container.refresh()

@@ -15,6 +15,7 @@ import { startBoiling, stopBoiling } from '@/composables/useAudio'
 import { TEA_POEMS } from '@/data/teaPoems'
 import TeaTreeCanvas from './break/TeaTreeCanvas.vue'
 import { colorTokens } from '@/styles/colorTokens'
+import { clamp01 } from '@/utils/math'
 
 const router = useRouter()
 
@@ -61,7 +62,7 @@ const treeProgress = computed(() => {
   if (soundMode.value) {
     progress += (1 - micLevel.value) * 0.15 - micLevel.value * 0.1
   }
-  return Math.min(1, Math.max(0, progress))
+  return clamp01(progress)
 })
 
 function tick() {

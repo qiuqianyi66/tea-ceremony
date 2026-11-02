@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue'
 import type { useAudio } from '@/composables/useAudio'
 import { BrewPhase } from '@/types/brewing'
+import { clamp } from '@/utils/math'
 
 /**
  * 注水手势（从 BrewView.vue 拆出，2026-10-22 B8）：
@@ -48,7 +49,7 @@ export function useBrewPourGesture(
   function movePourGesture(event: PointerEvent) {
     if (!isPourGestureActive.value) return
     // 向右拖动代表壶嘴向茶器倾斜，限制在 0~100 之间
-    pourGestureProgress.value = Math.max(0, Math.min(100, event.clientX - pourPointerStartX))
+    pourGestureProgress.value = clamp(event.clientX - pourPointerStartX, 0, 100)
   }
 
   function endPourGesture(event: PointerEvent) {
@@ -57,7 +58,7 @@ export function useBrewPourGesture(
     ;(event.currentTarget as HTMLElement).releasePointerCapture?.(event.pointerId)
     if (pourGestureProgress.value >= 60) {
       const elapsed = Math.max(performance.now() - pourPointerStartedAt, 120)
-      pourSpeed.value = Math.max(0.1, Math.min(1, (pourGestureProgress.value / elapsed) * 4))
+      pourSpeed.value = clamp((pourGestureProgress.value / elapsed) * 4, 0.1, 1)
       audio.playPourWater(1 + pourGestureProgress.value / 100)
       startSteeping()
     }

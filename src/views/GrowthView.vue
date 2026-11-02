@@ -8,7 +8,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import TasteRadarChart from '@/components/tasting/TasteRadarChart.vue'
 import TasteTrendChart from '@/components/tasting/TasteTrendChart.vue'
-import { BaseSpinner, EmptyState, PageHeader, PillButton } from '@/components/ui'
+import { BaseSpinner, Card, EmptyState, PageHeader, PillButton } from '@/components/ui'
 import { teas } from '@/data/teas'
 import {
   averageDimensions,
@@ -85,42 +85,42 @@ const hasRecords = computed(() => recordStore.history.length > 0)
     <div v-else>
       <!-- 概要 -->
       <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-6">
-        <div class="glass-panel rounded-xl p-4">
+        <Card flat>
           <p class="text-2xl font-serif font-bold text-[var(--color-wood)]">{{ stats.total }}</p>
           <p class="text-xs text-[var(--color-wood-light)] mt-1">总杯数</p>
-        </div>
-        <div class="glass-panel rounded-xl p-4">
+        </Card>
+        <Card flat>
           <p class="text-2xl font-serif font-bold text-[var(--color-wood)]">{{ stats.avgScore || '—' }}</p>
           <p class="text-xs text-[var(--color-wood-light)] mt-1">平均分</p>
-        </div>
-        <div class="glass-panel rounded-xl p-4">
+        </Card>
+        <Card flat>
           <p class="text-2xl font-serif font-bold text-[var(--color-tea-gold)]">{{ stats.maxScore || '—' }}</p>
           <p class="text-xs text-[var(--color-wood-light)] mt-1 truncate">{{ stats.maxScoreTea || '暂无' }}</p>
-        </div>
-        <div class="glass-panel rounded-xl p-4">
+        </Card>
+        <Card flat>
           <p class="text-2xl font-serif font-bold text-[var(--color-wood)] truncate">{{ stats.topTeaName || '—' }}</p>
           <p class="text-xs text-[var(--color-wood-light)] mt-1">最常喝</p>
-        </div>
+        </Card>
       </div>
 
       <!-- 八维均值 + 评分趋势 -->
       <div class="grid lg:grid-cols-2 gap-4 mb-6">
-        <div class="glass-panel rounded-xl p-4">
+        <Card flat>
           <h3 class="text-lg font-bold text-[var(--color-wood)] mb-2">八维均值</h3>
           <p class="text-xs text-[var(--color-wood-light)] mb-3">苦涩 / 甜 / 回甘 / 醇厚 / 香 / 汤感 / 身心 / 整体</p>
           <div class="flex justify-center">
             <TasteRadarChart :current-dimensions="avgDims" :show-comparison="false" :size="280" />
           </div>
-        </div>
-        <div class="glass-panel rounded-xl p-4">
+        </Card>
+        <Card flat>
           <h3 class="text-lg font-bold text-[var(--color-wood)] mb-2">评分趋势</h3>
           <p class="text-xs text-[var(--color-wood-light)] mb-3">最近 20 次的综合评分与工艺系数</p>
           <TasteTrendChart :records="recordStore.history" :height="200" />
-        </div>
+        </Card>
       </div>
 
       <!-- 茶类足迹 -->
-      <div class="glass-panel rounded-xl p-4 mb-6">
+      <Card flat class="mb-6">
         <h3 class="text-lg font-bold text-[var(--color-wood)] mb-2">茶类足迹</h3>
         <p class="text-xs text-[var(--color-wood-light)] mb-4">喝过 {{ catDist.length }} / 6 类茶</p>
         <div class="space-y-3">
@@ -135,10 +135,10 @@ const hasRecords = computed(() => recordStore.history.length > 0)
             <span class="w-8 shrink-0 text-right text-xs text-[var(--color-wood-light)]">{{ cat.count }}</span>
           </div>
         </div>
-      </div>
+      </Card>
 
       <!-- 节气足迹 -->
-      <div class="glass-panel rounded-xl p-4">
+      <Card flat>
         <h3 class="text-lg font-bold text-[var(--color-wood)] mb-2">节气足迹</h3>
         <p class="text-xs text-[var(--color-wood-light)] mb-4">你在哪些节气喝过茶</p>
         <div class="flex flex-wrap gap-2">
@@ -150,7 +150,7 @@ const hasRecords = computed(() => recordStore.history.length > 0)
             <span class="text-xs text-[var(--color-wood-light)]">× {{ term.count }}</span>
           </span>
         </div>
-      </div>
+      </Card>
     </div>
   </div>
 </template>
