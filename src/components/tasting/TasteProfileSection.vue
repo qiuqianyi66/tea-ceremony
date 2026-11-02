@@ -9,6 +9,7 @@
  * 计算逻辑在 services/tasteProfile.ts（纯函数，已单测）。
  */
 import { computed } from 'vue'
+import { Card } from '@/components/ui'
 import {
   buildAvgDimensions,
   buildFlavorStats,
@@ -39,7 +40,7 @@ const personalTip = computed(() => buildPersonalTip(props.history))
 
     <div class="grid gap-3 sm:grid-cols-2">
       <!-- 茶类偏好 -->
-      <div class="glass-panel rounded-xl p-4">
+      <Card flat>
         <p class="text-sm font-bold text-[var(--color-wood)] mb-3">茶类偏好</p>
         <div v-if="history.length === 0" class="text-xs text-[var(--color-wood-light)]">品鉴后解锁</div>
         <div v-else class="space-y-2">
@@ -52,10 +53,10 @@ const personalTip = computed(() => buildPersonalTip(props.history))
             <span class="w-16 shrink-0 text-right text-[var(--color-wood)]">{{ s.count }} 次{{ s.avg ? ` · ${s.avg}分` : '' }}</span>
           </div>
         </div>
-      </div>
+      </Card>
 
       <!-- 风味偏好 -->
-      <div class="glass-panel rounded-xl p-4">
+      <Card flat>
         <p class="text-sm font-bold text-[var(--color-wood)] mb-3">风味偏好</p>
         <div v-if="flavorStats.length === 0" class="text-xs text-[var(--color-wood-light)]">品鉴后解锁</div>
         <div v-else class="flex flex-wrap gap-2">
@@ -64,15 +65,15 @@ const personalTip = computed(() => buildPersonalTip(props.history))
             {{ f }} ×{{ n }}
           </span>
         </div>
-      </div>
+      </Card>
     </div>
 
     <!-- 口感雷达 -->
-    <div v-if="history.length > 0" class="glass-panel mt-3 rounded-xl p-4">
+    <Card v-if="history.length > 0" flat class="mt-3">
       <p class="mb-2 text-sm font-bold text-[var(--color-wood)]">口感画像</p>
       <div class="flex justify-center">
         <TasteRadarChart :current-dimensions="avgDimensions" :show-comparison="false" :size="260" />
       </div>
-    </div>
+    </Card>
   </section>
 </template>

@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import TasteRadarChart from '@/components/tasting/TasteRadarChart.vue'
 import TasteTrendChart from '@/components/tasting/TasteTrendChart.vue'
 import TastingCard from '@/components/tasting/TastingCard.vue'
+import { Card } from '@/components/ui'
 import { useToast } from '@/composables/useToast'
 import { WATER_TYPES } from '@/data/constants'
 import { getSoupColor } from '@/data/teas'
@@ -15,6 +16,7 @@ import { useTasteStore } from '@/stores/taste'
 import { useTeaStore } from '@/stores/tea'
 import { colorTokens } from '@/styles/colorTokens'
 import type { TasteDimensions, TastingRecord } from '@/types/tasting'
+import { formatDateShort } from '@/utils/format'
 import TasteObserveStep from './taste/TasteObserveStep.vue'
 import TasteStepIndicator from './taste/TasteStepIndicator.vue'
 
@@ -562,7 +564,7 @@ const averageDimensions = computed(() => {
 
       <!-- 结果详情 + 雷达图 + 趋势图 -->
       <div class="grid gap-4 mb-6">
-        <div class="glass-panel rounded-xl p-4 text-left text-sm">
+        <Card flat class="text-left text-sm">
           <div class="flex justify-between text-xs text-[var(--color-wood-light)] mb-2 flex flex-wrap gap-2">
             <span class="flex items-center gap-1">
               <IconCloud class="w-3 h-3" />
@@ -574,7 +576,7 @@ const averageDimensions = computed(() => {
             </span>
             <span class="flex items-center gap-1">
               <IconCalendar class="w-3 h-3" />
-              {{ new Date().toLocaleDateString() }}
+              {{ formatDateShort(Date.now()) }}
             </span>
           </div>
           <p class="text-[var(--color-wood)] flex items-center gap-1">
@@ -612,10 +614,10 @@ const averageDimensions = computed(() => {
           <div v-else-if="!aiComment && step === 'result'" class="mt-3 text-xs text-[var(--color-wood-light)]">
             <IconBot :size="14" class="inline-block mr-1 -mt-0.5 text-[var(--color-tea-gold)]" /> 茶灵正在思考...
           </div>
-        </div>
+        </Card>
 
         <!-- 雷达图对比 -->
-        <div v-if="Object.keys(averageDimensions).length > 0" class="glass-panel rounded-xl p-4">
+        <Card flat v-if="Object.keys(averageDimensions).length > 0">
           <p class="text-sm font-bold text-[var(--color-wood)] mb-3 flex items-center gap-2">
             <IconBarChart class="w-4 h-4" />
             品鉴对比：本次 vs 历史均值
@@ -626,16 +628,16 @@ const averageDimensions = computed(() => {
             :show-comparison="true"
             :size="280"
           />
-        </div>
+        </Card>
 
         <!-- 历史趋势图 -->
-        <div v-if="store.history.length > 0" class="glass-panel rounded-xl p-4">
+        <Card flat v-if="store.history.length > 0">
           <p class="text-sm font-bold text-[var(--color-wood)] mb-3 flex items-center gap-2">
             <IconTrendingUp class="w-4 h-4" />
             综合评分趋势（最近 20 次）
           </p>
           <TasteTrendChart :records="store.history" :height="180" />
-        </div>
+        </Card>
       </div>
 
       <button @click="router.push('/select')"

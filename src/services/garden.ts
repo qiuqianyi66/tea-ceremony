@@ -5,6 +5,7 @@
  * 若未来 3D 场景移除 plants 渲染，本文件可随之删除。
  */
 import type { GrowthStage, GrowthStageInfo, PlantedTea } from '@/types/garden'
+import { clamp } from '@/utils/math'
 
 // ============ 生长周期配置（14 天） ============
 
@@ -92,7 +93,7 @@ export function getCurrentWaterLevel(plant: PlantedTea): number {
   const lastWatered = new Date(plant.lastWateredAt).getTime()
   const daysSinceWater = (Date.now() - lastWatered) / (1000 * 60 * 60 * 24)
   const level = plant.waterLevel - daysSinceWater * WATER_DECAY_PER_DAY
-  return Math.max(0, Math.min(100, level))
+  return clamp(level, 0, 100)
 }
 
 /** 判断是否枯萎 */

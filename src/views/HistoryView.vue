@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { EmptyState, PageHeader, PillButton } from '@/components/ui'
+import { Card, EmptyState, PageHeader, PillButton } from '@/components/ui'
 import { getScoreLevel } from '@/services/scoring'
 import { useProgressStore } from '@/stores/progress'
 import { useRecordStore } from '@/stores/record'
 import { useTeaStore } from '@/stores/tea'
+import { formatDateShort } from '@/utils/format'
 
 const router = useRouter()
 const store = useTeaStore()
@@ -65,7 +66,7 @@ async function retrySync() {
     <!-- 成就展示 -->
     <div class="mb-8">
       <!-- 茶修等级 -->
-      <div class="glass-panel rounded-xl p-4 mb-4">
+      <Card flat class="mb-4">
         <div class="flex items-center justify-between mb-2">
           <div class="flex items-center gap-2">
             <component :is="`Icon${progress.currentLevel.icon}`" class="w-8 h-8 text-[var(--color-tea-gold)]" />
@@ -85,7 +86,7 @@ async function retrySync() {
             :style="{ width: `${Math.min(100, (progress.userXp / progress.xpForNextLevel) * 100)}%` }">
           </div>
         </div>
-      </div>
+      </Card>
 
       <h3 class="text-lg font-bold text-[var(--color-wood)] mb-3">
         成就
@@ -126,7 +127,7 @@ async function retrySync() {
               </span>
             </div>
             <p class="text-sm text-[var(--color-wood-light)]">
-              {{ new Date(record.date).toLocaleDateString() }} · 第 {{ record.infusions }} 泡 · {{ record.brewTemp }}°C · {{ record.brewTime }}s
+              {{ formatDateShort(record.date) }} · 第 {{ record.infusions }} 泡 · {{ record.brewTemp }}°C · {{ record.brewTime }}s
             </p>
             <p v-if="record.syncStatus" class="text-[11px] mt-1" :class="{
               'text-emerald-700': record.syncStatus === 'synced',

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { PageHeader } from '@/components/ui'
+import { Card, PageHeader, SectionHeader } from '@/components/ui'
 import { useRouter } from 'vue-router'
 import TasteProfileSection from '@/components/tasting/TasteProfileSection.vue'
 import { TEA_LEVELS } from '@/data/constants'
@@ -13,6 +13,7 @@ import {
   isTelemetryEnabled,
   setTelemetryEnabled,
 } from '@/services/telemetry'
+import { formatDateShort } from '@/utils/format'
 
 const router = useRouter()
 const store = useTeaStore()
@@ -81,10 +82,9 @@ const typeCoverage = computed(() => Math.round((tastedTypes.value.size / 6) * 10
 
     <!-- 六境全景 -->
     <div class="mb-6">
-      <h3 class="text-base font-bold text-[var(--color-wood)] mb-3">茶修六境</h3>
+      <SectionHeader size="base" :level="3">茶修六境</SectionHeader>
       <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
-        <div v-for="(level, i) in TEA_LEVELS" :key="level.id"
-          class="glass-panel rounded-xl p-3 text-center transition-all"
+        <Card flat padding="sm" v-for="(level, i) in TEA_LEVELS" :key="level.id" class="text-center transition-all"
           :class="progress.userXp >= level.minXp
             ? 'opacity-100'
             : 'opacity-40 grayscale'">
@@ -92,28 +92,28 @@ const typeCoverage = computed(() => Math.round((tastedTypes.value.size / 6) * 10
           <p class="text-xs font-bold text-[var(--color-wood)]">{{ level.name }}</p>
           <p class="text-[10px] text-[var(--color-wood-light)]">{{ level.desc }}</p>
           <p class="mt-1 text-[10px] leading-4 text-[var(--color-tea-gold)]/80">{{ level.essence }}</p>
-        </div>
+        </Card>
       </div>
     </div>
 
     <!-- 统计 -->
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-      <div class="glass-panel rounded-xl p-3 text-center">
+      <Card flat padding="sm" class="text-center">
         <p class="text-lg font-bold text-[var(--color-tea-gold)]">{{ totalTastings }}</p>
         <p class="text-xs text-[var(--color-wood-light)]">总品鉴</p>
-      </div>
-      <div class="glass-panel rounded-xl p-3 text-center">
+      </Card>
+      <Card flat padding="sm" class="text-center">
         <p class="text-lg font-bold text-[var(--color-tea-gold)]">{{ store.history.length > 0 ? (store.history.reduce((a, r) => a + r.overallScore, 0) / store.history.length).toFixed(1) : '—' }}</p>
         <p class="text-xs text-[var(--color-wood-light)]">平均评分</p>
-      </div>
-      <div class="glass-panel rounded-xl p-3 text-center">
+      </Card>
+      <Card flat padding="sm" class="text-center">
         <p class="text-lg font-bold text-[var(--color-tea-gold)]">{{ typeCoverage }}%</p>
         <p class="text-xs text-[var(--color-wood-light)]">茶类覆盖</p>
-      </div>
-      <div class="glass-panel rounded-xl p-3 text-center">
+      </Card>
+      <Card flat padding="sm" class="text-center">
         <p class="text-lg font-bold text-[var(--color-tea-gold)]">{{ unlockedWareCount }}</p>
         <p class="text-xs text-[var(--color-wood-light)]">茶器收藏</p>
-      </div>
+      </Card>
     </div>
 
     <!-- 口味画像 -->
@@ -121,35 +121,32 @@ const typeCoverage = computed(() => Math.round((tastedTypes.value.size / 6) * 10
 
     <!-- 近期茶记 -->
     <div>
-      <h3 class="text-base font-bold text-[var(--color-wood)] mb-3"><IconBookOpen class="inline-block -mt-1 w-4 h-4" /> 近期茶记</h3>
+      <SectionHeader size="base" :level="3" icon="IconBookOpen">近期茶记</SectionHeader>
       <div v-if="store.history.length === 0" class="text-center text-[var(--color-wood-light)] py-8">
         <p>还没有品鉴记录</p>
         <button @click="router.push('/select')" class="mt-2 inline-flex min-h-11 items-center text-[var(--color-tea-gold)] hover:underline">开始品茶</button>
       </div>
       <div v-else class="space-y-2">
-        <div v-for="r in store.history.slice(0, 5)" :key="r.id"
-          class="glass-panel rounded-xl p-3 text-sm">
+        <Card flat padding="sm" v-for="r in store.history.slice(0, 5)" :key="r.id" class="text-sm">
           <div class="flex justify-between items-center">
             <div>
               <p class="font-bold text-[var(--color-wood)]">{{ r.teaName }}</p>
               <p class="text-xs text-[var(--color-wood-light)]">
-                {{ new Date(r.date).toLocaleDateString() }}
+                {{ formatDateShort(r.date) }}
                 {{ r.weather || '' }} {{ r.mood || '' }}
               </p>
             </div>
             <span class="text-lg font-bold text-[var(--color-tea-gold)]">{{ r.overallScore }}</span>
           </div>
           <p v-if="r.notes" class="text-xs text-[var(--color-wood-light)] mt-1 italic">"{{ r.notes }}"</p>
-        </div>
+        </Card>
       </div>
     </div>
 
     <!-- 隐私：匿名运行数据开关（ADR-022）。关掉即停止采集与上报，本地已存数据不删 -->
     <div>
-      <h3 class="text-base font-bold text-[var(--color-wood)] mb-3">
-        <IconActivity class="inline-block -mt-1 w-4 h-4" /> 隐私
-      </h3>
-      <div class="glass-panel rounded-xl p-4">
+      <SectionHeader size="base" :level="3" icon="IconActivity">隐私</SectionHeader>
+      <Card flat>
         <div class="flex items-start justify-between gap-4">
           <div class="min-w-0">
             <p class="text-sm font-medium text-[var(--color-wood)]">匿名运行数据</p>
@@ -175,7 +172,7 @@ const typeCoverage = computed(() => Math.round((tastedTypes.value.size / 6) * 10
         <p v-if="telemetryJustSaved" class="mt-3 text-xs text-[var(--color-tea-gold)]">
           {{ telemetryOn ? '已开启' : '已关闭，不再上报' }}
         </p>
-      </div>
+      </Card>
     </div>
   </div>
 </template>
