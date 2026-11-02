@@ -4,7 +4,7 @@
 #
 #    pip-compile --no-emit-index-url --no-emit-trusted-host --no-index --output-file=requirements.lock requirements.txt
 #
-alembic==1.13.0
+alembic==1.20.1
     # via -r requirements.txt
 annotated-types==0.8.0
     # via pydantic
@@ -61,7 +61,7 @@ prometheus-client==0.26.0
     # via prometheus-fastapi-instrumentator
 prometheus-fastapi-instrumentator==7.1.0
     # via -r requirements.txt
-psycopg2-binary==2.9.9
+psycopg2-binary==2.9.13
     # via -r requirements.txt
 pyasn1==0.4.8
     # via
@@ -93,7 +93,7 @@ sentry-sdk==2.69.1
     # via -r requirements.txt
 six==1.17.0
     # via ecdsa
-sqlalchemy==2.0.35
+sqlalchemy==2.0.54
     # via
     #   -r requirements.txt
     #   alembic
