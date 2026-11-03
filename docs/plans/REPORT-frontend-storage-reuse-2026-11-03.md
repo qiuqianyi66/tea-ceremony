@@ -119,3 +119,38 @@ await db.transaction('rw', <表>, async () => {
    但净省约 15 行，动的是 **token 持久化路径**，收益与风险不成比例。
 3. 真要做，正确顺序是先给 `utils/storage.ts` 补一条「谁是唯一 localStorage 出口」的规则并
    逐个人改，而不是顺手替换（本项目在 IndexedDB/localStorage 这一层的历史事故最多）。
+
+## 五、附：P4 第 2/3/4 项判定（2026-11-03）
+
+### 第 2 项 `try/catch` 13 处 + `console.error/warn` 17 处 → 不动
+
+实测（生产代码，已排除 `__tests__` / `*.spec.*` / `src/test/`）：`console.warn|error` **17 处 / 10 文件**、
+`catch (` **13 处 / 8 文件**，与快照一致。
+
+逐条读完的结论：**17 处全是刻意降级路径**，每条都带说明（`紫砂贴图加载失败，回退纯色` /
+`HDRI 加载失败，使用纯色背景兜底` / `品鉴记录已保存在本地，稍后可重试同步` / `API 调用失败，使用 mock 数据` …）。
+它们不是重复的错误处理，是各自模块不同的兜底策略。
+
+「是否已有统一约定」的答案：`services/errorBuffer.ts` **已存在**，但它是 **捕获未处理错误**
+（`window.onerror` / `unhandledrejection` → IndexedDB），不是「代替 console 的写法约定」。
+把这 17 处已捕获的预期失败灌进 errorBuffer 只会制造噪声（离线时 HDRI 加载失败是正常态）。
+**结论：无约定缺口，不动。**
+
+### 第 3 项 `new Date()` 32 处 / 18 文件 → 不动（格式化已集中）
+
+按用途拆 32 处：
+
+| 用途 | 处数 | 判定 |
+|---|---|---|
+| `new Date().toISOString()` 造时间戳（unlockedAt / occurredAt / ts / exportedAt …） | 18 | 记录字段，不是格式化；抽 `nowIso()` 省 0 行 |
+| `new Date(x).getTime()` 时间戳比较（`services/garden.ts` 3 处） | 3 | 计划已定「比较不动」 |
+| `new Date().getHours()` 问安时段判断（useAudio / teaAI / HomeHero / TeaRoom） | 4 | 业务判断，不是格式化 |
+| 解析后交给 `utils/format.ts` 或数据层内部用（`TasteTrendChart` / `solarTerms` / `format` 本体） | 7 | 解析点，无重复可收 |
+
+**格式化用途已经全部集中在 `src/utils/format.ts`**（`formatDate` / `formatDateShort` / `formatRelativeTime`），
+上一轮已把 5 处散落格式化收进去。**结论：这一项在上轮就做完了，本轮无剩余。**
+
+### 第 4 项 `setTimeout` 30 处 / 20 文件 → 维持计划原判（整项跳过）
+
+实测 30 处 / 20 文件，与快照一致。计划已判定「全是时序编排/请求超时，不是防抖，不硬套 `debounce`」，
+本次未逐条复核其性质（原判已由上一轮审计报告 §四 给出证据），照原判跳过。
