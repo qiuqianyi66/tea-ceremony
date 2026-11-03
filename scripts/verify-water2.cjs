@@ -1,4 +1,9 @@
-/** verify-water2.cjs — 坐标点击浇水，检查粒子状态 + 截图 */
+/**
+ * verify-water2.cjs — 坐标点击浇水，检查粒子状态 + 截图
+ *
+ * 已知失效（2026-11-03 实测）：播种分支用的 `.plant-btn-3d` 在 `src/` 已无对应节点，
+ * 干净 profile 下本脚本只能当 smoke：尾部 `VERIFIED:` 会显示 `no-water-button（本次未验到浇水粒子）`。
+ */
 const { chromium } = require('playwright')
 
 ;(async () => {
@@ -98,6 +103,8 @@ const { chromium } = require('playwright')
   }
 
   console.log(JSON.stringify({ waterBtnFound: !!wb, waterState, errors }, null, 2))
+  // 探针如实标注自己验到了什么：按钮不在 = 本次没验到浇水粒子，不能算「通过」
+  console.log('VERIFIED:', wb ? 'water-button-clicked' : 'no-water-button（本次未验到浇水粒子）')
   console.log('ERRORS:', JSON.stringify(errors))
   if (errors.length > 0) process.exitCode = 1
   await browser.close()

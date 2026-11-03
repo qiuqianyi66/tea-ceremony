@@ -1,4 +1,10 @@
-/** verify-water-rain.cjs — 复现用户操作：种茶→点击茶树→浇水动画；切雨天→雨丝；捕获 console 错误 */
+/**
+ * verify-water-rain.cjs — 复现用户操作：种茶→点击茶树→浇水动画；切雨天→雨丝；捕获 console 错误
+ *
+ * 已知失效（2026-11-03 实测）：本脚本「若无苗则种茶」分支用的 `.plant-btn-3d` / `.empty-hint`
+ * 在 `src/` 已无对应节点（茶园页改走拖拽/接口播种），干净 profile 下本脚本只能当 smoke：
+ * 尾部 `VERIFIED:` 会显示 `no-watering-button（本次未验到浇水动画）`。
+ */
 const { chromium } = require('playwright')
 
 ;(async () => {
@@ -81,12 +87,14 @@ const { chromium } = require('playwright')
     await page.screenshot({ path: 'verify_3d_rain2.png' })
   }
 
+  const wateringVisible = await waterBtn.isVisible().catch(() => false)
   console.log(
-    JSON.stringify(
-      { wateringVisible: await waterBtn.isVisible().catch(() => false), errors },
-      null,
-      2,
-    ),
+    JSON.stringify({ wateringVisible, errors }, null, 2),
+  )
+  // 探针如实标注自己验到了什么：按钮不在 = 本次没验到浇水动画，不能算「通过」
+  console.log(
+    'VERIFIED:',
+    wateringVisible ? 'watering-button-present' : 'no-watering-button（本次未验到浇水动画）',
   )
   console.log('ERRORS:', JSON.stringify(errors))
   if (errors.length > 0) process.exitCode = 1

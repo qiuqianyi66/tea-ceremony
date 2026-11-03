@@ -46,8 +46,10 @@ function readLines(p) { try { return fs.readFileSync(p, 'utf8').split(/\r?\n/); 
 function rel(p) { return path.relative(ROOT, p).replace(/\\/g, '/'); }
 
 // ---------- R2：吞异常（任意异常类型的空 catch 块，含「只写注释」的空块） ----------
-// 豁免须写在块内：`// R2-allow: <理由≥8字>`，理由说明「为什么不能处理」。
+// 豁免须写在块内：`// R2-allow: <理由≥8字>`，理由说明「为什么这个位置不能处理」。
+// 两条可核验限制（与编码规范 R2 同措辞）：总豁免数 ≤ R2_ALLOW_BUDGET；同一理由不得出现 ≥3 处。
 // 判据细节与双向验证证据见 scripts/lib/swallow-catch.cjs + .harness/changes/gate-reliability/。
+const R2_ALLOW_BUDGET = 3;
 const javaFiles = collect('backend/src/main/java', new Set(['.java']));
 const swallowCatch = [];
 const r2Allowed = [];
@@ -55,13 +57,25 @@ for (const f of javaFiles) {
   const text = fs.readFileSync(f, 'utf8');
   for (const hit of findSwallowCatches(text)) {
     const line = text.slice(0, hit.index).split(/\r?\n/).length;
-    if (hit.reason) r2Allowed.push(`${rel(f)}:${line}`);
+    if (hit.reason) r2Allowed.push({ loc: `${rel(f)}:${line}`, reason: hit.reason });
     else swallowCatch.push(`${rel(f)}:${line} catch(${hit.exception}) 空块吞异常`);
   }
 }
 for (const s of swallowCatch) errors.push(`R2 ${s}（编码规范 §五 R2：禁 catch 吞异常）`);
+if (r2Allowed.length > R2_ALLOW_BUDGET) {
+  errors.push(
+    `R2 豁免 ${r2Allowed.length} 处超出预算 ${R2_ALLOW_BUDGET}（编码规范 R2：豁免是预算不是通道。先改共享 helper / 修正设计；确需上调须改 R2_ALLOW_BUDGET 并在 changes 切片写理由）`,
+  );
+}
+const r2ReasonCount = new Map();
+for (const a of r2Allowed) r2ReasonCount.set(a.reason, (r2ReasonCount.get(a.reason) ?? 0) + 1);
+for (const [reason, count] of r2ReasonCount) {
+  if (count >= 3) {
+    errors.push(`R2 同一豁免理由出现 ${count} 处「${reason}」（编码规范 R2：同因 ≥3 处应改共享 helper 或修正设计）`);
+  }
+}
 warnings.push(
-  `R2 豁免 ${r2Allowed.length} 处（块内 // R2-allow 已说明理由）${r2Allowed.length > 0 ? '：' + r2Allowed.join(', ') : ''}`,
+  `R2 豁免 ${r2Allowed.length}/${R2_ALLOW_BUDGET} 处${r2Allowed.length > 0 ? '：' + r2Allowed.map((a) => `${a.loc}「${a.reason}」`).join('；') : ''}`,
 );
 
 // ---------- R7a：ddl-auto 非 validate（跳过 # 注释行） ----------
