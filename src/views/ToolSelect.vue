@@ -64,7 +64,7 @@ function confirm() {
 
     <!-- 茶器选择 -->
     <div class="w-full max-w-lg mb-8">
-      <SectionHeader size="base" :level="3" icon="IconCupSoda"> 茶器</SectionHeader>
+      <SectionHeader size="base" :level="3" icon="IconCupSoda" icon-size="inherit"> 茶器</SectionHeader>
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <button
           v-for="ware in teawares" :key="ware.id"
@@ -94,7 +94,7 @@ function confirm() {
 
     <!-- 水源选择 -->
     <div class="w-full max-w-lg mb-8">
-      <SectionHeader size="base" :level="3" icon="IconDroplet"> 水源</SectionHeader>
+      <SectionHeader size="base" :level="3" icon="IconDroplet" icon-size="inherit"> 水源</SectionHeader>
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <button
           v-for="w in WATER_TYPES" :key="w.id"
@@ -112,7 +112,7 @@ function confirm() {
 
     <!-- 目标水温 -->
     <div class="w-full max-w-lg mb-8">
-      <SectionHeader size="base" :level="3" icon="IconThermometer"> 目标水温</SectionHeader>
+      <SectionHeader size="base" :level="3" icon="IconThermometer" icon-size="inherit"> 目标水温</SectionHeader>
       <label class="block text-sm text-[var(--color-wood)] mb-2">
         目标水温：<strong>{{ brew.state.targetTemp }}°C</strong>
         <span v-if="store.currentTea" class="text-[var(--color-tea-gold)]">
@@ -134,7 +134,7 @@ function confirm() {
 
     <!-- 投茶量 -->
     <div class="w-full max-w-lg mb-8">
-      <SectionHeader size="base" :level="3" icon="IconLeaf"> 投茶量</SectionHeader>
+      <SectionHeader size="base" :level="3" icon="IconLeaf" icon-size="inherit"> 投茶量</SectionHeader>
       <label class="block text-sm text-[var(--color-wood)] mb-2">
         投茶量：<strong>{{ brew.state.teaWeight }}g</strong>
         <span class="text-[var(--color-tea-gold)]">（建议 3g）</span>
