@@ -203,11 +203,13 @@ P1 已完成（分支 `refactor/scripts-fs-utils`，6 commit）。执行时发�
 
 **P1 顺带查出三个未列入本规划的问题**：
 
-1. `npm run quality` 在**本机（干净的 main）上红 5 个测试**，全在 `tracking*.spec.ts`：单独跑通过、
-   `--no-file-parallelism` 全量跑 43/43 通过、而 **CI 上 Vitest 39s 通过**。
-   结论：**并行执行下的稳定性缺陷（本机复现，CI 未复现）**，不是 main 破了。
-   其中 2 个是墙钟性能断言、3 个是计数断言。本规划每轮验收都要求 `npm run quality` 全绿，
-   本机不可靠 → 报「全绿」前要么串行跑一遍，要么以 CI 为准。
+1. **已修（PR #212）**：`npm run quality` 在本机（干净的 main）上红 5 个测试，全在 `tracking*.spec.ts`。
+   **根因不是测试写坏，是产品代码竞态**：`initDB()` 用「完成后才置位的布尔标记」做守卫，
+   并发调用会一起进 `db.open()` 与一次性迁移，迁移期间的读写与 `clear()` 交错 → 计数断言
+   「expected 0 received 1」；墙钟性能断言是同因（额外的 open/迁移推高耗时）。
+   实测：旧实现下 3 个并发调用触发 **3 次** `db.open()`；改成缓存 Promise 后连续 **3 次全量
+   44 文件 381 测试全绿**（改前每次全量都稳定 5 红）。新增 `db.init.spec.ts` 有牙齿
+   （旧实现下断言 `toHaveBeenCalledTimes(1)` 实测得到 3 → 失败）。
 2. **已修（PR #207）**：9 个 `verify-*.cjs` 打印 `ERRORS: [...]` 却不设非零退出码 →
    `npm run verify:ui` 用 `&&` 串联时永远报成功（假绿）。修了其中 6 个。
    **关键坑**：只加退出码会把 telemetry 噪声算成失败——后端不在场时
