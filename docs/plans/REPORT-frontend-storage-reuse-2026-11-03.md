@@ -88,3 +88,34 @@ await db.transaction('rw', <表>, async () => {
 3. 真正有重复债的地方本轮已定位清楚：`scripts/`（P1 已收）、后端 catch（P2 已证伪）。
    **P4 里的 `localStorage` 20 处 / `new Date` 32 处** 反而更可能有真收益，但计划自己也说「单点收益小」，
    优先度应低于「修 `verify-*.cjs` 假绿」这类门禁问题（已修）。
+
+## 四、附：P4 第 1 项（`localStorage` 直用）先判定完毕（2026-11-03）
+
+计划要求「先逐处核实是否真有业务侧直用」。实测（`src/` 全量，含测试）：
+
+- `localStorage.` 命中 **34 处 / 10 文件**（计划快照写 20 处 / 6 文件）。
+- 其中 **15 处在测试**（`storage.spec` / `teaAI.spec` / `tea.spec` / `utils/storage.spec`）、
+  2 处在 `src/test/setup.ts`（内存实现），都不是生产代码。
+
+生产侧 17 处分布：
+
+| 文件 | 处数 | 判定 |
+|---|---|---|
+| `services/storage/db.ts` | 4（另 2 处已注释） | 一次性 localStorage→IndexedDB 迁移，**该处就是要读 localStorage**，不改 |
+| `services/telemetry/identity.ts` | 4 | 存储层本身，不改 |
+| `services/authStorage.ts` | 3 | 存储层本身，不改 |
+| `services/aiSession.ts` | 3 | 存储层本身，不改 |
+| `stores/theme.ts` | 2 | **唯一的业务侧直用**（Pinia store 里直接 `localStorage.getItem('tea-theme')`） |
+
+**顺带发现（比「合并 2 处直用」更值得记的一条）**：`src/utils/storage.ts` 已提供
+`readJson / writeJson / removeKey`（含隐私模式、配额、循环引用的降级语义，且有专门 spec），
+但**全库没有任何生产调用方**——`authStorage.ts` 与 `aiSession.ts` 各自手写了一遍
+「try/catch + 序列化 + 静默失败」。所以真实状况是「工具函数已具备但没人用」，不是「缺工具」。
+
+**为什么这一项仍不动**：
+1. `stores/theme.ts` 存的是裸字符串（`'ming'`），换成 `writeJson` 会变成 `"ming"`（带引号），
+   老数据 `JSON.parse` 抛错后回落到默认值 → **已选主题静默重置**，是回归。
+2. `authStorage` / `aiSession` 换 `utils/storage` 可做到零格式变更（都是 JSON/整数边界），
+   但净省约 15 行，动的是 **token 持久化路径**，收益与风险不成比例。
+3. 真要做，正确顺序是先给 `utils/storage.ts` 补一条「谁是唯一 localStorage 出口」的规则并
+   逐个人改，而不是顺手替换（本项目在 IndexedDB/localStorage 这一层的历史事故最多）。
