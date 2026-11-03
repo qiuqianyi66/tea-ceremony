@@ -4,6 +4,8 @@ const { chromium } = require('playwright')
 ;(async () => {
   const browser = await chromium.launch({ headless: true, channel: 'chromium' })
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
+  // 后端不在场时 telemetry 上报会刷 ERR_CONNECTION_REFUSED，污染错误桶：直接应答 204
+  await page.route('**/v1/telemetry/batch', (r) => r.fulfill({ status: 204, body: '' }))
   const errors = []
   page.on('console', (m) => {
     if (m.type() === 'error') errors.push(m.text())
@@ -71,5 +73,6 @@ const { chromium } = require('playwright')
   await page.screenshot({ path: 'verify_field_planted.png' })
 
   console.log('ERRORS:', JSON.stringify(errors))
+  if (errors.length > 0) process.exitCode = 1
   await browser.close()
 })()
