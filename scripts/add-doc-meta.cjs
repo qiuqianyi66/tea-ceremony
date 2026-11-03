@@ -17,17 +17,12 @@
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
+const { collect } = require('./lib/fs-utils.cjs');
 
 const ROOT = path.resolve(__dirname, '..');
 const DRY = process.argv.includes('--dry-run');
 
-const files = [];
-(function walk(dir) {
-  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (e.isDirectory()) walk(path.join(dir, e.name));
-    else if (e.name.endsWith('.md')) files.push(path.join(dir, e.name));
-  }
-})(path.join(ROOT, 'docs'));
+const files = collect(path.join(ROOT, 'docs'), { exts: ['.md'] });
 
 const stats = { total: files.length, hasMeta: 0, hasFmNoMeta: 0, noFm: 0, skippedHasFmNoMeta: [] };
 

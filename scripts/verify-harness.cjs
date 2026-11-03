@@ -14,6 +14,7 @@
  */
 const fs = require('fs');
 const path = require('path');
+const { collect } = require('./lib/fs-utils.cjs');
 
 const ROOT = path.resolve(__dirname, '..');
 const errors = [];
@@ -302,14 +303,7 @@ for (const sub of ['docs/plans', 'docs/reference']) {
 }
 
 // 7. docs/ 元信息头覆盖率（doc-gardening 扫描依据；warning 不阻断，缺头文件始终列出）
-function walkDir(dir, acc) {
-  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (e.isDirectory()) walkDir(path.join(dir, e.name), acc);
-    else if (e.name.endsWith('.md')) acc.push(path.join(dir, e.name));
-  }
-}
-const allDocs = [];
-if (fs.existsSync(path.join(ROOT, 'docs'))) walkDir(path.join(ROOT, 'docs'), allDocs);
+const allDocs = collect(path.join(ROOT, 'docs'), { exts: ['.md'] });
 const noMetaFiles = allDocs.filter(f => {
   const c = fs.readFileSync(f, 'utf8');
   const m = c.match(/^---[\s\S]*?---/);

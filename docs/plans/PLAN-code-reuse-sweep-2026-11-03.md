@@ -175,3 +175,33 @@ backend Java 结构: @RestController 16 / @Service 21 / Repository 18
 src/services: 跨文件同名导出函数 0 个（语义重复需人读）
 src 散落: localStorage 20、setTimeout 30、new Date 32、try-catch 13、console 17、as unknown as 4
 ```
+
+## 7. P1 已执行 + 快照修正（2026-11-03 实测复核）
+
+P1 已完成（分支 `refactor/scripts-fs-utils`，6 commit）。执行时发现本文件 §6 快照有两处失真，
+按 §5 第 5 条「失真则重新摸底」以实测为准：
+
+| 项 | 快照写的 | 实测 |
+|---|---|---|
+| `scripts/` .cjs/.js | 66 个 / 7,727 行 | **63 个 / 6,146 行** |
+| 递归目录遍历重复 | **25 处 / 12 文件** | **6 处 / 6 文件** |
+
+**为什么是 6 不是 25**：25/12 是 `readdirSync` 的计数，其中 15 处是一次性扁平读目录
+（`readdirSync(x).filter(...)`，本身只有 1–2 行），另 4 处是不同契约的遍历
+（`gen-repomap.cjs` 要 `{path, dir}` 记录 + 深度限制 + 排序，不是文件收集器）。
+真正逐字雷同的递归收集器只有 6 个：`audit-redlines` / `audit-wiki-drift` / `verify-harness`
+/ `add-doc-meta` / `scan-emoji` / `verify-alert-rules`。
+
+**实际收益不是行数**：7 文件 +72/−71 = **净 +1 行**（§2 P1 预估「净减 300–500 行」不成立）。
+收益是 6 份遍历合并成 1 份、排除集以后只改一处。验收按 §2 原定标准执行：
+6 个脚本改造前后 stdout **md5 逐字一致**，退出码不变。
+
+**P1 顺带查出两个未列入本规划的问题**（均未动，待定）：
+
+1. `npm run quality` 在**干净的 main 上就是红的**：5 个失败全在 `tracking*.spec.ts`，
+   单独跑通过、`--no-file-parallelism` 全量跑 43/43 通过 → 并行执行下的稳定性缺陷
+   （2 个是墙钟性能断言，另 3 个是计数断言）。本规划每轮验收都要求 `npm run quality` 全绿，
+   这条不修则验收条件不可达。
+2. 9 个 `verify-*.cjs`（含 `verify-gardens` / `verify-pavilion` / `verify-icons`）打印
+   `ERRORS: [...]` 却**从不设非零退出码** → `npm run verify:ui` 用 `&&` 串联时永远报成功。
+   这 9 个都不在 CI 里，是人工门禁，所以影响限于「人没看输出就以为过了」。

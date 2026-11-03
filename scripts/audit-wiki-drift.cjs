@@ -16,6 +16,7 @@
  */
 const fs = require('fs');
 const path = require('path');
+const { collect } = require('./lib/fs-utils.cjs');
 
 const ROOT = path.resolve(__dirname, '..');
 const errors = [];
@@ -66,15 +67,7 @@ for (const m of wiki.matchAll(/\|\s*(POST|GET|PUT|DELETE|PATCH)\s*\|\s*`(\/api\/
 const codeEndpoints = [];   // {path, source}
 
 // 新栈 Spring Boot：类级 @RequestMapping + 方法注解（注解可带路径也可裸用）
-function walkDir(dir, acc) {
-  if (!fs.existsSync(dir)) return;
-  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (e.isDirectory()) walkDir(path.join(dir, e.name), acc);
-    else if (e.name.endsWith('.java')) acc.push(path.join(dir, e.name));
-  }
-}
-const javaFiles = [];
-walkDir(path.join(ROOT, 'backend/src/main/java'), javaFiles);
+const javaFiles = collect(path.join(ROOT, 'backend/src/main/java'), { exts: ['.java'] });
 for (const f of javaFiles) {
   const text = fs.readFileSync(f, 'utf8');
   const clsMatch = text.match(/@RequestMapping\("([^"]+)"\)/);

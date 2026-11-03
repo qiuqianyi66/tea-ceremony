@@ -28,6 +28,7 @@
 const fs = require('node:fs')
 const path = require('node:path')
 const yaml = require('js-yaml')
+const { collect } = require('./lib/fs-utils.cjs')
 
 const ROOT = path.resolve(__dirname, '..')
 const ALERTS = path.join(ROOT, 'deploy/prometheus/alerts.yml')
@@ -57,25 +58,17 @@ function toPromName(micrometerName) {
 /** 从 Java 源码里扫出所有 tea.* 埋点名 */
 function collectEmittedMetrics() {
   const found = new Set()
-  const walk = (dir) => {
-    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-      const full = path.join(dir, entry.name)
-      if (entry.isDirectory()) {
-        walk(full)
-      } else if (entry.name.endsWith('.java')) {
-        const src = fs.readFileSync(full, 'utf8')
-        // 直接字面量：counter("tea.x.y" / timer("tea.x.y"
-        for (const m of src.matchAll(/(?:counter|timer|gauge|summary|DistributionSummary|Timer|Counter)\(\s*"(tea[^"]+)"/g)) {
-          found.add(m[1])
-        }
-        // 常量：static final String METRIC_X = "tea.x.y"
-        for (const m of src.matchAll(/String\s+[A-Z_]+\s*=\s*"(tea[^"]+)"/g)) {
-          found.add(m[1])
-        }
-      }
+  for (const full of collect(JAVA_DIR, { exts: ['.java'] })) {
+    const src = fs.readFileSync(full, 'utf8')
+    // 直接字面量：counter("tea.x.y" / timer("tea.x.y"
+    for (const m of src.matchAll(/(?:counter|timer|gauge|summary|DistributionSummary|Timer|Counter)\(\s*"(tea[^"]+)"/g)) {
+      found.add(m[1])
+    }
+    // 常量：static final String METRIC_X = "tea.x.y"
+    for (const m of src.matchAll(/String\s+[A-Z_]+\s*=\s*"(tea[^"]+)"/g)) {
+      found.add(m[1])
     }
   }
-  walk(JAVA_DIR)
   return found
 }
 

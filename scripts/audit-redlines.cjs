@@ -22,6 +22,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
+const { collect: walkFiles } = require('./lib/fs-utils.cjs');
 
 const ROOT = path.resolve(__dirname, '..');
 const errors = [];
@@ -29,22 +30,8 @@ const warnings = [];
 
 // 遍历目录收集文件（排除构建产物/依赖/版本目录）
 const SKIP_DIRS = new Set(['node_modules', 'dist', 'coverage', '.git', '.venv', 'test-results', 'playwright-report', 'secrets', 'target', '__pycache__']);
-function walkDir(dir, acc, exts) {
-  let entries;
-  try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
-  for (const e of entries) {
-    if (e.isDirectory()) {
-      if (!SKIP_DIRS.has(e.name)) walkDir(path.join(dir, e.name), acc, exts);
-    } else if (exts.has(path.extname(e.name).toLowerCase())) {
-      acc.push(path.join(dir, e.name));
-    }
-  }
-}
 function collect(relRoot, exts) {
-  const acc = [];
-  const abs = path.join(ROOT, relRoot);
-  if (fs.existsSync(abs)) walkDir(abs, acc, exts);
-  return acc;
+  return walkFiles(path.join(ROOT, relRoot), { exts, skipDirs: SKIP_DIRS });
 }
 // 去掉行首空白后判断是否注释行
 function isComment(line, lang) {
