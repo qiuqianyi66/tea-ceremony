@@ -6,7 +6,7 @@
  * 子集做成确定性门禁；不可判定的条目输出人工核对提示，不静默跳过。
  *
  * 机械化子集：
- *   R2  吞异常：catch(Exception/RuntimeException) 空块
+ *   R2  吞异常：任意异常类型的空 catch 块（含「只写注释」的空块）；豁免须块内写 // R2-allow: <理由≥8字>
  *   R7  ddl-auto: update/create 禁生产；.harness/changes 迁移与回滚成对
  *   R8  禁 Executors 快捷工厂（newFixedThreadPool 等）
  *   R9  密钥禁入库（git 跟踪 .env/pem/secrets/credentials.json）；禁 console 打印密钥字段
@@ -23,6 +23,7 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 const { collect: walkFiles } = require('./lib/fs-utils.cjs');
+const { findSwallowCatches } = require('./lib/swallow-catch.cjs');
 
 const ROOT = path.resolve(__dirname, '..');
 const errors = [];
@@ -44,16 +45,24 @@ function isComment(line, lang) {
 function readLines(p) { try { return fs.readFileSync(p, 'utf8').split(/\r?\n/); } catch { return []; } }
 function rel(p) { return path.relative(ROOT, p).replace(/\\/g, '/'); }
 
-// ---------- R2：吞异常（Java 空 catch 块） ----------
+// ---------- R2：吞异常（任意异常类型的空 catch 块，含「只写注释」的空块） ----------
+// 豁免须写在块内：`// R2-allow: <理由≥8字>`，理由说明「为什么不能处理」。
+// 判据细节与双向验证证据见 scripts/lib/swallow-catch.cjs + .harness/changes/gate-reliability/。
 const javaFiles = collect('backend/src/main/java', new Set(['.java']));
 const swallowCatch = [];
+const r2Allowed = [];
 for (const f of javaFiles) {
   const text = fs.readFileSync(f, 'utf8');
-  for (const m of text.matchAll(/catch\s*\(\s*(Exception|RuntimeException)\s+\w+\s*\)\s*\{\s*[\r\n\s]*\}/g)) {
-    swallowCatch.push(`${rel(f)}: catch(${m[1]}) 空块吞异常`);
+  for (const hit of findSwallowCatches(text)) {
+    const line = text.slice(0, hit.index).split(/\r?\n/).length;
+    if (hit.reason) r2Allowed.push(`${rel(f)}:${line}`);
+    else swallowCatch.push(`${rel(f)}:${line} catch(${hit.exception}) 空块吞异常`);
   }
 }
 for (const s of swallowCatch) errors.push(`R2 ${s}（编码规范 §五 R2：禁 catch 吞异常）`);
+warnings.push(
+  `R2 豁免 ${r2Allowed.length} 处（块内 // R2-allow 已说明理由）${r2Allowed.length > 0 ? '：' + r2Allowed.join(', ') : ''}`,
+);
 
 // ---------- R7a：ddl-auto 非 validate（跳过 # 注释行） ----------
 const cfgFiles = collect('backend', new Set(['.properties', '.yml', '.yaml']));
