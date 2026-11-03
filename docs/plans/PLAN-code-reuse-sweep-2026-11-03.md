@@ -201,13 +201,15 @@ P1 已完成（分支 `refactor/scripts-fs-utils`，6 commit）。执行时发�
 收益是 6 份遍历合并成 1 份、排除集以后只改一处。验收按 §2 原定标准执行：
 6 个脚本改造前后 stdout **md5 逐字一致**，退出码不变。
 
-**P1 顺带查出三个未列入本规划的问题**：
+**P1 顺带查出四个未列入本规划的问题**（1–3 已修，4 需拍板）：
 
-1. `npm run quality` 在**本机（干净的 main）上红 5 个测试**，全在 `tracking*.spec.ts`：单独跑通过、
-   `--no-file-parallelism` 全量跑 43/43 通过、而 **CI 上 Vitest 39s 通过**。
-   结论：**并行执行下的稳定性缺陷（本机复现，CI 未复现）**，不是 main 破了。
-   其中 2 个是墙钟性能断言、3 个是计数断言。本规划每轮验收都要求 `npm run quality` 全绿，
-   本机不可靠 → 报「全绿」前要么串行跑一遍，要么以 CI 为准。
+1. **已修（PR #212）**：`npm run quality` 在本机（干净的 main）上红 5 个测试，全在 `tracking*.spec.ts`。
+   **根因不是测试写坏，是产品代码竞态**：`initDB()` 用「完成后才置位的布尔标记」做守卫，
+   并发调用会一起进 `db.open()` 与一次性迁移，迁移期间的读写与 `clear()` 交错 → 计数断言
+   「expected 0 received 1」；墙钟性能断言是同因（额外的 open/迁移推高耗时）。
+   实测：旧实现下 3 个并发调用触发 **3 次** `db.open()`；改成缓存 Promise 后连续 **3 次全量
+   44 文件 381 测试全绿**（改前每次全量都稳定 5 红）。新增 `db.init.spec.ts` 有牙齿
+   （旧实现下断言 `toHaveBeenCalledTimes(1)` 实测得到 3 → 失败）。
 2. **已修（PR #207）**：9 个 `verify-*.cjs` 打印 `ERRORS: [...]` 却不设非零退出码 →
    `npm run verify:ui` 用 `&&` 串联时永远报成功（假绿）。修了其中 6 个。
    **关键坑**：只加退出码会把 telemetry 噪声算成失败——后端不在场时
@@ -216,6 +218,15 @@ P1 已完成（分支 `refactor/scripts-fs-utils`，6 commit）。执行时发�
    `route.abort()` 反而变 6 条 `ERR_FAILED`；`route.fulfill(204)` 才是 0 条。
    另注意 `**/api/**` 宽匹配会误伤 `/src/services/api/index.ts` 模块请求，只能精确匹配
    `**/v1/telemetry/batch`。
-3. **待修**：`verify-gardens` 自启 dev server 后收不干净——运行结束 5173 仍被 node 进程占用，
-   要手动 kill。`scripts/lib/ensure-dev-server.cjs` 的 `stop: child.kill()` 在 Windows 上
-   杀不掉 vite 的实际子进程，需按进程树杀。
+3. **已修（PR #211）**：`verify-gardens` 自启 dev server 后收不干净——运行结束 5173 仍被 node 占用。
+   两个 bug：①`stop: child.kill()` 在 Windows 上只杀 `cmd.exe`，vite 的 node 子进程活着 → 改
+   `taskkill /pid <pid> /T /F` 按进程树杀；②`portListening` 探 `127.0.0.1` 而 `waitForServer` 用
+   `http://localhost`（Windows 可能先解析 `::1`），vite 只监听 `::1` 时被误判未启动 → 默认 url 统一
+   `127.0.0.1`。验证：冷跑 exit 0、`ERRORS: []`、跑完端口已释放。
+4. **待拍板**：`audit-redlines` 的 R2（禁 catch 吞异常）正则
+   `/catch\s*\(\s*(Exception|RuntimeException)\s+\w+\s*\)\s*\{\s*[\r\n\s]*\}/`
+   有两处盲区：①类型限定 `Exception|RuntimeException`，具体异常类不报；②`[\r\n\s]*` 不含注释，
+   **「空块 + 一句说明」不报**——而那正是这条红线最想拦的「自证式放行」写法。
+   全库实测只有 **2 处**空 catch（含仅注释）：`AiChatService:348`（客户端已断连）、
+   `GardenEnergyService:52`（幂等唯一索引兜底），**两处都合理**。所以现在扩规则会得到 2 个误报，
+   必须先定 allowlist 机制（如 `// R2-allow: <理由>`）再动，否则不要改。

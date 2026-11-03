@@ -121,22 +121,27 @@ export const db = new TeaCeremonyDB()
 
 // ============ 初始化与迁移 ============
 
-let migrationDone = false
+// 并发安全：缓存同一个 Promise。原写法用「完成后才置位的布尔标记」，并发调用方（应用启动时多个
+// service 同时 initDB、或测试里 beforeEach 与未完成的上一次调用重叠）会一起进 db.open() 与迁移，
+// 迁移期间的读写会和 clear() 之类交错，导致数据看起来「凭空多一条/少一条」。
+let initPromise: Promise<void> | null = null
 
-export async function initDB(): Promise<void> {
-  if (migrationDone) return
-
-  try {
-    await db.open()
-    migrationDone = true
-    console.log('[Dexie] 数据库打开成功')
-
-    // 首次运行：从 localStorage 迁移数据
-    await migrateFromLocalStorage()
-  } catch (error) {
-    console.error('[Dexie] 数据库初始化失败:', error)
-    throw error
-  }
+/** 打开数据库并完成一次性迁移；并发调用共享同一个 Promise，失败后允许重试。 */
+export function initDB(): Promise<void> {
+  if (initPromise) return initPromise
+  initPromise = (async () => {
+    try {
+      await db.open()
+      console.log('[Dexie] 数据库打开成功')
+      // 首次运行：从 localStorage 迁移数据
+      await migrateFromLocalStorage()
+    } catch (error) {
+      console.error('[Dexie] 数据库初始化失败:', error)
+      initPromise = null // 失败不缓存，下次调用重试
+      throw error
+    }
+  })()
+  return initPromise
 }
 
 /** 从 localStorage 迁移历史数据到 IndexedDB */
