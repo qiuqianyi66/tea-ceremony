@@ -29,11 +29,25 @@ async function waitForServer(url, timeoutMs) {
 }
 
 /**
+ * 结束子进程。Windows 下 child.kill() 只杀 cmd.exe，npm/vite 的实际 node 子进程会活下来继续占端口，
+ * 所以必须按进程树杀（taskkill /T）。
+ */
+function killTree(child) {
+  if (!child || child.killed) return
+  if (process.platform === 'win32') {
+    spawn('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore' })
+  } else {
+    child.kill('SIGTERM')
+  }
+}
+
+/**
  * 端口已监听 → 直接复用（返回 noop stop）。
  * 未监听 → spawn npm run dev（Windows 用 npm.cmd），轮询到就绪。
- * 超时 → 杀进程并抛错。
+ * 超时 → 杀进程树并抛错。
+ * 注：url 默认绑 127.0.0.1，与 portListening 的探测地址保持一致（vite 只监听 ::1 时不该误判为未启动）。
  */
-async function ensureDevServer({ port = 5173, url = `http://localhost:${port}`, timeoutMs = 60000, logFile = 'dev-server.log' } = {}) {
+async function ensureDevServer({ port = 5173, url = `http://127.0.0.1:${port}`, timeoutMs = 60000, logFile = 'dev-server.log' } = {}) {
   if (await portListening(port)) {
     return { stop: async () => {} }
   }
@@ -44,10 +58,10 @@ async function ensureDevServer({ port = 5173, url = `http://localhost:${port}`, 
     : spawn('npm', ['run', 'dev', '--', '--host', '127.0.0.1'], { stdio: ['ignore', out, out] })
   const ok = await waitForServer(url, timeoutMs)
   if (!ok) {
-    child.kill()
+    killTree(child)
     throw new Error(`dev server 未在 ${timeoutMs}ms 内就绪，详见 ${logFile}`)
   }
-  return { stop: async () => child.kill() }
+  return { stop: async () => killTree(child) }
 }
 
 module.exports = { ensureDevServer }
