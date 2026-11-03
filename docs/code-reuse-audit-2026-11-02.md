@@ -18,7 +18,7 @@ owner: yanha
 | 指标 | 改动前 | 改动后 | 说明 |
 |---|---|---|---|
 | 重复 class 串（去重后） | 94 种 | 90 种 | `glass-panel rounded-xl p-4` 21 处 → 0；`text-base font-bold … mb-3` 10 处 → 0 |
-| `SectionHeader` 采纳 | 2 文件 | 6 文件 | 新增 10 个调用点（含图标尺寸随字号档保持原 16px） |
+| `SectionHeader` 采纳 | 2 文件 | 6 文件 | 新增 10 个调用点（图标尺寸逐处保持原值，见 §三.3） |
 | 内联 `toLocaleDateString()` | 5 处 / 4 文件 | 1 处 / 1 文件 | 剩余 1 处是 `utils/format.ts` 自身的文档字符串 |
 | 手写 `Math.min/max` 夹取 | 21 处 / 13 文件 | 2 处 / 1 文件 | 剩余 2 处是 `utils/math.ts` 自身定义 |
 | 重复 `glass-panel rounded-xl p-4` | 21 处 | 0 处 | 全部收敛到 `<Card flat>` |
@@ -37,9 +37,16 @@ owner: yanha
 21 处替换分布在 10 个文件。`flat` 去掉阴影以对齐历史面板观感（历史面板本来无阴影）；`padding` 的 `md` 档定为 `p-4` 以精确匹配被替换处的档位，因此替换不改观感。
 
 ### 3. 分区标题 → `<SectionHeader>`（`src/components/ui/SectionHeader.vue`）
-10 处替换分布在 4 个视图。两个新增 prop 使替换零观感变化：
-- `size="base"` → `text-base`，且图标随之为 `w-4 h-4`（原手写即 16px）
+10 处替换分布在 4 个视图。新增三个 prop 使替换零观感变化：
+- `size="base"` → `text-base`（一级分区保持 `text-lg`）
 - `:level="3"` → 保持原 `<h3>`，不与 `PageHeader` 的 `<h2>` 跳级
+- `iconSize`（`sm` / `md` / `inherit`）→ 默认跟随 `size`（lg→20px、base→16px）。
+  **`inherit` 不写尺寸类**，用于原手写处本就没写 `w-N` 的情况——ToolSelect 4 处原本是
+  `class="inline-block -mt-1"`（lucide 默认 24px），若强制 16px 会把图标改小（本项回归
+  由带状态视觉回归发现并于 PR #203 修复，见 §五）
+
+各视图原手写图标尺寸并不统一，替换前逐处 grep 过：
+CollectionView / TeaGraph / TeaProfile 为 `w-4 h-4`（16px），ToolSelect 为无尺寸类（24px）。
 
 ### 4. 本地化日期 → `formatDateShort()`（`src/utils/format.ts`）
 5 处替换分布在 4 个文件。原 `toLocaleDateString()` 输出随运行时 locale 变，既不可测也不可控；`formatDateShort` 用本地 getter 输出 `2026/11/2`，与 zh-CN 下原输出一致但确定性。
@@ -60,9 +67,14 @@ owner: yanha
 
 ## 五、已知风险与未覆盖
 
-- **6 个新组件与 `src/utils/` 尚未被业务代码全覆盖**：`BaseButton` / `BaseBadge` / `BaseTooltip` / `BaseModal` / `BaseTabs` 与 `debounce` / `throttle` / `storage` / `url` / `array` / `string` 仍在等待首个真实调用方。`Card` / `SectionHeader` / `formatDateShort` / `clamp` 已有调用方。
-- **视图层改动未做视觉回归**：10 个视图的面板/标题替换是等价类替换，但 `npm run test` 只覆盖 4 个 views spec（无一覆盖本次改动的视图），`build` 只能证明可编译。合并前建议在预览环境点一遍 `/collection` `/growth` `/map` `/taste` `/teagraph` `/profile` `/tools` `/history` 八个页面。
-- **`TastingCard.vue` 有混合行尾**（主体 LF + 尾部 `<style>` 块 CRLF）。本次改动用字节级写入保持最小 diff（3 增 / 6 删）。后续编辑此文件请注意：`edit` 工具会把 CRLF 归一成 LF，产生 78/81 的假 diff。
+- **组件采纳：2 有 / 5 无**（实测 grep，排除 `components/ui/` 自身）：`Card`、`SectionHeader` 已被业务引用；`BaseButton` / `BaseBadge` / `BaseTooltip` / `BaseModal` / `BaseTabs` 仍 **0 处引用**，等首个真实调用方。
+- **utils 采纳：2 有 / 7 无**（实测 grep，排除 `src/utils/` 自身）：`math` 12 处（clamp / clamp01）、`format` 4 处（formatDateShort）；`debounce` / `throttle` / `storage` / `string` / `array` / `url` / `type-guards` 仍 **0 处引用**。其中 `debounce` / `throttle` 是全项目当前确实没有真防抖需求（§四已论证），不是遗漏。
+- **视图层视觉回归已做，且抓到一处真实回归**：改动前（`978ad76`）与当前各构建一套产物，同一 Chromium / 1280 宽 / zh-CN / reduced-motion 下 fullPage 截图逐像素比对。
+  - 默认无状态 8 个路由（`/collection` `/growth` `/map` `/taste` `/graph` `/profile` `/tools` `/history`）：全部 `IDENTICAL 0.0000%`
+  - 带状态 2 个页面（先选茶再进 `/tools`；`/graph` 下拉选茶让「文化关联」渲染）：全部 `IDENTICAL 0.0000%`
+  - **首轮「8 页全绿」是假绿**：`/tools` 有 `requiresTea` 守卫，无茶态被重定向到 `/select`，那 4 个标题根本没渲染。带状态复跑才暴露 ToolSelect 图标 24px→16px 回归，已由 PR #203 修复（SectionHeader 增 `iconSize="inherit"`）
+- **仍未覆盖**：条件渲染的空态 / 错误态分支未做视觉对比；`npm run test` 的 4 个 views spec 不覆盖本次改动的视图，`build` 只能证明可编译。
+- **`TastingCard.vue` 有混合行尾**（主体 LF 76 行 CRLF + 尾部 `<style>` 块）。本次改动用字节级写入保持最小 diff（3 增 / 6 删）。后续编辑请注意：常规编辑工具会把 CRLF 归一成 LF，产生 78/81 假 diff（判据：`git diff -w --numstat` 只显示 3/6 即为空白噪声）。仓库无 `.gitattributes`，本次未加（全库规范化会产生巨量 diff，需单独决策）。
 
 ## 六、后续建议（未做，留给下一轮）
 
