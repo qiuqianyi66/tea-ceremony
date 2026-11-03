@@ -30,5 +30,6 @@ const { chromium } = require('playwright')
   await page.screenshot({ path: 'verify_icons_break.png' })
 
   console.log('ERRORS:', JSON.stringify(errors))
+  if (errors.length > 0) process.exitCode = 1
   await browser.close()
 })()
