@@ -15,6 +15,8 @@ const OUT_RAIN = 'verify_3d_rain.png'
 ;(async () => {
   const browser = await chromium.launch({ headless: true, channel: 'chromium' })
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
+  // 后端不在场时 telemetry 上报会刷 ERR_CONNECTION_REFUSED，污染错误桶：直接应答 204
+  await page.route('**/v1/telemetry/batch', (r) => r.fulfill({ status: 204, body: '' }))
   const errors = []
   page.on('pageerror', (e) => errors.push('pageerror: ' + e.message))
   page.on('console', (m) => {
@@ -62,5 +64,7 @@ const OUT_RAIN = 'verify_3d_rain.png'
   console.log('[3] 音效开关操作完成')
   console.log('页面错误数: ' + errors.length)
   if (errors.length > 0) console.log(errors.slice(0, 5).join('\n'))
+  console.log('ERRORS:', JSON.stringify(errors))
+  if (errors.length > 0) process.exitCode = 1
   await browser.close()
 })()
