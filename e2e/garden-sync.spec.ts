@@ -26,8 +26,20 @@ test('茶园读路径：gardenApi.list 发出请求且页面正常渲染', async
         code: 'OK',
         message: 'ok',
         data: [
-          { client_id: 'test-1', region_id: 'hangzhou', tea_id: 'longjing', status: 'growing', planted_at: new Date().toISOString() },
-          { client_id: 'test-2', region_id: 'hangzhou', tea_id: 'biluochun', status: 'growing', planted_at: new Date().toISOString() },
+          {
+            client_id: 'test-1',
+            region_id: 'hangzhou',
+            tea_id: 'longjing',
+            status: 'growing',
+            planted_at: new Date().toISOString(),
+          },
+          {
+            client_id: 'test-2',
+            region_id: 'hangzhou',
+            tea_id: 'biluochun',
+            status: 'growing',
+            planted_at: new Date().toISOString(),
+          },
         ],
       }),
     })
@@ -42,7 +54,13 @@ test('茶园读路径：gardenApi.list 发出请求且页面正常渲染', async
       body: JSON.stringify({
         code: 'OK',
         message: 'ok',
-        data: { pending_amount: 12, collected_amount: 5, total_energy: 17, phase: 'growing', phase_thresholds: { planted: 0, growing: 100, blooming: 300, harvested: 600 } },
+        data: {
+          pending_amount: 12,
+          collected_amount: 5,
+          total_energy: 17,
+          phase: 'growing',
+          phase_thresholds: { planted: 0, growing: 100, blooming: 300, harvested: 600 },
+        },
       }),
     })
   })
@@ -51,17 +69,31 @@ test('茶园读路径：gardenApi.list 发出请求且页面正常渲染', async
   await page.addInitScript(() => {
     localStorage.setItem(
       'tea-auth',
-      JSON.stringify({ token: 'e2e-test-token', user: { id: 1, username: 'e2e_reader', display_name: '读路径测试' } }),
+      JSON.stringify({
+        token: 'e2e-test-token',
+        user: { id: 1, username: 'e2e_reader', display_name: '读路径测试' },
+      }),
     )
   })
   await page.goto('/garden/hangzhou')
   // Y3 修复：真实等待（不依赖固定时长）
-  await page.waitForResponse((resp) => resp.url().includes('/v1/garden-plants'), { timeout: 10_000 })
+  await page.waitForResponse((resp) => resp.url().includes('/v1/garden-plants'), {
+    timeout: 10_000,
+  })
 
   // 读路径断言：两个请求都必须发出
-  expect(requested.length, 'gardenApi.list 与 energyApi.summary 至少各发出 1 次').toBeGreaterThanOrEqual(2)
-  expect(requested.some((u) => u.includes('/v1/garden-plants')), 'gardenApi.list 请求路径正确').toBe(true)
-  expect(requested.some((u) => u.includes('/v1/garden-energy')), 'energyApi.summary 请求路径正确').toBe(true)
+  expect(
+    requested.length,
+    'gardenApi.list 与 energyApi.summary 至少各发出 1 次',
+  ).toBeGreaterThanOrEqual(2)
+  expect(
+    requested.some((u) => u.includes('/v1/garden-plants')),
+    'gardenApi.list 请求路径正确',
+  ).toBe(true)
+  expect(
+    requested.some((u) => u.includes('/v1/garden-energy')),
+    'energyApi.summary 请求路径正确',
+  ).toBe(true)
 
   // 渲染断言：页面正常渲染（不崩、有茶园标题）
   await expect(page.getByRole('heading', { name: /茶园/ })).toBeVisible()
