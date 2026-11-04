@@ -76,10 +76,15 @@ test('茶园读路径：gardenApi.list 发出请求且页面正常渲染', async
     )
   })
   await page.goto('/garden/hangzhou')
-  // Y3 修复：真实等待（不依赖固定时长）
-  await page.waitForResponse((resp) => resp.url().includes('/v1/garden-plants'), {
-    timeout: 10_000,
-  })
+
+  // 诊断：确认登录态注入成功（CI 时序差异下 addInitScript 可能未生效）
+  const authState = await page.evaluate(() => localStorage.getItem('tea-auth'))
+  expect(authState, 'localStorage[tea-auth] 必须存在（登录态注入）').toBeTruthy()
+
+  // 等读路径请求发出（轮询，不依赖单个事件——CI 环境时序差异下更稳）
+  await expect
+    .poll(() => requested.length, { timeout: 15_000, message: '读路径请求未发出' })
+    .toBeGreaterThanOrEqual(1)
 
   // 读路径断言：两个请求都必须发出
   expect(
