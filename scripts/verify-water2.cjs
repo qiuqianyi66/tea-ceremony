@@ -1,9 +1,16 @@
-/** verify-water2.cjs — 坐标点击浇水，检查粒子状态 + 截图 */
+/**
+ * verify-water2.cjs — 坐标点击浇水，检查粒子状态 + 截图
+ *
+ * 已知失效（2026-11-03 实测）：播种分支用的 `.plant-btn-3d` 在 `src/` 已无对应节点，
+ * 干净 profile 下本脚本只能当 smoke：尾部 `VERIFIED:` 会显示 `no-water-button（本次未验到浇水粒子）`。
+ */
 const { chromium } = require('playwright')
 
 ;(async () => {
   const browser = await chromium.launch({ headless: true, channel: 'chromium' })
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
+  // 后端不在场时 telemetry 上报会刷 ERR_CONNECTION_REFUSED，污染错误桶：直接应答 204
+  await page.route('**/v1/telemetry/batch', (r) => r.fulfill({ status: 204, body: '' }))
   const errors = []
   page.on('console', (m) => {
     if (m.type() === 'error') errors.push(m.text())
@@ -58,11 +65,12 @@ const { chromium } = require('playwright')
 
   // 找到浇水按钮（按可见文本），点它
   const waterBtn = page.locator('.dialog-btn', { hasText: '浇水' }).last()
-  const wb = waterBtn.boundingBox().catch(() => null)
+  // 必须 await：boundingBox() 返回 Promise，直接存 Promise 会让 `if (wb)` 恒真，
+  // 元素不在时 await 得 null 再去取 .x 就抛 TypeError（本轮实测踩到）
+  const wb = await waterBtn.boundingBox().catch(() => null)
   let waterState = null
   if (wb) {
-    const box = await wb
-    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2)
+    await page.mouse.click(wb.x + wb.width / 2, wb.y + wb.height / 2)
     // 立即检查粒子状态（30ms 内应有粒子 visible + y 在下落）
     for (let i = 0; i < 4; i++) {
       await page.waitForTimeout(150)
@@ -95,5 +103,9 @@ const { chromium } = require('playwright')
   }
 
   console.log(JSON.stringify({ waterBtnFound: !!wb, waterState, errors }, null, 2))
+  // 探针如实标注自己验到了什么：按钮不在 = 本次没验到浇水粒子，不能算「通过」
+  console.log('VERIFIED:', wb ? 'water-button-clicked' : 'no-water-button（本次未验到浇水粒子）')
+  console.log('ERRORS:', JSON.stringify(errors))
+  if (errors.length > 0) process.exitCode = 1
   await browser.close()
 })()

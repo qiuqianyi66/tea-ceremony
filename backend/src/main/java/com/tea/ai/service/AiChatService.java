@@ -346,7 +346,7 @@ public class AiChatService {
             try {
                 sink.emit("{\"error\":\"BAD_GATEWAY\"}");
             } catch (Exception ignore) {
-                // 客户端已断连，无需再通知
+                // R2-allow: 客户端已断连，再 emit 只会二次失败；SSE 通道已失效，无需处理
             }
         } finally {
             emitter.complete();

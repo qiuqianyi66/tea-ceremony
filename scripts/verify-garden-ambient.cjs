@@ -15,6 +15,8 @@ const OUT_RAIN = 'verify_3d_rain.png'
 ;(async () => {
   const browser = await chromium.launch({ headless: true, channel: 'chromium' })
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
+  // 后端不在场时 telemetry 上报会刷 ERR_CONNECTION_REFUSED，污染错误桶：直接应答 204
+  await page.route('**/v1/telemetry/batch', (r) => r.fulfill({ status: 204, body: '' }))
   const errors = []
   page.on('pageerror', (e) => errors.push('pageerror: ' + e.message))
   page.on('console', (m) => {
@@ -62,5 +64,10 @@ const OUT_RAIN = 'verify_3d_rain.png'
   console.log('[3] 音效开关操作完成')
   console.log('页面错误数: ' + errors.length)
   if (errors.length > 0) console.log(errors.slice(0, 5).join('\n'))
+  // 本探针只断言「操作过程中页面无报错」，不校验截图内容，也不覆盖 telemetry 传输正确性
+  // （#207 起 telemetry batch 被拦成 204，传输/退避链路在本探针中不可见）
+  console.log('VERIFIED: page-error-free-only（视觉内容与 telemetry 传输不在覆盖范围）')
+  console.log('ERRORS:', JSON.stringify(errors))
+  if (errors.length > 0) process.exitCode = 1
   await browser.close()
 })()

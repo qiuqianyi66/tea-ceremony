@@ -152,7 +152,7 @@
 提交前默认跑：`npm run quality`（前端统一门禁）+ 后端 pytest + `node scripts/verify-harness.cjs`（治理一致性，已挂 CI）。
 
 ```
-npm run quality       # lint + type-check + test + build + verify（提交前必跑）
+npm run quality       # 提交前必跑（含 redlines/harness/预算）
 npm run dev           # 开发服务器 http://localhost:5173
 npm run test:e2e      # Playwright E2E（改了流程/路由）
 node scripts/verify-gardens.cjs    # 3D 茶园四园晴雨截图，期望 ERRORS: []

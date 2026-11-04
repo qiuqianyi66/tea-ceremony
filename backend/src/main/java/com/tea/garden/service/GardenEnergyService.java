@@ -50,7 +50,7 @@ public class GardenEnergyService {
         try {
             eventRepository.save(event);
         } catch (DataIntegrityViolationException ex) {
-            // 并发同 client_id 记账：唯一索引兜底，已记账则忽略（幂等，对照 record 域）
+            // R2-allow: 并发同 client_id 记账由唯一索引兜底，重复写入等价于幂等成功（对照 record 域）
         }
     }
 
