@@ -1,3 +1,9 @@
+---
+last_updated: 2026-11-04
+status: active
+owner: yanha
+---
+
 # eval-harness: gate-reliability
 
 > 确定性评测（零 LLM）。--verify=on。日期 2026-11-04
