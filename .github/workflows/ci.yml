@@ -299,9 +299,10 @@ jobs:
       # red-line-auditor / consistency-verifier 的豆包机械化替代（红线 15 条可判定子集 + wiki 契约双向核对）
       - name: Run red-line audit
         run: node scripts/audit-redlines.cjs
-      # R2 判据双向回归锁（node --test，纯 fs 无依赖）：判据被改坏时 CI 立刻红，不靠人工复跑 fixture
-      - name: Run R2 judgement regression lock
-        run: node --test scripts/tests/swallow-catch.node-test.cjs
+      # scripts/ 回归锁（node --test，纯 fs 无依赖）：判据与评测器自检被改坏时 CI 立刻红，不靠人工复跑。
+      # 覆盖 scripts/tests/ 全部 *.node-test.cjs（R2 判据双向锁 / eval-harness 自检 / eval-core / 评委校准）
+      - name: Run scripts regression locks
+        run: node --test scripts/tests/*.node-test.cjs
       - name: Run wiki drift audit
         run: node scripts/audit-wiki-drift.cjs
       # nginx 侧两道机械化门禁（纯 fs 无依赖，不需要 npm ci / docker）

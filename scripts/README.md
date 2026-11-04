@@ -35,7 +35,7 @@
 |---|---|
 | `verify-gardens.cjs` / `verify-pavilion.cjs` | 四园晴雨 / 茶亭截图验证 |
 | `verify-garden-3d-crop.cjs` / `-interact.cjs` / `-phase4.cjs` / `-phase5.cjs` | 3D 茶园切片验证 |
-| `verify-garden-ambient.cjs` / `verify-water-rain.cjs` / `verify-water2.cjs` | 环境光 / 雨水效果验证 |
+| `verify-garden-ambient.cjs` | 环境光 / 云影 / 雾 / 雨丝 / 音效（纯观赏氛围层；养成链路已于 T4.1 删除，原 `verify-water-rain.cjs` / `verify-water2.cjs` 随之退役） |
 | `screenshot-brew3d.cjs` / `inspect-brew-corner.cjs` / `probe-brew.cjs` | 冲泡 3D 截图 / 角落检测 / 探针 |
 | `diag-glare.cjs` / `diag-glare2.cjs` | 反光诊断（一次性） |
 

@@ -12,7 +12,7 @@
  */
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
+const { execSync, execFileSync } = require('child_process');
 
 // review.md 结论解析（纯函数，node --test 覆盖）：取文末最后一个 🔴…🟡 计数行判清零。
 // 评审惯例 Findings 区先列「🔴 0 条 / 🟡 N 条（已修复）」摘要，清零结论在文末 Verdict 区；
@@ -24,7 +24,60 @@ function parseReviewClean(text) {
   return m ? Number(m.groups.rnum ?? 0) === 0 && Number(m.groups.ynum ?? 0) === 0 : false;
 }
 
-module.exports = { parseReviewClean };
+/**
+ * docs/agent-eval 报告必须自带元信息头。
+ * 为什么写进生成器而不是事后手补：本文件每次运行都整体重写报告，手补的 frontmatter 会被下一次
+ * 评估覆盖，verify-harness 的 doc-meta 警告随后复现（gate-reliability 切片实测踩过）。
+ */
+function metaHeader(date) {
+  return ['---', `last_updated: ${date}`, 'status: active', 'owner: yanha', '---', ''].join('\n');
+}
+
+/**
+ * ADR 是否适用 / 是否满足——只用文件证据判定，不匹配 summary 正文措辞。
+ * 旧实现用 /架构|ADR|迁移|数据模型/ 匹配 summary 文本，于是「**无**数据库迁移」里的「迁移」
+ * 被当成 ADR 证据，给一个没有 ADR 的切片打了 ADR:✓（gate-reliability 实测假阳性）。
+ *
+ * 残留盲区（按路径证据原理不可判定，不假装覆盖）：语义级数据变更若不动 entity/迁移文件
+ * （例如只改 repository 里的 SQL 字符串），本判据看不到，仍需人工评审兜底。
+ */
+function touchesSchemaPath(f) {
+  return (
+    /(^|\/)db-migrations\.sql$/.test(f) ||
+    /(^|\/)rollback\.sql$/.test(f) ||
+    /flyway|(^|\/)migrations?\//i.test(f) ||
+    /\/entity\//i.test(f) ||
+    /^src\/services\/storage\/db\.ts$/.test(f) // 前端 Dexie 表结构（AGENTS §8 的 L3）
+  );
+}
+
+function adrVerdict(changedFiles) {
+  const hasAdr = changedFiles.some((f) => f.startsWith('docs/ADR/'));
+  const touchesSchema = changedFiles.some(touchesSchemaPath);
+  return { applicable: hasAdr || touchesSchema, ok: hasAdr, touchesSchema };
+}
+
+/**
+ * 「零迁移」判定：文件证据优先于 summary 措辞，冲突时按文件判并把冲突写进 note。
+ * 旧实现只看 summary 措辞，于是 summary 写了「无数据库迁移」而同 commit 里带迁移/实体的切片
+ * 会被豁免（m1-ai / m1-auth 实测）。
+ */
+function deriveNoMigrate(changedFiles, summaryText) {
+  const declared = /无(数据库)?迁移|零迁移|无迁移/.test(summaryText);
+  if (!changedFiles.length) return { value: declared, conflict: false };
+  const sqlInFiles = changedFiles.some((f) => /(^|\/)db-migrations\.sql$/.test(f));
+  return { value: declared && !sqlInFiles, conflict: declared && sqlInFiles };
+}
+
+/** 解析 git -z（NUL 分隔）输出 */
+function splitNul(out) {
+  return out
+    .split('\0')
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+module.exports = { parseReviewClean, metaHeader, adrVerdict, touchesSchemaPath, deriveNoMigrate };
 
 if (require.main === module) {
 const root = path.resolve(__dirname, '..');
@@ -51,7 +104,40 @@ const note = (d, s, e) => notes.push({ d, s, e });
 const ch = path.join(root, '.harness', 'changes', slice);
 const summaryPath = path.join(ch, 'summary.md');
 const summaryText = fs.existsSync(summaryPath) ? fs.readFileSync(summaryPath, 'utf8') : '';
-const noMigrate = /无(数据库)?迁移|零迁移|无迁移/.test(summaryText);
+
+// 切片归属的文件证据：只看本切片各 commit 实际改了什么（参数走 execFileSync，不经 shell 拼接；
+// -c core.quotePath=false + -z 保证中文路径与空格路径不被转义/拆分，本地与 CI 同口径）
+const BATCH_COMMIT_FILE_LIMIT = 50;
+let changedFiles = [];
+let attributionNote = '';
+try {
+  const gitOut = (args) =>
+    execFileSync('git', ['-c', 'core.quotePath=false', ...args], {
+      cwd: root,
+      encoding: 'utf8',
+      maxBuffer: 8 * 1024 * 1024,
+    });
+  const commits = gitOut(['log', '--format=%H', '--', `.harness/changes/${slice}`]).split('\n').filter(Boolean);
+  if (commits.length > 20) attributionNote = `；切片共 ${commits.length} 个 commit，只取最近 20 个判 ADR`;
+  for (const c of commits.slice(0, 20)) {
+    const files = splitNul(gitOut(['show', '--name-only', '--format=', '-z', c]));
+    // 批量提交（一次改几十上百个文件）无法把文件归给单个切片，算进来会串味：跳过并留痕
+    if (files.length > BATCH_COMMIT_FILE_LIMIT) {
+      attributionNote += `；commit ${c.slice(0, 7)} 改了 ${files.length} 个文件（批量），归属存疑已跳过`;
+      continue;
+    }
+    changedFiles.push(...files);
+  }
+} catch (e) {
+  // git 不可用：不给分也不静默通过——写进 note，让报告自己暴露这次没证据
+  attributionNote = `；git 不可用（${String(e.message).split('\n')[0]}），ADR 记 n/a 不给分`;
+}
+
+const noMigrateInfo = deriveNoMigrate(changedFiles, summaryText);
+const noMigrate = noMigrateInfo.value;
+if (noMigrateInfo.conflict) {
+  attributionNote += '；summary 声明「无迁移」但切片 commit 里含 db-migrations.sql，已按文件判为有迁移';
+}
 
 // ---- 1. 流程完整性 22%：必需产物文件存在性（文件系统不说谎） ----
 {
@@ -61,20 +147,22 @@ const noMigrate = /无(数据库)?迁移|零迁移|无迁移/.test(summaryText);
     ['rollback.sql', fs.existsSync(path.join(ch, 'rollback.sql'))],
     ['review.md', fs.existsSync(path.join(ch, 'review.md'))],
   ];
-  // 零迁移切片：迁移两个文件豁免
+  // 零迁移切片：迁移两个文件豁免（豁免要在报告里看得见，否则读报告的人以为文件真存在）
   const effective = checks.map(([n, ok]) => {
     if (noMigrate && (n === 'db-migrations.sql' || n === 'rollback.sql')) return [n, true, '零迁移豁免'];
     return [n, ok, ok ? '存在' : '缺失'];
   });
-  // L3 应带 ADR：切片范围内提交是否含 docs/ADR 改动（Node 实现，兼容 Windows）
-  let adrOk = /架构|ADR|迁移|数据模型/.test(summaryText);
-  try {
-    const names = execSync(`git log --oneline --name-only -- .harness/changes/${slice}`, { cwd: root, encoding: 'utf8', maxBuffer: 4 * 1024 * 1024 });
-    adrOk = adrOk || names.includes('docs/ADR/');
-  } catch { /* git 不可用时以 summary 关键词为准 */ }
+  const adr = adrVerdict(changedFiles);
   const passed = effective.filter(([, ok]) => ok).length;
-  scores.process = Math.round((passed + (adrOk ? 1 : 0)) / (effective.length + 1) * 100);
-  note('流程完整性', scores.process, effective.map(([n, ok, d]) => `${n}:${ok ? '✓' : '✗'}`).join(' ') + ` ADR:${adrOk ? '✓' : '✗'}`);
+  const adrWeight = adr.applicable ? 1 : 0;
+  scores.process = Math.round((passed + (adr.ok ? 1 : 0)) / (effective.length + adrWeight) * 100);
+  note(
+    '流程完整性',
+    scores.process,
+    effective.map(([n, ok, d]) => `${n}:${ok ? '✓' : '✗'}${d === '存在' ? '' : `(${d})`}`).join(' ') +
+      ` ADR:${adr.applicable ? (adr.ok ? '✓' : '✗（本切片触数据模型/迁移但无 docs/ADR）') : 'n/a（本切片未触数据模型/迁移）'}` +
+      attributionNote,
+  );
 }
 
 // ---- 2. 产物质量 15%：summary 结构 + 反注水 ----
@@ -176,7 +264,15 @@ const total = Object.keys(WEIGHTS).reduce((acc, k) => acc + (scores[k] || 0) * W
 const totalInt = Math.round(total);
 const pass = totalInt >= 60;
 
-const lines = [`# eval-harness: ${slice}`, '', `> 确定性评测（零 LLM）。--verify=${verify ? 'on' : 'off'}。日期 ${new Date().toISOString().slice(0, 10)}`, ''];
+// 用本地日期，不用 toISOString()：UTC 会在大夜班时段写成前一天，与 commit 日期对不上
+const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+const lines = [
+  metaHeader(today),
+  `# eval-harness: ${slice}`,
+  '',
+  `> 确定性评测（零 LLM）。--verify=${verify ? 'on' : 'off'}。日期 ${today}`,
+  '',
+];
 for (const n of notes) {
   lines.push(`| ${n.d} | ${n.s}/100 | ${n.e} |`);
 }
