@@ -107,8 +107,18 @@ public class TraceRecorder {
     /** 成功收尾：output + exec（派发与来源）+ tokens/latency。 */
     public void complete(AiEvalTrace trace, AiChatVo vo) {
         trace.setOutput(vo.content());
-        trace.setExecLayer(json(Map.of(
-                "sources_count", vo.sources() == null ? 0 : vo.sources().size())));
+        Map<String, Object> exec = new LinkedHashMap<>();
+        exec.put("sources_count", vo.sources() == null ? 0 : vo.sources().size());
+        // A8 归因观测（2026-11-04）：culture_query 的调用次数/关键词/空命中数。前缀 rag_ 防撞键，
+        // 也让「没调工具」与「调了但空命中」在 trace 里一眼可分（过去只记 sources_count，分不开）。
+        if (vo.ragTrace() != null) {
+            vo.ragTrace().forEach((k, v) -> {
+                if (k != null && v != null) {
+                    exec.put("rag_" + k, v);
+                }
+            });
+        }
+        trace.setExecLayer(json(exec));
         // tokens_in/out、latency_ms 是 NOT NULL：专家走两参构造 AiChatVo(content, sources) 时
         // 这三个字段为 null，直塞会 insert 失败且只落一条 warn（record 内 catch）→ Trace 静默丢失。null 归零。
         trace.setTokensIn(vo.tokensIn() == null ? 0 : vo.tokensIn());

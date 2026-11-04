@@ -14,6 +14,7 @@ import com.tea.ai.dto.AiChatRequest;
 import com.tea.ai.dto.ChatMessageDto;
 import com.tea.ai.entity.AiEvalTrace;
 import com.tea.ai.repository.AiEvalTraceRepository;
+import com.tea.ai.vo.AiChatVo;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.util.List;
 import java.util.Map;
@@ -92,6 +93,34 @@ class TraceRecorderTest {
 
     private static AiChatRequest request() {
         return new AiChatRequest(List.of(new ChatMessageDto("user", "讲讲龙井")), null, null);
+    }
+
+    // ---- A8 归因观测（2026-11-04）：工具调用次数/关键词/空命中必须落进 exec_layer ----
+
+    @Test
+    void execLayerCarriesRagTraceForAttribution() throws Exception {
+        AiEvalTrace trace = new AiEvalTrace();
+        AiChatVo vo = new AiChatVo("内容", List.of("龙井"), null, null, null, null, null,
+                Map.of("calls", 2, "empty", 1, "total_hits", 3, "keywords", List.of("龙井", "茶寿")));
+
+        recorder.complete(trace, vo);
+
+        JsonNode exec = objectMapper.readTree(trace.getExecLayer());
+        assertThat(exec.get("sources_count").asInt()).isEqualTo(1);
+        assertThat(exec.get("rag_calls").asInt()).isEqualTo(2);
+        assertThat(exec.get("rag_empty").asInt()).isEqualTo(1);
+        assertThat(exec.get("rag_keywords").get(1).asText()).isEqualTo("茶寿");
+    }
+
+    @Test
+    void execLayerWithoutRagTraceStaysBackwardCompatible() throws Exception {
+        AiEvalTrace trace = new AiEvalTrace();
+
+        recorder.complete(trace, new AiChatVo("内容", List.of()));
+
+        JsonNode exec = objectMapper.readTree(trace.getExecLayer());
+        assertThat(exec.get("sources_count").asInt()).isZero();
+        assertThat(exec.has("rag_calls")).isFalse();
     }
 
     private JsonNode planOf(AiEvalTrace trace) throws Exception {

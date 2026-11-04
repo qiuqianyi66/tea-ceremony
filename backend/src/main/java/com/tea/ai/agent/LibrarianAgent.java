@@ -18,8 +18,10 @@ import com.tea.culture.vo.CultureSearchResult;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatResponse;
@@ -174,7 +176,9 @@ public class LibrarianAgent {
 
         // 同步包装：工具可能在框架侧的其它线程执行，写入要线程安全
         List<CultureSearchResult> collected = Collections.synchronizedList(new ArrayList<>());
-        CultureQueryTools tools = cultureQueryTools.collectingInto(collected);
+        // A8 归因观测：模型传了哪些词、命中多少（空命中/异常也记），随 AiChatVo 落到 trace.exec_layer
+        List<CultureQueryTools.QueryTrace> queryTraces = Collections.synchronizedList(new ArrayList<>());
+        CultureQueryTools tools = cultureQueryTools.collectingInto(collected, queryTraces);
         String system = systemWithSkill(question, TOOL_SYSTEM_PROMPT);
 
         long start = System.currentTimeMillis();
@@ -190,7 +194,39 @@ public class LibrarianAgent {
             sources.addAll(collectSources(hit));
         }
         // 去重：模型可能对同一主题连续调两次工具
-        return toVo(userId, req, response, new ArrayList<>(new LinkedHashSet<>(sources)), start);
+        return toVo(userId, req, response, new ArrayList<>(new LinkedHashSet<>(sources)), start,
+                ragTraceOf(queryTraces));
+    }
+
+    /**
+     * 把工具观测压成 trace 层用的短字段（exec_layer 是 JSON，别塞整段命中内容）。
+     *
+     * <p>字段含义：{@code calls} 工具被调了几次（0 = 模型没调）、{@code keywords} 模型传入的词
+     * （≤5 条，各 ≤MAX_KEYWORD_LENGTH）、{@code empty} 命中为空或异常的次数、
+     * {@code total_hits} 各次命中条数之和。有这三个数，「KB 依赖 case 拿不到 sources」就能归因到
+     * 「没调 / 传错词 / 库里没有」，不用再猜。
+     */
+    static Map<String, Object> ragTraceOf(List<CultureQueryTools.QueryTrace> traces) {
+        if (traces == null || traces.isEmpty()) {
+            return Map.of("calls", 0, "empty", 0, "total_hits", 0, "keywords", List.of());
+        }
+        List<CultureQueryTools.QueryTrace> snapshot;
+        synchronized (traces) {
+            snapshot = new ArrayList<>(traces);
+        }
+        List<String> keywords = snapshot.stream()
+                .map(CultureQueryTools.QueryTrace::keyword)
+                .filter(k -> k != null && !k.isBlank())
+                .limit(5)
+                .toList();
+        int empty = (int) snapshot.stream().filter(t -> t.totalHits() <= 0).count();
+        int totalHits = snapshot.stream().mapToInt(t -> Math.max(t.totalHits(), 0)).sum();
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("calls", snapshot.size());
+        out.put("empty", empty);
+        out.put("total_hits", totalHits);
+        out.put("keywords", keywords);
+        return out;
     }
 
     /** prompt 版本化 + T08 运行时技能（ADR-017）：按领域关键词命中注入子指令；未命中不膨胀上下文。 */
@@ -206,6 +242,12 @@ public class LibrarianAgent {
 
     /** 提取正文（空 → 502）+ 落计量（旁路失败不影响响应）+ 无来源时的确定性风险标记。两条路径共用。 */
     private AiChatVo toVo(Integer userId, AiChatRequest req, ChatResponse response, List<String> sources, long start) {
+        return toVo(userId, req, response, sources, start, null);
+    }
+
+    /** 带检索观测的版本：ragTrace 只供 TraceRecorder 落库（AiChatVo 里标了 @JsonIgnore，不进响应）。 */
+    private AiChatVo toVo(Integer userId, AiChatRequest req, ChatResponse response, List<String> sources,
+                          long start, Map<String, Object> ragTrace) {
         String content = ChatResponseText.requireNonBlank(response);
         int latency = (int) (System.currentTimeMillis() - start);
         try {
@@ -219,7 +261,10 @@ public class LibrarianAgent {
         if (sources.isEmpty()) {
             content = "以下为茶路常识，未引自站内文献。\n\n" + content;
         }
-        return new AiChatVo(content, sources);
+        if (ragTrace == null) {
+            return new AiChatVo(content, sources);
+        }
+        return new AiChatVo(content, sources, null, null, null, null, null, ragTrace);
     }
 
     /**
