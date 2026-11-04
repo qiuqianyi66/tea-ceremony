@@ -233,7 +233,8 @@ jobs:
         # 全量测试（单测 + 集成），Testcontainers 用 runner 自带 Docker 起 postgres:16
         # 2026-10-12 安全审计 H2：主配置 JWT_SECRET 已 fail-closed（无兜底默认），CI 显式注入测试密钥
         env:
-          JWT_SECRET: ci-test-secret-0123456789-0123456789-0123456789
+          # gitleaks:allow —— 合成测试密钥（非真实凭据）；行内放行，避免行号漂移导致放行单失效
+          JWT_SECRET: ci-test-secret-0123456789-0123456789-0123456789 # gitleaks:allow
         run: mvn -q test
 
   migration-test:
@@ -311,6 +312,10 @@ jobs:
       # 探针死选择器审计：探针引用的 class/title 在 src/ 命中 0 即红（防「跑得过但验不到」）
       - name: Run probe selector audit
         run: node scripts/audit-probe-selectors.cjs
+      # .gitleaksignore 指纹漂移审计：指纹是「路径:规则:行号」，行号随上方插入/删除漂移，
+      # 失效时 secret-scan 会无故变红（2026-11-04 实测踩到）。纯 fs 无依赖。
+      - name: Run gitleaks fingerprint audit
+        run: node scripts/audit-gitleaks-fingerprints.cjs
       - name: Run wiki drift audit
         run: node scripts/audit-wiki-drift.cjs
       # nginx 侧两道机械化门禁（纯 fs 无依赖，不需要 npm ci / docker）
