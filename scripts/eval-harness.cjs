@@ -222,15 +222,25 @@ if (noMigrateInfo.conflict) {
   let violations = 0;
   let paths = '';
   try {
-    paths = execSync('git diff --name-only HEAD~5', { cwd: root, encoding: 'utf8', maxBuffer: 4 * 1024 * 1024 });
+    // 只看 A/M（新增/修改）的路径：删除一个带 `.venv/` 字样的脚本不是"提交禁目录"（本切片实测误报）
+    paths = execSync('git diff --name-only --diff-filter=AM HEAD~5', { cwd: root, encoding: 'utf8', maxBuffer: 4 * 1024 * 1024 });
   } catch { /* 忽略 */ }
   // 路径级：禁提交目录（只看真实改动路径，避免文档文字误报）
   if (/node_modules\/|__pycache__\/|\.venv\/|test-results\/|playwright-report\/|^dist\//m.test(paths)) violations++;
   // 内容级：密钥/密码/占位符真值 + 新增 .env 文件
   try {
-    const diff = execSync('git diff HEAD~5 -- . ":(exclude)package-lock.json" ":(exclude)pnpm-lock.yaml"', { cwd: root, encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 });
-    if (/BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|password\s*[:=]\s*(?!(?:\$\{|\}|[a-zA-Z_$][\w$]*))["']?[^\s"'$}=]|api[_-]?key\s*[:=]\s*(?!(?:\$\{|\}|[a-zA-Z_$][\w$]*))["']?[^\s"'$}=]|secret\s*[:=]\s*(?!(?:\$\{|\}|[a-zA-Z_$][\w$]*))["']?[^\s"'$}=]/i.test(diff)) violations++;
-    if (/^\+\s*\.env(?![.\w])/m.test(diff)) violations++;
+    const rawDiff = execSync('git diff HEAD~5 -- . ":(exclude)package-lock.json" ":(exclude)pnpm-lock.yaml"', {
+      cwd: root,
+      encoding: 'utf8',
+      maxBuffer: 8 * 1024 * 1024,
+    });
+    // 只看「新增行」：删除一行含明文口令的测试夹具是在**清理**凭据，不是引入（本切片实测误报）
+    const added = rawDiff
+      .split('\n')
+      .filter((l) => l.startsWith('+') && !l.startsWith('+++'))
+      .join('\n');
+    if (/BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|password\s*[:=]\s*(?!(?:\$\{|\}|[a-zA-Z_$][\w$]*))["']?[^\s"'$}=]|api[_-]?key\s*[:=]\s*(?!(?:\$\{|\}|[a-zA-Z_$][\w$]*))["']?[^\s"'$}=]|secret\s*[:=]\s*(?!(?:\$\{|\}|[a-zA-Z_$][\w$]*))["']?[^\s"'$}=]/i.test(added)) violations++;
+    if (/^\+\s*\.env(?![.\w])/m.test(rawDiff)) violations++;
   } catch { /* diff 不可用时仅路径级判定 */ }
   scores.safety = violations === 0 ? 100 : Math.max(0, 100 - violations * 40);
   note('安全合规', scores.safety, violations === 0 ? '无密钥/禁目录/.env 提交' : `发现 ${violations} 类违规`);
