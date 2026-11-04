@@ -104,6 +104,7 @@
 - [x] 轨道判定：**Guided**（多文件、影响可估、可逆；未达 Controlled 的架构/数据模型/不可逆门槛，理由见上）
 - [x] 编码规范红线 15 条零违反
 - [x] review 通过与 🟡 清零（独立 Codex 评审已跑，2 轮：首轮 2 项不通过，修复后复核通过；记录见 `review.md`）
-- [x] 测试按改动面：`node scripts/audit-redlines.cjs` + 双向 fixture（10 项）+ `node scripts/verify-harness.cjs` +
-      `npm run quality` + 3 探针实跑
+- [x] 测试按改动面：`node scripts/audit-redlines.cjs` + `node --test scripts/tests/swallow-catch.node-test.cjs`
+      （14 项双向回归锁，已接入 CI `harness-consistency` job；变异验证：去掉掩码 → 9 项失败，判据退回
+      类型限定 → 2 项失败，恢复后 14/14 通过）+ `node scripts/verify-harness.cjs` + `npm run quality` + 3 探针实跑
 - [x] 无数据库迁移（本文件顶部已注明）
