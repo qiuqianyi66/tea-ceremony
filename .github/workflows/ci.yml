@@ -303,6 +303,9 @@ jobs:
       # 覆盖 scripts/tests/ 全部 *.node-test.cjs（R2 判据双向锁 / eval-harness 自检 / eval-core / 评委校准）
       - name: Run scripts regression locks
         run: node --test scripts/tests/*.node-test.cjs
+      # 探针死选择器审计：探针引用的 class/title 在 src/ 命中 0 即红（防「跑得过但验不到」）
+      - name: Run probe selector audit
+        run: node scripts/audit-probe-selectors.cjs
       - name: Run wiki drift audit
         run: node scripts/audit-wiki-drift.cjs
       # nginx 侧两道机械化门禁（纯 fs 无依赖，不需要 npm ci / docker）

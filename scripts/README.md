@@ -14,6 +14,7 @@
 | `audit-touch.cjs` | 全局触控目标审计（≥44px） |
 | `audit-hex.cjs` / `audit-states.cjs` / `audit-teas.cjs` / `audit-type.cjs` | 十六进制色值 / 状态五态 / 茶叶数据 / 类型一致性审计 |
 | `verify-brew-mobile.cjs` | 冲泡页移动端触控验证 |
+| `audit-probe-selectors.cjs` | 探针死选择器审计（探针引用的 class/title 在 `src/` 命中 0 → 红；防「跑得过但验不到」） |
 
 ## AI 评测体系
 
@@ -34,8 +35,8 @@
 | 脚本 | 用途 |
 |---|---|
 | `verify-gardens.cjs` / `verify-pavilion.cjs` | 四园晴雨 / 茶亭截图验证 |
-| `verify-garden-3d-crop.cjs` / `-interact.cjs` / `-phase4.cjs` / `-phase5.cjs` | 3D 茶园切片验证 |
 | `verify-garden-ambient.cjs` | 环境光 / 云影 / 雾 / 雨丝 / 音效（纯观赏氛围层；养成链路已于 T4.1 删除，原 `verify-water-rain.cjs` / `verify-water2.cjs` 随之退役） |
+| `verify-controls.cjs` / `verify-field.cjs` | OrbitControls 拖拽缩放 / 茶行地形（茶行实例数 + 全景截图） |
 | `screenshot-brew3d.cjs` / `inspect-brew-corner.cjs` / `probe-brew.cjs` | 冲泡 3D 截图 / 角落检测 / 探针 |
 | `diag-glare.cjs` / `diag-glare2.cjs` | 反光诊断（一次性） |
 
@@ -44,7 +45,7 @@
 | 脚本 | 用途 |
 |---|---|
 | `screenshot-home.cjs` / `screenshot-growth.cjs` / `screenshots-home-share.cjs` | 首页 / 成长页 / 首页+分享截图 |
-| `verify-brew-skins.cjs` / `verify-controls.cjs` / `verify-field.cjs` / `verify-final.cjs` / `verify-garden-sync-e2e.cjs` | 皮肤 / 控件 / 表单 / 终验 / 同步 E2E |
+| `verify-brew-skins.cjs` / `verify-final.cjs` | 冲泡皮肤 / 终验 |
 
 ## 资源与构建工具
 
