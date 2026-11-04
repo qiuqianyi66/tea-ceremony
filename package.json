@@ -16,14 +16,15 @@
     "test:e2e": "playwright test",
     "lint": "biome check src e2e scripts",
     "lint:fix": "biome check --write src e2e scripts",
-    "verify": "npm run verify:static && npm run verify:redlines && npm run verify:harness && npm run audit:context",
+    "verify": "npm run verify:static && npm run verify:redlines && npm run verify:harness && npm run audit:context && npm run verify:probes",
     "verify:static": "node scripts/scan-emoji.cjs",
     "verify:redlines": "node scripts/audit-redlines.cjs",
     "verify:harness": "node scripts/verify-harness.cjs",
     "audit:context": "node scripts/audit-context-budget.cjs",
     "verify:ui": "node scripts/verify-gardens.cjs && node scripts/verify-pavilion.cjs && node scripts/verify-icons.cjs",
     "quality": "npm run lint && npm run type-check && npm run test && npm run build && npm run verify",
-    "quality:full": "npm run quality && npm audit --registry=https://registry.npmjs.org"
+    "quality:full": "npm run quality && npm audit --registry=https://registry.npmjs.org",
+    "verify:probes": "node scripts/audit-probe-selectors.cjs"
   },
   "dependencies": {
     "@tresjs/cientos": "^5.9.3",
