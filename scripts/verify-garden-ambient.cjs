@@ -27,20 +27,10 @@ const OUT_RAIN = 'verify_3d_rain.png'
   await page.goto(ORIGIN + '/garden/hangzhou', { waitUntil: 'domcontentloaded' })
   await page.waitForTimeout(4000)
 
-  // 若无茶树则种 3 棵（empty-hint 存在才种）
-  if ((await page.locator('.empty-hint').count()) > 0) {
-    for (let i = 0; i < 3; i++) {
-      await page.click('.plant-btn-3d')
-      await page.waitForTimeout(400)
-      const items = page.locator('.tea-select-item')
-      if ((await items.count()) > 0) await items.first().click()
-      await page.waitForTimeout(300)
-      await page.click('.dialog-btn.confirm')
-      await page.waitForTimeout(2500) // 等 loadPlants + 3D 叶簇重建
-    }
-  }
-
-  // 等 3D 场景加载 + 动画走几秒（云/动物/雾动起来）
+  // T4.1 起茶园降级为纯观赏：种植 / 浇水 / 修剪 / 采摘链路已由产品删除（见 src/views/GardenView.vue 头注释）。
+  // 旧版此处「若无苗则种 3 棵」的播种分支引用 `.plant-btn-3d`（全仓 src/ 命中 0）与 `.empty-hint`
+  // （仅存于 SelectView.vue / TeaDragDrop.vue，茶园页无此节点），分支永远不执行，已删除。
+  // 本探针只验氛围层（云影 / 雾 / 雨丝 / 音效），不再假装覆盖养成链路。
   await page.waitForTimeout(4000)
   await page.screenshot({ path: OUT })
   console.log('[1] 晴天全景已截图')
@@ -64,9 +54,10 @@ const OUT_RAIN = 'verify_3d_rain.png'
   console.log('[3] 音效开关操作完成')
   console.log('页面错误数: ' + errors.length)
   if (errors.length > 0) console.log(errors.slice(0, 5).join('\n'))
-  // 本探针只断言「操作过程中页面无报错」，不校验截图内容，也不覆盖 telemetry 传输正确性
-  // （#207 起 telemetry batch 被拦成 204，传输/退避链路在本探针中不可见）
-  console.log('VERIFIED: page-error-free-only（视觉内容与 telemetry 传输不在覆盖范围）')
+  // 本探针只断言「氛围层按钮可点且操作过程中页面无报错」，不校验截图内容，也不覆盖 telemetry 传输正确性
+  // （#207 起 telemetry batch 被拦成 204，传输/退避链路在本探针中不可见）；
+  // 浇水/种植粒子动画不在覆盖范围——该链路已由 T4.1 从产品删除，不再有任何探针声称覆盖它。
+  console.log('VERIFIED: page-error-free + ambient-buttons-clickable（视觉内容、telemetry 传输、已删除的养成链路均不在覆盖范围）')
   console.log('ERRORS:', JSON.stringify(errors))
   if (errors.length > 0) process.exitCode = 1
   await browser.close()
