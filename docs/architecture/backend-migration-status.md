@@ -102,6 +102,7 @@ owner: yanha
 ## 5. 迁移残留（收尾前要清）
 
 1. ~~**`scripts/verify-garden-sync-e2e.cjs:31` 仍打 `/api/auth/register`**（旧栈路径，无 `/v1`）~~ → **已修（2026-10-22）**：改 `/api/v1/auth/register` + `ApiResponse` 解包；PG 连接串改走 `TEA_PG` 环境变量（口令不入库）；queryPg 的 python 路径可用 `TEA_PY` 覆盖（旧 `backend/.venv` 已不存在）。
+   2026-11-04 补：该脚本已随 T4.1（茶园纯观赏化，种植/采摘链路删除）退役，本条仅作历史记录，行号锚点已失效。
 2. **CI 双跑**：pytest（旧）+ Maven（新）并存；`backend-lint` 的 ruff/bandit 与 `dependency-audit` 的 pip-audit 均只覆盖旧栈（pip-audit 为有据放行，见 `docs/security-harness-engineering-spec.md` §5-G4）。
 3. **迁移双轨**：新表走 Flyway（`db/migration`），旧栈仍 Alembic（`backend/migrations/`）——AGENTS.md §8 过渡期口径。
 4. **`backend/app` 未删**：`backend/main.py` + `app/{models,routers,schemas,services}` + `tests/` + Alembic 配置俱全，旧栈可独立运行。
