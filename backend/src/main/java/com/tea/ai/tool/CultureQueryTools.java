@@ -3,7 +3,9 @@ package com.tea.ai.tool;
 import com.tea.culture.service.CultureSearchService;
 import com.tea.culture.vo.CultureSearchResult;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.tool.annotation.Tool;
@@ -53,10 +55,22 @@ public class CultureQueryTools {
     /** 关键词长度上限：模型偶尔会把整段问句塞进参数，截断比让 ILIKE 扫长串更稳。 */
     static final int MAX_KEYWORD_LENGTH = 50;
 
+    /**
+     * 单次工具调用观测（A8 归因用，2026-11-04）：模型传了什么词、命中多少。
+     *
+     * <p>为什么需要它：评测里「KB 依赖 case 拿不到 sources」有三种完全不同原因——模型压根没调工具、
+     * 调了但传的词检索不到、调了词对但库里没这条。过去的 trace 只记 sources_count，三者分不开，
+     * LIB-005（君山银针，语料有数据却 miss）因此无法归因。totalHits = -1 表示本次调用抛异常。
+     */
+    public record QueryTrace(String keyword, int totalHits, Map<String, Integer> counts) {}
+
     private final CultureSearchService cultureSearchService;
 
     /** 命中结果收集器：只有绑定实例（每请求一份）非空，Spring 单例本身不收集。 */
     private List<CultureSearchResult> sink;
+
+    /** 调用观测收集器：与 sink 同寿命，空命中/异常也要落一条（归因靠的就是「空的那次」）。 */
+    private List<QueryTrace> traceSink;
 
     public CultureQueryTools(CultureSearchService cultureSearchService) {
         this.cultureSearchService = cultureSearchService;
@@ -71,8 +85,19 @@ public class CultureQueryTools {
      * 透传断掉就是整条工具路径失效。绑定实例不依赖任何框架透传，最坏结果是 sources 为空。</p>
      */
     public CultureQueryTools collectingInto(List<CultureSearchResult> sink) {
+        return collectingInto(sink, null);
+    }
+
+    /**
+     * 同 {@link #collectingInto(List)}，额外把每次调用的关键词与命中分布记进 {@code traceSink}。
+     *
+     * <p>traceSink 可传 null（调用方不关心观测时行为不变）。传非空时**每次调用都记一条**——
+     * 空命中与异常同样记，否则「归因」永远只剩成功的那几次，等于没归因。
+     */
+    public CultureQueryTools collectingInto(List<CultureSearchResult> sink, List<QueryTrace> traceSink) {
         CultureQueryTools bound = new CultureQueryTools(cultureSearchService);
         bound.sink = sink;
+        bound.traceSink = traceSink;
         return bound;
     }
 
@@ -95,11 +120,34 @@ public class CultureQueryTools {
             if (sink != null && hasHit(hit)) {
                 sink.add(hit);
             }
+            recordTrace(q, hit);
             return render(hit);
         } catch (Exception e) {
             log.warn("culture_query 工具检索失败：{}", e.getMessage());
+            // 异常也记一条（totalHits = -1）：否则「工具挂了」在 trace 里看起来像「模型没调工具」
+            if (traceSink != null) {
+                traceSink.add(new QueryTrace(keyword == null ? "" : keyword.trim(), -1, Map.of()));
+            }
             return ERROR;
         }
+    }
+
+    /** 记一次调用观测：关键词 + 各类型命中条数（空命中照样记，归因靠的就是空的那次）。 */
+    private void recordTrace(String q, CultureSearchResult hit) {
+        if (traceSink == null) {
+            return;
+        }
+        Map<String, Integer> counts = new LinkedHashMap<>();
+        counts.put("tea", hit.teas().size());
+        counts.put("person", hit.people().size());
+        counts.put("region", hit.regions().size());
+        counts.put("poem", hit.poems().size());
+        counts.put("teaware", hit.teawares().size());
+        counts.put("etiquette", hit.etiquettes().size());
+        counts.put("relation", hit.relations().size());
+        counts.put("process", hit.processes().size());
+        int total = counts.values().stream().mapToInt(Integer::intValue).sum();
+        traceSink.add(new QueryTrace(q, total, counts));
     }
 
     /** 结构化精简文本：每类一行、只带决策需要的属性；空命中给明确文案（不返回 null）。 */

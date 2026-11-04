@@ -6,7 +6,9 @@
 # 由 gitleaks v8.30.1 实测输出，run: gitleaks detect --source . --no-git
 
 # --- ci.yml 自身测试环境变量（synthetic：ci-test-secret-...） ---
-.github/workflows/ci.yml:generic-api-key:231
+# 2026-11-04：该行已加行内 `gitleaks:allow`，指纹只作双保险；行号随 CI 结构变动会漂，
+# 漂移由 scripts/audit-gitleaks-fingerprints.cjs 在 CI 里盯（指向的行不像密钥就报 WARN）。
+.github/workflows/ci.yml:generic-api-key:237
 
 # --- Java 测试 fixture 的 SECRET（HS256 签名测试用的合成值） ---
 backend/src/test/java/com/tea/auth/service/AuthServiceTest.java:generic-api-key:34

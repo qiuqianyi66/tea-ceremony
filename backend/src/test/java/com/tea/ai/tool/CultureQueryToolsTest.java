@@ -154,4 +154,61 @@ class CultureQueryToolsTest {
         assertThat(callbacks[0].call("{\"keyword\":\"龙井\"}")).contains("【茶】龙井");
         assertThat(sink).hasSize(1);
     }
+
+    // ---- A8 归因观测（2026-11-04）：空命中也必须留痕，否则「没调」与「调了但空」分不开 ----
+
+    @Test
+    void traceRecordsKeywordAndPerTypeCountsOnHit() {
+        List<CultureQueryTools.QueryTrace> traces = new ArrayList<>();
+        CultureQueryTools bound = tools.collectingInto(new ArrayList<>(), traces);
+        when(search.search("龙井")).thenReturn(hit());
+
+        bound.cultureQuery("龙井");
+
+        assertThat(traces).hasSize(1);
+        CultureQueryTools.QueryTrace t = traces.get(0);
+        assertThat(t.keyword()).isEqualTo("龙井");
+        assertThat(t.totalHits()).isEqualTo(4); // tea+person+region+process 各 1
+        assertThat(t.counts()).containsEntry("tea", 1).containsEntry("person", 1)
+                .containsEntry("process", 1).containsEntry("poem", 0);
+    }
+
+    @Test
+    void traceRecordsEmptyCallWithZeroHits() {
+        List<CultureQueryTools.QueryTrace> traces = new ArrayList<>();
+        CultureQueryTools bound = tools.collectingInto(new ArrayList<>(), traces);
+        when(search.search("茶寿")).thenReturn(empty());
+
+        bound.cultureQuery("茶寿");
+
+        // sink 为空（不假装有出处），但 trace 必须有这一条：LIB-005 一类 miss 归因全靠它
+        assertThat(traces).hasSize(1);
+        assertThat(traces.get(0).keyword()).isEqualTo("茶寿");
+        assertThat(traces.get(0).totalHits()).isZero();
+    }
+
+    @Test
+    void traceRecordsFailureAsNegativeHits() {
+        List<CultureQueryTools.QueryTrace> traces = new ArrayList<>();
+        CultureQueryTools bound = tools.collectingInto(new ArrayList<>(), traces);
+        when(search.search("boom")).thenThrow(new RuntimeException("db down"));
+
+        bound.cultureQuery("boom");
+
+        // -1 = 工具异常；与「命中 0」区分开，否则会误判成「库里没有」
+        assertThat(traces).hasSize(1);
+        assertThat(traces.get(0).totalHits()).isEqualTo(-1);
+    }
+
+    @Test
+    void traceSinkIsOptionalAndKeywordIsTruncated() {
+        // 不传 traceSink 时行为不变（老调用方不受影响）
+        when(search.search(anyString())).thenReturn(empty());
+        assertThat(tools.cultureQuery("龙井")).isNotBlank();
+
+        List<CultureQueryTools.QueryTrace> traces = new ArrayList<>();
+        CultureQueryTools bound = tools.collectingInto(new ArrayList<>(), traces);
+        bound.cultureQuery("龙".repeat(CultureQueryTools.MAX_KEYWORD_LENGTH + 20));
+        assertThat(traces.get(0).keyword()).hasSize(CultureQueryTools.MAX_KEYWORD_LENGTH);
+    }
 }

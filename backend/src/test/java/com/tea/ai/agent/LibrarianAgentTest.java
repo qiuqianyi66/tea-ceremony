@@ -150,4 +150,31 @@ class LibrarianAgentTest {
 
         assertThrows(BadGatewayException.class, () -> agent.chat(null, question("讲讲茶")));
     }
+
+    // ---- A8 归因观测（2026-11-04）：trace 必须能区分「模型没调工具」与「调了但空命中」 ----
+
+    @Test
+    void ragTraceOfEmptyMeansModelDidNotCallTool() {
+        var trace = LibrarianAgent.ragTraceOf(List.of());
+
+        assertEquals(0, trace.get("calls"), "没调用时必须显式记 calls=0，不能靠字段缺失推断");
+        assertEquals(0, trace.get("empty"));
+        assertEquals(List.of(), trace.get("keywords"));
+    }
+
+    @Test
+    void ragTraceOfCountsEmptyCallsAndKeywords() {
+        var traces = List.of(
+                new CultureQueryTools.QueryTrace("龙井", 3, java.util.Map.of("tea", 3)),
+                new CultureQueryTools.QueryTrace("茶寿", 0, java.util.Map.of("tea", 0)),
+                new CultureQueryTools.QueryTrace("boom", -1, java.util.Map.of()));
+
+        var trace = LibrarianAgent.ragTraceOf(traces);
+
+        assertEquals(3, trace.get("calls"));
+        // 0 命中与异常(-1)都算「没拿到依据」，两者都必须计入，否则归因会漏掉工具挂掉那一类
+        assertEquals(2, trace.get("empty"));
+        assertEquals(3, trace.get("total_hits"), "异常不得拉低命中总和（负数按 0 计）");
+        assertEquals(List.of("龙井", "茶寿", "boom"), trace.get("keywords"));
+    }
 }
