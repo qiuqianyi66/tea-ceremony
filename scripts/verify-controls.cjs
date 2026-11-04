@@ -13,7 +13,12 @@ const { chromium } = require('playwright')
   page.on('pageerror', (e) => errors.push('PAGEERROR: ' + e.message))
 
   await page.goto('http://localhost:5173/garden/hangzhou', { waitUntil: 'domcontentloaded' })
-  await page.waitForTimeout(4500)
+  // 冷启动时 Vite 首次编译该路由 >4.5s，3D 未挂载就读 window.__teaGarden 会抛 TypeError（实测偶发）。
+  // 改成等挂载完成再取，避免「探针自己崩」被读成「功能坏了」。
+  await page
+    .waitForFunction(() => !!window.__teaGarden, null, { timeout: 20000 })
+    .catch(() => console.log('WARN: 20s 内未见 window.__teaGarden，后续断言可能为空'))
+  await page.waitForTimeout(1500)
 
   // 1. controls 状态
   const ctrl = await page.evaluate(() => {
@@ -40,8 +45,11 @@ const { chromium } = require('playwright')
   // 2. 相机初始位置
   const camBefore = await page.evaluate(() => {
     const g = window.__teaGarden
+    // 3D 未挂载时直接返回 null，让断言报红；不要在 evaluate 里抛 TypeError（那会变成 unhandled rejection）
+    if (!g) return null
     const cam = g.activeCamera()
     const c = cam && cam.value ? cam.value : cam
+    if (!c || !c.position) return null
     return { x: +c.position.x.toFixed(2), y: +c.position.y.toFixed(2), z: +c.position.z.toFixed(2) }
   })
   console.log('CAM_BEFORE:', JSON.stringify(camBefore))
@@ -58,8 +66,11 @@ const { chromium } = require('playwright')
 
   const camAfter = await page.evaluate(() => {
     const g = window.__teaGarden
+    // 3D 未挂载时直接返回 null，让断言报红；不要在 evaluate 里抛 TypeError（那会变成 unhandled rejection）
+    if (!g) return null
     const cam = g.activeCamera()
     const c = cam && cam.value ? cam.value : cam
+    if (!c || !c.position) return null
     return { x: +c.position.x.toFixed(2), y: +c.position.y.toFixed(2), z: +c.position.z.toFixed(2) }
   })
   console.log('CAM_AFTER:', JSON.stringify(camAfter))
@@ -70,82 +81,32 @@ const { chromium } = require('playwright')
   await page.waitForTimeout(500)
   const zoomAfter = await page.evaluate(() => {
     const g = window.__teaGarden
+    // 3D 未挂载时直接返回 null，让断言报红；不要在 evaluate 里抛 TypeError（那会变成 unhandled rejection）
+    if (!g) return null
     const cam = g.activeCamera()
     const c = cam && cam.value ? cam.value : cam
+    if (!c || !c.position) return null
     return { x: +c.position.x.toFixed(2), y: +c.position.y.toFixed(2), z: +c.position.z.toFixed(2) }
   })
   console.log('ZOOM_AFTER:', JSON.stringify(zoomAfter))
 
-  // 5. 浇水动画验证（种茶→点茶树→浇水→查粒子）
-  const plantBtn = page.locator('.plant-btn-3d')
-  const empty = await page
-    .locator('.empty-hint')
-    .isVisible()
-    .catch(() => false)
-  if (empty) {
-    await plantBtn.click()
-    await page.waitForTimeout(400)
-    const items = page.locator('.tea-select-item')
-    if ((await items.count()) > 0) {
-      await items.first().click()
-      await page.waitForTimeout(300)
-    }
-    const confirm = page.locator('.dialog-btn.confirm')
-    if (await confirm.isVisible().catch(() => false)) {
-      await confirm.click()
-    }
-    await page.waitForTimeout(2500)
-  }
-  const hit = await page.evaluate(() => {
-    const g = window.__teaGarden
-    if (!g) return null
-    const scene = g.scene()
-    let hitbox = null
-    scene.traverse((o) => {
-      if (!hitbox && o.isMesh && o.userData && typeof o.userData.plantId === 'number') hitbox = o
-    })
-    if (!hitbox) return null
-    const cam = g.activeCamera()
-    const c = cam && cam.value ? cam.value : cam
-    const v = hitbox.getWorldPosition(new g.THREE.Vector3())
-    const p = v.clone().project(c)
-    return { x: (p.x * 0.5 + 0.5) * 1440, y: (-p.y * 0.5 + 0.5) * 900 }
-  })
-  if (hit) {
-    await page.mouse.click(hit.x, hit.y)
-    await page.waitForTimeout(1200)
-  }
-  const wb = await page
-    .locator('.dialog-btn', { hasText: '浇水' })
-    .last()
-    .boundingBox()
-    .catch(() => null)
-  let waterState = null
-  if (wb) {
-    await page.mouse.click(wb.x + wb.width / 2, wb.y + wb.height / 2)
-    for (let i = 0; i < 4; i++) {
-      await page.waitForTimeout(150)
-      waterState = await page.evaluate(() => {
-        const g = window.__teaGarden
-        if (!g) return null
-        const scene = g.scene()
-        let pts = null
-        scene.traverse((o) => {
-          if (o.type === 'Points' && o.geometry && o.geometry.attributes.position) pts = o
-        })
-        if (!pts) return { found: false }
-        const pos = pts.geometry.attributes.position
-        const ys = []
-        for (let i = 0; i < Math.min(pos.count, 5); i++) ys.push(+pos.getY(i).toFixed(2))
-        return { found: true, visible: pts.visible, count: pos.count, sampleYs: ys }
-      })
-      if (waterState && waterState.visible) break
-    }
-  }
-  await page.waitForTimeout(300)
-  await page.screenshot({ path: 'verify_3d_controls_water.png' })
+  // ---- 最小断言（本探针的价值就在这里：不判就等于只打印日志）----
+  const moved = (a, b) => !!a && !!b && (Math.abs(a.x - b.x) + Math.abs(a.y - b.y) + Math.abs(a.z - b.z) > 0.01)
+  if (!camBefore) errors.push('ASSERT: 3D 未挂载，相机读数缺失（window.__teaGarden 为空）')
+  else if (!moved(camBefore, camAfter)) errors.push('ASSERT: 拖拽未改变相机位置（OrbitControls 可能失效）')
+  if (!moved(camAfter, zoomAfter)) errors.push('ASSERT: 滚轮未改变相机位置（缩放可能失效）')
+  // VERIFIED 行必须与断言结论一致：断了就是没验到，别让日志看起来像通过
+  const assertsFailed = errors.some((e) => e.startsWith('ASSERT:'))
+  console.log(
+    'VERIFIED:',
+    assertsFailed ? 'orbit-assert-failed（本次未通过）' : camBefore ? 'orbit-drag-and-zoom' : 'no-3d-scene（本次未验到控件）',
+  )
 
-  console.log('WATER:', JSON.stringify({ wbFound: !!wb, waterState }))
+  // 5. T4.1 起茶园降级为纯观赏：种植 / 点茶树 / 浇水的交互链路已从 src/ 删除
+  //    （`.plant-btn-3d` 在 src/ 命中 0），原「浇水粒子」断言随之退役，不再假装覆盖。
+  //    本探针只验 OrbitControls（旋转 / 缩放）与页面无报错。
+  await page.waitForTimeout(300)
+  await page.screenshot({ path: 'verify_3d_controls.png' })
   console.log('ERRORS:', JSON.stringify(errors))
   if (errors.length > 0) process.exitCode = 1
   await browser.close()
