@@ -1,0 +1,19 @@
+---
+last_updated: 2026-11-04
+status: active
+owner: yanha
+---
+
+# eval-harness: remaining-candidates
+
+> 确定性评测（零 LLM）。--verify=on。日期 2026-11-04
+
+| 流程完整性 | 100/100 | summary.md:✓ db-migrations.sql:✓(零迁移豁免) rollback.sql:✓(零迁移豁免) review.md:✓ ADR:n/a（本切片未触数据模型/迁移） |
+| 产物质量 | 100/100 | 范围:true GWT:true 影响:true 反注水(>200字/含代码块或表格):true |
+| 代码正确性 | 100/100 | type-check 通过 |
+| 效率 | 100/100 | 切片相关 commit=0 文档条目≈28（≤8/≤40 满分） |
+| 安全合规 | 100/100 | 无密钥/禁目录/.env 提交 |
+| 迭代能力 | 100/100 | review 结论行 🔴🟡 清零 |
+| 接口验收 | 100/100 | 契约登记✓ 测试目录✓ |
+
+**总分: 100/100（≥60 通过）— PASS**

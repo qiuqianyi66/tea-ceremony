@@ -13,6 +13,7 @@
 | `verify-icons.cjs` | lucide 图标渲染审计 |
 | `audit-touch.cjs` | 全局触控目标审计（≥44px） |
 | `audit-hex.cjs` / `audit-states.cjs` / `audit-teas.cjs` / `audit-type.cjs` | 十六进制色值 / 状态五态 / 茶叶数据 / 类型一致性审计 |
+| `audit-context-budget.cjs` | 常驻上下文预算体检（防 AGENTS.md / 规则层膨胀） |
 | `verify-brew-mobile.cjs` | 冲泡页移动端触控验证 |
 | `audit-probe-selectors.cjs` | 探针死选择器审计（探针引用的 class/title 在 `src/` 命中 0 → 红；防「跑得过但验不到」） |
 
@@ -57,6 +58,24 @@
 | `add-doc-meta.cjs` | docs 元信息头批量补齐 |
 | `gen-repomap.cjs` | 仓库地图生成（tree-sitter） |
 | `pwa-offline-smoke.cjs` | PWA 离线冒烟 |
+## 运维与部署（CI 外，手动执行）
+
+| 脚本 | 用途 |
+|---|---|
+| `deploy-backend.ps1` / `update-backend.ps1` / `install-windows-service.ps1` | 后端部署 / 更新 / 注册 Windows 服务 |
+| `backup-postgres.sh` / `rollback.ps1` | PostgreSQL 备份 / 部署回滚 |
+| `https-selfsigned.ps1` / `https-issue-cert.sh` | 本地自签证书 / 签发证书 |
+| `verify-nginx-headers.cjs` / `verify-nginx-routes.cjs` / `verify-alert-rules.cjs` / `verify-production.cjs` | nginx 安全头 / 路由白名单 / 告警规则 / 生产环境巡检 |
+
+## AI 评测辅助（一次性）
+
+| 脚本 | 用途 |
+|---|---|
+| `diagnose-rag.cjs` / `seed-extract.mjs` / `generate-relations.mjs` | RAG 诊断 / 种子抽取 / 关系图生成 |
+| `slim-china-map.cjs` / `gen-hero-responsive.cjs` | 地图瘦身 / 响应式 hero 生成 |
+| `parse-t09-annotations.py` | T09 人工复核完成版 TXT → 回填 samples-judge-t09.json 的 human 字段 |
+| `audit-context-migration.cjs` / `audit-levels-consistency.cjs` | 常驻上下文迁移审计 / 六境跨语言一致审计 |
+
 
 ## 其他
 
