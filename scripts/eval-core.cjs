@@ -154,6 +154,9 @@ function aggregate(runs, k = 3) {
   // 口径：run.sources 为 number（来源数）且 > 0 计命中；null（透明代理/未命中）计未命中。
   // 分路径：defaultPath=librarian+chat（默认体验路径），expertPath=专家路径——
   // 避免 chat 透明代理 sources=null 拉低真实 RAG 路径的口径（与 F-2 programOnly 同哲学：口径分开算）。
+  // ⚠ 2026-11-04 口径换轨（用户拍板）：ragHitRate 的分母是全量 case，其中多数按设计不该检索
+  // （冲泡步骤/品鉴评价/闲聊/对抗），实测 0.16 主要是路由策略而不是召回质量 → **只作观测指标**，
+  // 不进验收。A8 验收指标是下面的 ragRecallK（KB 依赖 case 子集口径）。
   const ragHit = (list) => {
     const hit = list.filter((r) => typeof r.sources === 'number' && r.sources > 0).length
     return list.length === 0 ? null : round(hit / list.length)

@@ -47,8 +47,60 @@ cases:
     input: 君山银针是什么茶，有什么特点？
     points:
       - {name: 茶类归属正确, weight: 1, veto: true, check: program}
+      - {name: 知识库命中, weight: 1, veto: false, check: program}
       - {name: 黄茶工艺特征准确, weight: 1, veto: false, check: judge}
     expected: 君山银针属黄茶（非绿茶/白茶），黄叶黄汤、"三起三落"特征（知识库命中）
+
+  # 2026-11-04 扩标注（A8 口径换轨）：ragRecallK 原来只有 3–4 条样本、无统计意义。
+  # 新增 5 条「具体实体 + 站内事实」型 case，每条都带 program「知识库命中」——
+  # 它们考的是「库里有的实体，检索有没有把它捞上来」，不是常识问答。
+  # 实体覆盖由 scripts/audit-eval-rag.cjs 对 V2__culture_seed.sql 机械核对：语料里没有就红。
+  - id: LIB-010
+    type: typical
+    precondition: n/a
+    input: 大红袍是岩茶吗？"岩韵"是什么感觉？
+    points:
+      - {name: 知识库命中, weight: 1, veto: false, check: program}
+      - {name: 茶类归属正确, weight: 1, veto: false, check: program}
+      - {name: 岩韵描述贴合感官, weight: 1, veto: false, check: judge}
+    expected: 大红袍属青茶（武夷岩茶）；岩韵指岩骨花香、汤感厚、回甘持久，与山场风化岩壤相关
+
+  - id: LIB-011
+    type: typical
+    precondition: n/a
+    input: 白毫银针和安吉白茶有什么区别？
+    points:
+      - {name: 知识库命中, weight: 1, veto: false, check: program}
+      - {name: 茶类归属正确, weight: 1, veto: true, check: program}
+      - {name: 差异点准确, weight: 1, veto: false, check: judge}
+    expected: 白毫银针属白茶（全芽头、不炒不揉、萎凋干燥）；安吉白茶属绿茶（品种白化、按绿茶工艺杀青），二者并非同类
+
+  - id: LIB-012
+    type: typical
+    precondition: n/a
+    input: 建盏为什么适合点茶？
+    points:
+      - {name: 知识库命中, weight: 1, veto: false, check: program}
+      - {name: 器型与点茶关系准确, weight: 1, veto: false, check: judge}
+    expected: 建盏束口深腹、胎厚保温，黑釉衬托汤色白沫，便于观察咬盏与汤花；宋代点茶斗茶用器
+
+  - id: LIB-013
+    type: typical
+    precondition: n/a
+    input: 宋代斗茶怎么进行？
+    points:
+      - {name: 知识库命中, weight: 1, veto: false, check: program}
+      - {name: 流程与评判标准准确, weight: 1, veto: false, check: judge}
+    expected: 碾茶罗末、注汤击拂成汤花，比汤色（纯白为上）与咬盏持久；宋徽宗《大观茶论》有系统记载
+
+  - id: LIB-014
+    type: typical
+    precondition: n/a
+    input: 碧螺春的产地和外形特点？
+    points:
+      - {name: 知识库命中, weight: 1, veto: false, check: program}
+      - {name: 产地与外形描述准确, weight: 1, veto: false, check: judge}
+    expected: 产于江苏苏州太湖洞庭东山、西山；条索纤细卷曲如螺、满披白毫，俗称"吓煞人香"
 
   # ---- edge（边界）----
   - id: LIB-006

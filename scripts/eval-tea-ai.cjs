@@ -19,6 +19,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const yaml = require('js-yaml')
 const { scoreCase, scoreCaseProgramOnly, passK, aggregate, round, parseJudgeVerdict, evalPointProgram, extractSystemPrompt, REFUSAL_KEYWORDS } = require('./eval-core.cjs')
+const { isKbDependent } = require('./lib/eval-rag-rules.cjs')
 
 const ROOT = path.join(__dirname, '..')
 const CASES_DIR = path.join(ROOT, 'docs', 'ai-eval', 'cases')
@@ -132,7 +133,9 @@ async function main() {
     // B1.1 RAG 召回质量字段：sourceNames 落名（不只计数）；kbDependent = case 要求知识库命中；
     // ragCited = 回答正文是否真的提到至少一个 source 名（召回了但模型不引用 = 白召回）。
     const sourceNames = Array.isArray(last.sources) ? last.sources.filter((s) => typeof s === 'string' && s) : []
-    const kbDependent = (caseDef.points || []).some((p) => typeof p.name === 'string' && p.name.includes('知识库命中'))
+    // 判据统一到 scripts/lib/eval-rag-rules.cjs（与 audit-eval-rag.cjs 同源）：早先这里只认考点名含
+    // 「知识库命中」四个字，把「引用知识库出处」（LIB-001）漏在样本外，ragRecallK 分母被悄悄缩小。
+    const kbDependent = isKbDependent(caseDef.points)
     const ragCited = sourceNames.some((n) => (last.content || '').includes(n))
     const run = { id: caseDef.id, file, type: caseDef.type, precondition: caseDef.precondition ?? null, input: caseDef.input.slice(0, 60), score: round(scores[0] ?? 0), programOnlyScore: programOnlyScore === null ? null : round(programOnlyScore), judgePointCount, judgeFilledCount, passResult: pk, httpStatus: last.httpStatus, contentSnippet: (last.content || '').slice(0, 80), sources: Array.isArray(last.sources) ? last.sources.length : null, sourceNames: sourceNames.length > 0 ? sourceNames : null, kbDependent, ragCited: sourceNames.length > 0 ? ragCited : null, tokensIn: last.tokensIn ?? null, tokensOut: last.tokensOut ?? null, latencyMs: last.latencyMs ?? null, points: pointDetail, iterations: iterationDetail, defaultPath: DEFAULT_PATH_FILES.has(path.basename(file, '.yaml')) }
     runs.push(run)

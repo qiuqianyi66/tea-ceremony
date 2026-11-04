@@ -47,6 +47,11 @@ jobs:
         run: npm ci
       - name: Run unit tests
         run: npm run test
+      # RAG 评测口径与语料对齐审计（需 js-yaml，故挂在本 job 而非无依赖的 harness-consistency）：
+      # 评测集声明依赖知识库的 case，种子语料必须覆盖；KB 依赖标注数低于棘轮即红。
+      # 治的病：ragHitRate 拿全量分母当 RAG 质量、kbDependent 只认「知识库命中」、语料缺口无感知。
+      - name: Run RAG eval audit
+        run: node scripts/audit-eval-rag.cjs
 
   frontend-lint:
     name: Frontend lint (Biome)
