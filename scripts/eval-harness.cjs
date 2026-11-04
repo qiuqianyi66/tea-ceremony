@@ -51,10 +51,32 @@ function touchesSchemaPath(f) {
   );
 }
 
+/**
+ * 内容级数据模型判定：SQL/DDL 关键词。用于补「路径不可见的语义级数据变更」盲区
+ * （只改 repository 内 SQL 或 service 内表语义、不动 entity/迁移文件时）。
+ * 保守：只在测试文件以外 + 已确认存在该文件时判定，避免误伤纯逻辑 service。
+ */
+const SQL_KEYWORDS_RE = /\b(CREATE\s+(UNIQUE\s+)?(TABLE|INDEX|VIEW|SEQUENCE)|ALTER\s+(TABLE|INDEX|VIEW|SEQUENCE|DATABASE|SCHEMA)|DROP\s+(TABLE|INDEX|VIEW|SEQUENCE)|TRUNCATE\s+TABLE|RENAME\s+TABLE|MERGE\s+INTO|REPLACE\s+INTO|INSERT\s+INTO|UPDATE\s+\w+\s+SET|DELETE\s+FROM|SELECT\s+[\w,.\s]+\s+FROM)\b/i;
+function touchesSchemaContent(fileText) {
+  return SQL_KEYWORDS_RE.test(fileText);
+}
+
 function adrVerdict(changedFiles) {
   const hasAdr = changedFiles.some((f) => f.startsWith('docs/ADR/'));
   const touchesSchema = changedFiles.some(touchesSchemaPath);
-  return { applicable: hasAdr || touchesSchema, ok: hasAdr, touchesSchema };
+  // 内容级补盲：文件内容含 SQL/DDL 关键词时也算 schema 触面（补路径不可见的语义级数据变更）
+  const touchesSchemaSql =
+    !touchesSchema &&
+    changedFiles.some((f) => {
+      try {
+        const p = path.resolve(root, f);
+        if (!fs.existsSync(p) || /__tests__|(\.spec|\.test)\.[cm]?[jt]sx?$/.test(f)) return false;
+        return touchesSchemaContent(fs.readFileSync(p, 'utf8'));
+      } catch {
+        return false;
+      }
+    });
+  return { applicable: hasAdr || touchesSchema || touchesSchemaSql, ok: hasAdr, touchesSchema: touchesSchema || touchesSchemaSql };
 }
 
 /**
@@ -77,10 +99,12 @@ function splitNul(out) {
     .filter(Boolean);
 }
 
-module.exports = { parseReviewClean, metaHeader, adrVerdict, touchesSchemaPath, deriveNoMigrate };
+// R1 修复：root 必须在模块顶层，否则被 require 时 adrVerdict 的内容级分支会抛 ReferenceError
+const root = path.resolve(__dirname, '..');
+
+module.exports = { parseReviewClean, metaHeader, adrVerdict, touchesSchemaPath, touchesSchemaContent, deriveNoMigrate };
 
 if (require.main === module) {
-const root = path.resolve(__dirname, '..');
 const slice = process.argv[2];
 const verify = process.argv.includes('--verify');
 if (!slice) {
