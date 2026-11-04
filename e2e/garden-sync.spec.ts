@@ -16,9 +16,15 @@ test.beforeEach(async ({ page }) => {
 test('茶园读路径：gardenApi.list 发出请求且页面正常渲染', async ({ page }) => {
   const requested: string[] = []
 
-  // 拦截 gardenApi.list（GET /v1/garden-plants），记录请求后返回 mock 数据
+  // 用 page.on('request') 记录请求（不依赖 page.route 拦截，preview 模式下更可靠）
+  page.on('request', (req) => {
+    if (req.url().includes('/v1/garden-plants') || req.url().includes('/v1/garden-energy')) {
+      requested.push(req.url())
+    }
+  })
+
+  // 拦截返回 mock 数据（preview 模式下后端不存在，不拦截会 404）
   await page.route('**/v1/garden-plants*', (route) => {
-    requested.push(route.request().url())
     return route.fulfill({
       status: 200,
       contentType: 'application/json',
