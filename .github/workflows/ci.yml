@@ -292,7 +292,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
+        # fetch-depth: 0 —— eval-harness 要对切片做 git 归属取证（git log -- .harness/changes/<slice>）。
+        # 浅克隆下查不到切片 commit → changedFiles 为空 → 安全维恒「未取证」、ADR 恒 n/a，两个维度等于没覆盖。
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:

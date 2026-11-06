@@ -1,5 +1,6 @@
 # main-dev-skill 总览（主开发流程，14 个）
 
+> 加载方式：本表定位 → Read 1 个 SKILL.md → 仅正文点名的 references/assets/scripts 才读（禁预读）；细则见 `.agents/skills/README.md` §加载方式。
 > 路由表：十阶段流水线对应关系。任务启动先读本表确定技能，再按需加载对应 SKILL.md。
 
 | 阶段 | 技能 | 触发场景 |
@@ -29,3 +30,5 @@
   2. **retro** —— 会话要结束、这次卡过/返工过时（找环境改进点）
   3. **session-handoff** —— 会话即将结束、要换 agent/跨日时（写交接）
   > 判据：**只有收尾动作会在这三步各跑一次，不叠加跑**。纯文档小改、任务进行中都不触发这三者。
+
+> 分层（活跃 / 储备）与升降判据见 `docs/reference/skill-layering.md`。

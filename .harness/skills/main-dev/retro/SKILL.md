@@ -89,3 +89,9 @@ AGENTS.md 是不是膨胀了？哪些常驻规则其实可以下沉到技能（�
 
 - 落地后跑 `node scripts/verify-harness.cjs` 确认治理一致。
 - 经验够 3 条真实证据 → 晋升 AGENTS.md §13。
+
+## 确定性入口
+
+- 一致性：`node scripts/verify-harness.cjs`
+- 红线：`node scripts/audit-redlines.cjs`
+- 契约漂移：`node scripts/audit-wiki-drift.cjs`

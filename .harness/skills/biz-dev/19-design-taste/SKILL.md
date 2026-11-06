@@ -1,6 +1,6 @@
 ---
 name: design-taste
-description: 前端设计质量——taste-skill Vue 化：Design Read + 三拨盘 8/6/4 + 62 项 Pre-Flight 逐项全检 + anti-slop 红线。tea 专属 19（设计门禁核心 #13）。
+description: 前端设计质量——taste-skill Vue 化：Design Read + 三拨盘 8/6/4 + 62 项 Pre-Flight 逐项全检 + anti-slop 红线。当做前端 UI/视觉设计或过设计门禁时用。tea 专属 19（设计门禁核心 #13）。
 ---
 
 # Design Taste

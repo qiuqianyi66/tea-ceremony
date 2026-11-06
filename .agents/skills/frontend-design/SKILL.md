@@ -69,3 +69,15 @@ Use active voice as default. A CTA says exactly what happens when it is used: "S
 Treat failure and emptiness as moments for direction, not mood. Explain what went wrong and how to fix it, in the interface's voice rather than a person's. Errors don't apologize, and they are never vague about what happened. An empty screen is an invitation to act.
 
 Keep the tone conversational: plain verbs, sentence case, no filler, with tone matched to the brand and the audience. Let each written element do exactly one job.
+
+## 确定性入口（设计审计 9 条的机械化部分）
+
+- 禁 emoji：`node scripts/scan-emoji.cjs`
+- 图标渲染：`node scripts/verify-icons.cjs`
+- 触控目标 ≥44px：`node scripts/audit-touch.cjs`
+- 排版度量：`node scripts/audit-type.cjs`
+- 五态覆盖：`node scripts/audit-states.cjs`
+
+## 踩坑（真实教训）
+
+- **组件收编前先统计被替换处的真实取值分布**：同一视觉意图不等于同一字面值——有的写死 `w-4 h-4`、有的留空靠默认（24px），直接统一会缩掉一半图标。出现两种模式就必须留 `inherit` 档。

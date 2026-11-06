@@ -1,5 +1,6 @@
 # trouble-shooting-skill 总览（故障排查，6 个）
 
+> 加载方式：本表定位 → Read 1 个 SKILL.md → 仅正文点名的 references/assets/scripts 才读（禁预读）；细则见 `.agents/skills/README.md` §加载方式。
 > 路由表：线上/本地异常排查。不知道哪类问题 → 00-bug-diagnose；定位后按现象命中 01-05。
 
 | 现象 | 技能 | 定位 |
@@ -17,3 +18,5 @@
 - **修复后回归**：定位根因（非症状）→ 修复 → 相关测试/压测回归 → 记录。
 - **修完走 retro**：这次什么环境问题让 debug 难？该加什么自动化检查？
 - **红线一致**：引用编码规范红线（#8 线程池、#10 降级链、文化纪律）。
+
+> 分层（活跃 / 储备）与升降判据见 `docs/reference/skill-layering.md`。

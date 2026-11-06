@@ -4,7 +4,7 @@
  */
 const { test } = require('node:test')
 const assert = require('node:assert/strict')
-const { parseReviewClean, metaHeader, adrVerdict, touchesSchemaPath, deriveNoMigrate } = require('../eval-harness.cjs')
+const { parseReviewClean, metaHeader, adrVerdict, touchesSchemaPath, deriveNoMigrate, judgePass } = require('../eval-harness.cjs')
 
 test('#147 回归锁：Findings 摘要先列未清零，文末 Verdict 清零 → 判 true（必须取最后一个匹配）', () => {
   const text = [
@@ -115,4 +115,32 @@ test('schema 路径：前端 Dexie db.ts 也算数据模型（AGENTS §8 的 L3�
   assert.equal(touchesSchemaPath('src/services/storage/db.ts'), true)
   assert.equal(touchesSchemaPath('backend/src/main/java/com/tea/x/entity/Plant.java'), true)
   assert.equal(touchesSchemaPath('scripts/lib/swallow-catch.cjs'), false)
+})
+
+// ---- 通过判定：安全是一票否决项，不能被其他维度平均掉 ----
+
+test('judgePass：总分达标但安全有违规 → FAIL（92 分也拦）', () => {
+  // 安全归零、其余六维满分：加权后 92 分，旧判据（单看总分）会放行
+  assert.equal(judgePass(92, 0), false)
+})
+
+test('judgePass：总分未达标 → FAIL，即使安全零违规', () => {
+  assert.equal(judgePass(59, 100), false)
+})
+
+test('judgePass：总分达标且安全零违规 → PASS', () => {
+  assert.equal(judgePass(60, 100), true)
+  assert.equal(judgePass(88, 100), true)
+})
+
+test('judgePass：安全维未取证 → 不否决总分，但不得读成合规（SK-05 管分项标注，不是整体否决）', () => {
+  // 未取证 ≠ 违规。证据缺失由安全维 note 显式标注「未取证」；若在此处否决，
+  // 任何无可归属 commit 的历史切片都会永久红（假红），门禁变成永远挡住 CI 的死门。
+  assert.equal(judgePass(92, 100, false), true)
+  // 未取证不能替代总分门槛：分数不够照样 FAIL
+  assert.equal(judgePass(59, 100, false), false)
+})
+
+test('judgePass：第三参缺省视为已验证（兼容旧调用点）', () => {
+  assert.equal(judgePass(60, 100), true)
 })

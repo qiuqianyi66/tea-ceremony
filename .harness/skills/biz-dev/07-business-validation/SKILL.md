@@ -1,6 +1,6 @@
 ---
 name: business-validation
-description: 业务校验——Bean Validation + 范围校验（八维 0-100/工艺系数 0.8-1.2），输出脱敏。业务专项 07。
+description: 业务校验——Bean Validation + 范围校验（八维 0-100/工艺系数 0.8-1.2），输出脱敏。当新增入参校验、范围规则或输出脱敏时用。业务专项 07。
 ---
 
 # Business Validation

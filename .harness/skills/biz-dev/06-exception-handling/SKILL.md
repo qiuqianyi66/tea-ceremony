@@ -1,6 +1,6 @@
 ---
 name: exception-handling
-description: 异常处理——BusinessException 体系（BadRequest/Unauthorized/NotFound/Conflict）+ @RestControllerAdvice，禁裸抛/吞异常。业务专项 06。
+description: 异常处理——BusinessException 体系（BadRequest/Unauthorized/NotFound/Conflict）+ 统一错误响应，禁裸抛/吞异常。当新增错误码或 Controller 需要统一错误响应时用。业务专项 06。
 ---
 
 # Exception Handling

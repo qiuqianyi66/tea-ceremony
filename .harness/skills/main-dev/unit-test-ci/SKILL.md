@@ -27,3 +27,14 @@ verification: npm run quality
 ## 下一步
 
 进入 → `expert-reviewer`（专家评审）。
+
+## 确定性入口
+
+- 脚本单测：`node --test scripts/tests/*.node-test.cjs`
+- 前端全量：`npm run test`
+- 后端全量：`cd backend && mvn -q test`（须带 `clean`）
+
+## 踩坑（真实教训）
+
+- **`Skipped` 不等于通过**：它是「这段逻辑一次都没跑过」——本机跳过、CI 首跑必红（脱敏 UUID 与断言原文比对失败的用例就是这样暴露的）。
+- **同类失败集中在基础设施层时先证环境**：13 个不相关测试类同时报 `Could not find a valid Docker environment`，是 Docker 引擎中途死亡，不是代码坏。`mvn` 报「0 run / 发现失败」先 `mvn clean` 复跑——`target/` 残留旧 class 会必现。

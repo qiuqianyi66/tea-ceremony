@@ -135,3 +135,13 @@ alembic downgrade base  # 回滚所有
 - [ ] 后端启动无数据库报错
 - [ ] 涉及的数据已正确迁移
 - [ ] `DATABASE_ER.md` 已同步更新（如果表结构变了）
+
+## 确定性入口
+
+- 迁移执行：`cd backend && alembic upgrade head`（与 frontmatter `verification` 同款）
+- 关系数据回填：`node scripts/generate-relations.mjs`（仅当变更涉及 `tea_relations` 时）
+
+## 踩坑（真实教训）
+
+- **索引列必须与删除/查询条件同列**：索引建在 `received_at`、保留任务却按 `occurred_at` 删，索引对任务完全无效 → 建索引前先看 WHERE 子句用的是哪一列。
+- **空表上的 EXPLAIN 不能证明索引没用**：小表永远走 `Seq Scan` → 灌真实数据量 + `ANALYZE` 后做「有索引 / 无索引」两次 EXPLAIN 对照。

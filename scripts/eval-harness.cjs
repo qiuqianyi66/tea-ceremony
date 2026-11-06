@@ -102,7 +102,30 @@ function splitNul(out) {
 // R1 修复：root 必须在模块顶层，否则被 require 时 adrVerdict 的内容级分支会抛 ReferenceError
 const root = path.resolve(__dirname, '..');
 
-module.exports = { parseReviewClean, metaHeader, adrVerdict, touchesSchemaPath, touchesSchemaContent, deriveNoMigrate };
+/**
+ * 通过判定：总分达线 **且** 安全零违规 **且** 安全维真有证据。
+ * 为什么安全不参与加权补偿：safety 权重仅 0.08，安全归零时其余六维满分仍有 92 分——
+ * 违规会被平均掉，"总分 ≥60" 于是能放行带安全违规的切片。四类指标须分开判，不揉总分。
+ * 为什么没证据不算过（三态语义，对齐 skillkit SK-05「未验证不得标 PASS」）：
+ * 切片无可归属 commit 时安全维没扫到任何东西，那是「未验证」而非「合规」，不能计入通过。
+ */
+function judgePass(totalInt, safetyScore, safetyVerified = true) {
+  // 只有「已取证且查出违规」才一票否决。未取证是「没查」，不是「查过且合规」也不是「违规」——
+  // 若把未取证也否决，任何无可归属 commit 的历史切片都会永久红（假红），门禁变成永远挡住 CI 的死门。
+  // 「未取证」的痕迹由安全维 note 显式标注，不允许读者把它读成已查过。
+  const safetyViolation = safetyVerified && safetyScore < 100;
+  return !safetyViolation && totalInt >= 60;
+}
+
+module.exports = {
+  parseReviewClean,
+  metaHeader,
+  adrVerdict,
+  touchesSchemaPath,
+  touchesSchemaContent,
+  deriveNoMigrate,
+  judgePass,
+};
 
 if (require.main === module) {
 const slice = process.argv[2];
@@ -241,33 +264,37 @@ if (noMigrateInfo.conflict) {
   }
 }
 
-// ---- 5. 安全合规 8%：路径级检测真实提交 + 内容级检测密钥/.env ----
+// ---- 5. 安全合规 8%：路径级检测本切片路径 + 内容级检测新增行密钥/.env ----
+// 口径收窄为「本切片归属文件」（changedFiles）。旧实现扫 `git diff HEAD~5` 全仓，历史 commit 里
+// 任何一次正则误报都会永久否决后续所有切片（zz-usage-probe 实测总分 67 却被判「安全违规」）。
+let safetyEvidence = false;
 {
   let violations = 0;
-  let paths = '';
-  try {
-    // 只看 A/M（新增/修改）的路径：删除一个带 `.venv/` 字样的脚本不是"提交禁目录"（本切片实测误报）
-    paths = execSync('git diff --name-only --diff-filter=AM HEAD~5', { cwd: root, encoding: 'utf8', maxBuffer: 4 * 1024 * 1024 });
-  } catch { /* 忽略 */ }
-  // 路径级：禁提交目录（只看真实改动路径，避免文档文字误报）
-  if (/node_modules\/|__pycache__\/|\.venv\/|test-results\/|playwright-report\/|^dist\//m.test(paths)) violations++;
-  // 内容级：密钥/密码/占位符真值 + 新增 .env 文件
-  try {
-    const rawDiff = execSync('git diff HEAD~5 -- . ":(exclude)package-lock.json" ":(exclude)pnpm-lock.yaml"', {
-      cwd: root,
-      encoding: 'utf8',
-      maxBuffer: 8 * 1024 * 1024,
-    });
-    // 只看「新增行」：删除一行含明文口令的测试夹具是在**清理**凭据，不是引入（本切片实测误报）
-    const added = rawDiff
-      .split('\n')
-      .filter((l) => l.startsWith('+') && !l.startsWith('+++'))
-      .join('\n');
-    if (/BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|password\s*[:=]\s*(?!(?:\$\{|\}|[a-zA-Z_$][\w$]*))["']?[^\s"'$}=]|api[_-]?key\s*[:=]\s*(?!(?:\$\{|\}|[a-zA-Z_$][\w$]*))["']?[^\s"'$}=]|secret\s*[:=]\s*(?!(?:\$\{|\}|[a-zA-Z_$][\w$]*))["']?[^\s"'$}=]/i.test(added)) violations++;
-    if (/^\+\s*\.env(?![.\w])/m.test(rawDiff)) violations++;
-  } catch { /* diff 不可用时仅路径级判定 */ }
+  const files = [...new Set(changedFiles)];
+  safetyEvidence = files.length > 0;
+  if (files.some((f) => /node_modules\/|__pycache__\/|\.venv\/|test-results\/|playwright-report\/|^dist\//m.test(f))) {
+    violations++;
+  }
+  if (files.length) {
+    try {
+      const rawDiff = execFileSync(
+        'git',
+        ['-c', 'core.quotePath=false', 'diff', 'HEAD~5', '--', ...files, ':(exclude)package-lock.json', ':(exclude)pnpm-lock.yaml'],
+        { cwd: root, encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 },
+      );
+      // 只看「新增行」：删除一行含明文口令的测试夹具是在**清理**凭据，不是引入（本切片实测误报）
+      const added = rawDiff
+        .split('\n')
+        .filter((l) => l.startsWith('+') && !l.startsWith('+++'))
+        .join('\n');
+      if (/BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|password\s*[:=]\s*(?!(?:\$\{|\}|[a-zA-Z_$][\w$]*))["']?[^\s"'$}=]|api[_-]?key\s*[:=]\s*(?!(?:\$\{|\}|[a-zA-Z_$][\w$]*))["']?[^\s"'$}=]|secret\s*[:=]\s*(?!(?:\$\{|\}|[a-zA-Z_$][\w$]*))["']?[^\s"'$}=]/i.test(added)) violations++;
+      if (/^\+\s*\.env(?![.\w])/m.test(rawDiff)) violations++;
+    } catch { /* diff 不可用时仅路径级判定 */ }
+  }
   scores.safety = violations === 0 ? 100 : Math.max(0, 100 - violations * 40);
-  note('安全合规', scores.safety, violations === 0 ? '无密钥/禁目录/.env 提交' : `发现 ${violations} 类违规`);
+  // 无归属 commit 时 safety 记满分但必须留「未取证」痕迹，禁止让读者读成「已查过且合规」
+  const evidence = files.length ? '' : '（本切片无可归属 commit，安全维未取证）';
+  note('安全合规', scores.safety, violations === 0 ? `无密钥/禁目录/.env 提交${evidence}` : `发现 ${violations} 类违规`);
 }
 
 // ---- 6. 迭代能力 5%：review 清零 + 修复提交 ----
@@ -296,7 +323,10 @@ if (noMigrateInfo.conflict) {
 // ---- 汇总 ----
 const total = Object.keys(WEIGHTS).reduce((acc, k) => acc + (scores[k] || 0) * WEIGHTS[k], 0);
 const totalInt = Math.round(total);
-const pass = totalInt >= 60;
+const pass = judgePass(totalInt, scores.safety, safetyEvidence);
+// 总分够但被否决时给出原因，否则读者只看到「92 分却 FAIL」以为脚本坏了
+// 未取证不再是否决位（见 judgePass 注释），所以此处只剩「总分达标但安全有违规」一种情形
+const vetoHint = !pass && totalInt >= 60 ? '（安全项否决：总分达标但存在违规）' : '';
 
 // 用本地日期，不用 toISOString()：UTC 会在大夜班时段写成前一天，与 commit 日期对不上
 const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
@@ -310,11 +340,11 @@ const lines = [
 for (const n of notes) {
   lines.push(`| ${n.d} | ${n.s}/100 | ${n.e} |`);
 }
-lines.push('', `**总分: ${totalInt}/100（≥60 通过）— ${pass ? 'PASS' : 'FAIL'}**`, '');
+lines.push('', `**总分: ${totalInt}/100（≥60 通过）— ${pass ? 'PASS' : 'FAIL'}**${vetoHint}`, '');
 
 console.log(`\neval-harness: ${slice} (verify=${verify ? 'on' : 'off'})\n`);
 for (const n of notes) console.log(`${n.s >= 60 ? '✅' : '❌'} ${n.d}: ${n.s}/100 — ${n.e}`);
-console.log(`\n总分: ${totalInt}/100 ${pass ? 'PASS' : 'FAIL'}`);
+console.log(`\n总分: ${totalInt}/100 ${pass ? 'PASS' : 'FAIL'}${vetoHint}`);
 
 const outDir = path.join(root, 'docs', 'agent-eval');
 fs.mkdirSync(outDir, { recursive: true });

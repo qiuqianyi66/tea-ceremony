@@ -54,3 +54,5 @@ without weather density. Use `$threejs-procedural-vfx` for emissive aurora
 curtain slabs or bounded interactive voxel fire and smoke with velocity,
 pressure, emitter, and collision fields. This skill owns weather-shaped cloud
 volumes, reconstruction, cloud lighting, and cloud shadows.
+
+> 资产（按需读，不预读）：`assets/weather-volume-clouds/`——只有做到这些内容时才打开。

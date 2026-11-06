@@ -102,7 +102,7 @@
 > 完整前端规范见 `.harness/rules/编码规范.md` §17-26（Vue 组件 / 类型安全 / 状态与数据流 / 路由 / 表单 / 样式与令牌 / 3D / 离线与性能 / 可访问性；红线 R11-R14 零容忍，含 3D 禁直建 renderer、统一 TresJS）。
 > 设计令牌、组件规则、字体（自托管 + 禁 Google Fonts link）、图标（一个库一个家族）、浏览器表面定制（选区/滚动条/焦点环/光标）见 `DESIGN_SPEC.md`；3D 约束见 `3D_SPEC.md`。**本节只列入口独有的门禁**；引入第三方库/图标前先查 `package.json`，禁重复引入。
 
-- **设计门禁（强制 6 步）**：⓪**先定轨道**（品牌物料轨：应用 UI / 图标 / 海报，全禁衬线；编辑出版轨：传播长文 / 文档 / 画册，长文允许衬线）——轨道定了才选风格，顺序不可颠倒（2026-10-10 融入，源自 design-aesthetics-book 轨道层）→ ① Design Read（页面类型/受众/vibe/倾向体系 + 三拨盘 8/6/4，未输出禁止写码）→ ② 视觉方向（一句话 + 4-6 色令牌 + 字体角色）→ ③ 对照简报评审 → ④ 实现（调用 taste-skill / ui-ux-pro-max / frontend-design / impeccable，禁模板手感）→ ⑤ critique（层级/清晰/情感）→ ⑥ audit + 设计审计 9 条，未过审计不得提交。完整规范见全局技能 `frontend-design-spec`。
+- **设计门禁（强制 6 步）**：⓪**先定轨道**（品牌物料轨：应用 UI / 图标 / 海报，全禁衬线；编辑出版轨：传播长文 / 文档 / 画册，长文允许衬线）——轨道定了才选风格，顺序不可颠倒（2026-10-10 融入，源自 design-aesthetics-book 轨道层）→ ① Design Read（页面类型/受众/vibe/倾向体系 + 三拨盘 8/6/4，未输出禁止写码）→ ② 视觉方向（一句话 + 4-6 色令牌 + 字体角色）→ ③ 对照简报评审 → ④ 实现（调用 taste-skill / ui-ux-pro-max / frontend-design / impeccable，禁模板手感）→ ⑤ critique（层级/清晰/情感）→ ⑥ audit + 设计审计 9 条，未过审计不得提交。完整规范见 `frontend-design-spec`（路径与回退见技能路由表）。
 - 设计禁令速查：AI 紫渐变 / 暖米白+陶土 / 纯黑灰（要 tint）/ Tailwind 默认色板 / Inter 与衬线体默认 / Fraunces·Instrument_Serif / eyebrow 眉题 / Hero+三卡片 / Emoji 当图标 / 玻璃拟态装饰 / 渐变文字 / bounce·elastic 动效 / 每节同款入场 / 「提交」式按钮文案，一律禁止。
 
 ## 7. 后端规范
@@ -161,7 +161,7 @@ node scripts/scan-emoji.cjs        # 禁 emoji 扫描
 node scripts/verify-icons.cjs      # lucide 图标渲染审计
 node scripts/verify-brew-mobile.cjs  # 冲泡页移动端触控（≥44px、无横向滚动）
 node scripts/audit-touch.cjs       # 全局触控目标审计
-node scripts/eval-harness.cjs <切片> [--verify]  # harness 七维确定性评测（每切片必跑，总分<60 阻断；不传 --verify 则代码正确性维记 0 分；报告 docs/agent-eval/）
+node scripts/eval-harness.cjs <切片> [--verify]  # harness 七维确定性评测（每切片必跑，总分<60 或安全违规阻断；不传 --verify 则代码正确性维记 0 分；报告 docs/agent-eval/）
 node scripts/verify-harness.cjs    # harness 一致性体检（ADR/CI job/技能数/路径/wiki 四件套/子代理/审查页/changes 门禁），期望 ERRORS: []，CI 门禁
 node scripts/audit-redlines.cjs    # 红线机械化审计（替代 red-line-auditor；R2/7/8/9/10/11/12/14），期望 ERRORS: []，CI 门禁
 node scripts/audit-wiki-drift.cjs  # wiki 契约漂移审计（替代 consistency-verifier；api-contract 端点 vs 代码路由双向核对），期望 ERRORS: []，CI 门禁

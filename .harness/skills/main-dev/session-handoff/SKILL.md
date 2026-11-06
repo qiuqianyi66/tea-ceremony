@@ -138,3 +138,11 @@ type: flow
 
 - 把 HANDOFF 文件路径贴给用户，提醒"新会话第一句：读这份 + TODO-PRIORITY + 对应 PLAN"。
 - 下一个 agent 接手时，先重跑"仓库状态"三行命令，再读未复核栏。
+
+## 确定性入口
+
+- 复核三行：`git log -1 --format=%h`、`git status --short`、`node scripts/verify-harness.cjs`
+
+## 踩坑（真实教训）
+
+- **交接快照不可叠加**：同一时刻多份交接报不同 HEAD，是三张不同时刻的快照而非同一状态的三个视角 → 逐条 `git log` / `git cat-file` 复核后再写。

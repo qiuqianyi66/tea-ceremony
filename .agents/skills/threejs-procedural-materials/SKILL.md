@@ -33,12 +33,12 @@ for walnut, antique-gold, and ebony texture/roughness/metalness/clearcoat
 bundles under a grazing-light setup.
 
 Read the
-[procedural planet surface](../threejs-procedural-planets/examples/procedural-planet-surface/planet-system.js)
+procedural planet surface
 for shared geological, climate, water, biome, roughness, and derivative-normal
 causes on a procedural planetary surface.
 
 Read the
-[analytic wave optics](../threejs-water-optics/examples/analytic-wave-optics/water-system.js)
+analytic wave optics
 for coupled reflection, refraction, absorption, filtered microstructure,
 resolved crest response, and their diagnostic channels.
 
@@ -152,3 +152,5 @@ orbit-to-close-approach body, not merely its material. Use
 intersection, silhouette coverage, or relief-aware shadows. Use
 `$threejs-temporal-surfaces` for view-aligned wet-glass optics and screen-space
 history; this skill owns the optical path through a transmissive body itself.
+
+> 资产（按需读，不预读）：`assets/raytraced-diamond/`——只有做到这些内容时才打开。

@@ -1,6 +1,6 @@
 ---
 name: ai-agent
-description: AI 多智能体——Spring AI Alibaba 编排（5 专家：荐茶/品鉴/文化/冲泡/成长），prompt 版本管理 + Schema 校验 + 灰度。tea 专属 14。
+description: AI 多智能体——Spring AI Alibaba 编排（5 专家：荐茶/品鉴/文化/冲泡/成长），prompt 版本管理 + Schema 校验 + 灰度。当新增或改动 AI 专家、prompt 或灰度策略时用。tea 专属 14。
 ---
 
 # AI Agent

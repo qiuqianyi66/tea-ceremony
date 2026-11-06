@@ -1,6 +1,6 @@
 ---
 name: transaction-consistency
-description: 事务一致性——@Transactional(rollbackFor) 边界 = 业务用例，只读 readOnly，幂等 + 乐观锁。业务专项 05（品鉴提交/画像更新）。
+description: 事务一致性——@Transactional(rollbackFor) 边界 = 业务用例，只读 readOnly，幂等 + 乐观锁。当一个用例涉及多表写入、需要事务边界与幂等时用。业务专项 05（品鉴提交/画像更新）。
 ---
 
 # Transaction Consistency

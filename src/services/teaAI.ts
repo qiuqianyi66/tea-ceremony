@@ -312,6 +312,8 @@ export type TeaAgent = 'auto' | 'advisor' | 'taster' | 'librarian' | 'brewer' | 
 export interface TeaReply {
   content: string
   sources: string[]
+  /** 走了规则降级而非 LLM（UI 据此标注，避免把规则回复当成 LLM 答案） */
+  degraded?: boolean
 }
 
 /** 专家选择项（UI 用）：label 与后端 SYSTEM_PROMPT 自称一致。 */
@@ -497,7 +499,7 @@ async function postWhole(question: string, prepared: PreparedChat): Promise<TeaR
       clearAiSessionId()
     }
     void track({ category: 'ai', event: 'ai_ask', label: 'ask', result: 'degraded' })
-    return { content: ruleBasedReply(question), sources: [] }
+    return { content: ruleBasedReply(question), sources: [], degraded: true }
   }
   // F-2 登录用户：后端返回新会话 id → 持久化，下次续用（配额按 sessionId 计数）
   if (prepared.loggedIn && payload.sessionId) {
@@ -505,7 +507,7 @@ async function postWhole(question: string, prepared: PreparedChat): Promise<TeaR
   }
   void track({ category: 'ai', event: 'ai_ask', label: 'ask', result: 'success' })
   // P-O4：解包 sources（透明代理/无命中为 null → 空数组）
-  return { content, sources: payload.sources ?? [] }
+  return { content, sources: payload.sources ?? [], degraded: false }
 }
 
 /**
@@ -628,12 +630,12 @@ async function postStream(
     if (!content) return null
     if (prepared.loggedIn && sessionId != null) saveAiSessionId(sessionId)
     void track({ category: 'ai', event: 'ai_ask', label: 'ask', result: 'success' })
-    return { content, sources: [] }
+    return { content, sources: [], degraded: false }
   } catch {
     // 用户主动停止：保留已出内容（哪怕空），不回退整段
     if (userStopped) {
       if (content && prepared.loggedIn && sessionId != null) saveAiSessionId(sessionId)
-      return { content, sources: [] }
+      return { content, sources: [], degraded: false }
     }
     // 超时 / 网络 / 断连 → 回退整段
     return null

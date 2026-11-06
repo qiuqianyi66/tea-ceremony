@@ -2,7 +2,8 @@
 
 > 目录：`.harness/changes/{feat-name}/`，与 git 分支 `feature/{feat-name}` 同名。
 > 本文件是模板：花括号 `{...}` 处按实际替换后使用。
-> **无数据库迁移时删除 db-migrations.sql / rollback.sql**，并在本文件顶部注明原因（参考 m1-ai 惯例）。
+> **不做数据库迁移时删除 db-migrations.sql / rollback.sql**，并在本文件顶部注明原因（参考 m1-ai 惯例）。
+> 「调用技能」填真实目录名（剥 NN- 前缀），由 `scripts/audit-skill-usage.cjs` 统计；写错名字会让该脚本报错。
 
 ## 一、变更概览
 
@@ -13,6 +14,7 @@
 | 需求来源 | `docs/prd/{需求文档}`（F{编号}，D{编号}） |
 | 类型 | feat / fix / refactor / test / docs / chore |
 | 涉及范围 | {前端 / 后端 / 部署 / 数据}（列出改动面） |
+| 调用技能 | 无 |
 
 ## 二、需求与方案
 

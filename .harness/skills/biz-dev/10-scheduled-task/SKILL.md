@@ -1,6 +1,6 @@
 ---
 name: scheduled-task
-description: 定时任务——@Scheduled + ShedLock 防重 + 幂等 + 失败告警，禁 fixedRate 依赖执行时长。业务专项 10（AI 成本日统计/缓存预热）。
+description: 定时任务——周期执行 + 防重 + 幂等 + 失败告警，禁依赖执行时长的固定频率。当需要周期跑统计/预热/清理且要防多实例重复时用。业务专项 10。
 ---
 
 # Scheduled Task

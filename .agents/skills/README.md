@@ -5,6 +5,20 @@
 > 流程族（main-dev / biz-dev / trouble-shooting，43 个）见 `.harness/skills/*/README.md`。
 > 核心技能人读审查页见 `docs/skills/`（plan-control / tea-tasting / db-migration / fastapi-endpoint / vue-component）。
 
+## 加载方式（三级，逐级按需）
+
+1. **一级·元数据**：只读本表（技能名 + 说明），按场景定位到 1 个技能。禁按名字猜多个。
+2. **二级·正文**：命中后 Read 该技能 `SKILL.md`。一次只读 1 个，读正文即止，不顺手点开邻居技能。
+3. **三级·资产**：正文出现 `references/` `assets/` `scripts/` 路径时才读那些文件。**禁预读**——正文没有点名的文件不要打开；正文没点名的资产等于不存在。
+
+> 判据：正文没提 `references/` 就没第三级；只读表就动手（跳过二级）属违约。
+
+## 项目外技能根（不进仓库治理，按绝对路径 Read）
+
+- **reasonix**：本机 `~/.config/reasonix/skills/<name>/SKILL.md`（64 个，仅 reasonix 环境自动加载）。本表与 AGENTS.md §6 引用的 `frontend-design-spec` 在此：`C:\Users\yanha\.config\reasonix\skills\frontend-design-spec\SKILL.md`；其他 agent（Codex / Claude Code / 豆包）不自动发现，需按绝对路径 Read，缺失时回退 [frontend-design](frontend-design/SKILL.md)。
+- **Codex**：本机 `.codex/skills/`（20 个 SKILL.md，git 未跟踪，属环境态）。
+- 判定：只有 `.agents/skills` 与 `.harness/skills` 进 `verify-harness.cjs` 校验（§4j 只认 git 跟踪的文件），上述两处不参与数量对账。
+
 ## 控制协议
 
 | 技能 | 说明 |
@@ -124,3 +138,5 @@
 | 技能 | 说明 |
 |---|---|
 | [show-me](show-me/SKILL.md) | 用图表/代码草图/HTML 片段直观解释当前主题 |
+
+> 分层（活跃 / 储备）与升降判据见 `docs/reference/skill-layering.md`。

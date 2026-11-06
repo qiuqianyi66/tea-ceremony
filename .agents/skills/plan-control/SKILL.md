@@ -315,3 +315,12 @@ Skill 不管理 Memory。只判断是否产生「Reusable + Verified + Stable」
 简单任务：Fast。复杂任务：Plan。高风险任务：Control。长期任务：Learn。
 
 最终目标：Build an Agent that becomes better after every task.
+
+## 确定性入口
+
+- 过门证据：`node scripts/verify-harness.cjs`（期望 `ERRORS: []`），切片评测 `node scripts/eval-harness.cjs <切片> --verify`
+
+## 踩坑（真实教训）
+
+- **门控证据必须可核验**：「我觉得测过了」不算过门，必须是「跑了 N 个用例、0 失败、退出码 0」。
+- **「已否决」只写跑过并测过的路线**：纯推断会把后续接手的人带偏（Graph 编排是靠四维甄别 0/4 才被砍的）。

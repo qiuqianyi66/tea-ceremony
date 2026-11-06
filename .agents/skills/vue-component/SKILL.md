@@ -87,3 +87,12 @@ onMounted(() => {
 - 涉及品鉴记录的组件要处理离线状态（`sync_status`）
 - 茶文化展示组件优先用 `src/data/` 中的静态数据
 - 动画用 tsparticles（已安装），不引入新的动画库
+
+## 确定性入口
+
+- 类型检查：`npm run type-check`（与 frontmatter `verification` 同款）
+- 五态与触控：`node scripts/audit-states.cjs`、`node scripts/audit-touch.cjs`
+
+## 踩坑（真实教训）
+
+- **收编多处手写样式前先 grep 每处原值**：出现「有的写死、有的留空靠默认」两种模式必须给组件留 `inherit` 档，不能假设同一视觉意图等于同一字面值。

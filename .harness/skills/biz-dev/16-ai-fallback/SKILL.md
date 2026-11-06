@@ -1,6 +1,6 @@
 ---
 name: ai-fallback
-description: AI 降级链——LLM 不可用(502) 回退规则引擎，前端 teaAI.ts 承重墙 + 后端 fallback 策略，改动必须回归。tea 专属 16。
+description: AI 降级链——LLM 不可用(502) 回退规则引擎，前端 teaAI.ts 承重墙 + 后端 fallback 策略，改动必须回归。当改动 LLM 调用或降级链时用（承重墙，改必回归）。tea 专属 16。
 ---
 
 # AI Fallback

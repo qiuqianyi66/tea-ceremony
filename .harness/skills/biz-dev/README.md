@@ -1,5 +1,6 @@
 # biz-dev-skill 总览（业务专项，19 个）
 
+> 加载方式：本表定位 → Read 1 个 SKILL.md → 仅正文点名的 references/assets/scripts 才读（禁预读）；细则见 `.agents/skills/README.md` §加载方式。
 > 路由表：tea 版裁剪映射（PRD 9.3 + ADR-011）。编码模式细节在此族，main-dev 只定义流程。
 > ⚠️ **过渡注记**：后端 M1 未开工，专项技能为流程骨架；M1 骨架落地后**回填真实类锚点**（如 `TeaRepository.findByTypeOrderBy`），代码模板锚定仓库真实实现。
 
@@ -30,3 +31,5 @@
 - **主/专配合**：coding-skill 触发后，按功能命中本族专项技能加载（≤4 上下文内）。
 - **红线一致**：每个专项技能引用 .harness/rules/编码规范.md 红线编号，不重复定义。
 - **裁剪声明**：03/04 为 tea 替代实现；12 占位不实现；trouble-shooting 族另有 AI 异常/RAG 质量（tea 特有）。
+
+> 分层（活跃 / 储备）与升降判据见 `docs/reference/skill-layering.md`。
