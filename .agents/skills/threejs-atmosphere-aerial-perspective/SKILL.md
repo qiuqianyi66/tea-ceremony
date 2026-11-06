@@ -54,3 +54,5 @@ temporal cloud reconstruction, and cloud shadows. Use
 perspective/equirectangular radiance materials, and for standalone filmic HDR
 lens-flare compositors. Keep the LUT example's lens flare here when it remains
 one stage in the sky-scattering and aerial-perspective composition.
+
+> 资产（按需读，不预读）：`assets/lut-aerial-perspective/`——只有做到这些内容时才打开。

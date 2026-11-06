@@ -137,7 +137,7 @@ angle-limited bevels, split corner normals, and derivative-filtered object-space
 roughness and bump.
 
 Read the
-[procedural financial tower compiler](../threejs-procedural-architecture/examples/procedural-financial-tower/building-system.js)
+procedural financial tower compiler
 for semantic placement compilation and material-slot instancing at building
 scale.
 

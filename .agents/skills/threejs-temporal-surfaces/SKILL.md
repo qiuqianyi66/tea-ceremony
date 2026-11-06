@@ -54,3 +54,5 @@ weather-surface coupling. Use `$threejs-procedural-materials` when a body must
 transmit its surroundings through its own volume rather than through a
 screen-aligned pane. This skill owns view-aligned wet-glass optics and
 screen-space persistent history.
+
+> 资产（按需读，不预读）：`assets/touch-history-frost/`——只有做到这些内容时才打开。

@@ -1,5 +1,6 @@
 # prompt-templates-skill 总览（提示词模板，4 个）
 
+> 加载方式：本表定位 → Read 1 个 SKILL.md → 仅正文点名的 references/assets/scripts 才读（禁预读）；细则见 `.agents/skills/README.md` §加载方式。
 > 第 4 族：**提示词模板族**。前三族（main-dev / biz-dev / trouble-shooting）是「模型照着做的流程」；本族是「写给模型看的提示词」——产出物是一段可直接复制的 prompt，不是代码、不是评审意见。
 
 ## 路由表

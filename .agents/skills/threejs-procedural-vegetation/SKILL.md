@@ -90,3 +90,5 @@ only implementation; the entry file only re-exports them.
 Use `$threejs-procedural-geometry` for generic branch-ring emission without a
 growth model. This skill owns species tables, vine and branch topology,
 surface-following growth, foliage, grass fields, roots, and rooted wind.
+
+> 资产（按需读，不预读）：`assets/gpu-culled-flower-field/`、`assets/structured-ash-growth/`、`assets/stylized-meadow-grass/`——只有做到这些内容时才打开。

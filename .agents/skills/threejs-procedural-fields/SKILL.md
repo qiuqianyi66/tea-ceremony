@@ -44,7 +44,7 @@ before implementation. It records sphere, terrain, water, and
 structured-placement field contracts plus common parity defects.
 
 Read the
-[procedural planet surface](../threejs-procedural-planets/examples/procedural-planet-surface/planet-system.js)
+procedural planet surface
 for a shared CPU/GLSL field bundle whose height, continents, climate, biomes,
 roughness, and normals remain independently inspectable.
 

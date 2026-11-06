@@ -1,5 +1,6 @@
 # main-dev-skill 总览（主开发流程，14 个）
 
+> 加载方式：本表定位 → Read 1 个 SKILL.md → 仅正文点名的 references/assets/scripts 才读（禁预读）；细则见 `.agents/skills/README.md` §加载方式。
 > 路由表：十阶段流水线对应关系。任务启动先读本表确定技能，再按需加载对应 SKILL.md。
 
 | 阶段 | 技能 | 触发场景 |

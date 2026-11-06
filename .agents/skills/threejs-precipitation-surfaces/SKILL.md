@@ -70,3 +70,5 @@ refraction, and Beer-Lambert water volumes. Use `$threejs-procedural-vfx` for
 general sparks, plasma, trails, and non-weather particles. Use
 `$threejs-temporal-surfaces` for screen-space touch history or frost clearing.
 This skill owns precipitation events and the surfaces they visibly alter.
+
+> 资产（按需读，不预读）：`assets/wet-puddle-rain/`——只有做到这些内容时才打开。
