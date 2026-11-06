@@ -73,7 +73,7 @@ owner: yanha
 | 迭代能力 | 5% | review 结论行 🔴🟡 清零 |
 | 接口验收 | 18% | summary 中 /api/ 路径均已登记 api-contract + 测试目录存在 |
 
-- 用法：`node scripts/eval-harness.cjs m5-s2 --verify`（前端/后端自动判定）；输出 console 评分表 + `docs/agent-eval/<切片>-eval.md` 报告；总分 <60 退出码 1（门禁级）。
+- 用法：`node scripts/eval-harness.cjs m5-s2 --verify`（前端/后端自动判定）；输出 console 评分表 + `docs/agent-eval/<切片>-eval.md` 报告；总分 <60 **或安全维有违规**退出码 1（门禁级；安全是一票否决项，不参与加权补偿）。
 - 关系：与 §1 的 G/T 人评维度互补——七维是机器确定性检查（每次切片必跑），G/T 是抽样人评（证据链沉淀 §13）。
 
 ## 5. 后期扩展（agent 开发评估）
