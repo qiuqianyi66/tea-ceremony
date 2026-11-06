@@ -1,6 +1,6 @@
 ---
 name: offline-sync
-description: 离线优先同步——IndexedDB ↔ 后端对账、client_id 幂等、sync_status 流转（pending/synced/failed），tea 承重墙配套。tea 专属 17。
+description: 离线优先同步——IndexedDB 与后端对账、client_id 幂等、sync_status 流转（pending/synced/failed），tea 承重墙配套。当改动离线写入、对账或 sync_status 流转时用。tea 专属 17。
 ---
 
 # Offline Sync

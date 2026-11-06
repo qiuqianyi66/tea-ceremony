@@ -1,6 +1,6 @@
 ---
 name: caffeine-cache
-description: 本地缓存——Caffeine（容量+过期+统计），键规范 tea:{module}:{biz}:{id}，禁 HashMap 缓存、禁无界。业务专项 03（替代 redis-cache，tea 不引入 Redis）。
+description: 本地缓存——Caffeine（容量+过期+统计），键规范 tea:{module}:{biz}:{id}，禁 HashMap 缓存、禁无界。当同一数据高频读且可容忍短暂不一致时用（替代 Redis）。业务专项 03。
 ---
 
 # Caffeine Cache

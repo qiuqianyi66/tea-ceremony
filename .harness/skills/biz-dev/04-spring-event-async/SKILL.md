@@ -1,6 +1,6 @@
 ---
 name: spring-event-async
-description: 异步解耦——Spring 事件 + @Async（有界线程池），禁事务内远程调用/异步，afterCommit 回调。业务专项 04（替代 mq-messaging，tea 无 RocketMQ）。
+description: 异步解耦——Spring 事件 + @Async（有界线程池），禁事务内远程调用/异步，afterCommit 回调。当事务提交后要异步做非关键动作（通知/统计）时用。业务专项 04。
 ---
 
 # Spring Event Async

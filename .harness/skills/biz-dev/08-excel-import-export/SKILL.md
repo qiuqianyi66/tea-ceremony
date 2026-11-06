@@ -1,6 +1,6 @@
 ---
 name: excel-import-export
-description: Excel 导入导出——文化数据批量导入（seeds）、导出模板，校验 + 错误行报告。业务专项 08（按需，首版文化 seeds 用）。
+description: Excel 导入导出——文化数据批量导入（seeds）、导出模板，校验 + 错误行报告。当需要批量导入文化数据或导出报表模板时用。业务专项 08（按需）。
 ---
 
 # Excel Import Export

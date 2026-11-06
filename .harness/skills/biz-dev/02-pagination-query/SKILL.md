@@ -1,6 +1,6 @@
 ---
 name: pagination-query
-description: 分页查询——PageRequest + 条件分支 + 索引可用性，禁全表扫描、禁 N+1。业务专项 02（品鉴历史/茶叶目录）。
+description: 分页查询——PageRequest + 条件分支 + 索引可用性，禁全表扫描、禁 N+1。当列表数据量大、需要分页或担心全表扫描时用。业务专项 02（品鉴历史/茶叶目录）。
 ---
 
 # Pagination Query

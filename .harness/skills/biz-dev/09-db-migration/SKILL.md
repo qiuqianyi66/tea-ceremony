@@ -1,6 +1,6 @@
 ---
 name: db-migration
-description: 数据库迁移——Flyway 迁移 + changes 成对追踪 + upgrade/downgrade 往返测试，禁 ddl-auto。业务专项 09（必用）。
+description: 数据库迁移——Flyway 迁移 + changes 成对追踪 + upgrade/downgrade 往返测试，禁 ddl-auto。当改表结构、加字段/索引或迁移数据时用。业务专项 09（必用）。
 ---
 
 # DB Migration

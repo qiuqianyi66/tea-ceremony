@@ -1,6 +1,6 @@
 ---
 name: crud-scaffold
-description: CRUD 脚手架——标准五步（Entity→Repository→Service→Controller→DTO/VO）生成茶叶/茶器/文化等标准增删改查。业务专项 01。
+description: CRUD 脚手架——标准五步（Entity→Repository→Service→Controller→DTO/VO）生成茶叶/茶器/文化等标准增删改查。当新增一个业务实体或需要标准增删改查接口时用。业务专项 01。
 ---
 
 # CRUD Scaffold

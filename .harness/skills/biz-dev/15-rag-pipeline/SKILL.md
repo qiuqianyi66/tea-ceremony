@@ -1,6 +1,6 @@
 ---
 name: rag-pipeline
-description: RAG 管线——文化文档切片/embedding/检索质量，知识库来源可追溯，防幻觉。tea 专属 15。
+description: RAG 管线——文化文档切片/embedding/检索质量，知识库来源可追溯，防幻觉。当改动文化文档切片、embedding 或检索质量时用。tea 专属 15。
 ---
 
 # RAG Pipeline
