@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-11-02
+last_updated: 2026-11-06
 status: active
 owner: tea-harness
 ---
@@ -99,3 +99,7 @@ owner: tea-harness
 - **`git checkout -b` 静默没生效，2 个 commit 落到了本地 main（2026-11-03，gate-reliability 切片自犯）**：跑 `git checkout -q -b fix/gate-reliability` 后直接 `git commit`，没校验分支名就继续；事后 `git branch --show-current` 是 `main`，分支根本没建，两个 commit 落在 main 上（`-q` 把失败信息也吞了）。所幸未 push，`origin/main` 仍是旧值，处置：`git switch -c <branch>`（HEAD 带 commit 一起过去、工作区改动保留）+ `git branch -f main origin/main`。铁律：**建分支后、提交前各跑一次 `git branch --show-current`**；批量脚本里凡 `git checkout/switch` 都要紧跟一个状态断言，不能只看后面 commit 成功。判据：`git log --oneline origin/main..main` 非空 = 本地 main 有未推提交，会挡住 PR 流程。
 - **混合行尾文件用常规编辑工具写会产生假 diff（2026-11-03，TastingCard.vue）**：该文件 HEAD blob 是主体 LF + 尾部 `<style>` 块 CRLF（76 CRLF / 277 LF）。用编辑器/`edit` 工具改 3 行，diff 变成 78 增 81 删——行尾被归一。判据：**小改动 diff 忽然暴涨 → 先 `git diff -w --numstat` 对比**，`-w` 只显示 3/6 就说明是空白噪声。修法：`git checkout --` 还原后，用 Node `fs.readFileSync(utf8)` 往返（保留 `\r\n` 原样）做精确替换，只碰目标子串不碰行尾。`git show` 重定向到文件会把编码搞坏（PowerShell `>` 写 UTF-16LE），查 blob 真实字节要用 `git cat-file blob <sha>` + `cmd` 重定向或 Node `execFileSync`。**同族的另一个坑（同日，6 个 verify 脚本）**：PowerShell 5.1 的 `Set-Content -Encoding utf8` 写源码会**加 UTF-8 BOM**，diff 首行变成 `-/**` → `+﻿/**`（肉眼几乎看不出）。判据：`git diff` 出现内容看起来一样的 `-`/`+` 首行 → 查前 3 字节，`47,42,42` 正常、`239,187,191` 是 BOM。修法：`[System.IO.File]::WriteAllText($p, $t.TrimStart([char]0xFEFF), (New-Object System.Text.UTF8Encoding($false)))`；批量替换源码优先用 Node `fs.writeFileSync(p, t, 'utf8')` 或 `edit` 工具，别用 `Set-Content`。
 - **修跨层引用断链时，路径细节不能写进常驻层（2026-11-06，§4j 入口盘点同批自犯）**：把 `frontend-design-spec` 的绝对路径直接补进 AGENTS.md / CLAUDE.md / 技能规范，常驻层 19458 → 19640 token，当场顶爆 `audit-context-budget`（总预算 19500，HEAD 只余 42）。改法：路径放进 `.agents/skills/README.md`（非常驻、按需读），常驻层只留「见技能路由表」指针，最终 19492/19500。铁律：**改常驻层前先跑 `audit-context-budget.cjs` 看余量；本机路径与机器环境事实一律进路由表或技能正文，不进规则文件**（跨机器无效）。同批：`verify-harness.cjs` §4j 用 `git ls-files` 只认仓库态技能根，`.codex/skills/`（20 个、git 未跟踪）判为环境态不纳管；变红能力已实测（worktree 里加 `.claude/skills/fake-skill` → `ERRORS: [1]`，exit 1）。
+
+- **审计器的「可执行」计数只做前缀匹配，不判文件存在（2026-11-06，批 B 自犯的风险点）**：`audit-skill-tooling.cjs` 用 `scripts/([\w.-]+\.(?:cjs|mjs|js))` 取引用，命中即记「可执行」——**路径写错也会算进去**。批 B 给 10 个技能挂命令后，21 处引用另跑一次 `existsSync` 逐条核验才敢报「缺失 0」。铁律：**引用类指标（锚点/脚本/资产）判定「有效」必须落到存在性检查，前缀命中只是候选**；同类门禁（§4l/§4m）本来就是 existsSync 口径，新写的审计器要对齐，否则两条指标互相打架。
+- **验收表里的目标要先分「实测可达」与「拍脑袋估值」（2026-11-06，批 B 收口）**：PLAN v3.1 写「全库可执行从 20 提到 ≥50」，批 B 实跑 15/109 —— 19 个 biz-dev 技能（分页/缓存/事务/Excel）在 `scripts/` 下根本没有对应脚本，硬接就是编造入口。正确动作是**按实测下调口径并写清依据**（改成「活跃层 16/20，4 个标 N/A 附理由」），不是继续加人或加脚本凑数。铁律：**未经验证的目标数字等同未复核断言**，验收表每个数字都要标来源是「实测」还是「估值」。
+- **分层契约不能写进会被重新生成的文件（2026-11-06，批 C）**：`docs/reference/skill-tooling-audit.md` 由 `audit-skill-tooling.cjs --write` 整文件重写，任何手写小节下次运行即消失。分层与升降规则因此独立成 `docs/reference/skill-layering.md`，审计报告只保留「当前快照」。铁律：**改一个 reference 文件前先确认它是手写还是生成物**（有 `--write` 入口的即生成物），契约类内容必须与生成物分离。

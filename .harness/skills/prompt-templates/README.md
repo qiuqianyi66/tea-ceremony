@@ -43,3 +43,5 @@
 - 新增模板：按 `.harness/rules/技能规范.md` §5 流程，`type: knowledge`，`name` = 目录名（剥 `NN-` 前缀）。
 - 新增后必须在本表登记（README 不列 = 技能不存在，`scripts/verify-harness.cjs` 4h 死技能审计会报错）。
 - 改了模板里的验证命令，先确认 `package.json` 里有该 script，再改。
+
+> 分层（活跃 / 储备）与升降判据见 `docs/reference/skill-layering.md`。

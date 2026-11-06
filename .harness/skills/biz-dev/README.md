@@ -31,3 +31,5 @@
 - **主/专配合**：coding-skill 触发后，按功能命中本族专项技能加载（≤4 上下文内）。
 - **红线一致**：每个专项技能引用 .harness/rules/编码规范.md 红线编号，不重复定义。
 - **裁剪声明**：03/04 为 tea 替代实现；12 占位不实现；trouble-shooting 族另有 AI 异常/RAG 质量（tea 特有）。
+
+> 分层（活跃 / 储备）与升降判据见 `docs/reference/skill-layering.md`。

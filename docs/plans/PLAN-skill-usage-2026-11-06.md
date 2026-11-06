@@ -56,11 +56,15 @@ owner: yanha
 
 新接线的 10 个：db-migration、plan-control、frontend-design、coding-skill、fastapi-endpoint、vue-component、arch-deepen、unit-test-ci、tea-voice、tea-tasting（另 quality-audit / retro / session-handoff / 01-feature-dev / 18-3d-scene 原已有脚本引用，本轮规范成入口段）。
 
-## 批 C 待批准内容
+## 批 C 已落地（与原计划有一处刻意偏差）
 
-- 储备层 83 个（含 20 个活跃层之外的 89 个中的导入包）在四族 README 末尾加「归档层」索引，不新增文件、不改常驻层。
-- 分层依据与升降规则（储备被真实任务点名 ≥3 次则升；活跃连续 3 切片零调用则降）写进 `docs/reference/skill-tooling-audit.md` 的固定小节。
-- 全库仍有 25 条 description 超 250 字符（全在 `.agents` 导入包：threejs / javascript / typescript / ui-styling / vue-axios / vue-testing），**均在储备层、不进任何客户端元数据**，批 C 只登记不压缩。
+| 动作 | 结果 |
+|---|---|
+| 分层契约 | 新建 `docs/reference/skill-layering.md`：活跃层 20 名单 + 储备层定义 + 升降判据 + 当前实测 |
+| README 指针 | `.agents/skills/README.md` 与四族 README 末尾各挂一行指针（幂等，已含则跳过） |
+| 偏差 | 原计划把分层规则写进 `docs/reference/skill-tooling-audit.md`，**实际不能**——该文件由 `--write` 整文件重写，手写小节下次即丢；改独立文件（已记 lesson） |
+| 不逐行打标 | 四族 README 与 `.agents` README 保持全量列出，分层只标在 layering.md，避免两份清单漂移 |
+| 全库 25 条超长描述 | 只登记不压缩（全在 `.agents` 导入包，属储备层，不进元数据面板） |
 
 ## 验收（批 B/C）
 

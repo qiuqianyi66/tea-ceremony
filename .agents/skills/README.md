@@ -138,3 +138,5 @@
 | 技能 | 说明 |
 |---|---|
 | [show-me](show-me/SKILL.md) | 用图表/代码草图/HTML 片段直观解释当前主题 |
+
+> 分层（活跃 / 储备）与升降判据见 `docs/reference/skill-layering.md`。
