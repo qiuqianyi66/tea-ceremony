@@ -133,3 +133,12 @@ class Xxx(Base):
 - 茶文化检索接口走 `app/services/` 中的 RAG 逻辑
 - 所有写操作需要认证，读操作视情况公开
 - 种子数据在 `backend/seeds/`，新表要考虑是否需要初始数据
+
+## 确定性入口
+
+- 端点语法：`cd backend && python -m py_compile main.py`
+- 契约与路由双向核对：`node scripts/audit-wiki-drift.cjs`
+
+## 踩坑（真实教训）
+
+- **双栈并存，API 前缀必须查 `backend/src/main/java`**：只看 `backend/main.py` 会得出反结论。三处对齐——新栈 Controller 的 `@RequestMapping`、前端实际调用路径、`.harness/wiki/api-contract.md` 的新旧两段。

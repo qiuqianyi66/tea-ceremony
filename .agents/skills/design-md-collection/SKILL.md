@@ -1,6 +1,6 @@
 ---
 name: design-md-collection
-description: 74 个真实网站的 DESIGN.md 设计系统参考库（来自 VoltAgent/awesome-design-md，Google Stitch DESIGN.md 格式）。涵盖 AI 平台 / 开发者工具 / SaaS / 设计工具 / 金融 / 电商 / 媒体 / 汽车 / 复古网页 9 大类，每个品牌含完整配色（hex + 角色）、字体层级、组件样式、布局原则、阴影体系、Do/Don't。当需要参考某品牌设计语言做视觉方向、抄配色/字体/组件规范、对比主流设计系统、为「一盏茶」找反主流参考或竞品 UI 分析时使用；说"像 Stripe 那样"/"参考 Linear 风格"/"Vercel 黑白精度"时按品牌名读 brands/<name>/DESIGN.md。
+description: 74 个真实网站的 DESIGN.md 设计系统参考库（VoltAgent/awesome-design-md，9 大类：AI/开发者工具/SaaS/设计工具/金融/电商/媒体/汽车/复古网页），含配色、字体层级、组件样式、布局与阴影体系。当需要参考某品牌设计语言、抄配色字体组件规范、对比主流设计系统、或做竞品 UI 分析时使用；说「像 Stripe 那样」「参考 Linear 风格」时按品牌名读 brands/<name>/DESIGN.md。
 ---
 
 # Design MD Collection（74 个真实网站设计系统）

@@ -30,3 +30,12 @@ verification: node scripts/agent-eval.cjs <切片名>
 
 ## 下一步
 评估通过 → 提交（英文 conventional）→ push → 下一片需求分析。
+
+## 确定性入口
+
+- 切片评分：`node scripts/agent-eval.cjs <切片>`
+- 七维评测：`node scripts/eval-harness.cjs <切片> --verify`（不传 `--verify` 则代码正确性维记 0）
+
+## 踩坑（真实教训）
+
+- **未判的judge 考点必须计 0，不能计中性 1**：原实现按中性计 1 让 v2 报 0.96，改计 0 后同批 dry-run 只有 0.19——98 考点中 77 个从未被判。报告必须显式输出 `programOnly` 与 `judgeCoverage` 两个口径。

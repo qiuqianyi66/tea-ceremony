@@ -102,3 +102,12 @@ src/views → src/components → src/stores → src/services
 ## 下一步
 
 进入 → `unit-test-write`（单元测试），随后 `expert-reviewer`（专家评审）。
+
+## 确定性入口
+
+- 红线机械化：`node scripts/audit-redlines.cjs`（期望 `ERRORS: []`）
+
+## 踩坑（真实教训）
+
+- **混合行尾文件用常规编辑工具写会产生假 diff**：小改动 diff 忽然暴涨（3 行变 78/81）→ 先 `git diff -w --numstat` 对比，只显示目标行数就是空白噪声。修法用 Node `fs.readFileSync/WriteFileSync(utf8)` 往返，不碰行尾。
+- **`Set-Content -Encoding utf8` 写源码会加 BOM**：diff 首行看似相同却变红 → 查前 3 字节，`47,42,42` 正常、`239,187,191` 是 BOM；写文件用 `[IO.File]::WriteAllText` + `UTF8Encoding($false)` 或 Node 的 `writeFileSync`。

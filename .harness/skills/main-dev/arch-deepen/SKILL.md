@@ -130,3 +130,11 @@ type: flow
 
 - 报告交付用户 → 用户挑 D1-Dn → 选中项各自走 request-analysis 立项 refactor PR。
 - 深化落地后更新本报告"观察清单"里该条状态。
+
+## 确定性入口
+
+- 仓库地图：`node scripts/gen-repomap.cjs`（输出 `docs/reference/repo-map.md`，关键符号缺失则 exit 1）
+
+## 踩坑（真实教训）
+
+- **外来架构信号必须先在真实代码上 dry-run**：教科书信号（如「一行 Service 直接 return repository」）在本项目 0 命中就必须删掉，不能为了「看起来完整」保留。

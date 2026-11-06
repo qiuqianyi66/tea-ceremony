@@ -1,6 +1,6 @@
 ---
 name: 3d-scene
-description: 3D 茶席场景——TresJS/Three 维护，只做视觉层不改状态机，资源按需加载 + KTX2。tea 专属 18。
+description: 3D 茶席场景——TresJS/Three 维护，只做视觉层不改状态机，资源按需加载 + KTX2。当改动茶席 3D 场景、资源加载或视觉参数时用。tea 专属 18。
 type: executable
 last-reviewed: 2026-10-29
 verification: node scripts/verify-gardens.cjs && node scripts/verify-pavilion.cjs
@@ -26,3 +26,8 @@ verification: node scripts/verify-gardens.cjs && node scripts/verify-pavilion.cj
 - [ ] TresJS 统一 renderer
 - [ ] 资源按需 + KTX2
 - [ ] verify-gardens/pavilion 通过
+
+## 确定性入口
+
+- 茶园四园：`node scripts/verify-gardens.cjs`（期望 `ERRORS: []`）
+- 茶亭：`node scripts/verify-pavilion.cjs`

@@ -86,3 +86,14 @@ L<file:line>: <严重度> <问题>. <根因>. <修复>.
 
 - 修复清单完成 → 按清单逐批修 → 批 1 主门禁重跑全绿 → 交付审计报告。
 - 审计发现的新红线缺口 → 写进 `docs/plans/lessons.md`（lesson 池，按需加载）。
+
+## 踩坑（真实教训）
+
+- **「挂进 npm 链」≠「挂进 CI」**：`package.json` 的 script 只代表本地入口，门禁是否生效必须以 `.github/workflows/ci.yml` 里存在该命令为准（曾出现 `audit-context-budget` 只进 `verify`、13 个 job 无一跑它）。
+
+## 确定性入口
+
+- 红线机械化：`node scripts/audit-redlines.cjs`
+- 治理一致性：`node scripts/verify-harness.cjs`
+- 契约漂移：`node scripts/audit-wiki-drift.cjs`
+- 文档元信息：`node scripts/add-doc-meta.cjs`（缺 frontmatter 时）
