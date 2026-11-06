@@ -8,12 +8,14 @@
  *   关键路径引用（docs/ .harness/ .agents/ scripts/ src/ backend/）存在性
  *   wiki 四件套 / changes 三件套+review 门禁 / docs/skills 审查页 / .claude agents
  *   docs 元信息头（缺失 + status 值域）/ AGENTS.md 行数（维护规则 200-350）
+ *   技能入口盘点（仓库态）：git 跟踪的 SKILL.md 必须落在已知技能根内（4j）
  *
  * 用法：node scripts/verify-harness.cjs   期望输出 ERRORS: []
  * 有错误 exit 1（可挂 CI），无错误 exit 0。
  */
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 const { collect } = require('./lib/fs-utils.cjs');
 
 const ROOT = path.resolve(__dirname, '..');
@@ -206,6 +208,38 @@ function fmField(front, name) {
   const m = front.match(new RegExp(`^${name}:\\s*(.+?)\\s*$`, 'm'));
   return m ? m[1] : null;
 }
+// 4f-2. verification 里点名的目录/文件/run 目标必须真实存在。
+//   只判「指向是否存在」，不解释命令语义（工具级命令如 alembic/mvn 不校验）。
+//   动机：`type: executable` 只要填了字符串就绿，写一条指向不存在脚本的命令同样绿 = 装饰字段。
+const PKG_SCRIPTS = new Set(Object.keys(require(path.join(ROOT, 'package.json')).scripts || {}));
+function verificationMisses(cmd) {
+  const misses = [];
+  let base = ROOT;
+  for (const seg of cmd.split('&&')) {
+    const tokens = seg.trim().split(/\s+/).filter(Boolean);
+    if (!tokens.length) continue;
+    if (tokens[0] === 'cd') {
+      const dir = tokens[1];
+      if (!dir || /</.test(dir)) continue;
+      const abs = path.resolve(base, dir);
+      if (fs.existsSync(abs)) base = abs;
+      else misses.push(`cd ${dir}`);
+      continue;
+    }
+    if (/^(npm|pnpm|yarn)$/.test(tokens[0])) {
+      const i = tokens.indexOf('run');
+      const name = i > 0 ? tokens[i + 1] : undefined;
+      if (name && !/</.test(name) && !PKG_SCRIPTS.has(name)) misses.push(`${tokens[0]} run ${name}`);
+      continue;
+    }
+    for (const t of tokens.slice(1)) {
+      if (t.startsWith('-') || /</.test(t)) continue;
+      if (!(/\.(cjs|mjs|js|ts|py|sql|json)$/.test(t) || t.includes('/'))) continue;
+      if (!fs.existsSync(path.resolve(base, t))) misses.push(t);
+    }
+  }
+  return misses;
+}
 for (const s of collectSkillFrontmatters()) {
   const type = fmField(s.front, 'type');
   const verification = fmField(s.front, 'verification');
@@ -217,6 +251,12 @@ for (const s of collectSkillFrontmatters()) {
   }
   if (verification && type !== 'executable') {
     errors.push(`❌ ${s.rel} 声明 verification 但 type=${type || '（缺省）'}。\n✅ FIX: type 改为 executable。\n📖 See: .harness/rules/技能规范.md §2（O-11）`);
+  }
+  if (type === 'executable' && verification) {
+    const misses = verificationMisses(verification);
+    if (misses.length) {
+      errors.push(`❌ ${s.rel} verification 指向不存在的目标：${misses.join('、')}。\n✅ FIX: 改正路径，或删除该 verification。\n📖 See: .harness/rules/技能规范.md §2（O-11）`);
+    }
   }
 }
 
@@ -285,6 +325,103 @@ for (const s of collectSkillFrontmatters()) {
   }
 }
 
+// 4j. 技能入口盘点（仓库态）：git 跟踪的 SKILL.md 必须落在已知技能根内
+//    数量对账只覆盖已登记的两个根，新增入口目录（如 .claude/skills/）会静默漏检且不报错。
+//    本机未跟踪入口（.codex/skills/、claude-code-template/）属环境态：不进 CI、不参与治理、不计入数量。
+{
+  let tracked = null;
+  try {
+    tracked = execSync('git ls-files', { cwd: ROOT, encoding: 'utf8' })
+      .split('\n').map(s => s.trim().replace(/\\/g, '/')).filter(Boolean)
+      .filter(p => p === 'SKILL.md' || p.endsWith('/SKILL.md'));
+  } catch {
+    warnings.push('git 不可用，跳过技能入口盘点（4j）');
+  }
+  if (tracked) {
+    const knownRoot = p =>
+      /^\.agents\/skills\/[^/]+\/SKILL\.md$/.test(p) ||
+      new RegExp(`^\\.harness/skills/(${families.join('|')})/[^/]+/SKILL\\.md$`).test(p);
+    for (const p of tracked) {
+      if (!knownRoot(p)) {
+        errors.push(`git 跟踪的技能不在已知技能根内：${p}\n✅ FIX: 迁入 .agents/skills/<name>/ 或 .harness/skills/<family>/<NN-name>/；新增入口目录须同步 SKILL_ROOTS 与路由表。\n📖 See: .harness/rules/技能规范.md §1（治理边界）`);
+      }
+    }
+  }
+}
+
+// 4k. 自写流程技能必须带自检段
+//    只有「触发 → 工作流」没有「做完怎么验」，等于有开头没有验收；实测 biz-dev 22 行技能
+//    四段齐全后密度够用，缺的只是这一处（12-growth-notification 占位未写自检）。
+//    只约束 .harness/skills（自写流程族）；.agents/skills 多为导入包（参考手册型），不要求。
+{
+  for (const family of families) {
+    const dir = path.join(ROOT, '.harness/skills', family);
+    if (!fs.existsSync(dir)) continue;
+    for (const name of fs.readdirSync(dir)) {
+      const rel = `.harness/skills/${family}/${name}/SKILL.md`;
+      if (!fs.existsSync(path.join(dir, name, 'SKILL.md'))) continue;
+      const text = read(rel);
+      if (text === null) continue;
+      if (!/^## .*(自检|检查清单)/m.test(text) && !/- \[ \]/.test(text)) {
+        errors.push(`${rel} 缺少自检段\n✅ FIX: 补 3-5 条可判真假的勾选项（写「做了什么」不写「注意质量」）。\n📖 See: .harness/rules/技能规范.md §2（技能模板）`);
+      }
+    }
+  }
+}
+
+// 4l. 有资产目录却没在正文指路 = 第三级渐进加载断裂
+//    references/assets/scripts 只有被正文点名才会被读；正文不写路径，等于资产不存在。
+//    .harness 自写技能记 error（能改）；.agents 多为导入包，记 warning（不改原件，只提示）。
+{
+  const check = (base, isHarness) => {
+    if (!fs.existsSync(base)) return;
+    const push = msg => (isHarness ? errors : warnings).push(msg);
+    for (const name of fs.readdirSync(base)) {
+      const dir = path.join(base, name);
+      if (!fs.statSync(dir).isDirectory()) continue;
+      const rel = `${base}/${name}/SKILL.md`;
+      const text = read(rel);
+      if (text === null) continue;
+      for (const sub of ['references', 'assets', 'scripts']) {
+        if (!fs.existsSync(path.join(dir, sub))) continue;
+        if (text.includes(sub + '/')) continue;
+        push(`${rel} 有 ${sub}/ 目录但正文从未提到 ${sub}/，第三级加载会断\n✅ FIX: 正文加一句「需要 X 时读 ${sub}/<文件名>」并按实际文件名列出。\n📖 See: .agents/skills/README.md §加载方式（三级）`);
+      }
+    }
+  };
+  check('.agents/skills', false);
+  for (const f of families) check(`.harness/skills/${f}`, true);
+}
+
+// 4m. 自写技能正文反引号锚点存活（PLAN-skill-usage v3）
+//   只查 .harness 自写技能：导入包引用的是上游仓库路径，与本仓不同源，检查只会产生假阳性。
+//   排除模板占位（YYYY / { } / <slot> / :id）、通配与省略号、路由片段（/brew），
+//   只判以 docs|scripts|src|backend|.harness|.agents 等已知根开头的路径。
+const ANCHOR_ROOT = /^(?:docs|scripts|src|backend|frontend|tests|\.harness|\.agents|\.claude|\.github|AGENTS\.md|CLAUDE\.md|package\.json)/;
+const ANCHOR_TEMPLATE = /[*…]|YYYY|\{|\}|:id|<\w+>/;
+function anchorMisses(rel) {
+  const abs = path.join(ROOT, rel);
+  const body = fs.readFileSync(abs, 'utf8').replace(/^---[\s\S]*?---/, '');
+  const misses = [];
+  for (const m of body.matchAll(/`([^`\n]{2,160})`/g)) {
+    const raw = m[1].trim();
+    if (ANCHOR_TEMPLATE.test(raw)) continue;
+    if (!ANCHOR_ROOT.test(raw)) continue;
+    const token = raw.split(/[\s,，。;；]+/)[0].replace(/["'）)]*$/, '');
+    if (!ANCHOR_ROOT.test(token)) continue;
+    const cands = [path.join(ROOT, token), path.resolve(path.dirname(abs), token)];
+    if (!cands.some(c => fs.existsSync(c))) misses.push(token);
+  }
+  return misses;
+}
+for (const s of collectSkillFrontmatters()) {
+  if (!s.rel.startsWith('.harness/skills/')) continue;
+  const misses = anchorMisses(s.rel);
+  if (misses.length) {
+    errors.push(`${s.rel} 有 ${misses.length} 处反引号路径不存在：${misses.slice(0, 3).join('、')}${misses.length > 3 ? ' …' : ''}。\n✅ FIX: 路径已迁走就更新为现路径；只是示例就去掉反引号或改成含 YYYY / {} 的模板占位。\n📖 See: .harness/rules/技能规范.md §2`);
+  }
+}
+
 // 5. 关键路径引用存在性（AGENTS.md 中 docs/ .harness/ .agents/ scripts/ src/ backend/ 开头的反引号路径）
 const seen = new Set();
 const pathRefs = agents.match(/`((?:docs|\.harness|\.agents|scripts|src|backend)\/[^`]+)`/g) || [];
@@ -293,6 +430,26 @@ for (const raw of pathRefs) {
   if (seen.has(p) || /\s/.test(p) || p.includes('*')) continue;   // 带空格/通配符的是命令或 glob，跳过
   seen.add(p);
   if (!fs.existsSync(path.join(ROOT, p))) errors.push(`AGENTS.md 引用路径不存在：${p}`);
+}
+
+// 5b. SKILL.md 内部相对引用存在性（官方清单「Referenced files actually exist」）
+//   只查 markdown 链接指向的本地相对路径；外部 URL 与锚点跳过。
+//   动机：技能可以只带一个 SKILL.md 而正文照抄上游的 references/ 链接，链接全断但正文看着完好。
+function skillLinkMisses(relPath) {
+  const abs = path.join(ROOT, relPath);
+  const misses = [];
+  for (const m of fs.readFileSync(abs, 'utf8').matchAll(/\[([^\]]*)\]\(([^)\s]+)\)/g)) {
+    const target = m[2];
+    if (/^(https?:|mailto:|#)/.test(target)) continue;
+    if (!fs.existsSync(path.resolve(path.dirname(abs), target))) misses.push(target);
+  }
+  return misses;
+}
+for (const s of collectSkillFrontmatters()) {
+  const misses = skillLinkMisses(s.rel);
+  if (misses.length) {
+    errors.push(`❌ ${s.rel} 有 ${misses.length} 处引用不存在：${misses.slice(0, 3).join('、')}${misses.length > 3 ? ' …' : ''}。\n✅ FIX: 恢复被引文件，或把链接降级为纯文本（保留 label）。\n📖 See: .harness/rules/技能规范.md §2`);
+  }
 }
 
 // 6. 285 docs 分层惯例：plans/ 与 reference/ 目录存在（工程结构.md §六）

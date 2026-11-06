@@ -4,7 +4,7 @@
  */
 const { test } = require('node:test')
 const assert = require('node:assert/strict')
-const { parseReviewClean, metaHeader, adrVerdict, touchesSchemaPath, deriveNoMigrate } = require('../eval-harness.cjs')
+const { parseReviewClean, metaHeader, adrVerdict, touchesSchemaPath, deriveNoMigrate, judgePass } = require('../eval-harness.cjs')
 
 test('#147 回归锁：Findings 摘要先列未清零，文末 Verdict 清零 → 判 true（必须取最后一个匹配）', () => {
   const text = [
@@ -115,4 +115,30 @@ test('schema 路径：前端 Dexie db.ts 也算数据模型（AGENTS §8 的 L3�
   assert.equal(touchesSchemaPath('src/services/storage/db.ts'), true)
   assert.equal(touchesSchemaPath('backend/src/main/java/com/tea/x/entity/Plant.java'), true)
   assert.equal(touchesSchemaPath('scripts/lib/swallow-catch.cjs'), false)
+})
+
+// ---- 通过判定：安全是一票否决项，不能被其他维度平均掉 ----
+
+test('judgePass：总分达标但安全有违规 → FAIL（92 分也拦）', () => {
+  // 安全归零、其余六维满分：加权后 92 分，旧判据（单看总分）会放行
+  assert.equal(judgePass(92, 0), false)
+})
+
+test('judgePass：总分未达标 → FAIL，即使安全零违规', () => {
+  assert.equal(judgePass(59, 100), false)
+})
+
+test('judgePass：总分达标且安全零违规 → PASS', () => {
+  assert.equal(judgePass(60, 100), true)
+  assert.equal(judgePass(88, 100), true)
+})
+
+test('judgePass：安全维无证据 → 未验证，不计入通过（对齐 skillkit SK-05 未验证不得标 PASS）', () => {
+  // 切片无可归属 commit 时安全维扫不到任何东西：那是「未验证」，不是「合规」
+  assert.equal(judgePass(92, 100, false), false)
+  assert.equal(judgePass(100, 100, false), false)
+})
+
+test('judgePass：第三参缺省视为已验证（兼容旧调用点）', () => {
+  assert.equal(judgePass(60, 100), true)
 })
