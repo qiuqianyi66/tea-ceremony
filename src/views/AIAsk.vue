@@ -16,6 +16,8 @@ interface ChatMsg {
   content: string
   /** P-O4：AI 回复的知识来源数组（茶·/诗·等前缀），降级或用户消息为空 */
   sources: string[]
+  /** 规则降级回复（非 LLM）：必须在气泡下可见标注，不能伪装成 LLM 答案 */
+  degraded?: boolean
 }
 const messages = ref<ChatMsg[]>([])
 const input = ref('')
@@ -77,6 +79,7 @@ async function sendMessage(text?: string) {
   )
   aiMsg.content = reply.content
   aiMsg.sources = reply.sources
+  aiMsg.degraded = reply.degraded ?? false
   // 空气泡（用户秒停 / 流未出字）：撤掉，避免留一个空白 AI 气泡
   if (!aiMsg.content) {
     messages.value.pop()
@@ -128,6 +131,8 @@ async function sendMessage(text?: string) {
             <div v-if="msg.sources.length" class="ai-sources" role="note" aria-label="知识来源">
               <span v-for="s in msg.sources" :key="s" class="ai-source-chip">{{ s }}</span>
             </div>
+            <!-- 降级标注：规则回复必须自报身份，不能让用户以为是 LLM 生成的 -->
+            <p v-if="msg.degraded" class="ai-degraded" role="note">本地规则回复 · AI 暂不可用</p>
           </div>
         </div>
         <div v-else class="ai-user-bubble">{{ msg.content }}</div>
@@ -245,6 +250,11 @@ async function sendMessage(text?: string) {
 /* P-O4：来源卡片——AI 气泡下的知识来源 chip 行 */
 .ai-ai-body { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; }
 .ai-sources { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+/* 降级标注：与来源 chip 同层级但语气更弱，只陈述事实不报警 */
+.ai-degraded {
+  margin: 0; font-size: 0.7rem; line-height: 1.5;
+  color: var(--color-wood-dark); opacity: 0.55;
+}
 .ai-source-chip {
   display: inline-flex; align-items: center;
   padding: 0.15rem 0.55rem; border-radius: 999px;

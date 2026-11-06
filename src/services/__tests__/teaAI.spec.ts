@@ -53,6 +53,8 @@ describe('teaAI 降级逻辑（后端代理不可用时）', () => {
     expect(reply.content.length).toBeGreaterThan(0)
     // P-O4：降级路径 sources 为空
     expect(reply.sources).toEqual([])
+    // 降级必须可识别：UI 靠这个字段标注「本地规则回复」，漏设即静默伪装成 LLM 答案
+    expect(reply.degraded).toBe(true)
   })
 
   it('askTeaMaster：代理返回 502 时返回兜底回复', async () => {
