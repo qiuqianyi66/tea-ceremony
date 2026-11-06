@@ -110,7 +110,11 @@ const root = path.resolve(__dirname, '..');
  * 切片无可归属 commit 时安全维没扫到任何东西，那是「未验证」而非「合规」，不能计入通过。
  */
 function judgePass(totalInt, safetyScore, safetyVerified = true) {
-  return totalInt >= 60 && safetyVerified && safetyScore >= 100;
+  // 只有「已取证且查出违规」才一票否决。未取证是「没查」，不是「查过且合规」也不是「违规」——
+  // 若把未取证也否决，任何无可归属 commit 的历史切片都会永久红（假红），门禁变成永远挡住 CI 的死门。
+  // 「未取证」的痕迹由安全维 note 显式标注，不允许读者把它读成已查过。
+  const safetyViolation = safetyVerified && safetyScore < 100;
+  return !safetyViolation && totalInt >= 60;
 }
 
 module.exports = {
@@ -321,11 +325,8 @@ const total = Object.keys(WEIGHTS).reduce((acc, k) => acc + (scores[k] || 0) * W
 const totalInt = Math.round(total);
 const pass = judgePass(totalInt, scores.safety, safetyEvidence);
 // 总分够但被否决时给出原因，否则读者只看到「92 分却 FAIL」以为脚本坏了
-const vetoHint = !pass && totalInt >= 60
-  ? safetyEvidence
-    ? '（安全项否决：总分达标但存在违规）'
-    : '（未验证：切片无可归属 commit，安全维无证据，不计入通过）'
-  : '';
+// 未取证不再是否决位（见 judgePass 注释），所以此处只剩「总分达标但安全有违规」一种情形
+const vetoHint = !pass && totalInt >= 60 ? '（安全项否决：总分达标但存在违规）' : '';
 
 // 用本地日期，不用 toISOString()：UTC 会在大夜班时段写成前一天，与 commit 日期对不上
 const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);

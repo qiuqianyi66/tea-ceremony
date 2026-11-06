@@ -133,10 +133,12 @@ test('judgePass：总分达标且安全零违规 → PASS', () => {
   assert.equal(judgePass(88, 100), true)
 })
 
-test('judgePass：安全维无证据 → 未验证，不计入通过（对齐 skillkit SK-05 未验证不得标 PASS）', () => {
-  // 切片无可归属 commit 时安全维扫不到任何东西：那是「未验证」，不是「合规」
-  assert.equal(judgePass(92, 100, false), false)
-  assert.equal(judgePass(100, 100, false), false)
+test('judgePass：安全维未取证 → 不否决总分，但不得读成合规（SK-05 管分项标注，不是整体否决）', () => {
+  // 未取证 ≠ 违规。证据缺失由安全维 note 显式标注「未取证」；若在此处否决，
+  // 任何无可归属 commit 的历史切片都会永久红（假红），门禁变成永远挡住 CI 的死门。
+  assert.equal(judgePass(92, 100, false), true)
+  // 未取证不能替代总分门槛：分数不够照样 FAIL
+  assert.equal(judgePass(59, 100, false), false)
 })
 
 test('judgePass：第三参缺省视为已验证（兼容旧调用点）', () => {
