@@ -61,6 +61,14 @@ function bodyOf(rel) {
   return t.replace(/^---[\s\S]*?---/, '');
 }
 
+// 元数据触发词（只报不阻断）：description 没写「什么时候该用我」，模型只能靠名字猜
+const TRIGGER_WORD = /当[^。]{0,60}?(?:时用|时)|触发[:：]|Use when|use when|when to use|Triggers on/;
+function descOf(rel) {
+  const t = fs.readFileSync(path.join(ROOT, rel), 'utf8');
+  const m = t.match(/^description:\s*(.+)$/m);
+  return m ? m[1].trim() : '';
+}
+
 // 引用到的脚本文件名（不含 lib/ 与 node_modules）
 const SCRIPT_REF = /scripts\/([\w.-]+\.(?:cjs|mjs|js))/g;
 const CMD_STEP = /^\s*(?:\d+\.|[-*])\s+.*(?:\bnode\b|\bnpm\b|\bnpx\b|\bgit\b|\bpython\b|\bmvn\b|运行|执行|跑|command)/gm;
@@ -71,7 +79,8 @@ const skills = skillFiles().map(s => {
   const cmds = (body.match(CMD_STEP) || []).length;
   const idx = refs.length * 2 + Math.min(cmds, 3);
   const tier = refs.length > 0 ? '可执行' : (cmds >= 2 ? '半可执行' : '纯文档');
-  return { ...s, refs, cmds, idx, tier };
+  const desc = descOf(s.rel);
+  return { ...s, refs, cmds, idx, tier, desc, trigger: TRIGGER_WORD.test(desc) };
 });
 
 const scripts = scriptFiles();
@@ -152,6 +161,23 @@ lines.push(`| 半可执行（≥2 条命令行步骤） | ${byTier['半可执行
 lines.push(`| 纯文档 | ${byTier['纯文档'].length} | 全靠模型现场推导 |`);
 lines.push('');
 lines.push(`孤儿脚本（零技能引用）：**${orphans.length} / ${scripts.length}**——${gateOnly.length} 个在 CI/门禁或脚本间被调用（缺口在技能正文没点名），${oneshotOnly.length} 个 @oneshot 一次性诊断（使命已完结），${trueOrphans.length} 个谁都不引用（该判「接给谁 / 删」）`);
+lines.push('');
+const selfSkills = skills.filter((s) => s.self);
+const importSkills = skills.filter((s) => !s.self);
+const selfMiss = selfSkills.filter((s) => !s.trigger);
+const importMiss = importSkills.filter((s) => !s.trigger);
+lines.push('## 元数据触发词（只报不阻断）');
+lines.push('');
+lines.push('| 层 | 有「当…时用 / Use when」 | 缺 |');
+lines.push('|---|---|---|');
+lines.push(`| 自写层（.harness） | ${selfSkills.length - selfMiss.length} / ${selfSkills.length} | ${selfMiss.length} |`);
+lines.push(`| 导入层（.agents） | ${importSkills.length - importMiss.length} / ${importSkills.length} | ${importMiss.length} |`);
+lines.push('');
+if (selfMiss.length) {
+  lines.push(`自写层缺触发词：${selfMiss.map((s) => '`' + s.name + '`').join('、')}`);
+  lines.push('');
+}
+lines.push('导入层属上游包原样，只登记不逐条改（改了下次同步就丢）；自写层缺项应补「当…时用」。');
 lines.push('');
 lines.push('## 可执行技能（已接上脚本层）');
 lines.push('');

@@ -1,6 +1,6 @@
 ---
 name: oom
-description: OOM 排查——堆转储分析（MAT/JFR），定位大对象/泄漏/无界集合，修复后回归。故障排查 02。
+description: OOM 排查——堆转储分析（MAT/JFR），定位大对象/泄漏/无界集合，修复后回归。当进程内存持续上涨、或发生 OOM 崩溃时用。
 ---
 
 # OOM

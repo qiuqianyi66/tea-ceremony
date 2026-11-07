@@ -1,6 +1,6 @@
 ---
 name: unit-test-write
-description: 单元测试编写——TDD 垂直切片，用例顺序正常→边界→异常→幂等→状态流转，覆盖率 ≥80%。流水线阶段 5。
+description: 单元测试编写——TDD 垂直切片，用例顺序正常→边界→异常→幂等→状态流转，覆盖率 ≥80%。当要为新功能或修复写测试时用。
 ---
 
 # Unit Test Write
