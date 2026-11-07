@@ -97,3 +97,5 @@ L<file:line>: <严重度> <问题>. <根因>. <修复>.
 - 治理一致性：`node scripts/verify-harness.cjs`
 - 契约漂移：`node scripts/audit-wiki-drift.cjs`
 - 文档元信息：`node scripts/add-doc-meta.cjs`（缺 frontmatter 时）
+- 常驻层压缩「零丢失」核对（迁移台账）：`node scripts/audit-context-migration.cjs`
+- 技能可执行化审计：`node scripts/audit-skill-tooling.cjs`（`--write` 刷新 `docs/reference/skill-tooling-audit.md`）

@@ -35,6 +35,12 @@ verification: node scripts/agent-eval.cjs <切片名>
 
 - 切片评分：`node scripts/agent-eval.cjs <切片>`
 - 七维评测：`node scripts/eval-harness.cjs <切片> --verify`（不传 `--verify` 则代码正确性维记 0）
+- 评测集结构校验（改 case/考点前必跑）：`node scripts/validate-eval-cases.cjs`
+- 跑评测：`node scripts/eval-tea-ai.cjs`
+- judge 校准（人工标注 vs 机评一致率，阈值 85%）：`node scripts/calibrate-judge.cjs`
+- 历史基线 diff（扫 `docs/ai-eval/reports/*.json`）：`node scripts/eval-baseline-diff.cjs`
+- 失败 case 提回归样本：`node scripts/eval-extract-regression.cjs`
+- RAG 命中率诊断（A8 步骤①②机械化）：`node scripts/diagnose-rag.cjs`
 
 ## 踩坑（真实教训）
 

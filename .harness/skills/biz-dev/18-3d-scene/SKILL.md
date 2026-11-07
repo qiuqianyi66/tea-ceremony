@@ -31,3 +31,11 @@ verification: node scripts/verify-gardens.cjs && node scripts/verify-pavilion.cj
 
 - 茶园四园：`node scripts/verify-gardens.cjs`（期望 `ERRORS: []`）
 - 茶亭：`node scripts/verify-pavilion.cjs`
+- 古茶园地形/茶行/遮阴树：`node scripts/verify-field.cjs`
+- 晴雨最终视觉（晴天全景 → 雨天全景）：`node scripts/verify-final.cjs`
+- 氛围层（云影/晨雾/动物）：`node scripts/verify-garden-ambient.cjs`
+- OrbitControls 状态与拖拽：`node scripts/verify-controls.cjs`
+- 冲泡页 3D 截图（HEATING/STEEPING）：`node scripts/screenshot-brew3d.cjs`
+- 纹理转 KTX2：`node scripts/convert-3d-ktx2.cjs`
+- 拉取 PBR 纹理：`node scripts/dl-textures.cjs`
+- 冲泡页探针（3D canvas / 报错 / 主线程卡死）：`node scripts/probe-brew.cjs`

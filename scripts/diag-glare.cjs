@@ -1,3 +1,4 @@
+// @oneshot 一次性诊断已收口：保留作历史复现，不作为技能入口
 /** diag-glare.cjs — 定位右侧刺眼白光：逐项隐藏对象截图对比 */
 const { chromium } = require('playwright')
 

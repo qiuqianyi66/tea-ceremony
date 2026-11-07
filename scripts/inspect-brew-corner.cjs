@@ -1,3 +1,4 @@
+// @oneshot 一次性诊断已收口：保留作历史复现，不作为技能入口
 /** 识别 brew 页左下角图标是什么元素 */
 const fs = require('fs')
 ;(async () => {

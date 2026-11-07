@@ -1,3 +1,4 @@
+// @oneshot 一次性诊断已收口：保留作历史复现，不作为技能入口
 // 评委间一致性对比（临时工具）：2026-10-10.json（通义 judge）vs 2026-10-12.json（deepseek judge）
 // 按 (id, pointName) 对齐 judge 考点判分，输出一致率 + 不一致清单
 const fs = require('node:fs')

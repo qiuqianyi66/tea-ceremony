@@ -23,3 +23,7 @@ description: 数据库迁移——Flyway 迁移 + changes 成对追踪 + upgrade
 - [ ] 命名规范（ix_/uk_/fk_）
 - [ ] 未改历史迁移
 - [ ] 数据迁移有逻辑
+
+## 确定性入口
+
+- 从 `src/data/` TS 数据生成种子迁移 SQL：`node scripts/seed-extract.mjs`（Flyway 启用后作为 V2 种子迁移来源）

@@ -22,3 +22,10 @@ description: 部署验证——十阶段 8-10：预发验证→上线部署→30
 - [ ] 生产部署成功 + 冒烟通过
 - [ ] 30 分钟观测无异常
 - [ ] 回滚路线明确（镜像标签可回退）
+
+## 确定性入口
+
+- 基础冒烟：`node scripts/smoke.mjs`
+- 判断「新版本到底有没有真的上线」：`node scripts/verify-production.cjs`
+- PWA 离线闭环（在线预缓存 → 断网 → 核心路由）：`node scripts/pwa-offline-smoke.cjs`
+- 告警规则与看板：`node scripts/verify-alert-rules.cjs`

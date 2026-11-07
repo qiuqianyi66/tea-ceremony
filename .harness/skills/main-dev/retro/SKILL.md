@@ -95,3 +95,4 @@ AGENTS.md 是不是膨胀了？哪些常驻规则其实可以下沉到技能（�
 - 一致性：`node scripts/verify-harness.cjs`
 - 红线：`node scripts/audit-redlines.cjs`
 - 契约漂移：`node scripts/audit-wiki-drift.cjs`
+- AI 提交占比（`[ai]` 前缀度量）：`node scripts/measure-ai-commits.cjs`
