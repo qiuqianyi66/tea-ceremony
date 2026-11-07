@@ -29,3 +29,5 @@ description: 部署验证——十阶段 8-10：预发验证→上线部署→30
 - 判断「新版本到底有没有真的上线」：`node scripts/verify-production.cjs`
 - PWA 离线闭环（在线预缓存 → 断网 → 核心路由）：`node scripts/pwa-offline-smoke.cjs`
 - 告警规则与看板：`node scripts/verify-alert-rules.cjs`
+- nginx 安全响应头：`node scripts/verify-nginx-headers.cjs`
+- nginx 路由：`node scripts/verify-nginx-routes.cjs`

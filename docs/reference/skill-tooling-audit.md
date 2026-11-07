@@ -7,7 +7,7 @@ owner: ai
 # 技能可执行化审计（自动生成，勿手改）
 
 > 生成：node scripts/audit-skill-tooling.cjs --write
-> 技能 109 个（自写 43 / 导入 66）；脚本 63 个；解析失败 0 个
+> 技能 109 个（自写 43 / 导入 66）；脚本 57 个；解析失败 0 个
 
 ## 汇总
 
@@ -17,7 +17,7 @@ owner: ai
 | 半可执行（≥2 条命令行步骤） | 10 | 有命令但未沉淀成脚本 |
 | 纯文档 | 82 | 全靠模型现场推导 |
 
-孤儿脚本（零技能引用）：**16 / 63**——10 个在 CI/门禁或脚本间被调用（缺口在技能正文没点名），6 个 @oneshot 一次性诊断（使命已完结），0 个谁都不引用（该判「接给谁 / 删」）
+孤儿脚本（零技能引用）：**0 / 57**——0 个在 CI/门禁或脚本间被调用（缺口在技能正文没点名），0 个 @oneshot 一次性诊断（使命已完结），0 个谁都不引用（该判「接给谁 / 删」）
 
 ## 可执行技能（已接上脚本层）
 
@@ -31,11 +31,11 @@ owner: ai
 | vue-component | 导入 | audit-states.cjs、audit-touch.cjs、verify-brew-mobile.cjs、verify-brew-skins.cjs | 5 |
 | 09-db-migration | 自写 | seed-extract.mjs | 1 |
 | 18-3d-scene | 自写 | verify-gardens.cjs、verify-pavilion.cjs、verify-field.cjs、verify-final.cjs、verify-garden-ambient.cjs、verify-controls.cjs、screenshot-brew3d.cjs、convert-3d-ktx2.cjs、dl-textures.cjs、probe-brew.cjs | 11 |
-| agent-eval | 自写 | agent-eval.cjs、eval-harness.cjs、validate-eval-cases.cjs、eval-tea-ai.cjs、calibrate-judge.cjs、eval-baseline-diff.cjs、eval-extract-regression.cjs、diagnose-rag.cjs | 9 |
+| agent-eval | 自写 | agent-eval.cjs、eval-harness.cjs、validate-eval-cases.cjs、eval-tea-ai.cjs、calibrate-judge.cjs、eval-baseline-diff.cjs、eval-extract-regression.cjs、diagnose-rag.cjs、eval-core.cjs、skill-usage-parse.cjs | 9 |
 | arch-deepen | 自写 | gen-repomap.cjs | 2 |
 | coding-skill | 自写 | audit-redlines.cjs | 2 |
-| deploy-verify | 自写 | smoke.mjs、verify-production.cjs、pwa-offline-smoke.cjs、verify-alert-rules.cjs | 6 |
-| quality-audit | 自写 | audit-redlines.cjs、verify-harness.cjs、audit-wiki-drift.cjs、add-doc-meta.cjs、audit-context-migration.cjs、audit-skill-tooling.cjs | 21 |
+| deploy-verify | 自写 | smoke.mjs、verify-production.cjs、pwa-offline-smoke.cjs、verify-alert-rules.cjs、verify-nginx-headers.cjs、verify-nginx-routes.cjs | 8 |
+| quality-audit | 自写 | audit-redlines.cjs、verify-harness.cjs、audit-wiki-drift.cjs、add-doc-meta.cjs、audit-context-migration.cjs、audit-skill-tooling.cjs、audit-context-budget.cjs、audit-levels-consistency.cjs、audit-eval-rag.cjs、audit-gitleaks-fingerprints.cjs、audit-probe-selectors.cjs、audit-skill-usage.cjs | 27 |
 | retro | 自写 | verify-harness.cjs、audit-redlines.cjs、audit-wiki-drift.cjs、measure-ai-commits.cjs | 11 |
 | session-handoff | 自写 | verify-harness.cjs | 10 |
 | tea-voice | 自写 | scan-emoji.cjs | 2 |
@@ -66,11 +66,11 @@ composition-patterns、css-animations、css-layout、css-responsive、design-md-
 
 ## 孤儿脚本：门禁/CI 在调用、但技能正文未点名（缺口在技能侧）
 
-`audit-context-budget.cjs`、`audit-eval-rag.cjs`、`audit-gitleaks-fingerprints.cjs`、`audit-levels-consistency.cjs`、`audit-probe-selectors.cjs`、`audit-skill-usage.cjs`、`eval-core.cjs`、`skill-usage-parse.cjs`、`verify-nginx-headers.cjs`、`verify-nginx-routes.cjs`
+（无）
 
 ## 一次性诊断（@oneshot，不接技能入口）
 
-`compare-judge-agreement.cjs`、`diag-glare.cjs`、`diag-glare2.cjs`、`gen-judge-checklist.cjs`、`gen-judge-samples.cjs`、`inspect-brew-corner.cjs`
+（无）
 
 ## 真孤儿脚本：谁都不引用（逐个判「接给谁 / 删」）
 

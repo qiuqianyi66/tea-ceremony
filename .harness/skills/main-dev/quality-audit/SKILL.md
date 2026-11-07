@@ -99,3 +99,9 @@ L<file:line>: <严重度> <问题>. <根因>. <修复>.
 - 文档元信息：`node scripts/add-doc-meta.cjs`（缺 frontmatter 时）
 - 常驻层压缩「零丢失」核对（迁移台账）：`node scripts/audit-context-migration.cjs`
 - 技能可执行化审计：`node scripts/audit-skill-tooling.cjs`（`--write` 刷新 `docs/reference/skill-tooling-audit.md`）
+- 常驻上下文预算：`node scripts/audit-context-budget.cjs`
+- 规则/技能分层一致性：`node scripts/audit-levels-consistency.cjs`
+- RAG 评测语料覆盖：`node scripts/audit-eval-rag.cjs`
+- gitleaks 指纹忽略集：`node scripts/audit-gitleaks-fingerprints.cjs`
+- 探针选择器：`node scripts/audit-probe-selectors.cjs`
+- 切片技能调用统计：`node scripts/audit-skill-usage.cjs`

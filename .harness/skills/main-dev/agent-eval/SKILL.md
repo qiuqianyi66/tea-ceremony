@@ -41,6 +41,8 @@ verification: node scripts/agent-eval.cjs <切片名>
 - 历史基线 diff（扫 `docs/ai-eval/reports/*.json`）：`node scripts/eval-baseline-diff.cjs`
 - 失败 case 提回归样本：`node scripts/eval-extract-regression.cjs`
 - RAG 命中率诊断（A8 步骤①②机械化）：`node scripts/diagnose-rag.cjs`
+- 判分核心逻辑（纯函数，单测覆盖）：`scripts/eval-core.cjs`
+- 「调用技能」单元格解析：`scripts/skill-usage-parse.cjs`（由 `audit-skill-usage.cjs` 调用，有回归锁）
 
 ## 踩坑（真实教训）
 

@@ -25,8 +25,8 @@
 | `eval-core.cjs` | 评测判分核心（program + judge 考点） |
 | `eval-extract-regression.cjs` | K17：评测 bad case → 回归样本 |
 | `eval-baseline-diff.cjs` | K18：评测历史基线自动 diff |
-| `calibrate-judge.cjs` / `compare-judge-agreement.cjs` | 评委校准 / 人工-评委一致率 |
-| `gen-judge-checklist.cjs` / `gen-judge-samples.cjs` / `validate-eval-cases.cjs` | 评委清单 / 样本生成 / 用例校验 |
+| `calibrate-judge.cjs` | 评委校准 / 人工-评委一致率 |
+| `validate-eval-cases.cjs` | 评测用例结构校验 |
 | `agent-eval.cjs` | 六 agent 评测切片 |
 | `eval-harness.cjs` | harness 七维确定性评测 |
 | `measure-ai-commits.cjs` | K20：AI 提交占比度量（`[ai]` 标记） |
@@ -38,8 +38,7 @@
 | `verify-gardens.cjs` / `verify-pavilion.cjs` | 四园晴雨 / 茶亭截图验证 |
 | `verify-garden-ambient.cjs` | 环境光 / 云影 / 雾 / 雨丝 / 音效（纯观赏氛围层；养成链路已于 T4.1 删除，原 `verify-water-rain.cjs` / `verify-water2.cjs` 随之退役） |
 | `verify-controls.cjs` / `verify-field.cjs` | OrbitControls 拖拽缩放 / 茶行地形（茶行实例数 + 全景截图） |
-| `screenshot-brew3d.cjs` / `inspect-brew-corner.cjs` / `probe-brew.cjs` | 冲泡 3D 截图 / 角落检测 / 探针 |
-| `diag-glare.cjs` / `diag-glare2.cjs` | 反光诊断（一次性） |
+| `screenshot-brew3d.cjs` / `probe-brew.cjs` | 冲泡 3D 截图 / 探针 |
 
 ## 截图（UI 视觉验证）
 
