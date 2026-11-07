@@ -17,6 +17,10 @@ description: AI 异常排查——LLM 超时/限流/内容异常/Schema 校验�
 ## 红线
 - 降级链不可删（#10）；AI 请求走后端代理（#10）。
 
+## 确定性入口
+
+- 降级后 AI 质量回归：`node scripts/eval-tea-ai.cjs`（全量 1 次迭代）；`--iterations 3` 跑 pass^3
+
 ## 自检
 - [ ] 异常分类明确
 - [ ] 降级链回归通过

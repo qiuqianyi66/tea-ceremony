@@ -20,6 +20,12 @@ description: 前端设计质量——taste-skill Vue 化：Design Read + 三拨�
 - 禁 Inter 默认 / AI 紫渐变 / 三等分卡片 / em-dash / Jane Doe / 玻璃拟态装饰 / emoji 图标。
 - 禁 `h-screen`（用 min-h-[100dvh]）；禁手绘 SVG 图标；图标一个库一个家族。
 
+## 确定性入口
+
+- 禁 emoji：`node scripts/scan-emoji.cjs`
+- 色值合规（禁 Tailwind 默认色板 / 硬编码 hex）：`node scripts/audit-hex.cjs`
+- 排版度量：`node scripts/audit-type.cjs`
+
 ## 自检
 - [ ] Design Read 先于代码
 - [ ] 三拨盘明确（非默认值）

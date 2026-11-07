@@ -94,7 +94,9 @@ function skillRefMisses(rel, names) {
 
 // 引用到的脚本文件名（不含 lib/ 与 node_modules）
 const SCRIPT_REF = /scripts\/([\w.-]+\.(?:cjs|mjs|js))/g;
-const CMD_STEP = /^\s*(?:\d+\.|[-*])\s+.*(?:\bnode\b|\bnpm\b|\bnpx\b|\bgit\b|\bpython\b|\bmvn\b|运行|执行|跑|command)/gm;
+// 只认真正的命令行工具。此前把「运行 / 执行 / 跑」这类中文动词也算命令步骤，
+// 导致「半可执行」虚高——正文写「跑测试」不等于有可执行入口。
+const CMD_STEP = /^\s*(?:\d+\.|[-*])\s+.*(?:\bnode\b|\bnpm\b|\bnpx\b|\bgit\b|\bpython\b|\bmvn\b|\bvitest\b|\bpytest\b|\bcurl\b|\bdocker\b)/gm;
 
 const skills = skillFiles().map(s => {
   const body = bodyOf(s.rel);
