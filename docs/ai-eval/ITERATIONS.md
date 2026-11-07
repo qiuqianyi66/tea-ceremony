@@ -229,7 +229,7 @@ LLM-as-Judge 全量实跑：overall 0.95（judgeCoverage 1，50 条 full-judge�
 - **口径铁律（双重）**：①通道模型是 deepseek（经 CodeBuddy 账号池），**非生产模型**——T08 分数只验证
   管道通 + 判分器行为对，**不写入简历口径**；②judgeCoverage 0.92 < 0.95——不满足「可引用数字」门槛。
   简历仍只引用 v3 0.81 / v5 0.80 / T10 taster 0.88 mentor 0.81（judgeCoverage=1，通义 judge）。
-- **T09 校准关键发现：评委间一致率 77.9%（60/77）< 85% 阈值**（`scripts/compare-judge-agreement.cjs`）：
+- **T09 校准关键发现：评委间一致率 77.9%（60/77）< 85% 阈值**（`scripts/compare-judge-agreement.cjs`，该一次性对比脚本已随 T09 收口删除，见 git 历史）：
   deepseek judge vs 通义 judge 同 case 同考点判分不一致 17 处，**deepseek 更宽容**（13 处 0→1，4 处 1→0）。
   含义：T08 0.87 高于历史 0.80 的部分差异来自评委模型漂移，非能力提升；judge 非确定性新增一个来源维度（评委模型选择）。
 - **T09 人工复核样本已生成**（`docs/ai-eval/samples-judge-t09.json`，77 条 machine 判分自动填入，
