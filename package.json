@@ -33,7 +33,7 @@
   "dependencies": {
     "@tresjs/cientos": "^5.9.3",
     "@tresjs/core": "^5.9.3",
-    "@tsparticles/preset-bubbles": "^4.3.2",
+    "@tsparticles/preset-bubbles": "^4.5.0",
     "@tsparticles/preset-fire": "^4.3.2",
     "@tsparticles/slim": "^4.4.0",
     "@tsparticles/vue3": "^4.3.2",
