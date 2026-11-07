@@ -1,6 +1,6 @@
 ---
 name: ai-exception
-description: AI 异常排查——LLM 超时/限流/内容异常/Schema 校验失败，分级处理 + 降级链验证。tea 专属故障排查 04（替代 MQ 积压）。
+description: AI 异常排查——LLM 超时/限流/内容异常/Schema 校验失败，分级处理 + 降级链验证。当 AI 调用超时、被限流、返回格式不符或触发降级时用。
 ---
 
 # AI Exception

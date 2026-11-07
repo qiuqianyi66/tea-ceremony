@@ -1,6 +1,6 @@
 ---
 name: rag-quality
-description: RAG 质量排查——检索命中率低/答案无来源/文化事实错误，定位切片/embedding/阈值/索引问题。tea 专属故障排查 05（替代缓存热点）。
+description: RAG 质量排查——检索命中率低/答案无来源/文化事实错误，定位切片/embedding/阈值/索引问题。当问答答非所问、答案无来源或茶文化事实出错时用。
 ---
 
 # RAG Quality

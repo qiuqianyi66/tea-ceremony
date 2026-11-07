@@ -1,6 +1,6 @@
 ---
 name: agent-eval
-description: 切片协作质量评估——按 agent-eval-baseline 两层维度（通用 G1-5 / tea 专项 T1-6）验收切片产物，0 分必附证据并沉淀 AGENTS.md §13。流水线阶段 6 评审后、每批收尾必跑。
+description: 切片协作质量评估——按 agent-eval-baseline 两层维度（通用 G1-5 / tea 专项 T1-6）验收切片产物，0 分必附证据并沉淀 AGENTS.md §13。当一个切片收尾、或提交前要验收协作质量时用。
 type: executable
 last-reviewed: 2026-10-29
 verification: node scripts/agent-eval.cjs <切片名>

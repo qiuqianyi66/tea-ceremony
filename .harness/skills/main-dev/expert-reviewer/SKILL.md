@@ -1,6 +1,6 @@
 ---
 name: expert-reviewer
-description: 代码评审——两轴分离（标准轴 6 维质量 / 规格轴对照 summary.md 的 F 编号与 GWT），问题 🔴🟡🟢🔵 分级，🟡 清零才过。流水线阶段 6。
+description: 代码评审——两轴分离（标准轴 6 维质量 / 规格轴对照 summary.md 的 F 编号与 GWT），问题 🔴🟡🟢🔵 分级，🟡 清零才过。当代码写完、门禁全绿、要出评审结论时用。
 ---
 
 # Expert Reviewer

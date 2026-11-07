@@ -1,6 +1,6 @@
 ---
 name: slow-sql
-description: 慢 SQL 排查——定位慢查询（日志/EXPLAIN/索引），修 N+1/缺索引/全表扫描，验证执行计划。故障排查 01。
+description: 慢 SQL 排查——定位慢查询（日志/EXPLAIN/索引），修 N+1/缺索引/全表扫描，验证执行计划。当接口变慢、出现全表扫描或 N+1 时用。
 ---
 
 # Slow SQL

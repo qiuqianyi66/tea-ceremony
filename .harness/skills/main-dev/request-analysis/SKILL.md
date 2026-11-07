@@ -1,6 +1,6 @@
 ---
 name: request-analysis
-description: 需求分析：将模糊需求转化为清晰技术任务（F 编号 + Given-When-Then + 影响分析），进入开发流程前必须使用本技能。
+description: 需求分析：将模糊需求转化为清晰技术任务（F 编号 + Given-When-Then + 影响分析）。当需求含糊、进入开发前要做拆解与验收定义时用。
 ---
 
 # 需求分析技能

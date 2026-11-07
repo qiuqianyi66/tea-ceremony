@@ -1,6 +1,6 @@
 ---
 name: coding-skill
-description: 编码实现：按分层流程写代码（后端 Entity/Repository/Service/Controller，前端 Types/API/Store/Composable/Component），需求分析完成后必须使用本技能。
+description: 编码实现：按分层流程写代码（后端 Entity/Repository/Service/Controller，前端 Types/API/Store/Composable/Component）。当需求文档已批准、要按分层写实现代码时用。
 ---
 
 # 编码技能

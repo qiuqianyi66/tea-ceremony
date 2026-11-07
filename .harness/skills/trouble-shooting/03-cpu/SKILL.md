@@ -1,6 +1,6 @@
 ---
 name: cpu
-description: CPU 高排查——线程转储（jstack）定位热点，区分计算/GC/死循环/锁竞争，修复后验证。故障排查 03。
+description: CPU 高排查——线程转储（jstack）定位热点，区分计算/GC/死循环/锁竞争，修复后验证。当 CPU 持续打满、或响应突然变慢时用。
 ---
 
 # CPU High
