@@ -13,9 +13,9 @@ owner: ai
 
 | 档位 | 数量 | 判定 |
 |---|---|---|
-| 可执行（引用 ≥1 个 scripts/） | 17 | 有一个确定性入口 |
+| 可执行（引用 ≥1 个 scripts/） | 18 | 有一个确定性入口 |
 | 半可执行（≥2 条命令行步骤） | 10 | 有命令但未沉淀成脚本 |
-| 纯文档 | 82 | 全靠模型现场推导 |
+| 纯文档 | 81 | 全靠模型现场推导 |
 
 孤儿脚本（零技能引用）：**0 / 57**——0 个在 CI/门禁或脚本间被调用（缺口在技能正文没点名），0 个 @oneshot 一次性诊断（使命已完结），0 个谁都不引用（该判「接给谁 / 删」）
 
@@ -53,6 +53,7 @@ owner: ai
 | session-handoff | 自写 | verify-harness.cjs | 10 |
 | tea-voice | 自写 | scan-emoji.cjs | 2 |
 | 01-feature-dev | 自写 | verify-gardens.cjs | 6 |
+| 05-rag-quality | 自写 | audit-eval-rag.cjs | 2 |
 
 ## 半可执行（有命令、未沉淀）
 
@@ -71,7 +72,7 @@ owner: ai
 
 ## 纯文档（零确定性入口）
 
-composition-patterns、css-animations、css-layout、css-responsive、design-md-collection、html-a11y、html-forms、javascript-data、javascript-debug、javascript-dom、javascript-performance、javascript-testing、show-me、threejs-animation、threejs-atmosphere-aerial-perspective、threejs-bloom、threejs-camera-direction、threejs-exposure-color-grading、threejs-geometry、threejs-image-pipeline、threejs-impl-lighting、threejs-impl-post-processing、threejs-impl-shadows、threejs-interaction、threejs-lighting、threejs-loaders、threejs-materials、threejs-parallax-occlusion-mapping、threejs-postprocessing、threejs-precipitation-surfaces、threejs-procedural-animation、threejs-procedural-fields、threejs-procedural-geometry、threejs-procedural-materials、threejs-procedural-vegetation、threejs-procedural-vfx、threejs-screen-space-ambient-occlusion、threejs-shaders、threejs-shadow-systems、threejs-syntax-loaders、threejs-temporal-surfaces、threejs-textures、threejs-visual-validation、threejs-volumetric-clouds、typescript-config、typescript-debug、typescript-testing、typescript-types、typescript-vue、ui-styling、vue-architecture、vue-axios、vue-composables、vue-debug、vue-pinia、vue-router、vue-testing、vueuse、01-crud-scaffold(自写)、02-pagination-query(自写)、03-caffeine-cache(自写)、04-spring-event-async(自写)、05-transaction-consistency(自写)、06-exception-handling(自写)、07-business-validation(自写)、08-excel-import-export(自写)、11-file-upload(自写)、12-growth-notification(自写)、13-stats-report(自写)、14-ai-agent(自写)、15-rag-pipeline(自写)、16-ai-fallback(自写)、17-offline-sync(自写)、19-design-taste(自写)、caveman-review(自写)、pr-body(自写)、unit-test-write(自写)、01-slow-sql(自写)、02-oom(自写)、03-cpu(自写)、04-ai-exception(自写)、05-rag-quality(自写)
+composition-patterns、css-animations、css-layout、css-responsive、design-md-collection、html-a11y、html-forms、javascript-data、javascript-debug、javascript-dom、javascript-performance、javascript-testing、show-me、threejs-animation、threejs-atmosphere-aerial-perspective、threejs-bloom、threejs-camera-direction、threejs-exposure-color-grading、threejs-geometry、threejs-image-pipeline、threejs-impl-lighting、threejs-impl-post-processing、threejs-impl-shadows、threejs-interaction、threejs-lighting、threejs-loaders、threejs-materials、threejs-parallax-occlusion-mapping、threejs-postprocessing、threejs-precipitation-surfaces、threejs-procedural-animation、threejs-procedural-fields、threejs-procedural-geometry、threejs-procedural-materials、threejs-procedural-vegetation、threejs-procedural-vfx、threejs-screen-space-ambient-occlusion、threejs-shaders、threejs-shadow-systems、threejs-syntax-loaders、threejs-temporal-surfaces、threejs-textures、threejs-visual-validation、threejs-volumetric-clouds、typescript-config、typescript-debug、typescript-testing、typescript-types、typescript-vue、ui-styling、vue-architecture、vue-axios、vue-composables、vue-debug、vue-pinia、vue-router、vue-testing、vueuse、01-crud-scaffold(自写)、02-pagination-query(自写)、03-caffeine-cache(自写)、04-spring-event-async(自写)、05-transaction-consistency(自写)、06-exception-handling(自写)、07-business-validation(自写)、08-excel-import-export(自写)、11-file-upload(自写)、12-growth-notification(自写)、13-stats-report(自写)、14-ai-agent(自写)、15-rag-pipeline(自写)、16-ai-fallback(自写)、17-offline-sync(自写)、19-design-taste(自写)、caveman-review(自写)、pr-body(自写)、unit-test-write(自写)、01-slow-sql(自写)、02-oom(自写)、03-cpu(自写)、04-ai-exception(自写)
 
 ## 引用异常
 

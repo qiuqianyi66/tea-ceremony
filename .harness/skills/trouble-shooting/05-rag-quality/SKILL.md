@@ -17,6 +17,11 @@ description: RAG 质量排查——检索命中率低/答案无来源/文化事�
 ## 红线
 - 不编造文化事实（文化纪律）；答案必须引用来源。
 
+## 确定性入口
+
+- RAG case 语料覆盖核对：`node scripts/audit-eval-rag.cjs`（KB 依赖 case 是否都有语料覆盖，exit 1 即有缺口）
+- 出报告：`node scripts/audit-eval-rag.cjs --report <path>`
+
 ## 自检
 - [ ] 检索命中率提升（可对比）
 - [ ] 答案带来源
