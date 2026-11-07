@@ -105,3 +105,4 @@ L<file:line>: <严重度> <问题>. <根因>. <修复>.
 - gitleaks 指纹忽略集：`node scripts/audit-gitleaks-fingerprints.cjs`
 - 探针选择器：`node scripts/audit-probe-selectors.cjs`
 - 切片技能调用统计：`node scripts/audit-skill-usage.cjs`
+- 技能路由可区分性：`node scripts/audit-skill-routing.cjs`（活跃层独有词比例 / 超长 / 非中文主导 / 共用开头）

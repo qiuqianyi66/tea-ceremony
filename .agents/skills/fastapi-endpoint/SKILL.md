@@ -1,6 +1,6 @@
 ---
 name: fastapi-endpoint
-description: 为一盏茶项目生成符合规范的 FastAPI 接口。当用户要求新增 API、修改后端路由、或添加后端功能时触发。
+description: FastAPI 接口与路由——Controller→Service→Repository 单向分层、ApiResponse 统一错误、JWT 鉴权、事务边界。当要新增或修改后端接口、路由或鉴权时用。
 type: executable
 last-reviewed: 2026-10-29
 verification: cd backend && python -m py_compile main.py
