@@ -91,7 +91,55 @@ AGENTS.md 铁律「README 不列 = 技能不存在」，但没人验过反向：
 | F11 真实任务改动波及承重墙 | 只选低风险、可逆、单文件改动；不动 `src/services/teaAI.ts` 降级逻辑与 3D 状态机 |
 | 元数据预算 | 本阶段不改 description，活跃层维持 930 token |
 
-## 七、等批准
+## 七、批 H 判定表（2026-11-07 已执行）
 
-1. **F11 的真实任务选哪条**：推荐「给 trouble-shooting 某技能补踩坑段」——低风险、单文件、结果可验证，还能同时验证技能链路。
-2. **F10 先只报还是直接阻断**：推荐先只报，抽检精确率达标（≥70%）再谈阻断。
+### 先修了一处口径缺陷
+
+`CMD_STEP` 把「运行 / 执行 / 跑」这类中文动词算作命令步骤，导致「半可执行」虚高——正文写「跑测试」不等于有可执行入口。改为只认真实工具（`node` / `npm` / `npx` / `git` / `python` / `mvn` / `vitest` / `pytest` / `curl` / `docker`）后，`10-scheduled-task` 落回纯文档（`@Scheduled` 是注解不是命令）。
+
+### F12 半可执行逐个判定
+
+判据三条：① 命令跨环境一致；② 不需要人判断；③ 不重复现成一键入口。
+
+| 技能 | 命令 | 判据命中 | 结论 |
+|---|---|---|---|
+| unit-test-ci | 8 步：quality / pytest / mvn / compose | ③ 已有 `npm run quality`、`npm run verify` 一键入口 | **不重复**：正文「确定性入口」已指向现成命令，不再造壳 |
+| 04-performance | build / preview / Lighthouse / EXPLAIN | ② Lighthouse 与 EXPLAIN 需人看结果 | **不沉淀**，入口已在正文 |
+| 03-debug-issue | git bisect / fixture / fuzz | ② 需人判断 | 不沉淀 |
+| 00-bug-diagnose | 2 步取证 | ② 流程主导 | 不沉淀 |
+| 02-code-review | git diff + 交叉模型 | ② 需人判断 | 不沉淀 |
+| expert-reviewer | git diff + npm audit | ② 评审靠判断 | 不沉淀（`npm audit` 已在 CI） |
+| request-analysis | git log 取证 | ② 需人判断 | 不沉淀 |
+| 10-scheduled-task | `@Scheduled` 注解 | ① 是注解不是命令 | 已落回纯文档 |
+| javascript-node / shadcn | 上游包 6 / 19 步 | 上游包 | 不改 |
+
+### F13 自写纯文档二分类
+
+| 类别 | 技能 | 结论 |
+|---|---|---|
+| **本可机械检查，已补入口** | 04-ai-exception → `eval-tea-ai.cjs`；17-offline-sync → `pwa-offline-smoke.cjs`；19-design-taste → `scan-emoji` / `audit-hex` / `audit-type`；unit-test-write → `npm run test` / `node --test` | 纯文档 → 可执行或半可执行 |
+| **流程型 / 格式型，N/A 合理** | caveman-review（格式变体）、pr-body（模板）、biz-dev 01–16 共 16 个（业务模式参考，无对应脚本） | 标 N/A，不硬接 |
+| **无可对应脚本** | 01-slow-sql、02-oom、03-cpu（库内无对应脚本，接入即编造） | 标 N/A |
+
+### 结果（实测）
+
+口径本次变了（`CMD_STEP` 去掉中文动词），跨口径不可直接比数字，故分列：
+
+| 项 | 批 G 后·旧口径 | 批 H 后·新口径 |
+|---|---|---|
+| 可执行 | 18 | **21** |
+| 半可执行 | 11 | 12 |
+| 纯文档 | 80 | **76** |
+
+不受口径影响的：
+
+| 项 | 批 G 前 | 批 H 后 |
+|---|---|---|
+| 跨技能死链 | 1 | 0 |
+| 调用留痕 | 0 | 1 |
+
+### 已批准并执行的两个决定
+
+1. F11 的真实任务：已选 `05-rag-quality`（比「补踩坑段」更实——补踩坑容易变成编造，接脚本能真跑）。
+2. F10：只报不阻断。三重约束下剩 1 条真死链，精确率达标；不做阻断，避免正文换写法就误红。
+

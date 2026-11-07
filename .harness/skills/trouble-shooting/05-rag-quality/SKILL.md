@@ -20,6 +20,7 @@ description: RAG 质量排查——检索命中率低/答案无来源/文化事�
 ## 确定性入口
 
 - RAG case 语料覆盖核对：`node scripts/audit-eval-rag.cjs`（KB 依赖 case 是否都有语料覆盖，exit 1 即有缺口）
+- 命中率诊断：`node scripts/diagnose-rag.cjs`（把「猜根因」变成两步实测）
 - 出报告：`node scripts/audit-eval-rag.cjs --report <path>`
 
 ## 自检

@@ -18,6 +18,10 @@ description: 离线优先同步——IndexedDB 与后端对账、client_id 幂�
 ## 红线
 - 幂等写接口（#5）；同步字段改动考虑流转（AGENTS.md §3）。
 
+## 确定性入口
+
+- 离线闭环冒烟：`node scripts/pwa-offline-smoke.cjs`（先 `npm run build && npm run preview`，脚本连 4173 端口）
+
 ## 自检
 - [ ] client_id 幂等就位
 - [ ] sync_status 流转完整

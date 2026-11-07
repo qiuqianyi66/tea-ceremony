@@ -19,6 +19,11 @@ description: 单元测试编写——TDD 垂直切片，用例顺序正常→边
 5. **重构纪律**：**Never refactor while RED**——必须先全绿（GREEN）再动重构；每次重构后跑测试。
 6. **收尾**：覆盖率 ≥80%（核心逻辑 100%）→ 测试全绿。
 
+## 确定性入口
+
+- 前端单测：`npm run test`（vitest run）
+- 脚本单测：`node --test scripts/tests/*.node-test.cjs`
+
 ## 自检
 - [ ] 测试范围已和用户确认（不是每个 edge case 都测）
 - [ ] TDD 垂直切片（先红后绿，未在 RED 状态重构）
