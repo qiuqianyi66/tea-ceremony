@@ -1,3 +1,4 @@
+// @oneshot 一次性诊断已收口：保留作历史复现，不作为技能入口
 // 生成 T09 人工复核标注清单（临时工具）：从 T08 报告抽 judge 考点 → markdown 清单（含 AI 回答片段，便于快速标注）
 const fs = require('node:fs')
 const path = require('node:path')

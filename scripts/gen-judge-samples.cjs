@@ -1,3 +1,4 @@
+// @oneshot 一次性诊断已收口：保留作历史复现，不作为技能入口
 // 生成 T09 校准样本（临时工具）：从 T08 报告（2026-10-12.json）抽 judge 考点判分 → samples.json
 // machine 判分自动填入；human 字段留 null，待人工独立复核后跑 calibrate-judge.cjs
 const fs = require('node:fs')

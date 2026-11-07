@@ -77,6 +77,12 @@ Keep the tone conversational: plain verbs, sentence case, no filler, with tone m
 - 触控目标 ≥44px：`node scripts/audit-touch.cjs`
 - 排版度量：`node scripts/audit-type.cjs`
 - 五态覆盖：`node scripts/audit-states.cjs`
+- 素材压缩（图最长边 800px / ≤80KB）：`node scripts/compress-assets.cjs`
+- hero 响应式变体（WebP + JPEG）：`node scripts/gen-hero-responsive.cjs`
+- 首页/成长看板截图：`node scripts/screenshot-home.cjs`、`node scripts/screenshot-growth.cjs`
+- 首页 + 高分品鉴卡分享图：`node scripts/screenshots-home-share.cjs`
+- 硬编码 hex 统计（调色板外取值）：`node scripts/audit-hex.cjs`
+- china-map 坐标瘦身（3 位小数）：`node scripts/slim-china-map.cjs`
 
 ## 踩坑（真实教训）
 

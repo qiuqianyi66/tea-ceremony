@@ -1,3 +1,4 @@
+// @oneshot 一次性诊断已收口：保留作历史复现，不作为技能入口
 /** diag-glare2.cjs — 环境强度 0 / 换 sky env 对比 */
 const { chromium } = require('playwright')
 
