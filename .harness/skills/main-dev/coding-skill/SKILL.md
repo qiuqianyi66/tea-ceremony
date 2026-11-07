@@ -30,7 +30,7 @@ description: 编码实现：按分层流程写代码（后端 Entity/Repository/
 | `.harness/wiki/data-model.md` | 涉及 Entity/DDL 时 |
 | `.harness/wiki/api-contract.md` | 涉及 API 设计时 |
 
-**编码模式优先参照 `biz-dev-skill`**：CRUD 脚手架 (01)、分页 (02)、缓存 (03)、异步 (04)、事务 (05)、异常 (06)、校验 (07) 等，本技能只定义流程与检查点，不重复展开模式细节。
+**编码模式优先参照 biz-dev 族路由表（`.harness/skills/biz-dev/README.md`）**：CRUD 脚手架 (01)、分页 (02)、缓存 (03)、异步 (04)、事务 (05)、异常 (06)、校验 (07) 等，本技能只定义流程与检查点，不重复展开模式细节。
 
 ## 代码结构参照（禁发明路径）
 

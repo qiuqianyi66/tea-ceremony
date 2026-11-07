@@ -422,6 +422,32 @@ for (const s of collectSkillFrontmatters()) {
   }
 }
 
+// 4n. 技能必须在所属路由表登记（AGENTS.md 铁律：README 不列 = 技能不存在）
+//    与 4j 互补：4j 管「入口目录合法」，4n 管「有没有被路由表登记」。
+//    新增技能忘写 README，模型按路由表找技能时就永远找不到它。
+{
+  const readmeCache = new Map();
+  const textOf = (rel) => {
+    if (!readmeCache.has(rel)) {
+      let t = '';
+      try { t = fs.readFileSync(path.join(ROOT, rel), 'utf8'); } catch { t = ''; }
+      readmeCache.set(rel, t);
+    }
+    return readmeCache.get(rel);
+  };
+  for (const s of collectSkillFrontmatters()) {
+    const parts = s.rel.split('/');
+    let readme;
+    if (/^\.agents\/skills\//.test(s.rel)) readme = '.agents/skills/README.md';
+    else if (/^\.harness\/skills\//.test(s.rel)) readme = `.harness/skills/${parts[2]}/README.md`;
+    else continue;
+    const name = parts[parts.length - 2];
+    if (!textOf(readme).includes(name)) {
+      errors.push(`${s.rel} 未在路由表登记：${readme} 里找不到「${name}」。\n✅ FIX: 在该 README 增加技能名与触发场景。\n📖 See: .harness/rules/技能规范.md §5（增删改流程）`);
+    }
+  }
+}
+
 // 5. 关键路径引用存在性（AGENTS.md 中 docs/ .harness/ .agents/ scripts/ src/ backend/ 开头的反引号路径）
 const seen = new Set();
 const pathRefs = agents.match(/`((?:docs|\.harness|\.agents|scripts|src|backend)\/[^`]+)`/g) || [];

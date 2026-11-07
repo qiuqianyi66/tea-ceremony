@@ -69,6 +69,29 @@ function descOf(rel) {
   return m ? m[1].trim() : '';
 }
 
+// F10 跨技能裸引用（只报不阻断）：正文里反引号包裹的 kebab-case 若不在技能库，
+// 且该行含「技能 / skill / 路由 / →」线索，就是指向了不存在的技能。
+// §4m 只查路径与命令锚点，查不到这类。
+const SKILL_REF = /`([a-z][a-z0-9]*(?:-[a-z0-9]+)+)`/g;
+const SKILL_CTX = /技能|skill|路由|→/;
+// 同形但确定不是技能名的：npm 包、CSS 类、ARIA / Vue 指令
+const NOT_SKILL = /^(lucide-|date-fns|vue-|@vue|react|axios|pinia|idb-|jwt-|focus-trap|change-case|async-validator|rollup-|tailwind|aria-|data-|v-|bg-|text-|size-|z-)/;
+function skillRefMisses(rel, names) {
+  const body = bodyOf(rel);
+  const out = [];
+  for (const ln of body.split('\n')) {
+    if (!SKILL_CTX.test(ln)) continue;
+    for (const m of ln.matchAll(SKILL_REF)) {
+      const t = m[1];
+      if (names.has(t) || NOT_SKILL.test(t)) continue;
+      // biz-dev 等族内互引用常剥掉 NN- 前缀
+      if ([...names].some((n) => n.endsWith('-' + t))) continue;
+      out.push(t);
+    }
+  }
+  return [...new Set(out)];
+}
+
 // 引用到的脚本文件名（不含 lib/ 与 node_modules）
 const SCRIPT_REF = /scripts\/([\w.-]+\.(?:cjs|mjs|js))/g;
 const CMD_STEP = /^\s*(?:\d+\.|[-*])\s+.*(?:\bnode\b|\bnpm\b|\bnpx\b|\bgit\b|\bpython\b|\bmvn\b|运行|执行|跑|command)/gm;
@@ -146,6 +169,11 @@ const trueOrphans = orphans.filter(o => !gateCited.has(o) && !isOneshot(o));
 const byTier = { '可执行': [], '半可执行': [], '纯文档': [] };
 for (const s of skills) byTier[s.tier].push(s);
 
+// F10：跨技能裸引用死链（只报不阻断）
+const nameSet = new Set(skills.map((s) => s.name));
+for (const s of skills) s.refMiss = skillRefMisses(s.rel, nameSet);
+const refMisses = skills.filter((s) => s.refMiss.length > 0);
+
 const lines = [];
 lines.push('# 技能可执行化审计（自动生成，勿手改）');
 lines.push('');
@@ -162,12 +190,24 @@ lines.push(`| 纯文档 | ${byTier['纯文档'].length} | 全靠模型现场推�
 lines.push('');
 lines.push(`孤儿脚本（零技能引用）：**${orphans.length} / ${scripts.length}**——${gateOnly.length} 个在 CI/门禁或脚本间被调用（缺口在技能正文没点名），${oneshotOnly.length} 个 @oneshot 一次性诊断（使命已完结），${trueOrphans.length} 个谁都不引用（该判「接给谁 / 删」）`);
 lines.push('');
+lines.push('## 跨技能引用（只报不阻断）');
+lines.push('');
+if (refMisses.length === 0) {
+  lines.push('无：正文里反引号包裹的技能名都能在库中找到。');
+} else {
+  lines.push(`| 技能 | 指向不存在的技能名 |`);
+  lines.push('|---|---|');
+  for (const s of refMisses) lines.push(`| ${s.name} | ${s.refMiss.join('、')} |`);
+  lines.push('');
+  lines.push('判定：反引号 + kebab-case + 该行含「技能 / skill / 路由 / →」。§4m 只查路径与命令锚点，这类裸技能名不在其范围。');
+}
+lines.push('');
+lines.push('## 元数据触发词（只报不阻断）');
+lines.push('');
 const selfSkills = skills.filter((s) => s.self);
 const importSkills = skills.filter((s) => !s.self);
 const selfMiss = selfSkills.filter((s) => !s.trigger);
 const importMiss = importSkills.filter((s) => !s.trigger);
-lines.push('## 元数据触发词（只报不阻断）');
-lines.push('');
 lines.push('| 层 | 有「当…时用 / Use when」 | 缺 |');
 lines.push('|---|---|---|');
 lines.push(`| 自写层（.harness） | ${selfSkills.length - selfMiss.length} / ${selfSkills.length} | ${selfMiss.length} |`);
