@@ -19,6 +19,7 @@
     "verify": "npm run verify:static && npm run verify:redlines && npm run verify:harness && npm run audit:context && npm run audit:skill-usage && npm run verify:probes && npm run verify:eval-rag && npm run verify:gitleaks-ignore",
     "audit:skill-usage": "node scripts/audit-skill-usage.cjs",
     "audit:skill-tooling": "node scripts/audit-skill-tooling.cjs",
+    "audit:skill-layering": "node scripts/audit-skill-layering.cjs",
     "verify:static": "node scripts/scan-emoji.cjs",
     "verify:redlines": "node scripts/audit-redlines.cjs",
     "verify:harness": "node scripts/verify-harness.cjs",
