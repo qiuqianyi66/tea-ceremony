@@ -306,6 +306,12 @@ jobs:
         run: node scripts/verify-harness.cjs
       - name: Six-level word list consistency（六境跨语言一致）
         run: node scripts/audit-levels-consistency.cjs
+      # 技能治理可见性：只报不阻断（exit 恒 0），目的是让活跃层元数据膨胀/描述同质化在 PR 阶段就被看见，
+      # 不靠人记得本地跑。判据口径见 docs/reference/skill-layering.md
+      - name: Skill layering & routing visibility（只报不阻断）
+        run: |
+          node scripts/audit-skill-layering.cjs
+          node scripts/audit-skill-routing.cjs
       # red-line-auditor / consistency-verifier 的豆包机械化替代（红线 15 条可判定子集 + wiki 契约双向核对）
       - name: Run red-line audit
         run: node scripts/audit-redlines.cjs
