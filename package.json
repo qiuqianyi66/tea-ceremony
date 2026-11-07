@@ -20,6 +20,7 @@
     "audit:skill-usage": "node scripts/audit-skill-usage.cjs",
     "audit:skill-tooling": "node scripts/audit-skill-tooling.cjs",
     "audit:skill-layering": "node scripts/audit-skill-layering.cjs",
+    "audit:skill-routing": "node scripts/audit-skill-routing.cjs",
     "verify:static": "node scripts/scan-emoji.cjs",
     "verify:redlines": "node scripts/audit-redlines.cjs",
     "verify:harness": "node scripts/verify-harness.cjs",

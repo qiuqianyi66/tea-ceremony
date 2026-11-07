@@ -1,6 +1,6 @@
 ---
 name: vue-component
-description: 为一盏茶项目生成符合规范的 Vue 3 组件。当用户要求新建页面、组件、或修改 Vue 组件时触发。
+description: Vue 3 组件与页面——SFC 结构、Types/API/Store/Composable/Component 分层、五态覆盖、触控 ≥44px、离线 sync_status。当要新建或修改 Vue 组件、页面、composable 时用。
 type: executable
 last-reviewed: 2026-10-29
 verification: npm run type-check
