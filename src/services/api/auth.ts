@@ -2,6 +2,7 @@
 
 import { requestOrMock } from '../http'
 import type { ApiResponse } from './types'
+import { offlineOk } from './types'
 
 /** 新后端 TokenVo（ApiResponse.data；user.displayName 为 camelCase——后端无全局 snake_case 策略） */
 interface TokenVo {
@@ -41,15 +42,11 @@ export const authApi = {
         method: 'POST',
         body: JSON.stringify({ username, password, displayName }),
       },
-      {
-        code: 'OK',
-        message: 'ok',
-        data: {
-          token: 'dev-token',
-          expiresInSeconds: 86400,
-          user: { id: 1, username, displayName: displayName || username, level: 1, xp: 0 },
-        },
-      },
+      offlineOk<TokenVo>({
+        token: 'dev-token',
+        expiresInSeconds: 86400,
+        user: { id: 1, username, displayName: displayName || username, level: 1, xp: 0 },
+      }),
     )
     return toStoreShape(res.data)
   },
@@ -61,15 +58,11 @@ export const authApi = {
         method: 'POST',
         body: JSON.stringify({ username, password }),
       },
-      {
-        code: 'OK',
-        message: 'ok',
-        data: {
-          token: 'dev-token',
-          expiresInSeconds: 86400,
-          user: { id: 1, username, displayName: username, level: 1, xp: 0 },
-        },
-      },
+      offlineOk<TokenVo>({
+        token: 'dev-token',
+        expiresInSeconds: 86400,
+        user: { id: 1, username, displayName: username, level: 1, xp: 0 },
+      }),
     )
     return toStoreShape(res.data)
   },
