@@ -139,21 +139,27 @@ function main() {
   console.log('')
 
   console.log('## 二、结构')
+  const imported = (n) => (skills.get(n)?.rel || '').startsWith('.agents/skills/')
+  const tag = (n) => (imported(n) ? '　（导入层·上游同步会覆盖，不改）' : '')
   const long = active.filter((n) => skills.get(n).desc.length > 200)
   const en = active.filter((n) => zhRatio(skills.get(n).desc) < 0.3)
   const noZh = active.filter((n) => !/当[^。]{0,60}(?:时用|时)|触发[:：]/.test(skills.get(n).desc))
   if (long.length) {
     console.log(`- 超 200 字符（挤预算）：`)
-    for (const n of long) console.log(`    ${skills.get(n).desc.length}字  ${n}`)
+    for (const n of long) console.log(`    ${skills.get(n).desc.length}字  ${n}${tag(n)}`)
   } else console.log('- 超 200 字符：无')
   if (en.length) {
     console.log(`- 非中文主导（中文用户输入时靠跨语种匹配，风险更高）：`)
-    for (const n of en) console.log(`    中文占比 ${(zhRatio(skills.get(n).desc) * 100).toFixed(0)}%  ${n}`)
+    for (const n of en) console.log(`    中文占比 ${(zhRatio(skills.get(n).desc) * 100).toFixed(0)}%  ${n}${tag(n)}`)
   } else console.log('- 非中文主导：无')
   if (noZh.length) {
     console.log(`- 无中文触发句（「当…时用」/「触发：」）：`)
-    for (const n of noZh) console.log(`    ${n}`)
+    for (const n of noZh) console.log(`    ${n}${tag(n)}`)
   } else console.log('- 无中文触发句：无')
+  const importedHits = [...new Set([...long, ...en, ...noZh])].filter(imported)
+  if (importedHits.length) {
+    console.log(`  （其中 ${importedHits.length} 个来自 .agents/skills 上游包：改了下次同步即被覆盖 —— 只记录不修）`)
+  }
   console.log('')
 
   console.log('## 三、共用开头模板（同头 = 区分只能靠后半段）')
