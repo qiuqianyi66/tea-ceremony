@@ -100,6 +100,7 @@ L<file:line>: <严重度> <问题>. <根因>. <修复>.
 - 常驻层压缩「零丢失」核对（迁移台账）：`node scripts/audit-context-migration.cjs`
 - 技能可执行化审计：`node scripts/audit-skill-tooling.cjs`（`--write` 刷新 `docs/reference/skill-tooling-audit.md`）
 - 生成物新鲜度（已入 verify + CI）：`node scripts/audit-skill-tooling.cjs --check`（只比正文，忽略 last_updated）
+- 技能真实读取台账（只报不阻断、不进 CI）：`node scripts/audit-skill-usage-from-trajectory.cjs`（扫客户端会话轨迹里的 Read 调用；目录不存在时报「未测」，不报 0）
 - 常驻上下文预算：`node scripts/audit-context-budget.cjs`
 - 规则/技能分层一致性：`node scripts/audit-levels-consistency.cjs`
 - RAG 评测语料覆盖：`node scripts/audit-eval-rag.cjs`
