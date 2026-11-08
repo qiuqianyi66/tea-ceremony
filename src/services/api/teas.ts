@@ -3,6 +3,7 @@
 import { type Tea, TeaType } from '@/types/tea'
 import { requestOrMock } from '../http'
 import type { ApiResponse } from './types'
+import { offlineOk } from './types'
 
 /** 新后端 TeaVo（snake_case 字段名，V2 种子全字段） */
 interface TeaVo {
@@ -73,7 +74,7 @@ export const teasApi = {
     const result = await requestOrMock<ApiResponse<TeaPage>>(
       `/v1/teas?${params.toString()}`,
       undefined,
-      { code: 'OK', message: 'ok', data: { items: [], total: 0, page: 1, size: 20 } },
+      offlineOk<TeaPage>({ items: [], total: 0, page: 1, size: 20 }),
     )
     return result.data.items.map(toLocalTea)
   },

@@ -5,6 +5,7 @@
 
 import { requestOrMock } from '../http'
 import type { ApiResponse } from './types'
+import { offlineOk } from './types'
 
 export interface GardenPlantCreateDto {
   /** 幂等键（V1 表 NOT NULL，uk_garden_plants_user_client） */
@@ -49,7 +50,7 @@ export const gardenApi = {
     const result = await requestOrMock<ApiResponse<GardenPlantVo[]>>(
       '/v1/garden-plants',
       undefined,
-      { code: 'OK', message: 'ok', data: [] },
+      offlineOk<GardenPlantVo[]>([]),
     )
     return result.data
   },
@@ -69,7 +70,7 @@ export const energyApi = {
     const result = await requestOrMock<ApiResponse<GardenEnergySummaryVo>>(
       '/v1/garden-energy',
       undefined,
-      { code: 'OK', message: 'ok', data: EMPTY_SUMMARY },
+      offlineOk<GardenEnergySummaryVo>(EMPTY_SUMMARY),
     )
     return result.data
   },
