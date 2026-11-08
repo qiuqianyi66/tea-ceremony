@@ -55,8 +55,7 @@ describe('tracking 容量上限（防本地无限膨胀）', () => {
     expect(olds).toBe(0)
     const news = await db.trackingEvents.where('event').equals('ai_ask').count()
     expect(news).toBeLessThanOrEqual(MAX_EVENTS)
-  }, // 2100 次串行 IndexedDB 写：负载高时会超过默认超时，显式给足并让抖动不影响结果
-  30_000)
+  }, 30_000) // 2100 次串行 IndexedDB 写：负载高时会超过默认超时，显式给足并让抖动不影响结果
 })
 
 describe('tracking 输入白名单（隐私安全）', () => {
