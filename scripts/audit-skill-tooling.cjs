@@ -10,9 +10,10 @@
  *   2. 被引用的脚本是否真实存在，且 node --check 能解析（不执行，无副作用）
  *   3. 仓库 scripts/ 里有几个脚本从未被任何技能引用（孤儿脚本）
  *
- * 用法：node scripts/audit-skill-tooling.cjs [--write]
- *   --write 写 docs/skills/TOOLING.md
- * 退出码：0（审计脚本不阻断门禁；门禁在 verify-harness §4m / §4n）
+ * 用法：node scripts/audit-skill-tooling.cjs [--write | --check]
+ *   --write 写 docs/reference/skill-tooling-audit.md
+ *   --check 只比正文（忽略 last_updated），过期即 exit 1；不打印整份报告
+ * 退出码：0（不带参数时审计脚本不阻断门禁；门禁在 verify-harness §4m / §4n，--check 有漂移时 exit 1）
  */
 const fs = require('fs');
 const path = require('path');
