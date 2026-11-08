@@ -118,7 +118,7 @@ function main() {
   for (const [, set] of tok) for (const t of set) df.set(t, (df.get(t) || 0) + 1)
 
   console.log('## 一、唯一性（独有词被其他技能描述复现的比例）')
-  console.log('比例越高 = 这条描述里"只属于我"的信息越少 = 越难被精确选中')
+  console.log('比例越高 = 描述里"只属于我"的词越多 = 越容易被精确选中；低于 50% 算不清（skill-authoring 判据）')
   const rows = []
   for (const n of active) {
     const set = tok.get(n)
@@ -133,6 +133,9 @@ function main() {
   }
   const worst = rows[0]
   console.log(`  → 最低是 ${worst?.n ?? 'N/A'}（${(worst?.ratio * 100).toFixed(1)}%）`)
+  const low = rows.filter((r) => r.ratio < 0.5).map((r) => `${r.n} ${(r.ratio * 100).toFixed(1)}%`)
+  console.log(`  低于判据 50% 的 ${low.length} 个${low.length ? `：${low.join('、')}` : ''}`)
+  console.log('  （只提示不阻断：低独有词 = 描述可再收紧，不等于该改；也受词元切分口径影响）')
   console.log('')
 
   console.log('## 二、结构')

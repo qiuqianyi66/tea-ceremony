@@ -103,7 +103,8 @@ if (counts.size) {
   console.log('\n调用次数：');
   for (const [n, c] of [...counts].sort((a, b) => b[1] - a[1])) console.log(`  ${n} ${c}`);
 }
-console.log(`\n零调用（仅按有记录切片计，历史无记录不计入）: ${zero.length} 个`);
+console.log(`\n未记录（≠ 未使用）：${zero.length} 个技能没在任何切片留痕里出现过`);
+console.log('  读法：留痕是人工填的，覆盖率不足时这是「没记录」而不是「零调用」；先看有记录切片数再下判断。');
 if (zero.length) console.log(`  ${zero.slice(0, 10).join('、')}${zero.length > 10 ? ' …' : ''}`);
 
 const errors = [
