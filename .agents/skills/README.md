@@ -38,11 +38,11 @@
 
 | 技能 | 说明 |
 |---|---|
-| [frontend-design](frontend-design/SKILL.md) | 独特视觉设计方向与审美决策指导 |
+| [frontend-design](frontend-design/SKILL.md) | 独特视觉设计方向与审美决策指导。当要为界面定视觉方向、选字体配色，或判断"这看起来像模板"时读 |
 | [ui-styling](ui-styling/SKILL.md) | shadcn/ui + Tailwind 界面实现规范 |
-| [shadcn](shadcn/SKILL.md) | shadcn 组件管理与项目配置 |
+| [shadcn](shadcn/SKILL.md) | shadcn 组件管理与项目配置。当要加/改 shadcn 组件、用 registry 预设或处理 components.json 时读 |
 | [composition-patterns](composition-patterns/SKILL.md) | 组件组合模式（compound/context/render props，来自 vercel 包） |
-| [design-md-collection](design-md-collection/SKILL.md) | 74 个真实品牌 DESIGN.md 设计系统参考库 |
+| [design-md-collection](design-md-collection/SKILL.md) | 74 个真实品牌 DESIGN.md 设计系统参考库。当要参考某品牌配色字体、做竞品 UI 对比，或说"像 Stripe 那样"时读 |
 
 ## Web 基础
 
