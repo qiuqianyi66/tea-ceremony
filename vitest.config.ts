@@ -19,5 +19,8 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.spec.ts'],
+    // 机器负载下 IndexedDB 类用例（写入 2000+ 条）会超过 vitest 默认 5s；
+    // 超时后用例被中断但后台写入仍在跑，会污染后续用例（实测表现为计数对不上），因此统一放宽。
+    testTimeout: 15_000,
   },
 })

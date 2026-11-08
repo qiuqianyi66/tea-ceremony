@@ -19,16 +19,50 @@ const FIELD_MAX = 40
 const CATEGORIES: TrackCategory[] = ['ai', 'tasting', 'nav', 'system']
 const RESULTS: TrackResult[] = ['success', 'degraded', 'failed']
 
+/** 白名单拒收计数（非法输入按设计静默丢弃，但必须可观测） */
+let rejectedCount = 0
+/** 存储失败丢弃计数（IndexedDB 异常被吞，埋点数据丢失必须可观测） */
+let droppedCount = 0
+/** 最近一次丢弃原因，供诊断；不落盘、不含用户输入 */
+let lastDropError: string | null = null
+
+/**
+ * 埋点健康度快照：用于断言「静默丢弃」是否真的发生。
+ * rejected 是设计行为（非法输入）；dropped 是异常行为（写入失败）。
+ */
+export function trackingHealth(): { rejected: number; dropped: number; lastError: string | null } {
+  return { rejected: rejectedCount, dropped: droppedCount, lastError: lastDropError }
+}
+
+/** 重置计数器（测试与隐私清理用） */
+export function resetTrackingHealth(): void {
+  rejectedCount = 0
+  droppedCount = 0
+  lastDropError = null
+}
+
 /**
  * 记录一条行为事件（fire-and-forget）。
- * 输入白名单校验：非法值静默丢弃；存储异常静默消化，绝不向上抛。
+ * 输入白名单校验：非法值静默丢弃并计 rejected；存储异常静默消化并计 dropped，绝不向上抛。
  */
 export async function track(input: TrackInput): Promise<void> {
   try {
-    if (!CATEGORIES.includes(input.category)) return
-    if (!input.event || input.event.length > FIELD_MAX) return
-    if (input.label && input.label.length > FIELD_MAX) return
-    if (input.result && !RESULTS.includes(input.result)) return
+    if (!CATEGORIES.includes(input.category)) {
+      rejectedCount += 1
+      return
+    }
+    if (!input.event || input.event.length > FIELD_MAX) {
+      rejectedCount += 1
+      return
+    }
+    if (input.label && input.label.length > FIELD_MAX) {
+      rejectedCount += 1
+      return
+    }
+    if (input.result && !RESULTS.includes(input.result)) {
+      rejectedCount += 1
+      return
+    }
 
     const { db, initDB } = await loadStorage()
     await initDB()
@@ -48,8 +82,10 @@ export async function track(input: TrackInput): Promise<void> {
     if (input.label) record.label = input.label
     if (input.result) record.result = input.result
     await db.trackingEvents.add(record)
-  } catch {
-    // 埋点失败不影响主流程（静默降级）
+  } catch (err) {
+    // 埋点失败不影响主流程（静默降级），但必须计数，否则数据丢失不可诊断
+    droppedCount += 1
+    lastDropError = err instanceof Error ? err.message : String(err)
   }
 }
 
