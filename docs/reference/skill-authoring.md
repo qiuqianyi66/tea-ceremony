@@ -160,6 +160,7 @@ disable-model-invocation: true        # 仅用户手动触发（如 plan-control
 node scripts/verify-harness.cjs        # 期望 ERRORS: []
 node scripts/audit-skill-tooling.cjs   # 期望 孤儿 0、跨技能死链 0
 node scripts/audit-skill-routing.cjs   # 独有词 ≥50%、预算 ≤2000
+npm run audit:skill-tooling:check      # 改过技能就必须重跑 --write，否则红（只比正文，忽略 last_updated）
 node --test scripts/tests/*.node-test.cjs
 npm run verify
 ```

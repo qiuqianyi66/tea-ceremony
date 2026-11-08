@@ -312,6 +312,10 @@ jobs:
         run: |
           node scripts/audit-skill-layering.cjs
           node scripts/audit-skill-routing.cjs
+      # 生成物新鲜度：docs/reference/skill-tooling-audit.md 必须与当前技能库一致，不一致即红。
+      # 只比正文：frontmatter 的 last_updated 每天都会变，比它会跨天假红。
+      - name: Skill audit report freshness
+        run: node scripts/audit-skill-tooling.cjs --check
       # red-line-auditor / consistency-verifier 的豆包机械化替代（红线 15 条可判定子集 + wiki 契约双向核对）
       - name: Run red-line audit
         run: node scripts/audit-redlines.cjs

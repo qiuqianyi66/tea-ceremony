@@ -99,6 +99,7 @@ L<file:line>: <严重度> <问题>. <根因>. <修复>.
 - 文档元信息：`node scripts/add-doc-meta.cjs`（缺 frontmatter 时）
 - 常驻层压缩「零丢失」核对（迁移台账）：`node scripts/audit-context-migration.cjs`
 - 技能可执行化审计：`node scripts/audit-skill-tooling.cjs`（`--write` 刷新 `docs/reference/skill-tooling-audit.md`）
+- 生成物新鲜度（已入 verify + CI）：`node scripts/audit-skill-tooling.cjs --check`（只比正文，忽略 last_updated）
 - 常驻上下文预算：`node scripts/audit-context-budget.cjs`
 - 规则/技能分层一致性：`node scripts/audit-levels-consistency.cjs`
 - RAG 评测语料覆盖：`node scripts/audit-eval-rag.cjs`
