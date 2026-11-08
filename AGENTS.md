@@ -65,6 +65,27 @@
 
 禁止：不读文件直接改代码；直接新增依赖；直接改变架构；跳过验证宣称完成；未拆解直接开工。
 
+**技能速查（命中就先读该 SKILL.md，不必再翻总表；总表只用于查未列入的技能）**：
+
+| 任务 | 先读 |
+|---|---|
+| Vue 页面 / 组件 | `vue-component` |
+| 后端接口（新栈 Spring Boot / 过渡期旧 FastAPI） | `coding-skill` → `fastapi-endpoint` |
+| 表结构、迁移脚本 | `db-migration`（旧 Alembic）/ `.harness/skills/biz-dev/09-db-migration`（Flyway） |
+| 评分、冲泡参数、新茶类 | `tea-tasting` |
+| 对外文案、传播文、README | `tea-voice` |
+| 视觉方向、配色、字体、组件风格 | `frontend-design` → `shadcn` / `design-md-collection` |
+| 3D 茶园、场景、材质 | `18-3d-scene` |
+| 新功能立项、需求变更、行为改动 | `request-analysis` → `plan-control` |
+| 测试红了、补测试 | `unit-test-ci` / `unit-test-write` |
+| 治理体检、审计脚本 | `quality-audit` |
+| 架构体检、模块过深 | `arch-deepen` |
+| 评测基线、切片评分 | `agent-eval` |
+| 收尾复盘、交接 | `retro` / `session-handoff` |
+| 用户点名挑刺、要狠话 | `caveman-review` |
+
+命中后仍要按 `.harness/rules/技能规范.md` 的 frontmatter 约定使用；表里没有的技能去 `.agents/skills/README.md` 与四族 README 查，**README 不列 = 技能不存在**。
+
 ### 4.1 任务轨道（分诊结果决定流程深度）
 
 > 分诊规则与十阶段流水线的完整对照见 `.harness/rules/开发流程规范.md` §一（含 L0-L3 路径分级与小改动判据）。此处只定入口：
@@ -176,10 +197,9 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量�
 
 ## 12. 文档索引
 
-- `.agents/skills/*/SKILL.md` — 匹配到的技能必须先 Read 再执行
-- `.agents/skills/README.md` — 技能路由总表（66 个，按族分组，任务启动先读）
+- `.agents/skills/README.md` — 通用+领域技能总表（66 个；常见任务直接看 §4 速查表）
 - `.harness/rules/技能规范.md` — 技能治理唯一权威（模板/触发式描述/路由表维护，§5 增删改流程）
-- `docs/skills/` — 核心技能人读审查页（plan-control / tea-tasting / db-migration / fastapi-endpoint / vue-component / caveman-review / quality-audit / arch-deepen / session-handoff / tea-voice / retro / pr-body / 00-bug-diagnose，面向人核对）
+- `docs/skills/` — 核心技能人读审查页（plan-control / tea-tasting / db-migration / fastapi-endpoint / vue-component / caveman-review / quality-audit / arch-deepen / session-handoff / tea-voice / retro / pr-body / 00-bug-diagnose）
 - `CONTEXT.md` — 术语 + ADR 索引 + 架构关键词（必读）
 - `docs/ADR/` — 架构决策记录（ADR-001~029；新决策写 ADR-0XX.md，禁止塞进 CONTEXT.md）
 - `docs/plans/` — 迭代计划层（PLAN-* / TODO-PRIORITY / 环境审查清单）
@@ -200,7 +220,7 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量�
 - `docs/token-optimization-guide.md` — 通用 token 优化方案（控制层 / 模板 / 度量 / 流行技巧审查）
 - `.harness/wiki/` — AI 编码上下文四件套（业务模型 / 接口协议 / 数据模型 / 领域术语），编码前按需读 ≤3 份
 - `.harness/changes/_template/` — 变更追踪模板（summary + db-migrations + rollback），与 git 分支同名
-- `.claude/agents/` — 三子代理（code-reviewer / consistency-verifier / red-line-auditor；Claude Code 专用。豆包环境等效：expert-reviewer / audit-wiki-drift.cjs + verify-harness.cjs / audit-redlines.cjs，见开发流程规范 §子代理）
+- `.claude/agents/` — 三子代理（Claude Code 专用；豆包等效见开发流程规范 §子代理）
 - `.harness/skills/` — 技能全套 43 个（main-dev 14 / biz-dev 19 / trouble-shooting 6），每族带 README 路由表，按需渐进式加载（request-analysis 规则 + Wiki ≤3、coding-skill ≤4）
 - `.github/workflows/ci.yml` — CI 合并门禁（含 compose-validate / harness 一致性）
 - `docs/agent-eval-baseline.md` — AI 协作评估基线（通用+专项维度、抽样会话评分流程、评估证据沉淀）
@@ -209,7 +229,7 @@ cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量�
 
 ## 13. 更新记录
 
-**维护规则**：保持短（超 500 行就是在跟自己打架，200-350 行最舒服）；只留救过命的规则（问 "删掉这行会让 AI 犯错吗？" 不会就删）；命令必须真实（从 package.json/scripts 抄）；写规则不写建议（给 "禁止 X" 不给 "建议用 X"）；AI 每次犯错写一行进 `docs/plans/lessons.md`（本文件只收晋升后的规则），已有规则覆盖就收紧，不重复。**经验三级进化（2026-10-07）**：踩坑先写 lesson（单次记录）→ 跨项目复现归纳 pattern → 验证后晋升 instinct 自动生效；每级晋升需人工确认，防错误经验扩散。**晋升门槛（2026-10-10 收紧）**：晋升须附 **≥3 条真实可查证据**（真实日志/commit/文件，日期真实存在），证据不足只标「候选·证据不足」，禁止写成规则；**改技能/规则名或路径前先 grep 记忆层+技能层+任务层+文档层四处引用并同步**，防断链。**静默失效警觉（2026-10-10）**：治理类问题（规则漂移/技能断链/文档过期/引用失效）**当场不报错，几周后才显形**——所以「本次没发现问题」≠「没问题」，须靠确定性脚本（verify-harness 等）定期体检而非凭印象；指标取不到时报「未测」，禁按 0 计（把「没测到」读成「正常」是本机制最致命的失败模式）。**写入五问（写新条目/规则前自问，防膨胀）**：①与已有条目同主题？→合并更新不新增；②新说法覆盖旧说法？→替换不并存；③操作细节/命令/路径？→进技能不进规则；④临时状态/进行中？→不写（用会话/任务清单）；⑤核心偏好/身份？→画像层，环境事实→记忆层。**防膨胀护栏**：压缩稿须 <95% 原文（否则是"压缩后变大"），备份先行保留 14 天，单次降幅 ≤40%，**达标即停**（降到目标即止，不做超额治理）。**修剪（执行路径）**：lesson 进 `docs/plans/lessons.md`（按需池，不常驻），跨场景复现的进 `docs/plans/patterns.md`（pattern 池，见开发流程规范 §八），晋升后的约束写回本文件；本文件只留规则与索引。**迁移 ≠ 压缩**：整段外置到按需文件（内容零改动）不算压降，只须备份 + 引用同步；降幅护栏针对「同文件内删除/改写」。
+**维护规则**：保持短（≤350 行）；只留救过命的规则（问「删掉这行会让 AI 犯错吗」，不会就删）；命令必须真实（从 package.json/scripts 抄）；写规则不写建议（给「禁止 X」不给「建议用 X」）；AI 每次犯错写一行进 `docs/plans/lessons.md`，已有规则覆盖就收紧不重复。**晋升门槛**：踩坑 → lesson（单次记录）→ 跨场景复现归纳 pattern → 验证后晋升规则，每级人工确认；晋升须附 ≥3 条真实可查证据（真实日志/commit/文件/日期真实存在），证据不足只标「候选·证据不足」；改技能/规则名或路径前 grep 记忆层+技能层+任务层+文档层四处引用并同步。**静默失效警觉**：治理问题（规则漂移/技能断链/文档过期/引用失效）当场不报错、几周后才显形——「本次没发现问题」≠「没问题」，靠确定性脚本定期体检而非凭印象；指标取不到报「未测」，禁按 0 计。**写入五问**：①同主题？→合并；②覆盖旧说法？→替换；③操作细节/命令/路径？→进技能不进规则；④临时状态？→不写；⑤偏好/身份/环境事实？→画像层或记忆层。**护栏**：压缩稿 <95% 原文、备份留 14 天、单次降幅 ≤40%、达标即停；整段外置（内容零改动）不算压降，只备份 + 同步引用。
 
 **学习记录（近况沉淀）**：lesson 池已外置 → `docs/plans/lessons.md`（研究精读 / 落地记录 / 历史决策原文，**按需加载，不常驻**）。**新增 lesson 写进该文件，不写回本文件**；写入前过「写入五问」，晋升按下方门槛。
 **仍具约束力的条目（常驻保留，勿迁走）**：
