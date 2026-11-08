@@ -88,7 +88,42 @@ owner: yanha
 
 ## 5. 执行记录
 
-（逐批追加：改了什么 / 验收输出 / 未覆盖风险）
+### B1 测试稳定性 + 埋点可观测（PR #244，已合）
+
+- 改动：`vitest.config.ts` 全局 `testTimeout: 15_000`；两个 2000 次串行 IndexedDB 写入用例显式 `30_000`；`tracking.ts` 增 `rejected`/`dropped`/`lastError` 计数与 `trackingHealth()` / `resetTrackingHealth()`；新增 `tracking.health.spec.ts` 三条路径（非法 category、超长 event、存储异常）。
+- 根因（比预想更深一层）：不仅是「断言阈值 10 s 高于默认超时 5 s」，更在于**超时中断后写入循环仍在后台跑**，污染同文件后续用例——这解释了历史两次不同红法（`expected 853 to be 1000`、白名单用例 `expected 1 to be +0`）。
+- 验收：`npm run test` 连跑 3 次全绿（384 tests / 45 files）；`npm run type-check` exit 0；CI 14/14 通过（Biome 首轮因格式化失败，已在同一分支补 `style(test)` commit）。
+- 未覆盖：CI 机器快，历史上恰好未踩中 5–10 s 区间；本次修复不等于证明所有机器都稳，仍需观察。
+
+### B2 离线兜底收敛（PR #245，已合）
+
+- 改动：`src/services/api/types.ts` 增 `offlineOk<T>()`；替换 `auth.ts:45,65`、`garden.ts:52,72`、`records.ts:114`、`teas.ts:76` 六处手写对象，返回结构逐字段不变。
+- 验收：`npm run type-check` exit 0；`vitest run src/services/api` 通过；rebase 到含 B1 的 main 后 CI 全绿。
+
+### B3 覆盖率采集（PR #246）
+
+- 改动：新增 devDependency `@vitest/coverage-v8`；`vitest.config.ts` 加 `coverage`（provider v8、`text-summary` + `lcov`、排除 `src/**/*.spec.ts` / `src/test/**` / `src/data/**` / `src/main.ts`）；`package.json` 加 `test:coverage`；**不设阈值**。
+- 基线（首次实测）：Statements **29.84%**（2272/7612）、Branches **33.24%**（1219/3667）、Functions **33.18%**（450/1356）、Lines **30.25%**（2064/6821）。
+- 读法：44 个 spec / 214 个源文件，行覆盖只有三成——说明「测试数量」与「关键路径覆盖」是两件事。两周后再决定门槛，且门槛应从实测分布推出，不从愿望推出。
+- 顺带观察到（**未改**）：单次覆盖率跑创建 45 次 jsdom 环境、环境类开销 155 s，占 59%；若后续要提速可评估 `pool`/`isolate` 配置，属独立议题。
+
+### B4 localStorage 收敛调查（结论：不做批量替换）
+
+实测生产代码 14 处直调（不含测试），分三类语义，**没有「语义相同」的批量收敛项**：
+
+| 位置 | 语义 | 与 `utils/storage` 的差异 |
+|---|---|---|
+| `stores/theme.ts:12,24` | 纯字符串标量（主题 id） | utils 只有 JSON API，无字符串 API |
+| `services/aiSession.ts:10,21,29` | 纯字符串 + `Number.isInteger` 校验 | 同上，且需数值合法性判断 |
+| `services/telemetry/identity.ts:39,41,72,88` | 纯字符串 + 内存降级 | utils 不保留进程内 fallback |
+| `services/authStorage.ts:15,27,35` | JSON + token 形状校验 | utils 的 fallback 语义不做形状校验 |
+| `services/storage/db.ts:161,176,190,202` | 一次性历史数据迁移读取 | 迁移专用，读完即弃 |
+
+结论：为形式统一新增字符串 API 属「为抽象而抽象」，且 `utils/storage` 的静默 false 返回与各处 `null`/内存降级语义不同，替换会改变失败行为。**保持现状**，只留此清单；若将来出现第三处同语义调用再重构。
+
+### B5 PWA 缓存分级（暂缓，待拍板）
+
+现配置靠 workbox 默认 2 MB 上限挡下 2K 贴图（4.57 MB / 137 条预缓存）。显式化上限不改变行为、风险低；改成 runtimeCaching 会牺牲离线首访完整性，需单独决策。
 
 ## 6. 未验证 / 本轮不宣称
 
