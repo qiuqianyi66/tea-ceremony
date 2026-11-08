@@ -50,7 +50,7 @@ owner: ai
 | arch-deepen | 自写 | gen-repomap.cjs | 2 |
 | coding-skill | 自写 | audit-redlines.cjs | 2 |
 | deploy-verify | 自写 | smoke.mjs、verify-production.cjs、pwa-offline-smoke.cjs、verify-alert-rules.cjs、verify-nginx-headers.cjs、verify-nginx-routes.cjs | 8 |
-| quality-audit | 自写 | audit-redlines.cjs、verify-harness.cjs、audit-wiki-drift.cjs、add-doc-meta.cjs、audit-context-migration.cjs、audit-skill-tooling.cjs、audit-context-budget.cjs、audit-levels-consistency.cjs、audit-eval-rag.cjs、audit-gitleaks-fingerprints.cjs、audit-probe-selectors.cjs、audit-skill-usage.cjs、audit-skill-routing.cjs | 24 |
+| quality-audit | 自写 | audit-redlines.cjs、verify-harness.cjs、audit-wiki-drift.cjs、add-doc-meta.cjs、audit-context-migration.cjs、audit-skill-tooling.cjs、audit-context-budget.cjs、audit-levels-consistency.cjs、audit-eval-rag.cjs、audit-gitleaks-fingerprints.cjs、audit-probe-selectors.cjs、audit-skill-usage.cjs、audit-skill-routing.cjs | 25 |
 | retro | 自写 | verify-harness.cjs、audit-redlines.cjs、audit-wiki-drift.cjs、measure-ai-commits.cjs | 7 |
 | session-handoff | 自写 | verify-harness.cjs | 7 |
 | tea-voice | 自写 | scan-emoji.cjs | 1 |

@@ -258,7 +258,25 @@ lines.push(trueOrphans.length ? trueOrphans.map(o => '`' + o + '`').join('、') 
 lines.push('');
 
 const out = lines.join('\n');
-console.log(out);
+// --check 只输出结论，避免 CI 日志被整份报告淹没
+if (!process.argv.includes('--check')) console.log(out);
+
+if (process.argv.includes('--check')) {
+  // 只比正文：frontmatter 的 last_updated 每天都会变，比它必然跨天假红
+  const rel = 'docs/reference/skill-tooling-audit.md';
+  const abs = path.join(ROOT, rel);
+  if (!fs.existsSync(abs)) {
+    console.error(`❌ ${rel} 不存在，先跑 --write`);
+    process.exit(1);
+  }
+  const diskBody = fs.readFileSync(abs, 'utf8').replace(/^---[\s\S]*?---\n+/, '').trimEnd();
+  if (diskBody !== out.trimEnd()) {
+    console.error(`❌ 生成物已过期：${rel} 与当前技能库不一致`);
+    console.error('✅ FIX: node scripts/audit-skill-tooling.cjs --write');
+    process.exit(1);
+  }
+  console.log(`\n✅ 生成物最新（${rel}）`);
+}
 
 if (process.argv.includes('--write')) {
   // 放 docs/reference/ 而非 docs/skills/：后者是「人读审查页」，新增一页必须同步 AGENTS.md §12 声明（常驻层无余量）
