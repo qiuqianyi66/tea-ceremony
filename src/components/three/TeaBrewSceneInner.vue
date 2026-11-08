@@ -543,13 +543,15 @@ onRender(({ delta, elapsed }) => {
        仅保留地面承接茶席光影。 -->
   <TresMesh :position="floorPos" :rotation="[-Math.PI / 2, 0, 0]" :receive-shadow="true">
     <TresPlaneGeometry :args="[12, 8]" />
-    <TresMeshStandardMaterial :color="'#241b13'" :roughness="0.95" :env-map-intensity="0.2" />
+    <!-- 地面抬 2 档明度：真实夜拍里桌下不是死黑，而是暖光衰减后的深棕 -->
+    <TresMeshStandardMaterial :color="'#2b211a'" :roughness="0.95" :env-map-intensity="0.2" />
   </TresMesh>
 
   <!-- 木桌 + 茶席布 + 桌腿 -->
   <TresMesh :position="tablePos" :cast-shadow="true" :receive-shadow="true">
     <TresBoxGeometry :args="[4.4, 0.16, 2.2]" />
-    <TresMeshStandardMaterial :color="'#4a3626'" :map="woodTex" :roughness="0.65" :metalness="0.02" :env-map-intensity="0.35" />
+    <!-- 木纹可见度：真实茶席的桌子在暖光下能看清木纹走向与反光；旧值 0.65/0.35 太平闷 -->
+    <TresMeshStandardMaterial :color="'#4a3626'" :map="woodTex" :roughness="0.55" :metalness="0.02" :env-map-intensity="0.5" />
   </TresMesh>
   <TresMesh :position="clothPos" :rotation="[-Math.PI / 2, 0, 0]" :receive-shadow="true">
     <TresPlaneGeometry :args="[3, 1.3]" />

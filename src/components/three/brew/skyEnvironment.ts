@@ -44,8 +44,9 @@ export function createRain(count = 300): RainSystem {
     rainPositions[i * 6] = x
     rainPositions[i * 6 + 1] = y
     rainPositions[i * 6 + 2] = z
-    rainPositions[i * 6 + 3] = x
-    rainPositions[i * 6 + 4] = y - 0.18
+    // 细雨而非雨帘：线段更短 + 尾端轻微横移（斜落），避免整屏等长竖线的游戏感
+    rainPositions[i * 6 + 3] = x + 0.03
+    rainPositions[i * 6 + 4] = y - 0.1
     rainPositions[i * 6 + 5] = z
     rainSpeeds[i] = 2 + Math.random() * 2
   }
@@ -53,7 +54,7 @@ export function createRain(count = 300): RainSystem {
   rainGeometry.setAttribute('position', new THREE.BufferAttribute(rainPositions, 3))
   const rainLines = new THREE.LineSegments(
     rainGeometry,
-    new THREE.LineBasicMaterial({ color: 0xb4c8d8, transparent: true, opacity: 0.32 }),
+    new THREE.LineBasicMaterial({ color: 0xb4c8d8, transparent: true, opacity: 0.24 }),
   )
   rainLines.visible = false
   return { rainLines, rainGeometry, rainPositions, rainSpeeds }

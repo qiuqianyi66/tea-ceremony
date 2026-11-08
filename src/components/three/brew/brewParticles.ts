@@ -71,13 +71,14 @@ export function createSteamParticles(
   const points = new THREE.Points(
     geometry,
     new THREE.PointsMaterial({
-      size: 0.22,
+      // 真实蒸汽是低对比的暖灰雾丝，不是发光体：additive 会把 60 个粒子叠成一颗"光球"，
+      // 改用普通混合 + 更低不透明度，靠重叠出雾。
+      size: 0.16,
       map: softCircleTex,
-      // 蒸汽压暗一档：暖灯下纯白 additive 会在盖碗上炸成死白斑，改暖灰降低过曝
-      color: '#e0d4c0',
+      color: '#d9cec0',
       transparent: true,
-      opacity: 0.12,
-      blending: THREE.AdditiveBlending,
+      opacity: 0.16,
+      blending: THREE.NormalBlending,
       depthWrite: false,
       sizeAttenuation: true,
     }),
