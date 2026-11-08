@@ -7,7 +7,7 @@ owner: ai
 # 技能可执行化审计（自动生成，勿手改）
 
 > 生成：node scripts/audit-skill-tooling.cjs --write
-> 技能 109 个（自写 43 / 导入 66）；脚本 59 个；解析失败 0 个
+> 技能 109 个（自写 43 / 导入 66）；脚本 60 个；解析失败 0 个
 
 ## 汇总
 
@@ -17,7 +17,7 @@ owner: ai
 | 半可执行（≥2 条命令行步骤） | 12 | 有命令但未沉淀成脚本 |
 | 纯文档 | 76 | 全靠模型现场推导 |
 
-孤儿脚本（零技能引用）：**0 / 59**——0 个在 CI/门禁或脚本间被调用（缺口在技能正文没点名），0 个 @oneshot 一次性诊断（使命已完结），0 个谁都不引用（该判「接给谁 / 删」）
+孤儿脚本（零技能引用）：**0 / 60**——0 个在 CI/门禁或脚本间被调用（缺口在技能正文没点名），0 个 @oneshot 一次性诊断（使命已完结），0 个谁都不引用（该判「接给谁 / 删」）
 
 ## 跨技能引用（只报不阻断）
 
@@ -50,7 +50,7 @@ owner: ai
 | arch-deepen | 自写 | gen-repomap.cjs | 2 |
 | coding-skill | 自写 | audit-redlines.cjs | 2 |
 | deploy-verify | 自写 | smoke.mjs、verify-production.cjs、pwa-offline-smoke.cjs、verify-alert-rules.cjs、verify-nginx-headers.cjs、verify-nginx-routes.cjs | 8 |
-| quality-audit | 自写 | audit-redlines.cjs、verify-harness.cjs、audit-wiki-drift.cjs、add-doc-meta.cjs、audit-context-migration.cjs、audit-skill-tooling.cjs、audit-context-budget.cjs、audit-levels-consistency.cjs、audit-eval-rag.cjs、audit-gitleaks-fingerprints.cjs、audit-probe-selectors.cjs、audit-skill-usage.cjs、audit-skill-routing.cjs | 25 |
+| quality-audit | 自写 | audit-redlines.cjs、verify-harness.cjs、audit-wiki-drift.cjs、add-doc-meta.cjs、audit-context-migration.cjs、audit-skill-tooling.cjs、audit-skill-usage-from-trajectory.cjs、audit-context-budget.cjs、audit-levels-consistency.cjs、audit-eval-rag.cjs、audit-gitleaks-fingerprints.cjs、audit-probe-selectors.cjs、audit-skill-usage.cjs、audit-skill-routing.cjs | 26 |
 | retro | 自写 | verify-harness.cjs、audit-redlines.cjs、audit-wiki-drift.cjs、measure-ai-commits.cjs | 7 |
 | session-handoff | 自写 | verify-harness.cjs | 7 |
 | tea-voice | 自写 | scan-emoji.cjs | 1 |
