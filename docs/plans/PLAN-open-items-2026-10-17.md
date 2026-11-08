@@ -105,7 +105,7 @@ last_updated: 2026-10-22
 | 评测 live 批 / 正式基线 | DashScope 2026-10-12 欠费（HTTP 400 `Arrearage`） | 阿里云百炼充值（¥50 量级够评测） | T08 pass³ 通义基线、T09 judge 校准补跑、v6 live 批、A3 缓存命中验证 |
 | ~~P1-9 HTTPS 443 + HSTS~~ → **已完成（2026-10-18，走 IP 证书路线）** | Let's Encrypt shortlived IP 证书已签发（6.7 天），cron 每 2 天续期；2026-10-22 外网探针实证：`https://42.121.125.4` 200 + HSTS 在线。详见 `PLAN-ip-cert-2026-10-18.md` §7 | — | 剩余运维项：续期停站约 30s/次（未改 webroot 零中断模式） |
 | SFT T13 训练 | 预算未定（训练单价需登录百炼控制台确认） | 用户给预算上限 | 241 条语料直接训练 LoRA（单专家 mentor） |
-| 三大体积目录 86 MB（`.agents/skills` 34 / `docs/screenshots` 29.2 / `public/3d` 22.8） | 存储形态决策 | 拍板 | 仓库瘦身 |
+| 三大体积目录（2026-11-08 实测 60.5 MB：`.agents/skills` 31.1 / `docs/screenshots` 6.6 / `public/3d` 22.8；原记 86 MB 已过期，screenshots 从 29.2 降至 6.6 已不成问题） | 存储形态决策（仅剩 skills 与 3d 两块） | 拍板 | 仓库瘦身 |
 
 ## 3. 待用户拍板（每条给推荐与代价）
 
