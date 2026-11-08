@@ -142,8 +142,26 @@ if (skillRules) {
   }
 }
 
+// 路由表 + 二级分册的统一读取：主表只留族指针时（如 Three.js 31 个搬去 threejs-INDEX.md），
+// 技能名落在分册里。§4d / §4h / §4n 都必须顺着主表的 md 链接看分册，否则把已登记误判成死技能。
+// 只认 md 链接、排除 SKILL.md（技能正文不算路由表登记），只查一层，结果缓存。
+const readWithSubindex = (() => {
+  const cache = new Map();
+  return (p) => {
+    if (cache.has(p)) return cache.get(p);
+    const t = read(p) || '';
+    const dir = path.posix.dirname(p);
+    const subs = [...t.matchAll(/\]\(([^)#\s]+\.md)\)/g)]
+      .map(m => path.posix.normalize(path.posix.join(dir, m[1])))
+      .filter(x => !/SKILL\.md$/.test(x));
+    const full = [t, ...subs.map(s => read(s) || '')].join('\n');
+    cache.set(p, full);
+    return full;
+  };
+})();
+
 // 4d. .agents/skills/README.md 路由表双向核对（技能规范.md：README 不列 = 不存在）
-const agentsReadmeText = read('.agents/skills/README.md');
+const agentsReadmeText = readWithSubindex('.agents/skills/README.md');
 if (agentsReadmeText) {
   const listed = new Set();
   for (const m of agentsReadmeText.matchAll(/\[[^\]]+\]\(([^)]+?\/SKILL\.md)\)/g)) {
@@ -307,7 +325,7 @@ for (const s of collectSkillFrontmatters()) {
   const routingText = [
     '.agents/skills/README.md',
     ...families.map(f => `.harness/skills/${f}/README.md`),
-  ].map(p => read(p)).filter(Boolean).join('\n');
+  ].map(p => readWithSubindex(p)).filter(Boolean).join('\n');
   const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const orphans = [];
   for (const dir of SKILL_ROOTS) {
@@ -442,7 +460,7 @@ for (const s of collectSkillFrontmatters()) {
     else if (/^\.harness\/skills\//.test(s.rel)) readme = `.harness/skills/${parts[2]}/README.md`;
     else continue;
     const name = parts[parts.length - 2];
-    if (!textOf(readme).includes(name)) {
+    if (!readWithSubindex(readme).includes(name)) {
       errors.push(`${s.rel} 未在路由表登记：${readme} 里找不到「${name}」。\n✅ FIX: 在该 README 增加技能名与触发场景。\n📖 See: .harness/rules/技能规范.md §5（增删改流程）`);
     }
   }
