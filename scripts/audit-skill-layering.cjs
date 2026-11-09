@@ -6,9 +6,13 @@
  * 本脚本把纸面判据变成可跑的统计，并且**在样本不足时明确报「未测」**，
  * 不把「没有记录」读成「没被用过」（AGENTS.md §13 静默失效警觉）。
  *
- * 数据源：
+ * 数据源（两个，各回答不同问题，不可互相替代）：
  *   1. docs/reference/skill-layering.md 的「活跃层」表格 → 活跃技能名单
- *   2. .harness/changes/<切片>/summary.md 的「调用技能」行 → 真实留痕
+ *   2. .harness/changes/<切片>/summary.md 的「调用技能」行 → 任务归属（「这个切片用了哪个技能」）
+ *   3. 客户端会话轨迹（scripts/lib/trajectory-scan.cjs）→ 文件是否真被打开过（机器记录，不受人是否记得填影响）
+ *
+ * 为什么必须两个：留痕覆盖率长期只有个位数（39 个切片 1 条），只看它永远「未测」；
+ * 轨迹样本够但缺任务归属（一个会话可能横跨多个主题）。一个给观测、一个给归属，缺任一个都判不了升降。
  *
  * 判据（照抄契约，不另行发明）：
  *   升：储备技能被真实任务点名 ≥ 3 次
@@ -18,6 +22,7 @@
  */
 const fs = require('fs')
 const path = require('path')
+const { scan, defaultSessionsDir } = require('./lib/trajectory-scan.cjs')
 
 const ROOT = path.resolve(__dirname, '..')
 const LAYERING = path.join(ROOT, 'docs/reference/skill-layering.md')
@@ -84,6 +89,7 @@ function sliceRecords() {
 function main() {
   const active = activeSkills()
   const records = sliceRecords()
+  const traj = scan({ sessionsDir: defaultSessionsDir(), repoMarks: ['Desktop/tea', ROOT] })
   const allSkills = new Set()
   const counts = new Map()
   for (const r of records) {
@@ -109,6 +115,27 @@ function main() {
     console.log(`- ${a}: ${n}`)
   }
   console.log('')
+  // 轨迹观测：留痕覆盖率不足时的独立维度（机器记录，不受人是否记得填影响）
+  console.log('## 轨迹观测（文件是否真被打开过）')
+  if (traj.missing) {
+    console.log(`- 未测：本机无会话轨迹目录（${traj.sessionsDir}）。缺目录不等于零读取。`)
+  } else {
+    const top = [...traj.skillReads.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8)
+    console.log(
+      `- 轨迹 ${traj.files} 个 | 技能正文读取 ${traj.entry.skillMd} 次 / ${traj.sessions.withSkillMd} 个会话` +
+        ` | 读过任一入口的会话 ${traj.sessions.withAny} 个`,
+    )
+    console.log('- 读取最高：' + (top.length ? top.map(([n, v]) => `${n}(${v})`).join('、') : '无'))
+    const trajZero = active.filter((a) => !traj.skillReads.has(a))
+    console.log(`- 活跃层里轨迹零读取 ${trajZero.length}/${active.length} 个${trajZero.length ? `：${trajZero.join('、')}` : ''}`)
+    const trajUp = [...traj.skillReads.entries()].filter(([n, v]) => v >= UP_THRESHOLD && !active.includes(n))
+    console.log(
+      '- 轨迹升候选（储备读出 ≥' + UP_THRESHOLD + ' 次）：' +
+        (trajUp.length ? trajUp.map(([n, v]) => `${n}(${v})`).join('、') : '无'),
+    )
+    console.log('- 读法：轨迹能证「打开过」，证不了「这个任务该不该用它」；降级仍需留痕确认同类覆盖。')
+  }
+  console.log('')
 
   console.log('## 升降候选')
   const up = [...counts.entries()].filter(([s, n]) => n >= UP_THRESHOLD && !active.includes(s))
@@ -132,10 +159,18 @@ function main() {
 
   console.log('## 结论')
   if (recorded.length < DOWN_WINDOW) {
-    console.log(`判据未满足最小样本（有留痕切片 ${recorded.length} < ${DOWN_WINDOW}），本轮不动名单。`)
-    console.log('这不是「活跃层没用」，是本项目目前只跑过 ' + recorded.length + ' 条带留痕的真实任务。')
+    console.log(`留痕侧样本不足（有留痕切片 ${recorded.length} < ${DOWN_WINDOW}）：切片粒度的「连续 ${DOWN_WINDOW} 个切片零调用」本轮判不了。`)
+    if (!traj.missing && traj.sessions.withSkillMd >= DOWN_WINDOW) {
+      const trajZero = active.filter((a) => !traj.skillReads.has(a))
+      console.log(`轨迹侧样本够（${traj.sessions.withSkillMd} 个会话读过技能正文）：`)
+      console.log(`  能判的：活跃层里轨迹零读取的 ${trajZero.length} 个是降级强信号（仍需人工确认是否有同类技能覆盖）。`)
+      console.log('  判不了的：时序判据（连续 N 个切片零调用）——轨迹里没有切片归属。')
+    } else {
+      console.log('轨迹侧也不足，两个源同时未满足 —— 本轮不动名单，这是「没测到」不是「没用过」。')
+    }
   } else {
     console.log('样本满足，按上方候选人工复核后改 skill-layering.md 的活跃层表。')
+    console.log('复核时同时看轨迹观测：留痕说「这个任务用了它」，轨迹说「文件被打开过」，两者不一致的地方要查原因。')
   }
   console.log('')
   console.log('## 全库被点过的技能（真实留痕）')
