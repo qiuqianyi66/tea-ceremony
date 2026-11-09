@@ -15,6 +15,7 @@
 | `audit-hex.cjs` / `audit-states.cjs` / `audit-teas.cjs` / `audit-type.cjs` | 十六进制色值 / 状态五态 / 茶叶数据 / 类型一致性审计 |
 | `audit-context-budget.cjs` | 常驻上下文预算体检（防 AGENTS.md / 规则层膨胀） |
 | `verify-brew-mobile.cjs` | 冲泡页移动端触控验证 |
+| `verify-brew-desktop.cjs` | 冲泡页 1440 宽屏 3D 验证（canvas 真挂载 + 无横向滚动） |
 | `audit-probe-selectors.cjs` | 探针死选择器审计（探针引用的 class/title 在 `src/` 命中 0 → 红；防「跑得过但验不到」） |
 
 ## AI 评测体系

@@ -181,6 +181,7 @@ node scripts/verify-pavilion.cjs   # 茶亭验证
 node scripts/scan-emoji.cjs        # 禁 emoji 扫描
 node scripts/verify-icons.cjs      # lucide 图标渲染审计
 node scripts/verify-brew-mobile.cjs  # 冲泡页移动端触控（≥44px、无横向滚动）
+node scripts/verify-brew-desktop.cjs  # 冲泡页 1440 宽屏 3D 茶席截图（断言 canvas 真挂载、无横向滚动）
 node scripts/audit-touch.cjs       # 全局触控目标审计
 node scripts/eval-harness.cjs <切片> [--verify]  # harness 七维确定性评测（每切片必跑，总分<60 或安全违规阻断；不传 --verify 则代码正确性维记 0 分；报告 docs/agent-eval/）
 node scripts/verify-harness.cjs    # harness 一致性体检（ADR/CI job/技能数/路径/wiki 四件套/子代理/审查页/changes 门禁），期望 ERRORS: []，CI 门禁
