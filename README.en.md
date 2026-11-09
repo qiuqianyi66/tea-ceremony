@@ -4,6 +4,21 @@
 
 Imagine: open the browser, wooden table, Yixing clay teapot, 85°C spring water pouring in, steam rising, liquor color deepening. After the session, eight-dimension mouthfeel scores are recorded; next time the AI tea spirit remembers your taste.
 
+## Quick facts
+
+| Item | Fact |
+| --- | --- |
+| What it is | An immersive online tea ceremony app. Not an encyclopedia, not a brewing timer |
+| Live demo | [qiuqianyi66.github.io/tea-ceremony](https://qiuqianyi66.github.io/tea-ceremony/) (no signup, works offline) |
+| Frontend | Vue 3.5 · TypeScript 6 (strict) · Pinia 4 · Tailwind CSS 4 · Vite 8 |
+| 3D | Three.js 0.185 · TresJS 5.8; teaware is built from parametric Lathe / Box geometry plus procedural Canvas textures, zero external model assets |
+| Backend | Spring Boot 3.5 · Spring Data JPA · Spring AI Alibaba · PostgreSQL + pgvector |
+| Offline | Dexie.js + IndexedDB offline-first; records land locally, sync via `sync_status` when online |
+| Tests and gates | Vitest · Playwright E2E · axe a11y · Maven Testcontainers · ArchUnit layering; 14 CI merge-gate jobs |
+| Engineering docs | 30 ADRs, each recording "why A, why not B, when to reverse" |
+| Scale | 67 teas · 21 routes · 3 tea-room skins (lake rain / mountain dawn / indoor storm) |
+| License | MIT. Commercial use and forks allowed, keep the copyright notice |
+
 **Who are you?**
 
 | Just want to try | Developer running it locally | Checking the stack / resume project |
@@ -55,7 +70,7 @@ Full loop: enter the room → pick a tea → prepare teaware → boil water → 
 - **Offline-first PWA**: Dexie.js + IndexedDB, records land locally first, sync when back online via `sync_status` retry queue
 - **Shareable**: one-tap tasting card with QR code / read-only share link / PNG
 - **AI tea spirit**: five specialist roles + multi-tool agent + SSE streaming replies + cross-session long-term memory; RAG answers are traceable
-- **Engineering**: 14 CI merge-gate jobs, 29 ADRs, ArchUnit layered tests, Testcontainers integration tests, full observability and security headers
+- **Engineering**: 14 CI merge-gate jobs, 30 ADRs, ArchUnit layered tests, Testcontainers integration tests, full observability and security headers
 
 ## Screenshots
 
@@ -64,8 +79,10 @@ Full loop: enter the room → pick a tea → prepare teaware → boil water → 
 | ![home](docs/screenshots/home.jpg) | ![brew](docs/screenshots/brew-3d-steeping.png) | ![card](docs/screenshots/share.png) |
 
 ![select](docs/screenshots/select.png)
-![pour](docs/screenshots/brew-3d-done.png)
+![3D tea table in the indoor rain-night skin](docs/screenshots/brew-3d-indoor.png)
 ![growth](docs/screenshots/growth-desktop.png)
+
+Screenshots are captured by repo scripts: `node scripts/verify-brew-mobile.cjs` (390×844) and `node scripts/verify-brew-desktop.cjs` (1440×900).
 
 ## Tech stack
 
@@ -107,9 +124,9 @@ tea-ceremony/
 ├── backend/                    # Spring Boot 3.5 backend
 │   ├── src/main/java/com/tea/  # Controller → Service → Repository
 │   └── src/test/               # Testcontainers + ArchUnit + LayerDependency
-├── docs/                       # ADR-001~029, plans, eval evidence
+├── docs/                       # ADR-001~030, plans, eval evidence
 ├── .agents/skills/            # 66 general / domain skills
-├── .harness/                   # 39 process-family skills + rules + wiki
+├── .harness/                   # 43 process-family skills + rules + wiki
 ├── deploy/                     # Docker Compose, nginx, observability
 └── .github/workflows/ci.yml    # 14-job merge gate
 ```
@@ -155,15 +172,21 @@ Docs: [DEPLOY.md](DEPLOY.md) · [CONTEXT.md](CONTEXT.md) · [DESIGN_SPEC.md](DES
 Process, rules and verification are written as code. Machines check them, not willpower.
 
 - **AI collaboration rules**: `AGENTS.md` defines red lines, dev process and a three-track triage (Fast / Guided / Controlled)
-- **Architecture decision records**: ADR-001~029, every choice documented with "why A, why not B, when to reverse"; the newest cover self-hosted local embedding (ADR-029) and cross-session memory (ADR-028)
+- **Architecture decision records**: ADR-001~030, every choice documented with "why A, why not B, when to reverse"; the newest cover self-hosted local embedding (ADR-029) and cross-session memory (ADR-028)
 - **CI merge gate**: all 14 jobs green before merge; main is PR-only
 - **Deterministic health checks**: `verify-harness.cjs` / `audit-redlines.cjs` / `audit-wiki-drift.cjs` / `audit-context-budget.cjs`, wired into CI
 - **Layering**: ArchUnit enforces Controller → Service → Repository one-way dependency
 
 ## FAQ
 
+**Q: What is this project, and who is it for?**
+A: A web app where you can actually walk through a full tea-brewing session. Anyone curious about a tea table can use the demo as-is. Developers looking at 3D frontends, AI application plumbing or full-stack process design can read the repo, because the workflow, gates and decision records all live here.
+
 **Q: What is the tech stack?**
 A: Vue 3.5 + TypeScript + Pinia + Tailwind + Vite frontend; Spring Boot 3.5 + Spring AI Alibaba + PostgreSQL/pgvector backend; Three.js for 3D; Docker Compose deployment; GitHub Actions CI.
+
+**Q: Does the 3D tea table use model assets?**
+A: No external models. Teaware is generated at runtime from parametric geometry (Lathe profiles, Box, Cylinder) plus procedural Canvas textures, so the repo carries no multi-megabyte glb files and no texture packs to download.
 
 **Q: How is the AI implemented?**
 A: Spring AI Alibaba provides the multi-tool agent, SSE streaming replies and Advisor memory. RAG embeds culture knowledge with self-hosted bge-large-zh-v1.5 ONNX, stores vectors in pgvector, and retrieves by cosine. User profile is stored in the `user_memory` table for cross-session reuse.
@@ -183,10 +206,13 @@ A: The DashScope account is out of credit and unrecoverable; self-hosted ONNX is
 **Q: How is it deployed?**
 A: Docker Compose orchestrates four containers (frontend / backend / postgres / nginx); the static frontend demo is deployed to GitHub Pages. See [DEPLOY.md](DEPLOY.md) for the full flow.
 
+**Q: Can I use it commercially or build on it?**
+A: Yes. MIT license; keep the copyright notice. Changes and republishing do not have to be contributed back.
+
 ## Roadmap
 
 - Replace placeholder teaware with real photography
-- Expand tea catalog from 66 to 100+ Chinese teas
+- Expand tea catalog from 67 to 100+ Chinese teas
 - Two-person shared sessions (evolve the read-only share card into a live tea party)
 - Production Sentry error tracking + Redis rate limiting
 

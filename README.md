@@ -1,14 +1,27 @@
 # 一盏茶 · Tea Ceremony
 
-> 沉浸式在线茶道应用：**Vue 3 + Spring Boot 3 + Spring AI Alibaba 全栈项目**，含 3D 茶席、离线优先 PWA、自托管 RAG 向量检索、SSE 流式 AI 对话与跨会话长期记忆。一席茶，一方天地，一念清心。
+**一座开在浏览器里的数字茶室。** Vue 3.5 + Three.js 渲染 3D 茶席，Spring Boot 3.5 + Spring AI Alibaba 提供 RAG 问答与多工具 Agent，Dexie 让泡茶断网也能继续。在线 Demo 免注册，MIT 许可。
 
-想象一下：打开浏览器，木桌、紫砂壶、85℃ 山泉水缓缓注入，蒸汽升起，汤色渐透。结束后八维口感打个分，下次 AI 茶灵记得你的口味偏好。这就是「一盏茶」。
+## 快速了解
+
+| 项 | 事实 |
+| --- | --- |
+| 项目定位 | 沉浸式在线茶道应用。不是茶文化百科，也不是泡茶计时器 |
+| 在线体验 | [qiuqianyi66.github.io/tea-ceremony](https://qiuqianyi66.github.io/tea-ceremony/)（免注册，可离线） |
+| 前端 | Vue 3.5 · TypeScript 6（strict）· Pinia 4 · Tailwind CSS 4 · Vite 8 |
+| 3D | Three.js 0.185 · TresJS 5.8；茶器由参数化 Lathe / Box 几何加程序化贴图生成，零外部模型资产 |
+| 后端 | Spring Boot 3.5 · Spring Data JPA · Spring AI Alibaba · PostgreSQL + pgvector |
+| 离线能力 | Dexie.js + IndexedDB 离线优先，品鉴记录先落本地，联网按 `sync_status` 回传 |
+| 测试与门禁 | Vitest · Playwright E2E · axe 无障碍 · Maven Testcontainers · ArchUnit 分层；CI 14 个合并门禁 job |
+| 工程文档 | 30 份 ADR，每份写「选 A 理由 + 否 B 理由 + 反转条件」 |
+| 数据规模 | 67 款茶 · 21 条路由 · 中式茶席 3 套皮肤（湖畔烟雨 / 山顶日出 / 室内雨夜） |
+| 许可 | MIT。可商用、可二次开发，保留版权声明 |
 
 **你是谁？**
 
-| 我是来体验的 | 我是开发者要跑起来 | 我在看技术栈/简历项目 |
+| 我是来体验的 | 我是开发者要跑起来 | 我在看技术栈 / 简历项目 |
 | --- | --- | --- |
-| 👉 [在线 Demo](https://qiuqianyi66.github.io/tea-ceremony/)（离线可用）| 👉 [快速开始](#快速开始) | 👉 [技术栈](#技术栈) · [AI 能力](#ai-能力) · [工程质量与治理](#工程质量与治理) |
+| 👉 [在线 Demo](https://qiuqianyi66.github.io/tea-ceremony/)（离线可用） | 👉 [快速开始](#快速开始) | 👉 [技术栈](#技术栈) · [AI 能力](#ai-能力) · [工程质量与治理](#工程质量与治理) |
 
 [![License MIT](https://img.shields.io/badge/License-MIT-9E8050?style=for-the-badge&labelColor=1C1C1C)](LICENSE)
 [![Built with Vue 3 · Spring Boot 3](https://img.shields.io/badge/Built_with-Vue_3_%C2%B7_Spring_Boot_3-5D4E37?style=for-the-badge&labelColor=1C1C1C)](https://vuejs.org/)
@@ -39,6 +52,8 @@
 
 「一盏茶」不是百科、不是计时器，是一座可以走进去的数字茶室。
 
+想象一下：打开浏览器，木桌、紫砂壶、80℃ 山泉水缓缓注入，蒸汽升起，汤色渐透。结束后八维口感打个分，下次 AI 茶灵记得你的口味偏好。
+
 业务闭环：入席 → 选茶 → 备器 → 煮水 → 冲泡 → 品鉴记录 → 个人成长。前端用 Vue 3 + Three.js 渲染可交互的 3D 茶席，后端用 Spring Boot 3.5 + Spring AI Alibaba 提供 RAG 问答与多工具 Agent，数据层 PostgreSQL + pgvector 支撑向量检索。
 
 ## 立即体验
@@ -50,22 +65,24 @@
 
 ## 核心特性
 
-- **3D 茶席**：TresJS / Three.js 渲染的木桌茶器，注水有蒸汽、出汤看汤色，时间、节气、主题茶室影响氛围
+- **3D 茶席**：TresJS / Three.js 渲染的木桌与茶器，木茶盘承托盖碗、公道杯、品杯与炭炉；注水有蒸汽，出汤看汤色，皮肤（湖畔烟雨 / 山顶日出 / 室内雨夜）改变光线与天气
 - **完整流程闭环**：备器 → 煮水 → 温杯 → 醒茶 → 冲泡 → 观色 → 闻香 → 品味，八维口感评分 × 冲泡工艺系数
 - **离线优先 PWA**：Dexie.js + IndexedDB，品鉴记录先落本地，断网也能泡，联网后自动同步（`sync_status` 重试队列）
-- **可分享**：一键生成带二维码的品鉴卡 PNG / 只读分享链接
-- **AI 茶灵**：五角色专家 + 多工具 Agent + SSE 流式回复 + 跨会话长期记忆，RAG 答案可溯源
-- **工程化**：14 个 CI 合并门禁 job、29 个 ADR、ArchUnit 分层测试、Testcontainers 集成测试、可观测性与安全头全套
+- **可分享**：一键生成带二维码的品鉴卡 PNG 与只读分享链接
+- **AI 茶灵**：五角色专家 + 多工具 Agent + SSE 流式回复 + 跨会话长期记忆，RAG 答案带 sources 可溯源
+- **工程化**：14 个 CI 合并门禁 job、30 份 ADR、ArchUnit 分层测试、Testcontainers 集成测试
 
 ## 截图
 
-| 沉浸式首页 | 3D 冲泡 | 品鉴分享卡 |
+| 沉浸式首页 | 3D 冲泡（湖畔烟雨） | 品鉴分享卡 |
 | --- | --- | --- |
 | ![首页](docs/screenshots/home.jpg) | ![冲泡](docs/screenshots/brew-3d-steeping.png) | ![品鉴卡](docs/screenshots/share.png) |
 
 ![选茶](docs/screenshots/select.png)
-![3D 出汤](docs/screenshots/brew-3d-done.png)
+![3D 茶席 · 室内雨夜](docs/screenshots/brew-3d-indoor.png)
 ![个人成长](docs/screenshots/growth-desktop.png)
+
+截图由仓库脚本实拍：`node scripts/verify-brew-mobile.cjs`（390×844）与 `node scripts/verify-brew-desktop.cjs`（1440×900）。
 
 ## 技术栈
 
@@ -107,7 +124,7 @@ tea-ceremony/
 ├── backend/                    # Spring Boot 3.5 后端
 │   ├── src/main/java/com/tea/  # Controller → Service → Repository
 │   └── src/test/               # Testcontainers + ArchUnit + LayerDependency
-├── docs/                       # ADR-001~029、计划、评测证据
+├── docs/                       # ADR-001~030、计划、评测证据
 ├── .agents/skills/            # 66 个通用/领域技能
 ├── .harness/                   # 43 个流程族技能 + 规则 + Wiki 四件套
 ├── deploy/                     # Docker Compose、nginx、观测栈
@@ -155,15 +172,21 @@ docker compose up -d --build
 流程、规范、验证都写成代码，机器可查，不靠自觉。
 
 - **AI 协作规则**：`AGENTS.md` 定义红线、开发流程与三轨道分诊（Fast / Guided / Controlled）
-- **架构决策记录**：ADR-001~029，每个选择写「选 A 理由 + 否 B 理由 + 反转条件」；最近的覆盖自托管本地 embedding（ADR-029）与跨会话长期记忆（ADR-028）
+- **架构决策记录**：ADR-001~030，每个选择写「选 A 理由 + 否 B 理由 + 反转条件」；最近的覆盖自托管本地 embedding（ADR-029）与跨会话长期记忆（ADR-028）
 - **CI 合并门禁**：14 job 全绿才合并；main 分支保护 = 只走 PR
 - **确定性体检脚本**：`verify-harness.cjs` / `audit-redlines.cjs` / `audit-wiki-drift.cjs` / `audit-context-budget.cjs`，挂 CI 门禁
 - **架构分层**：ArchUnit 强制 Controller → Service → Repository 单向依赖
 
 ## 常见问题
 
-**Q：这个项目用了什么技术栈？**
+**Q：这是什么项目，适合谁？**
+A：一个可以真的走完一遍泡茶流程的 Web 应用。想体验茶席的人打开 Demo 就能用；做前端 3D、AI 应用或全栈工程化参考的人也读得下去，因为流程、门禁与决策记录都在仓库里。
+
+**Q：用了什么技术栈？**
 A：Vue 3.5 + TypeScript + Pinia + Tailwind + Vite 前端；Spring Boot 3.5 + Spring AI Alibaba + PostgreSQL/pgvector 后端；Three.js 3D；Docker Compose 部署；GitHub Actions CI。
+
+**Q：3D 茶席用的是什么模型？**
+A：没有外部模型资产。茶器由参数化几何（Lathe 剖面旋转、Box、Cylinder）加 Canvas 2D 程序化贴图现场生成，所以仓库里没有几 MB 的 glb 文件，也不需要加载贴图包。
 
 **Q：AI 是怎么实现的？**
 A：Spring AI Alibaba 做多工具 Agent、SSE 流式回复与 Advisor 记忆；RAG 用自托管 bge-large-zh-v1.5 ONNX 模型生成 embedding，存入 pgvector 做 cosine 检索；用户画像存 `user_memory` 表跨会话复用。
@@ -180,13 +203,16 @@ A：只跑前端：`npm install && npm run dev`。全栈：`cp .env.example .env
 **Q：为什么自托管 embedding 而不是用 DashScope？**
 A：DashScope 账号欠费不可恢复，自托管 ONNX 是解锁向量 RAG 的唯一路径。决策记录见 ADR-029（选型 bge-large-zh-v1.5，1024 维免改表）。
 
+**Q：能商用或二次开发吗？**
+A：MIT 许可，可以。保留版权声明即可，改动与再发布不要求回馈本项目。
+
 **Q：怎么部署？**
 A：Docker Compose 编排 frontend / backend / postgres / nginx 四个容器；前端静态 Demo 部署到 GitHub Pages。完整流程见 [DEPLOY.md](DEPLOY.md)。
 
 ## 路线图
 
 - 真实茶汤与茶器摄影素材替换占位图
-- 茶单扩充到中国茶区主要品类（当前 66 款，目标 100+）
+- 茶单扩充到中国茶区主要品类（当前 67 款，目标 100+）
 - 多人共席（分享卡从只读进化到双人茶会）
 - 生产环境接入 Sentry 错误追踪与 Redis 限流
 
