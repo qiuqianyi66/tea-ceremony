@@ -31,10 +31,17 @@ export function createHandGroup(): THREE.Group {
   thumb.rotation.z = 0.9
   thumb.castShadow = true
   handGroup.add(thumb)
-  // 袖口（深靛蓝布袖，与茶巾同色；短一截让皮肤露出）
-  const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.09, 0.08, 16), handSleeveMat)
-  cuff.position.set(0, -0.14, 0)
+  // 袖口 + 小臂（深靛蓝布袖，与茶巾同色）：旧版只到腕部，画面里像一只悬空的手掌
+  const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.076, 0.088, 0.07, 16), handSleeveMat)
+  cuff.position.set(0, -0.135, 0)
+  cuff.castShadow = true
   handGroup.add(cuff)
+  // 小臂：从腕口向后下方收细，长度够到手不再像断在腕上
+  const forearm = new THREE.Mesh(new THREE.CylinderGeometry(0.088, 0.105, 0.34, 16), handSleeveMat)
+  forearm.position.set(0, -0.32, -0.012)
+  forearm.rotation.x = 0.12
+  forearm.castShadow = true
+  handGroup.add(forearm)
 
   // 手默认藏在画面下方镜头外
   handGroup.position.set(0, -0.5, 4.2)
