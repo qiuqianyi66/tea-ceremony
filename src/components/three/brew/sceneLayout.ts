@@ -64,9 +64,22 @@ export function createSceneLayout(
   // 避免旧值 0.98→0.68 的大行程让盖子悬空/合盖时像一颗大白球。
   // 盖碗盖子位置：碗沿在世界坐标 y≈0.95（碗身轮廓顶点），盖沿必须坐在碗沿上。
   // 合盖=0.95（齐平），开盖抬 0.21。旧值 0.92→0.74 让盖沉进碗里，只剩白球露在外面。
-  const lidPosition = computed(
-    () => new THREE.Vector3(0, 1.16 - 0.21 * smoothstep(anim.steep.value), 0),
-  )
+  // 注水时把盖斜搭到碗沿右侧：真实醒茶先揭盖再注水，否则水会打在盖上流走（F6）。
+  // 位移与倾角都在盖碗局部坐标里（盖碗 scale 0.24），所以数值是世界的 4 倍。
+  const lidPosition = computed(() => {
+    const pour = smoothstep(anim.pourWater.value)
+    return new THREE.Vector3(
+      0.58 * pour,
+      1.16 - 0.21 * smoothstep(anim.steep.value) + 0.06 * pour,
+      0,
+    )
+  })
+  // TresJS 的 rotation 只接受数组/Euler：直接塞 Vector3 会 write 到只读的 Euler 上报错
+  const lidRotation = computed<[number, number, number]>(() => [
+    0,
+    0,
+    -0.5 * smoothstep(anim.pourWater.value),
+  ])
 
   // ==================== 公道杯（茶海，玻璃材质，出汤→分茶用） ====================
   // 比例修正：旧 scale 0.28 世界半径仅 0.126，远小于盖碗 0.288；真实公道杯与盖碗体量接近
@@ -161,7 +174,7 @@ export function createSceneLayout(
   const kettlePos = new THREE.Vector3(-1.25, 1.465, SET_Z)
   const kettleScale = new THREE.Vector3(0.24, 0.24, 0.24)
   const kettleLidPos = new THREE.Vector3(0, 1.55, 0)
-  const knobPos = new THREE.Vector3(0, 1.82, 0)
+  const knobPos = new THREE.Vector3(0, 1.84, 0)
   const spoutPos = new THREE.Vector3(1.35, 1.05, 0)
   const handlePos = new THREE.Vector3(-1.35, 0.95, 0)
   const stovePos = new THREE.Vector3(-1.25, 1.19, SET_Z)
@@ -205,6 +218,7 @@ export function createSceneLayout(
     gaiwanScale,
     liquidPos,
     lidPosition,
+    lidRotation,
     fairnessPos,
     fairnessScale,
     fairnessPts,

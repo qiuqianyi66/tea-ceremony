@@ -143,6 +143,7 @@ const {
   gaiwanScale,
   liquidPos,
   lidPosition,
+  lidRotation,
   fairnessPos,
   fairnessScale,
   fairnessPts,
@@ -646,7 +647,7 @@ onRender(({ delta, elapsed }) => {
         :env-map-intensity="0.7"
       />
     </TresMesh>
-    <TresGroup :position="lidPosition" :cast-shadow="true">
+    <TresGroup :position="lidPosition" :rotation="lidRotation" :cast-shadow="true">
       <!-- 扁穹顶盖：剖面从碗沿起 0.34 高、盖径 1.22（略大于碗沿 1.15），对齐真盖碗比例 -->
       <TresMesh :cast-shadow="true">
         <TresLatheGeometry :args="[lidPts, 48]" />
