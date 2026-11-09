@@ -136,11 +136,13 @@ function main() {
   const low = rows.filter((r) => r.ratio < 0.5).map((r) => `${r.n} ${(r.ratio * 100).toFixed(1)}%`)
   console.log(`  低于判据 50% 的 ${low.length} 个${low.length ? `：${low.join('、')}` : ''}`)
   console.log('  （只提示不阻断：低独有词 = 描述可再收紧，不等于该改；也受词元切分口径影响）')
+  console.log('  （口径盲区：中英同义词未归一 —— "component" 与「组件」不计为重合。description 全英文时独有词会虚高；')
+  console.log('    中文化后同一技能的比例会真实下降，2026-11-09 三条导入技能中文化时 vue-component 由 46.2% 降为 38.5% 即此故，别当成退化。）')
   console.log('')
 
   console.log('## 二、结构')
   const imported = (n) => (skills.get(n)?.rel || '').startsWith('.agents/skills/')
-  const tag = (n) => (imported(n) ? '　（导入层·上游同步会覆盖，不改）' : '')
+  const tag = (n) => (imported(n) ? '　（导入层·改动需自担重导合并成本，本轮未改）' : '')
   const long = active.filter((n) => skills.get(n).desc.length > 200)
   const en = active.filter((n) => zhRatio(skills.get(n).desc) < 0.3)
   const noZh = active.filter((n) => !/当[^。]{0,60}(?:时用|时)|触发[:：]/.test(skills.get(n).desc))
@@ -158,7 +160,7 @@ function main() {
   } else console.log('- 无中文触发句：无')
   const importedHits = [...new Set([...long, ...en, ...noZh])].filter(imported)
   if (importedHits.length) {
-    console.log(`  （其中 ${importedHits.length} 个来自 .agents/skills 上游包：改了下次同步即被覆盖 —— 只记录不修）`)
+    console.log(`  （其中 ${importedHits.length} 个来自 .agents/skills 导入层：本站无自动同步脚本，改动不会被上游冲掉，成本只是将来重导时自行合并 —— 未改是按收益判据，不是不能改）`)
   }
   console.log('')
 
