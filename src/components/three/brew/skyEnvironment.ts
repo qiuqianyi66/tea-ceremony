@@ -39,13 +39,15 @@ export function createRain(count = 300): RainSystem {
   const rainSpeeds = new Float32Array(count)
   for (let i = 0; i < count; i++) {
     const x = (Math.random() - 0.5) * 8
-    const y = Math.random() * 4 + 1
+    // 只在茶席上方的"窗外"空间落雨：旧范围 1~5 会落到桌面高度，看着像雨穿进屋里
+    const y = Math.random() * 2.4 + 2.6
     const z = (Math.random() - 0.5) * 6 - 1
     rainPositions[i * 6] = x
     rainPositions[i * 6 + 1] = y
     rainPositions[i * 6 + 2] = z
-    rainPositions[i * 6 + 3] = x
-    rainPositions[i * 6 + 4] = y - 0.18
+    // 细雨而非雨帘：线段更短 + 尾端轻微横移（斜落），避免整屏等长竖线的游戏感
+    rainPositions[i * 6 + 3] = x + 0.03
+    rainPositions[i * 6 + 4] = y - 0.1
     rainPositions[i * 6 + 5] = z
     rainSpeeds[i] = 2 + Math.random() * 2
   }
@@ -53,7 +55,7 @@ export function createRain(count = 300): RainSystem {
   rainGeometry.setAttribute('position', new THREE.BufferAttribute(rainPositions, 3))
   const rainLines = new THREE.LineSegments(
     rainGeometry,
-    new THREE.LineBasicMaterial({ color: 0xb4c8d8, transparent: true, opacity: 0.32 }),
+    new THREE.LineBasicMaterial({ color: 0xb4c8d8, transparent: true, opacity: 0.24 }),
   )
   rainLines.visible = false
   return { rainLines, rainGeometry, rainPositions, rainSpeeds }

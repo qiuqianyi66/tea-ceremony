@@ -34,11 +34,11 @@ defineProps<{
 <template>
   <!-- ======== 冲泡动画区域（非 IDLE）======== -->
   <div class="relative w-64 h-64 mb-6">
-    <!-- tsParticles 容器（3D 场景接管视觉，保留 DOM 以便回退）-->
+    <!-- tsParticles 容器（仅在 headless 回退时叠加；3D 场景自带蒸汽，两层同开会叠成一团白光斑）-->
     <div
       :ref="containerRef"
       class="absolute inset-0 w-full h-full pointer-events-none z-10"
-      v-show="!isHeadless"
+      v-show="isHeadless"
     ></div>
     <!-- 火焰粒子 (CSS 备用，3D 接管) -->
     <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-16 h-14" v-show="isHeadless">

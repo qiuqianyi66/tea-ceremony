@@ -60,24 +60,26 @@ export function createSteamParticles(
   const vel = new Float32Array(count)
   const top = new Float32Array(count)
   for (let i = 0; i < count; i++) {
-    positions[i * 3] = 0.25 + (Math.random() - 0.5) * 0.7
-    positions[i * 3 + 1] = Math.random() * 1.2 + 2.4 // 起始在桌面附近
-    positions[i * 3 + 2] = (Math.random() - 0.5) * 0.5 + setZ
+    // 汽源抬到盖顶之上（碗沿 1.46 + 穹顶 0.08 ≈ 1.54），否则粒子压在白盖面上叠成一块白斑。
+    positions[i * 3] = -0.1 + (Math.random() - 0.5) * 0.3
+    positions[i * 3 + 1] = 1.66 + Math.random() * 0.12
+    positions[i * 3 + 2] = (Math.random() - 0.5) * 0.3 + setZ
     vel[i] = 0.4 + Math.random() * 0.5
-    top[i] = 3.4 + Math.random() * 1.6
+    top[i] = 2.9 + Math.random() * 1.0
   }
   const geometry = new THREE.BufferGeometry()
   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
   const points = new THREE.Points(
     geometry,
     new THREE.PointsMaterial({
-      size: 0.22,
+      // 真实蒸汽是低对比的暖灰雾丝，不是发光体：additive 会把 60 个粒子叠成一颗"光球"，
+      // 改用普通混合 + 更低不透明度，靠重叠出雾。
+      size: 0.16,
       map: softCircleTex,
-      // 蒸汽压暗一档：暖灯下纯白 additive 会在盖碗上炸成死白斑，改暖灰降低过曝
-      color: '#e0d4c0',
+      color: '#d9cec0',
       transparent: true,
-      opacity: 0.12,
-      blending: THREE.AdditiveBlending,
+      opacity: 0.16,
+      blending: THREE.NormalBlending,
       depthWrite: false,
       sizeAttenuation: true,
     }),

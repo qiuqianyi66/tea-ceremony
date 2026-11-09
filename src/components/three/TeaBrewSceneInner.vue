@@ -20,7 +20,7 @@ import { createBrewTextures } from './brew/proceduralTextures'
 import { createSceneLayout } from './brew/sceneLayout'
 import { createTeaLeaves, createSteamParticles } from './brew/brewParticles'
 import { createHandGroup } from './brew/handBuilder'
-import { bowlPts, potPts } from './brew/latheProfiles'
+import { bowlPts, lidPts, potPts } from './brew/latheProfiles'
 import { setupRenderPipeline } from './brew/renderPipeline'
 import { createRain, makeSkyGradient } from './brew/skyEnvironment'
 
@@ -133,6 +133,11 @@ const {
   floorPos,
   tablePos,
   clothPos,
+  trayPos,
+  traySize,
+  saucerPos,
+  lidKnobOffset,
+  lidKnobTopPos,
   legPositions,
   gaiwanPos,
   gaiwanScale,
@@ -334,7 +339,8 @@ function setSteamTarget(phase: BrewPhase, temp: number) {
   const target = props.targetTemp || 80
   switch (phase) {
     case BrewPhase.HEATING:
-      steamTargetOpacity = temp > 60 ? 0.25 + (temp / Math.max(target, 1)) * 0.15 : 0.1
+      // 蒸汽不透明度按"雾"而非"发光体"标定：旧值 0.25~0.4 在普通混合下仍会叠出白球
+      steamTargetOpacity = temp > 60 ? 0.12 + (temp / Math.max(target, 1)) * 0.08 : 0.06
       flameTargetIntensity = clamp01(temp / Math.max(target, 1))
       break
     case BrewPhase.WARMING:
@@ -342,11 +348,11 @@ function setSteamTarget(phase: BrewPhase, temp: number) {
     case BrewPhase.READY:
     case BrewPhase.STEEPING:
     case BrewPhase.DONE:
-      steamTargetOpacity = 0.35
+      steamTargetOpacity = 0.18
       flameTargetIntensity = 0
       break
     default:
-      steamTargetOpacity = 0.1
+      steamTargetOpacity = 0.06
       flameTargetIntensity = 0
   }
   tiltTarget = props.isPouringOut || phase === BrewPhase.DONE ? 0.55 : 0
@@ -401,9 +407,9 @@ onRender(({ delta, elapsed }) => {
   if (activeBg && bgScene && bgScene.background !== activeBg) {
     bgScene.background = activeBg
   }
-  // 闷泡时蒸汽增强（基于 anim.steep progress）
+  // 闷泡时蒸汽增强（基于 anim.steep progress）：上限压在 0.3，超过就叠成白球
   if (anim.steep.value > 0.1) {
-    steamTargetOpacity = Math.max(steamTargetOpacity, 0.35 + anim.steep.value * 0.25)
+    steamTargetOpacity = Math.max(steamTargetOpacity, 0.18 + anim.steep.value * 0.12)
   }
 
   // 蒸汽：平滑透明度（按皮肤 steamBoost 放大室内雨夜热气）+ 上飘循环
@@ -419,9 +425,10 @@ onRender(({ delta, elapsed }) => {
       steamPositions[i * 3 + 2] =
         (steamPositions[i * 3 + 2] ?? 0) + Math.cos(elapsed * 0.6 + i) * delta * 0.08
       if (y > top) {
-        y = 2.4
-        steamPositions[i * 3] = 0.25 + (Math.random() - 0.5) * 0.7
-        steamPositions[i * 3 + 2] = (Math.random() - 0.5) * 0.5 + SET_Z
+        // 重生回盖顶之上（1.66），而不是半空或碗沿：否则汽团在盖面上聚成一块白斑
+        y = 1.66
+        steamPositions[i * 3] = -0.1 + (Math.random() - 0.5) * 0.3
+        steamPositions[i * 3 + 2] = (Math.random() - 0.5) * 0.3 + SET_Z
       }
       steamPositions[i * 3 + 1] = y
     }
@@ -490,15 +497,15 @@ onRender(({ delta, elapsed }) => {
       const idx = i * 6
       rainPositions[idx + 1] = (rainPositions[idx + 1] ?? 0) - v * delta
       rainPositions[idx + 4] = (rainPositions[idx + 4] ?? 0) - v * delta
-      if ((rainPositions[idx + 4] ?? 0) < 1.0) {
+      if ((rainPositions[idx + 4] ?? 0) < 2.2) {
         const x = (Math.random() - 0.5) * 8
-        const y = 4.5
+        const y = 5.0
         const z = (Math.random() - 0.5) * 6 - 1
         rainPositions[idx] = x
         rainPositions[idx + 1] = y
         rainPositions[idx + 2] = z
-        rainPositions[idx + 3] = x
-        rainPositions[idx + 4] = y - 0.18
+        rainPositions[idx + 3] = x + 0.03
+        rainPositions[idx + 4] = y - 0.1
         rainPositions[idx + 5] = z
       }
     }
@@ -543,18 +550,40 @@ onRender(({ delta, elapsed }) => {
        仅保留地面承接茶席光影。 -->
   <TresMesh :position="floorPos" :rotation="[-Math.PI / 2, 0, 0]" :receive-shadow="true">
     <TresPlaneGeometry :args="[12, 8]" />
-    <TresMeshStandardMaterial :color="'#241b13'" :roughness="0.95" :env-map-intensity="0.2" />
+    <!-- 地面抬 2 档明度：真实夜拍里桌下不是死黑，而是暖光衰减后的深棕 -->
+    <TresMeshStandardMaterial :color="'#2b211a'" :roughness="0.95" :env-map-intensity="0.2" />
   </TresMesh>
 
   <!-- 木桌 + 茶席布 + 桌腿 -->
   <TresMesh :position="tablePos" :cast-shadow="true" :receive-shadow="true">
     <TresBoxGeometry :args="[4.4, 0.16, 2.2]" />
-    <TresMeshStandardMaterial :color="'#4a3626'" :map="woodTex" :roughness="0.65" :metalness="0.02" :env-map-intensity="0.35" />
+    <!-- 木纹可见度：真实茶席的桌子在暖光下能看清木纹走向与反光；旧值 0.65/0.35 太平闷 -->
+    <TresMeshStandardMaterial :color="'#4a3626'" :map="woodTex" :roughness="0.55" :metalness="0.02" :env-map-intensity="0.5" />
   </TresMesh>
   <TresMesh :position="clothPos" :rotation="[-Math.PI / 2, 0, 0]" :receive-shadow="true">
-    <TresPlaneGeometry :args="[3, 1.3]" />
+    <TresPlaneGeometry :args="[3.4, 1.4]" />
     <TresMeshStandardMaterial :color="'#cbb68a'" :roughness="0.9" :bump-map="fabricBump" :bump-scale="0.06" :side="THREE.DoubleSide" :env-map-intensity="0.2" />
   </TresMesh>
+  <!-- 茶盘：真实茶席的器物都承在盘上，散放在桌面空地是假的地方 -->
+  <TresMesh :position="trayPos" :cast-shadow="true" :receive-shadow="true">
+    <TresBoxGeometry :args="traySize" />
+    <TresMeshStandardMaterial :color="'#7a5c3f'" :map="woodTex" :roughness="0.65" :metalness="0.02" :env-map-intensity="0.5" />
+  </TresMesh>
+  <!-- 盖碗托（茶船）：出汤时碗身倾斜、托不跟着转，所以要独立摆放 -->
+  <TresGroup :position="saucerPos" :scale="gaiwanScale">
+    <TresMesh :cast-shadow="true" :receive-shadow="true">
+      <TresCylinderGeometry :args="[1.3, 1.02, 0.12, 40]" />
+      <TresMeshPhysicalMaterial
+        :color="'#f5f1e8'"
+        :roughness="0.24"
+        :metalness="0.02"
+        :clearcoat="0.9"
+        :clearcoat-roughness="0.18"
+        :env-map-intensity="0.9"
+        :map="porcelainTex"
+      />
+    </TresMesh>
+  </TresGroup>
   <TresMesh v-for="(leg, i) in legPositions" :key="i" :position="leg" :cast-shadow="true">
     <TresBoxGeometry :args="[0.14, 1.1, 0.14]" />
     <TresMeshStandardMaterial :color="'#3f3020'" :roughness="0.8" />
@@ -590,18 +619,47 @@ onRender(({ delta, elapsed }) => {
         :env-map-intensity="0.7"
       />
     </TresMesh>
-    <TresMesh :position="lidPosition" :cast-shadow="true">
-      <TresSphereGeometry :args="[0.82, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2.4]" />
-      <TresMeshPhysicalMaterial
-        :color="'#f5f1e8'"
-        :roughness="0.24"
-        :metalness="0.02"
-        :clearcoat="0.9"
-        :clearcoat-roughness="0.18"
-        :env-map-intensity="0.9"
-        :map="porcelainTex"
-      />
-    </TresMesh>
+    <TresGroup :position="lidPosition" :cast-shadow="true">
+      <!-- 扁穹顶盖：剖面从碗沿起 0.34 高、盖径 1.22（略大于碗沿 1.15），对齐真盖碗比例 -->
+      <TresMesh :cast-shadow="true">
+        <TresLatheGeometry :args="[lidPts, 48]" />
+        <TresMeshPhysicalMaterial
+          :color="'#f5f1e8'"
+          :roughness="0.24"
+          :metalness="0.02"
+          :clearcoat="0.9"
+          :clearcoat-roughness="0.18"
+          :env-map-intensity="0.9"
+          :map="porcelainTex"
+          :side="THREE.DoubleSide"
+        />
+      </TresMesh>
+      <!-- 盖钮：真盖碗的盖顶抓手 -->
+      <TresMesh :position="lidKnobOffset" :cast-shadow="true">
+        <TresCylinderGeometry :args="[0.1, 0.15, 0.14, 16]" />
+        <TresMeshPhysicalMaterial
+          :color="'#f5f1e8'"
+          :roughness="0.24"
+          :metalness="0.02"
+          :clearcoat="0.9"
+          :clearcoat-roughness="0.18"
+          :env-map-intensity="0.9"
+          :map="porcelainTex"
+        />
+      </TresMesh>
+      <TresMesh :position="lidKnobTopPos" :cast-shadow="true">
+        <TresSphereGeometry :args="[0.13, 16, 12]" />
+        <TresMeshPhysicalMaterial
+          :color="'#f5f1e8'"
+          :roughness="0.24"
+          :metalness="0.02"
+          :clearcoat="0.9"
+          :clearcoat-roughness="0.18"
+          :env-map-intensity="0.9"
+          :map="porcelainTex"
+        />
+      </TresMesh>
+    </TresGroup>
   </TresGroup>
 
   <!-- 茶壶（壶身 + 盖 + 壶钮 + 嘴 + 把）。紫砂：哑光颗粒 + 适度 IBL 提层次，不再死黑 -->
