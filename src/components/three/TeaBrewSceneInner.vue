@@ -514,15 +514,17 @@ onRender(({ delta, elapsed }) => {
   }
 
   // 真手姿态：按动画信号选动作位置，damp 滑过去；无事时缩回画面外
-  // z 往镜头方向 +0.3：手不被器物挡住，露在器物前方
+  // 关键约束：手只落在器物的外侧，不许沉进壶身/碗身（旧值 1.5/-0.35 正好压在壶壁上）
+  // 壶柄世界坐标 = kettlePos + handlePos*0.24 ≈ (-1.57, 1.69, -0.7)，手取柄外侧前方
   if (anim.drink.value > 0.1) {
     handTarget.set(1.5, 1.4 - anim.drink.value * 0.15, -0.3 - anim.drink.value * 0.35)
   } else if (anim.fairnessPour.value > 0.1) {
     handTarget.set(0.45, 1.4, -0.18)
   } else if (anim.pourOut.value > 0.1) {
-    handTarget.set(-0.35, 1.5, -0.4)
+    // 出汤握盖碗：碗沿 r≈1.15*0.3 在 x -0.44..0.24，手退到碗左侧外
+    handTarget.set(-0.62, 1.45, -0.45)
   } else if (anim.pourWater.value > 0.1) {
-    handTarget.set(-1.45, 1.55, -0.35)
+    handTarget.set(-1.72, 1.62, -0.62)
   } else {
     handTarget.set(0, -0.5, 4.2)
   }
