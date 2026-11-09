@@ -93,6 +93,7 @@ onMounted(() => {
 - 类型检查：`npm run type-check`（与 frontmatter `verification` 同款）
 - 五态与触控：`node scripts/audit-states.cjs`、`node scripts/audit-touch.cjs`
 - 冲泡页移动端（390×844，触控 ≥44px、无横向滚动）：`node scripts/verify-brew-mobile.cjs`
+- 冲泡页宽屏（1440×900，断言 3D canvas 真挂载、无横向滚动）：`node scripts/verify-brew-desktop.cjs`
 - 皮肤切换截图对比：`node scripts/verify-brew-skins.cjs`
 
 ## 踩坑（真实教训）

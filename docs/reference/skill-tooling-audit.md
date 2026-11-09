@@ -1,5 +1,5 @@
 ---
-last_updated: 2026-11-08
+last_updated: 2026-11-09
 status: active
 owner: ai
 ---
@@ -7,7 +7,7 @@ owner: ai
 # 技能可执行化审计（自动生成，勿手改）
 
 > 生成：node scripts/audit-skill-tooling.cjs --write
-> 技能 109 个（自写 43 / 导入 66）；脚本 60 个；解析失败 0 个
+> 技能 109 个（自写 43 / 导入 66）；脚本 61 个；解析失败 0 个
 
 ## 汇总
 
@@ -17,7 +17,7 @@ owner: ai
 | 半可执行（≥2 条命令行步骤） | 12 | 有命令但未沉淀成脚本 |
 | 纯文档 | 76 | 全靠模型现场推导 |
 
-孤儿脚本（零技能引用）：**0 / 60**——0 个在 CI/门禁或脚本间被调用（缺口在技能正文没点名），0 个 @oneshot 一次性诊断（使命已完结），0 个谁都不引用（该判「接给谁 / 删」）
+孤儿脚本（零技能引用）：**0 / 61**——0 个在 CI/门禁或脚本间被调用（缺口在技能正文没点名），0 个 @oneshot 一次性诊断（使命已完结），0 个谁都不引用（该判「接给谁 / 删」）
 
 ## 跨技能引用（只报不阻断）
 
@@ -41,7 +41,7 @@ owner: ai
 | frontend-design | 导入 | scan-emoji.cjs、verify-icons.cjs、audit-touch.cjs、audit-type.cjs、audit-states.cjs、compress-assets.cjs、gen-hero-responsive.cjs、screenshot-home.cjs、screenshot-growth.cjs、screenshots-home-share.cjs、audit-hex.cjs、slim-china-map.cjs | 11 |
 | plan-control | 导入 | verify-harness.cjs、eval-harness.cjs | 1 |
 | tea-tasting | 导入 | audit-teas.cjs | 1 |
-| vue-component | 导入 | audit-states.cjs、audit-touch.cjs、verify-brew-mobile.cjs、verify-brew-skins.cjs | 5 |
+| vue-component | 导入 | audit-states.cjs、audit-touch.cjs、verify-brew-mobile.cjs、verify-brew-desktop.cjs、verify-brew-skins.cjs | 6 |
 | 09-db-migration | 自写 | seed-extract.mjs | 1 |
 | 17-offline-sync | 自写 | pwa-offline-smoke.cjs | 1 |
 | 18-3d-scene | 自写 | verify-gardens.cjs、verify-pavilion.cjs、verify-field.cjs、verify-final.cjs、verify-garden-ambient.cjs、verify-controls.cjs、screenshot-brew3d.cjs、convert-3d-ktx2.cjs、dl-textures.cjs、probe-brew.cjs | 11 |
