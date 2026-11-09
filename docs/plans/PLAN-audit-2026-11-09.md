@@ -103,3 +103,11 @@ H3：茶拨只影响观感，不影响任何交互与状态。——读码确认
 ### F4 取证补充（H2 仍未核销）
 - 出汤后进入 DONE 段（`done/d-01.png`：第 2 泡 4s 完成、公道杯有茶、手在盖碗右侧），但「自动续水」下 DONE 只停留约 1-2 秒就自动进下一泡（`done/d-12.png` 已是第 2 泡 5s 浸泡），期间公道杯未倾斜、品茗杯仍是空的。
 - 结论：分茶 / 品饮姿态在自动化流程里拿不到帧，H2 未核销；要取证需让 DONE 段停住（改状态机）或单测里直接驱动 `useBrewAnimation`，属另一批。
+
+### 批 7（治理小债复核 + 分茶/品饮状态通路测试）· 已落地
+- 两项此前登记的小债经复核不成立，不改代码：
+  - `scripts/audit-skill-tooling.cjs:13` 的用法注释本就写着 `[--write | --check]`，不存在缺 `--check`。
+  - `TeaDragDrop.vue` 并未被覆盖率配置排除（`vitest.config.ts:33` 只排 spec / test / data / main.ts）；真实情况是它在 `src/` 内零引用（只在文档里被提到），属死代码。按 AGENTS §5「已有死代码不删，提一句即可」，保留不动，是否删除待拍板。
+- 新增 `src/composables/__tests__/useBrewAnimation.spec.ts`（6 例）：READY 不自动注水、拖拽 override 接管、STEEPING 三路同步到位、出汤中只推进 pourOut、出汤结束后分茶接管且品饮在分茶过 70% 后才起、damp 帧率无关性。
+- 意义：H2 的「分茶→品饮」状态通路从此有确定性证据（此前只有「拿不到帧」的否定结论）；画面帧仍缺，仍需 DONE 段停住才拍得到。
+- 验证：`npx biome check` No fixes applied；`npm run test` 390 用例全过（原 384 + 6）。
