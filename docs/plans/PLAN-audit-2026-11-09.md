@@ -83,6 +83,10 @@ H3：茶拨只影响观感，不影响任何交互与状态。——读码确认
 ## 收口状态（2026-11-09）
 - 已合并：#254 方案、#255（F1+F2）、#256（F3）、#257（F5）。main `dfd2f7a`，工作树干净，Pages 部署 success。
 - 回归：`type-check` ✓ / `build` ✓（precache 137 entries 4678.97 KiB）/ `npm run test` 45 文件 384 用例全过 / `verify-harness` ERRORS [] / `audit-redlines` ERRORS []。
-- 未做：F6（注水揭盖）、手补小臂、F4 的分茶与品饮姿态取证、依赖升级（onnxruntime 1.20→1.31、uvicorn 0.30→0.54、Spring Boot 3.5.3→4.1.2 受 spring-ai 阻塞）。
-
-
+- 未做：手补小臂、F4 的分茶与品饮姿态取证、依赖升级（onnxruntime 1.20→1.31、uvicorn 0.30→0.54、Spring Boot 3.5.3→4.1.2 受 spring-ai 阻塞）。
+### 批 4（F6 注水揭盖 + 壶钮）· 已落地
+- 根因：`anim.pourWater` 从未参与盖子位姿，`lidPosition` 只跟 `anim.steep` 走，注水时盖正压在碗口中央，水线打在盖面上。
+- 改法：`lidPosition` 增加 `pour = smoothstep(anim.pourWater.value)` 项——局部 x `0.58*pour`、y `+0.06*pour`；新增 `lidRotation`（TresJS 只接受数组，塞 Vector3 会报 `Cannot assign to read only property 'rotation'`，实测踩过），倾角 `-0.5*pour`，让盖左沿搭在碗沿上、碗口让开。位移/倾角都在盖碗局部坐标（scale 0.24），数值是世界的 4 倍。
+- 壶钮 `knobPos` y 1.82 → 1.84，盖顶小凸起更明确。
+- 验证：注水帧 `z2-lid02.png`（盖斜搭碗沿、水线进碗口、茶叶可见）；`type-check` ✓ / `build` ✓（precache 137）/ `npm run test` 45 文件 384 用例 ✓ / `biome` ✓。
+- 茶拨不变：红色探针 + 放大证明它被水盂挡住（`z-pick-red2z.png`），挪坐标只会破坏「茶拨在茶巾上」的落位，故保留原位；用户在默认机位看不见属遮挡而非悬空。
