@@ -515,8 +515,9 @@ if (noMetaFiles.length > 0) {
   warnings.push(`docs/ 缺元信息头 ${noMetaFiles.length} 个：${names}${noMetaFiles.length > 5 ? ' …' : ''}（新文档必须带 last_updated/status/owner，或跑 node scripts/add-doc-meta.cjs）`);
 }
 
-// 7b. docs 元信息头 status 值域（active|draft|deprecated）
-const VALID_STATUS = new Set(['active', 'draft', 'deprecated']);
+// 7b. docs 元信息头 status 值域（active|draft|archived|deprecated）
+// archived = 已完成归档（HANDOFF 类文档用），与 deprecated（已废弃但仍在库）语义不同，不能合并
+const VALID_STATUS = new Set(['active', 'draft', 'archived', 'deprecated']);
 const badStatus = [];
 for (const f of allDocs) {
   const c = fs.readFileSync(f, 'utf8');
@@ -526,7 +527,7 @@ for (const f of allDocs) {
   if (st && !VALID_STATUS.has(st[1])) badStatus.push(path.relative(ROOT, f).replace(/\\/g, '/'));
 }
 if (badStatus.length > 0) {
-  warnings.push(`docs/ 元信息头 status 值域异常 ${badStatus.length} 个：${badStatus.slice(0, 3).join(', ')}（合法值 active|draft|deprecated）`);
+  warnings.push(`docs/ 元信息头 status 值域异常 ${badStatus.length} 个：${badStatus.slice(0, 3).join(', ')}（合法值 active|draft|archived|deprecated）`);
 }
 
 // 8. wiki 四件套存在性（工程结构.md §六：business-model / api-contract / data-model / glossary）
