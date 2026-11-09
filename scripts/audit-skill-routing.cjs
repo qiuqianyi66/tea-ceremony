@@ -76,12 +76,40 @@ function activeNames() {
   return names
 }
 
-/** 词元：英文按词（长度>2），中文按 2-gram */
+/**
+ * 中英同义词归一。
+ * 不做这一步，一条英文 description 里只属于该技能的英文词不会被中文描述"复现"，
+ * 独有词比例会虚高；反过来，中文化之后同一技能的比例会凭空下跌（vue-component 46.2% → 38.5% 就是此故）。
+ * 只收高频、含义唯一的名词；歧义词（如 run / do / use）不收，收了会掩盖真重复。
+ */
+const SYNONYM = {
+  component: '组件', components: '组件',
+  page: '页面', pages: '页面',
+  style: '样式', styles: '样式',
+  test: '测试', tests: '测试', testing: '测试',
+  migration: '迁移', migrations: '迁移',
+  api: '接口', apis: '接口',
+  design: '设计', designs: '设计',
+  form: '表单', forms: '表单',
+  animation: '动画', animations: '动画',
+  scene: '场景', scenes: '场景',
+  database: '数据库', db: '数据库',
+  sync: '同步',
+  review: '评审',
+  plan: '计划',
+  audit: '审计',
+}
+
+/** 词元：英文按词（长度>2），中文按 2-gram；英文词命中同义词表时折算成对应的中文词元（只留一个，不额外加） */
 function tokens(text) {
   const out = new Set()
   const clean = text.toLowerCase().replace(/[`*|]/g, ' ')
   for (const w of clean.split(/[^\w\u4e00-\u9fa5]+/).filter(Boolean)) {
-    if (/^[a-z0-9]+$/.test(w) && w.length > 2) out.add(`w:${w}`)
+    if (/^[a-z0-9]+$/.test(w) && w.length > 2) {
+      const zh = SYNONYM[w]
+      if (zh) out.add(`c:${zh}`)
+      else out.add(`w:${w}`)
+    }
   }
   const cjk = clean.replace(/[^\u4e00-\u9fa5]/g, ' ')
   for (const seg of cjk.split(/\s+/).filter(Boolean)) {
@@ -136,8 +164,10 @@ function main() {
   const low = rows.filter((r) => r.ratio < 0.5).map((r) => `${r.n} ${(r.ratio * 100).toFixed(1)}%`)
   console.log(`  低于判据 50% 的 ${low.length} 个${low.length ? `：${low.join('、')}` : ''}`)
   console.log('  （只提示不阻断：低独有词 = 描述可再收紧，不等于该改；也受词元切分口径影响）')
-  console.log('  （口径盲区：中英同义词未归一 —— "component" 与「组件」不计为重合。description 全英文时独有词会虚高；')
-  console.log('    中文化后同一技能的比例会真实下降，2026-11-09 三条导入技能中文化时 vue-component 由 46.2% 降为 38.5% 即此故，别当成退化。）')
+  console.log('  （口径说明：中英同义词已归一 —— component↔组件、page↔页面、style↔样式等折算成同一词元，全英文 description 不再虚高。')
+  console.log('    归一后 vue-component 38.5% → 40.0%，说明它和 db-migration 低于 50% 是**真实的描述重叠**，不是口径假象：')
+  console.log('    「组件 / 页面 / 样式」与 shadcn、frontend-design 共享，「数据库 / 迁移 / 表结构」与同族技能共享。')
+  console.log('    对这两个技能改文本才有用；但改不改按收益判据，不为凑 50% 硬改。）')
   console.log('')
 
   console.log('## 二、结构')
