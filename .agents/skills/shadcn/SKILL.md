@@ -1,6 +1,6 @@
 ---
 name: shadcn
-description: Manages shadcn components and projects — add, search, fix, debug, style, compose UI. Use when working with shadcn/ui, component registries, presets, `--preset` codes, or any project with components.json.
+description: shadcn/ui 组件与 registry 管理：增删查改组件、修 bug、改样式、组合界面。当项目有 components.json、要用 --preset 初始化、或从 registry 取组件时用。
 user-invocable: false
 allowed-tools: Bash(npx shadcn@latest *), Bash(pnpm dlx shadcn@latest *), Bash(bunx --bun shadcn@latest *)
 ---
