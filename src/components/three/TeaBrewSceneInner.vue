@@ -133,6 +133,10 @@ const {
   floorPos,
   tablePos,
   clothPos,
+  trayPos,
+  traySize,
+  saucerPos,
+  lidKnobOffset,
   legPositions,
   gaiwanPos,
   gaiwanScale,
@@ -490,15 +494,15 @@ onRender(({ delta, elapsed }) => {
       const idx = i * 6
       rainPositions[idx + 1] = (rainPositions[idx + 1] ?? 0) - v * delta
       rainPositions[idx + 4] = (rainPositions[idx + 4] ?? 0) - v * delta
-      if ((rainPositions[idx + 4] ?? 0) < 1.0) {
+      if ((rainPositions[idx + 4] ?? 0) < 2.2) {
         const x = (Math.random() - 0.5) * 8
-        const y = 4.5
+        const y = 5.0
         const z = (Math.random() - 0.5) * 6 - 1
         rainPositions[idx] = x
         rainPositions[idx + 1] = y
         rainPositions[idx + 2] = z
-        rainPositions[idx + 3] = x
-        rainPositions[idx + 4] = y - 0.18
+        rainPositions[idx + 3] = x + 0.03
+        rainPositions[idx + 4] = y - 0.1
         rainPositions[idx + 5] = z
       }
     }
@@ -557,6 +561,26 @@ onRender(({ delta, elapsed }) => {
     <TresPlaneGeometry :args="[3, 1.3]" />
     <TresMeshStandardMaterial :color="'#cbb68a'" :roughness="0.9" :bump-map="fabricBump" :bump-scale="0.06" :side="THREE.DoubleSide" :env-map-intensity="0.2" />
   </TresMesh>
+  <!-- 茶盘：真实茶席的器物都承在盘上，散放在桌面空地是假的地方 -->
+  <TresMesh :position="trayPos" :cast-shadow="true" :receive-shadow="true">
+    <TresBoxGeometry :args="traySize" />
+    <TresMeshStandardMaterial :color="'#7a5c3f'" :map="woodTex" :roughness="0.65" :metalness="0.02" :env-map-intensity="0.5" />
+  </TresMesh>
+  <!-- 盖碗托（茶船）：出汤时碗身倾斜、托不跟着转，所以要独立摆放 -->
+  <TresGroup :position="saucerPos" :scale="gaiwanScale">
+    <TresMesh :cast-shadow="true" :receive-shadow="true">
+      <TresCylinderGeometry :args="[1.3, 1.02, 0.12, 40]" />
+      <TresMeshPhysicalMaterial
+        :color="'#f5f1e8'"
+        :roughness="0.24"
+        :metalness="0.02"
+        :clearcoat="0.9"
+        :clearcoat-roughness="0.18"
+        :env-map-intensity="0.9"
+        :map="porcelainTex"
+      />
+    </TresMesh>
+  </TresGroup>
   <TresMesh v-for="(leg, i) in legPositions" :key="i" :position="leg" :cast-shadow="true">
     <TresBoxGeometry :args="[0.14, 1.1, 0.14]" />
     <TresMeshStandardMaterial :color="'#3f3020'" :roughness="0.8" />
@@ -592,18 +616,33 @@ onRender(({ delta, elapsed }) => {
         :env-map-intensity="0.7"
       />
     </TresMesh>
-    <TresMesh :position="lidPosition" :cast-shadow="true">
-      <TresSphereGeometry :args="[0.82, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2.4]" />
-      <TresMeshPhysicalMaterial
-        :color="'#f5f1e8'"
-        :roughness="0.24"
-        :metalness="0.02"
-        :clearcoat="0.9"
-        :clearcoat-roughness="0.18"
-        :env-map-intensity="0.9"
-        :map="porcelainTex"
-      />
-    </TresMesh>
+    <TresGroup :position="lidPosition">
+      <TresMesh :cast-shadow="true">
+        <TresSphereGeometry :args="[0.82, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2.4]" />
+        <TresMeshPhysicalMaterial
+          :color="'#f5f1e8'"
+          :roughness="0.24"
+          :metalness="0.02"
+          :clearcoat="0.9"
+          :clearcoat-roughness="0.18"
+          :env-map-intensity="0.9"
+          :map="porcelainTex"
+        />
+      </TresMesh>
+      <!-- 盖钮：真盖碗的盖顶是抓手，没有钮时盖顶就是一颗光滑白球 -->
+      <TresMesh :position="lidKnobOffset" :cast-shadow="true">
+        <TresCylinderGeometry :args="[0.11, 0.16, 0.16, 16]" />
+        <TresMeshPhysicalMaterial
+          :color="'#f5f1e8'"
+          :roughness="0.24"
+          :metalness="0.02"
+          :clearcoat="0.9"
+          :clearcoat-roughness="0.18"
+          :env-map-intensity="0.9"
+          :map="porcelainTex"
+        />
+      </TresMesh>
+    </TresGroup>
   </TresGroup>
 
   <!-- 茶壶（壶身 + 盖 + 壶钮 + 嘴 + 把）。紫砂：哑光颗粒 + 适度 IBL 提层次，不再死黑 -->

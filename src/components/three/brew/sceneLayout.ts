@@ -39,13 +39,22 @@ export function createSceneLayout(
   const floorPos = new THREE.Vector3(0, -0.001, 1.5)
   const tablePos = new THREE.Vector3(0, 1.1, SET_Z)
   const clothPos = new THREE.Vector3(0, 1.19, SET_Z)
+  // 茶盘：真实茶席必有承托盘承托盖碗/公道杯/品杯；没有盘时器物像散放在空桌面上。
+  // 盘面顶在 TRAY_TOP_Y，三件器统一坐这一层（否则会比盘面低、穿模悬浮）。
+  const trayPos = new THREE.Vector3(0.55, 1.22, 0.05 + SET_Z)
+  const traySize: [number, number, number] = [1.9, 0.03, 1.2]
+  const TRAY_TOP_Y = 1.235
+  // 盖碗托（茶船）：独立于碗身，出汤时碗身倾斜而托不跟着转
+  const saucerPos = new THREE.Vector3(-0.1, TRAY_TOP_Y, SET_Z)
+  // 盖钮（碗盖顶钮）：真实盖碗必有，缺了盖顶就是一颗光球
+  const lidKnobOffset = new THREE.Vector3(0, 0.86, 0)
   const legPositions: THREE.Vector3[] = [
     new THREE.Vector3(-2, 0.55, -0.9 + SET_Z),
     new THREE.Vector3(2, 0.55, -0.9 + SET_Z),
     new THREE.Vector3(-2, 0.55, 0.9 + SET_Z),
     new THREE.Vector3(2, 0.55, 0.9 + SET_Z),
   ]
-  const gaiwanPos = new THREE.Vector3(-0.1, 1.19, SET_Z)
+  const gaiwanPos = new THREE.Vector3(-0.1, TRAY_TOP_Y, SET_Z)
   const gaiwanScale = new THREE.Vector3(0.24, 0.24, 0.24)
   const liquidPos = new THREE.Vector3(0, 0.68, 0)
   // 盖碗盖子位置（闷泡时下移盖上碗口）。开盖只微抬、合盖盖沿与碗口齐平，
@@ -56,7 +65,7 @@ export function createSceneLayout(
 
   // ==================== 公道杯（茶海，玻璃材质，出汤→分茶用） ====================
   // 比例修正：旧 scale 0.28 世界半径仅 0.126，远小于盖碗 0.288；真实公道杯与盖碗体量接近
-  const fairnessPos = new THREE.Vector3(0.68, 1.19, 0.22 + SET_Z)
+  const fairnessPos = new THREE.Vector3(0.68, TRAY_TOP_Y, 0.22 + SET_Z)
   const fairnessScale = new THREE.Vector3(0.4, 0.4, 0.4)
   const fairnessPts = [
     new THREE.Vector2(0, 0),
@@ -95,9 +104,9 @@ export function createSceneLayout(
     new THREE.Vector2(0.25, 0.42),
   ]
   const teacupPositions: THREE.Vector3[] = [
-    new THREE.Vector3(1.2, 1.19, 0.55 + SET_Z),
-    new THREE.Vector3(1.5, 1.19, 0.05 + SET_Z),
-    new THREE.Vector3(1.2, 1.19, -0.42 + SET_Z),
+    new THREE.Vector3(1.2, TRAY_TOP_Y, 0.55 + SET_Z),
+    new THREE.Vector3(1.5, TRAY_TOP_Y, 0.05 + SET_Z),
+    new THREE.Vector3(1.2, TRAY_TOP_Y, -0.42 + SET_Z),
   ]
   // 中景道具：茶席后移后桌面中景偏空，补茶巾/水盂/茶拨/杯托丰富层次。
   // 均位于右侧品茗杯区，不挡左侧注水流与放茶动画（3D_SPEC：只做视觉层）。
@@ -183,6 +192,10 @@ export function createSceneLayout(
     floorPos,
     tablePos,
     clothPos,
+    trayPos,
+    traySize,
+    saucerPos,
+    lidKnobOffset,
     legPositions,
     gaiwanPos,
     gaiwanScale,

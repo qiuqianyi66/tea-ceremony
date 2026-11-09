@@ -39,7 +39,8 @@ export function createRain(count = 300): RainSystem {
   const rainSpeeds = new Float32Array(count)
   for (let i = 0; i < count; i++) {
     const x = (Math.random() - 0.5) * 8
-    const y = Math.random() * 4 + 1
+    // 只在茶席上方的"窗外"空间落雨：旧范围 1~5 会落到桌面高度，看着像雨穿进屋里
+    const y = Math.random() * 2.4 + 2.6
     const z = (Math.random() - 0.5) * 6 - 1
     rainPositions[i * 6] = x
     rainPositions[i * 6 + 1] = y
