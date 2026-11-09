@@ -695,8 +695,9 @@ onRender(({ delta, elapsed }) => {
       <TresLatheGeometry :args="[potPts, 48]" />
       <TresMeshStandardMaterial :color="'#8a6b48'" :roughness="0.6" :metalness="0.05" :map="zishaTex" :bump-map="potBump" :bump-scale="0.05" :env-map-intensity="0.55" />
     </TresMesh>
-    <TresMesh :position="kettleLidPos" :cast-shadow="true">
-      <TresSphereGeometry :args="[0.62, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2.6]" />
+    <!-- 壶盖：盖径 1.06 略大于壶口 1.05，落在壶沿上（旧 0.62 正好等于壶身收口，只盖住那个小孔） -->
+    <TresMesh :position="kettleLidPos" :scale="[1, 0.35, 1]" :cast-shadow="true">
+      <TresSphereGeometry :args="[1.06, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2.6]" />
       <TresMeshStandardMaterial :color="'#8a6b48'" :roughness="0.6" :metalness="0.05" :map="zishaTex" :bump-map="potBump" :bump-scale="0.05" :env-map-intensity="0.55" />
     </TresMesh>
     <TresMesh :position="knobPos" :cast-shadow="true">
