@@ -176,7 +176,6 @@ const {
   flameLightPos,
   stoveGlowScale,
   streamPos,
-  waterStreamPos,
   liquidScale,
   teaScoopPos,
 } = createSceneLayout(anim)
@@ -308,6 +307,11 @@ const stoveGlow = ref<THREE.Sprite | null>(null) // 炉火辉光精灵
 const teaLiquidMat = ref<THREE.MeshStandardMaterial | null>(null) // 碗内茶汤材质
 const pourStreamMat = ref<THREE.MeshBasicMaterial | null>(null) // 水流细柱材质
 const pourStream = ref<THREE.Mesh | null>(null) // 水流细柱
+const waterStream = ref<THREE.Mesh | null>(null) // 入水水线（壶嘴→盖碗，端点每帧按茶壶世界矩阵算）
+const SPOUT_TIP_LOCAL = new THREE.Vector3(1.673, 1.495, 0) // 壶嘴端点（茶壶局部坐标，尺寸见 spoutPos 与 1.1 长壶嘴）
+const waterTip = new THREE.Vector3()
+const waterMouth = new THREE.Vector3()
+const waterDir = new THREE.Vector3()
 const steamMat = ref<THREE.PointsMaterial | null>(null) // 蒸汽材质
 
 // 视觉平滑目标值（动画循环中 lerp）
@@ -482,11 +486,31 @@ onRender(({ delta, elapsed }) => {
     }
   }
 
-  // 茶壶：出汤倾斜平滑 + 轻微呼吸
+  // 茶壶：出汤倾斜平滑 + 轻微呼吸；注水时抬离茶盘，让壶嘴高过碗沿（否则水线是平的）
+  const pourLift = 0.16 * smoothstep(anim.pourWater.value)
   if (kettleGroup.value) {
     const k = kettleGroup.value
     k.rotation.z += (tiltTarget - k.rotation.z) * Math.min(1, delta * 4)
-    k.position.y = 1.28 + Math.sin(elapsed * 1.2) * 0.012
+    k.position.y = 1.28 + Math.sin(elapsed * 1.2) * 0.012 + pourLift
+  }
+
+  // 入水水线：起于壶嘴端点世界坐标，落进碗口中心；长度与倾角每帧重算
+  if (waterStream.value) {
+    const ws = waterStream.value
+    waterMouth.set(gaiwanPos.x, gaiwanPos.y + 0.2, gaiwanPos.z)
+    if (kettleGroup.value) {
+      kettleGroup.value.updateWorldMatrix(true, false)
+      waterTip.copy(SPOUT_TIP_LOCAL).applyMatrix4(kettleGroup.value.matrixWorld)
+    } else {
+      waterTip.copy(SPOUT_TIP_LOCAL)
+    }
+    waterDir.copy(waterMouth).sub(waterTip)
+    const len = waterDir.length()
+    ws.position.copy(waterTip).add(waterMouth).multiplyScalar(0.5)
+    // 圆柱轴沿 +Y，绕 Z 转 θ 后 +Y 指向 (-sinθ, cosθ)；令其等于单位方向得到 θ = atan2(-dx, dy)
+    ws.rotation.set(0, 0, Math.atan2(-waterDir.x, waterDir.y))
+    ws.scale.y = len * 1.05
+    ws.visible = anim.pourWater.value > 0.05
   }
   if (pourStream.value) pourStream.value.visible = tiltTarget > 0.3
 
@@ -524,7 +548,8 @@ onRender(({ delta, elapsed }) => {
     // 出汤握盖碗：碗沿 r≈1.15*0.3 在 x -0.44..0.24，手退到碗左侧外
     handTarget.set(-0.62, 1.45, -0.45)
   } else if (anim.pourWater.value > 0.1) {
-    handTarget.set(-1.72, 1.62, -0.62)
+    // 注水时壶被抬起（见 pourLift），手随之抬到柄外侧
+    handTarget.set(-1.72, 1.62 + pourLift, -0.62)
   } else {
     handTarget.set(0, -0.5, 4.2)
   }
@@ -688,13 +713,9 @@ onRender(({ delta, elapsed }) => {
     </TresMesh>
   </TresGroup>
 
-  <!-- 注水流（从壶嘴到盖碗，入水动画） -->
-  <TresMesh
-    :position="waterStreamPos"
-    :rotation="[0, 0, Math.PI / 2]"
-    :visible="anim.pourWater.value > 0.05"
-  >
-    <TresCylinderGeometry :args="[0.025, 0.045, 2.0, 8]" />
+  <!-- 注水流（从真实壶嘴端点斜落进盖碗，入水动画）——端点每帧按茶壶世界矩阵更新 -->
+  <TresMesh ref="waterStream" :visible="anim.pourWater.value > 0.05">
+    <TresCylinderGeometry :args="[0.012, 0.028, 1, 8]" />
     <TresMeshBasicMaterial
       :color="'#a8d8f0'"
       :transparent="true"
@@ -884,8 +905,8 @@ onRender(({ delta, elapsed }) => {
     <TresMeshStandardMaterial :color="'#2a3540'" :roughness="0.95" :env-map-intensity="0.15" />
   </TresMesh>
 
-  <!-- 中景道具：茶拨（竹制，斜放在茶巾上） -->
-  <TresMesh :position="teaPickPos" :rotation="[0, 0.6, 0]" :cast-shadow="true">
+  <!-- 中景道具：茶拨（竹制，平放在茶巾上）——圆柱轴沿 +Y，先用 Z 轴转 90° 放倒，再由 Y 轴偏航 -->
+  <TresMesh :position="teaPickPos" :rotation="[0, 0.6, Math.PI / 2]" :cast-shadow="true">
     <TresCylinderGeometry :args="[0.012, 0.012, 0.4, 8]" />
     <TresMeshStandardMaterial :color="'#b8956a'" :roughness="0.55" :env-map-intensity="0.35" />
   </TresMesh>
