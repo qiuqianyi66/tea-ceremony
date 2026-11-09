@@ -117,7 +117,7 @@ export function createSceneLayout(
   // 均位于右侧品茗杯区，不挡左侧注水流与放茶动画（3D_SPEC：只做视觉层）。
   const teaClothPos = new THREE.Vector3(1.7, 1.194, -0.15 + SET_Z)
   const waterPotPos = new THREE.Vector3(1.78, 1.27, 0.28 + SET_Z)
-  const teaPickPos = new THREE.Vector3(1.68, 1.206, -0.15 + SET_Z)
+  const teaPickPos = new THREE.Vector3(1.68, 1.211, -0.15 + SET_Z)
   const teacupLiquidPos = new THREE.Vector3(0, 0.2, 0)
   // 品茗杯液面（分茶时上升，喝茶时减少）
   const teacupLiquidScale = computed(() => {
@@ -169,12 +169,8 @@ export function createSceneLayout(
   const flameLightPos = new THREE.Vector3(0, 0.45, 0)
   const stoveGlowScale = new THREE.Vector3(1.1, 1.1, 1)
   const streamPos = new THREE.Vector3(0.1, 1.0, 0)
-  // 注水流位置：壶嘴到盖碗中心的中点（入水动画用）
-  const waterStreamPos = computed(() => {
-    const spoutWorld = new THREE.Vector3(kettlePos.x + 0.5, kettlePos.y + 0.3, kettlePos.z)
-    const gaiwanCenter = new THREE.Vector3(gaiwanPos.x, gaiwanPos.y + 0.3, gaiwanPos.z)
-    return spoutWorld.clone().add(gaiwanCenter).multiplyScalar(0.5)
-  })
+  // 注水流不再由布局算：壶嘴端点随茶壶倾斜/抬升变化，改由 TeaBrewSceneInner 每帧按
+  // 茶壶世界矩阵取真实壶嘴位置（旧实现在这里算固定中点，水柱横在半空、接不上壶嘴）。
   // 盖碗液面 scale（入水时液面上升）
   const liquidScale = computed(
     () => new THREE.Vector3(1, 0.3 + smoothstep(anim.pourWater.value) * 0.5, 1),
@@ -242,7 +238,6 @@ export function createSceneLayout(
     flameLightPos,
     stoveGlowScale,
     streamPos,
-    waterStreamPos,
     liquidScale,
     teaScoopPos,
   }
