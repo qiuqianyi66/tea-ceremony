@@ -69,7 +69,7 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
-        <!-- JWT（jjwt 0.12.6，T6 认证切片） -->
+        <!-- JWT（jjwt 0.13.0，T6 认证切片） -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
