@@ -60,11 +60,12 @@ export function createSteamParticles(
   const vel = new Float32Array(count)
   const top = new Float32Array(count)
   for (let i = 0; i < count; i++) {
-    positions[i * 3] = 0.25 + (Math.random() - 0.5) * 0.7
-    positions[i * 3 + 1] = Math.random() * 1.2 + 2.4 // 起始在桌面附近
-    positions[i * 3 + 2] = (Math.random() - 0.5) * 0.5 + setZ
+    // 蒸汽从碗口（世界 y≈1.46）升起。旧值从 y=2.4 半空开始，汽团会悬在盖碗上方像一颗球。
+    positions[i * 3] = -0.1 + (Math.random() - 0.5) * 0.24
+    positions[i * 3 + 1] = 1.5 + Math.random() * 0.12
+    positions[i * 3 + 2] = (Math.random() - 0.5) * 0.24 + setZ
     vel[i] = 0.4 + Math.random() * 0.5
-    top[i] = 3.4 + Math.random() * 1.6
+    top[i] = 2.7 + Math.random() * 1.1
   }
   const geometry = new THREE.BufferGeometry()
   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))

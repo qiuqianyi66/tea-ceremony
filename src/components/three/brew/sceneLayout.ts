@@ -46,8 +46,10 @@ export function createSceneLayout(
   const TRAY_TOP_Y = 1.235
   // 盖碗托（茶船）：独立于碗身，出汤时碗身倾斜而托不跟着转
   const saucerPos = new THREE.Vector3(-0.1, TRAY_TOP_Y, SET_Z)
-  // 盖钮（碗盖顶钮）：真实盖碗必有，缺了盖顶就是一颗光球
-  const lidKnobOffset = new THREE.Vector3(0, 0.86, 0)
+  // 盖钮（碗盖顶钮）：真盖碗必有，缺了盖顶就是一颗光滑球。高度对齐新穹顶顶面 0.34
+  const lidKnobOffset = new THREE.Vector3(0, 0.4, 0)
+  // 钮顶圆珠（钮帽），压在钮柱之上
+  const lidKnobTopPos = new THREE.Vector3(0, 0.5, 0)
   const legPositions: THREE.Vector3[] = [
     new THREE.Vector3(-2, 0.55, -0.9 + SET_Z),
     new THREE.Vector3(2, 0.55, -0.9 + SET_Z),
@@ -59,8 +61,10 @@ export function createSceneLayout(
   const liquidPos = new THREE.Vector3(0, 0.68, 0)
   // 盖碗盖子位置（闷泡时下移盖上碗口）。开盖只微抬、合盖盖沿与碗口齐平，
   // 避免旧值 0.98→0.68 的大行程让盖子悬空/合盖时像一颗大白球。
+  // 盖碗盖子位置：碗沿在世界坐标 y≈0.95（碗身轮廓顶点），盖沿必须坐在碗沿上。
+  // 合盖=0.95（齐平），开盖抬 0.21。旧值 0.92→0.74 让盖沉进碗里，只剩白球露在外面。
   const lidPosition = computed(
-    () => new THREE.Vector3(0, 0.92 - 0.18 * smoothstep(anim.steep.value), 0),
+    () => new THREE.Vector3(0, 1.16 - 0.21 * smoothstep(anim.steep.value), 0),
   )
 
   // ==================== 公道杯（茶海，玻璃材质，出汤→分茶用） ====================
@@ -196,6 +200,7 @@ export function createSceneLayout(
     traySize,
     saucerPos,
     lidKnobOffset,
+    lidKnobTopPos,
     legPositions,
     gaiwanPos,
     gaiwanScale,

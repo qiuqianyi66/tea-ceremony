@@ -20,7 +20,7 @@ import { createBrewTextures } from './brew/proceduralTextures'
 import { createSceneLayout } from './brew/sceneLayout'
 import { createTeaLeaves, createSteamParticles } from './brew/brewParticles'
 import { createHandGroup } from './brew/handBuilder'
-import { bowlPts, potPts } from './brew/latheProfiles'
+import { bowlPts, lidPts, potPts } from './brew/latheProfiles'
 import { setupRenderPipeline } from './brew/renderPipeline'
 import { createRain, makeSkyGradient } from './brew/skyEnvironment'
 
@@ -137,6 +137,7 @@ const {
   traySize,
   saucerPos,
   lidKnobOffset,
+  lidKnobTopPos,
   legPositions,
   gaiwanPos,
   gaiwanScale,
@@ -338,7 +339,8 @@ function setSteamTarget(phase: BrewPhase, temp: number) {
   const target = props.targetTemp || 80
   switch (phase) {
     case BrewPhase.HEATING:
-      steamTargetOpacity = temp > 60 ? 0.25 + (temp / Math.max(target, 1)) * 0.15 : 0.1
+      // 蒸汽不透明度按"雾"而非"发光体"标定：旧值 0.25~0.4 在普通混合下仍会叠出白球
+      steamTargetOpacity = temp > 60 ? 0.12 + (temp / Math.max(target, 1)) * 0.08 : 0.06
       flameTargetIntensity = clamp01(temp / Math.max(target, 1))
       break
     case BrewPhase.WARMING:
@@ -346,11 +348,11 @@ function setSteamTarget(phase: BrewPhase, temp: number) {
     case BrewPhase.READY:
     case BrewPhase.STEEPING:
     case BrewPhase.DONE:
-      steamTargetOpacity = 0.35
+      steamTargetOpacity = 0.18
       flameTargetIntensity = 0
       break
     default:
-      steamTargetOpacity = 0.1
+      steamTargetOpacity = 0.06
       flameTargetIntensity = 0
   }
   tiltTarget = props.isPouringOut || phase === BrewPhase.DONE ? 0.55 : 0
@@ -405,9 +407,9 @@ onRender(({ delta, elapsed }) => {
   if (activeBg && bgScene && bgScene.background !== activeBg) {
     bgScene.background = activeBg
   }
-  // 闷泡时蒸汽增强（基于 anim.steep progress）
+  // 闷泡时蒸汽增强（基于 anim.steep progress）：上限压在 0.3，超过就叠成白球
   if (anim.steep.value > 0.1) {
-    steamTargetOpacity = Math.max(steamTargetOpacity, 0.35 + anim.steep.value * 0.25)
+    steamTargetOpacity = Math.max(steamTargetOpacity, 0.18 + anim.steep.value * 0.12)
   }
 
   // 蒸汽：平滑透明度（按皮肤 steamBoost 放大室内雨夜热气）+ 上飘循环
@@ -423,9 +425,10 @@ onRender(({ delta, elapsed }) => {
       steamPositions[i * 3 + 2] =
         (steamPositions[i * 3 + 2] ?? 0) + Math.cos(elapsed * 0.6 + i) * delta * 0.08
       if (y > top) {
-        y = 2.4
-        steamPositions[i * 3] = 0.25 + (Math.random() - 0.5) * 0.7
-        steamPositions[i * 3 + 2] = (Math.random() - 0.5) * 0.5 + SET_Z
+        // 重生回碗口，而不是半空 2.4：否则汽团在盖碗上方聚成一团发白光斑
+        y = 1.5
+        steamPositions[i * 3] = -0.1 + (Math.random() - 0.5) * 0.24
+        steamPositions[i * 3 + 2] = (Math.random() - 0.5) * 0.24 + SET_Z
       }
       steamPositions[i * 3 + 1] = y
     }
@@ -616,9 +619,24 @@ onRender(({ delta, elapsed }) => {
         :env-map-intensity="0.7"
       />
     </TresMesh>
-    <TresGroup :position="lidPosition">
+    <TresGroup :position="lidPosition" :cast-shadow="true">
+      <!-- 扁穹顶盖：剖面从碗沿起 0.34 高、盖径 1.22（略大于碗沿 1.15），对齐真盖碗比例 -->
       <TresMesh :cast-shadow="true">
-        <TresSphereGeometry :args="[0.82, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2.4]" />
+        <TresLatheGeometry :args="[lidPts, 48]" />
+        <TresMeshPhysicalMaterial
+          :color="'#f5f1e8'"
+          :roughness="0.24"
+          :metalness="0.02"
+          :clearcoat="0.9"
+          :clearcoat-roughness="0.18"
+          :env-map-intensity="0.9"
+          :map="porcelainTex"
+          :side="THREE.DoubleSide"
+        />
+      </TresMesh>
+      <!-- 盖钮：真盖碗的盖顶抓手 -->
+      <TresMesh :position="lidKnobOffset" :cast-shadow="true">
+        <TresCylinderGeometry :args="[0.1, 0.15, 0.14, 16]" />
         <TresMeshPhysicalMaterial
           :color="'#f5f1e8'"
           :roughness="0.24"
@@ -629,9 +647,8 @@ onRender(({ delta, elapsed }) => {
           :map="porcelainTex"
         />
       </TresMesh>
-      <!-- 盖钮：真盖碗的盖顶是抓手，没有钮时盖顶就是一颗光滑白球 -->
-      <TresMesh :position="lidKnobOffset" :cast-shadow="true">
-        <TresCylinderGeometry :args="[0.11, 0.16, 0.16, 16]" />
+      <TresMesh :position="lidKnobTopPos" :cast-shadow="true">
+        <TresSphereGeometry :args="[0.13, 16, 12]" />
         <TresMeshPhysicalMaterial
           :color="'#f5f1e8'"
           :roughness="0.24"
