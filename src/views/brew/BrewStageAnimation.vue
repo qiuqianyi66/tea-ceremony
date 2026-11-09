@@ -94,8 +94,8 @@ defineProps<{
       ></div>
     </div>
 
-    <!-- 注水水流：用分层 CSS 模拟壶嘴、水柱、飞溅和茶面涟漪 -->
-    <div v-if="isPouring || canGesturePour" class="pouring-scene" :class="{ 'gesture-ready': canGesturePour }">
+    <!-- 注水水流：用分层 CSS 模拟壶嘴、水柱、飞溅和茶面涟漪（3D 场景自带水流与涟漪，此层只在 headless 回退显示） -->
+    <div v-if="(isPouring || canGesturePour) && isHeadless" class="pouring-scene" :class="{ 'gesture-ready': canGesturePour }">
       <div
         class="pouring-kettle"
         :style="pourGestureStyle"
@@ -116,13 +116,13 @@ defineProps<{
       <p v-if="canGesturePour && !isPourGestureActive" class="pour-hint">向右拖动壶嘴注水</p>
     </div>
 
-    <!-- 浸泡时茶叶缓慢舒展，让等待本身成为体验的一部分 -->
-    <div v-if="phase === BrewPhase.STEEPING" class="tea-leaves" aria-hidden="true">
+    <!-- 浸泡时茶叶缓慢舒展，让等待本身成为体验的一部分（3D 盖碗内已有茶叶，此层只在 headless 回退显示） -->
+    <div v-if="phase === BrewPhase.STEEPING && isHeadless" class="tea-leaves" aria-hidden="true">
       <span v-for="i in 4" :key="i" :style="{ animationDelay: `${i * 0.35}s` }"><IconLeaf class="w-6 h-6 text-[var(--color-tea-gold)]" /></span>
     </div>
 
-    <!-- 出汤：倾壶、流线、杯中液面与落点涟漪 -->
-    <div v-if="isPouringOut" class="outflow-scene" aria-live="polite">
+    <!-- 出汤：倾壶、流线、杯中液面与落点涟漪（3D 场景接管物理演出，此层只在 headless 回退显示） -->
+    <div v-if="isPouringOut && isHeadless" class="outflow-scene" aria-live="polite">
       <div class="outflow-kettle">◒</div>
       <div class="outflow-stream"></div>
       <div class="outflow-cup">
@@ -133,9 +133,9 @@ defineProps<{
       <p class="outflow-label">出汤 · 第 {{ completedInfusion }} 泡</p>
     </div>
 
-    <!-- 茶汤色展示（浸泡/出汤时）-->
+    <!-- 茶汤色展示（浸泡/出汤时；3D 盖碗内的汤色由材质实时接管，此色卡只在 headless 回退显示）-->
     <div
-      v-if="phase === BrewPhase.STEEPING || phase === BrewPhase.DONE"
+      v-if="(phase === BrewPhase.STEEPING || phase === BrewPhase.DONE) && isHeadless"
       class="absolute -right-8 bottom-4 w-20 h-24 bg-white/80 rounded-lg shadow-sm flex flex-col items-center justify-center p-2"
     >
       <div class="w-12 h-12 rounded-full mb-1 transition-colors duration-500"

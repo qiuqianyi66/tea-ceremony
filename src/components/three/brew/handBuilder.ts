@@ -38,7 +38,8 @@ export function createHandGroup(): THREE.Group {
 
   // 手默认藏在画面下方镜头外
   handGroup.position.set(0, -0.5, 4.2)
-  handGroup.rotation.x = -1.0
+  // 掌心朝镜头侧（±z），只留一点前倾；旧值 -1.0 把掌心翻向上，握柄时会从器物里"长出来"
+  handGroup.rotation.x = -0.3
   handGroup.visible = true
   handGroup.scale.setScalar(0.9)
   return handGroup

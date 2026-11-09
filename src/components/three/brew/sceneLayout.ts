@@ -181,8 +181,10 @@ export function createSceneLayout(
   )
   // 茶则位置（从旁侧移入盖碗上方，放茶动画）
   const teaScoopPos = computed(() => {
+    // 起点在茶盘右外侧；终点是茶盘上的落位，不再停在盖碗正上方（旧终点 y=gaiwan+0.8
+    // 让茶则整泡都浮在半空，屏幕上看像一块飘着的木片压在进度条上）
     const start = new THREE.Vector3(1.8, 1.6, SET_Z)
-    const end = new THREE.Vector3(gaiwanPos.x + 0.2, gaiwanPos.y + 0.8, gaiwanPos.z)
+    const end = new THREE.Vector3(1.05, TRAY_TOP_Y + 0.01, -0.55)
     return start.clone().lerp(end, smoothstep(anim.addLeaves.value))
   })
 
