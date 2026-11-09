@@ -95,3 +95,11 @@ H3：茶拨只影响观感，不影响任何交互与状态。——读码确认
 - 改法：腕口收到 0.07，随后接一段 0.34 长、半径 0.088→0.105 的小臂（同深靛蓝布），轻微后倾 0.12 rad，让袖形从腕口连续延伸到画面下缘一带。
 - 验证：注水帧 `z-arm.png`（掌—腕—袖连续，无断开）；`type-check` ✓ / `biome` ✓ / `build` ✓（precache 137）/ `npm run test` 384 用例 ✓ / `verify-harness` ERRORS []。
 - 残留：小臂末端仍在画面内收口（不是从画面外伸入），近距放大可见袖口截面；要彻底解决得连相机机位一起调，属下一批。
+### 批 6（后端依赖升级）· 已落地
+- `backend/requirements.txt`：uvicorn 0.30.0 → 0.54.0。验证在本地 venv 实测：`pip install uvicorn==0.54.0` 后 `pytest tests -q` 45 passed / 3 skipped，并真起服务 `python -m uvicorn main:app --port 8123`，`GET /health` 返回 200，启动日志无报错。
+- `backend/pom.xml`：onnxruntime 1.20.0 → 1.31.1（同步改 L128 注释里的版本号）。`mvn -B -q -DskipTests compile` 通过。
+- 未测：onnxruntime 运行时行为（Docker 已停，Testcontainers 跑不了本地 mevn test），以 CI 的 Spring Boot Maven job 为准；uvicorn 的 gunicorn `UvicornWorker` 路径在 Windows 上无 fcntl 无法本地验证（POSIX 专属，属环境限制而非不兼容）。
+
+### F4 取证补充（H2 仍未核销）
+- 出汤后进入 DONE 段（`done/d-01.png`：第 2 泡 4s 完成、公道杯有茶、手在盖碗右侧），但「自动续水」下 DONE 只停留约 1-2 秒就自动进下一泡（`done/d-12.png` 已是第 2 泡 5s 浸泡），期间公道杯未倾斜、品茗杯仍是空的。
+- 结论：分茶 / 品饮姿态在自动化流程里拿不到帧，H2 未核销；要取证需让 DONE 段停住（改状态机）或单测里直接驱动 `useBrewAnimation`，属另一批。
