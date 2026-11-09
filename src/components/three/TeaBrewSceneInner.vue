@@ -425,10 +425,10 @@ onRender(({ delta, elapsed }) => {
       steamPositions[i * 3 + 2] =
         (steamPositions[i * 3 + 2] ?? 0) + Math.cos(elapsed * 0.6 + i) * delta * 0.08
       if (y > top) {
-        // 重生回碗口，而不是半空 2.4：否则汽团在盖碗上方聚成一团发白光斑
-        y = 1.5
-        steamPositions[i * 3] = -0.1 + (Math.random() - 0.5) * 0.24
-        steamPositions[i * 3 + 2] = (Math.random() - 0.5) * 0.24 + SET_Z
+        // 重生回盖顶之上（1.66），而不是半空或碗沿：否则汽团在盖面上聚成一块白斑
+        y = 1.66
+        steamPositions[i * 3] = -0.1 + (Math.random() - 0.5) * 0.3
+        steamPositions[i * 3 + 2] = (Math.random() - 0.5) * 0.3 + SET_Z
       }
       steamPositions[i * 3 + 1] = y
     }
@@ -561,7 +561,7 @@ onRender(({ delta, elapsed }) => {
     <TresMeshStandardMaterial :color="'#4a3626'" :map="woodTex" :roughness="0.55" :metalness="0.02" :env-map-intensity="0.5" />
   </TresMesh>
   <TresMesh :position="clothPos" :rotation="[-Math.PI / 2, 0, 0]" :receive-shadow="true">
-    <TresPlaneGeometry :args="[3, 1.3]" />
+    <TresPlaneGeometry :args="[3.4, 1.4]" />
     <TresMeshStandardMaterial :color="'#cbb68a'" :roughness="0.9" :bump-map="fabricBump" :bump-scale="0.06" :side="THREE.DoubleSide" :env-map-intensity="0.2" />
   </TresMesh>
   <!-- 茶盘：真实茶席的器物都承在盘上，散放在桌面空地是假的地方 -->

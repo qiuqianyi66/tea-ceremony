@@ -38,7 +38,8 @@ export function createSceneLayout(
   const rimLightPos = new THREE.Vector3(-3, 2, -2)
   const floorPos = new THREE.Vector3(0, -0.001, 1.5)
   const tablePos = new THREE.Vector3(0, 1.1, SET_Z)
-  const clothPos = new THREE.Vector3(0, 1.19, SET_Z)
+  // 茶席布：铺满茶盘 + 品杯 + 茶巾整片区域（旧 3×1.3 只垫到壶下，右侧器物像压在光桌面上）
+  const clothPos = new THREE.Vector3(0, 1.19, -0.55 + SET_Z)
   // 茶盘：真实茶席必有承托盘承托盖碗/公道杯/品杯；没有盘时器物像散放在空桌面上。
   // 盘面顶在 TRAY_TOP_Y，三件器统一坐这一层（否则会比盘面低、穿模悬浮）。
   const trayPos = new THREE.Vector3(0.55, 1.22, 0.05 + SET_Z)
