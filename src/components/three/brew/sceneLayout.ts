@@ -130,9 +130,12 @@ export function createSceneLayout(
   const DRINK_CUP_INDEX = 1
   // 中景道具：茶席后移后桌面中景偏空，补茶巾/水盂/茶拨/杯托丰富层次。
   // 均位于右侧品茗杯区，不挡左侧注水流与放茶动画（3D_SPEC：只做视觉层）。
+  // 茶巾：0.75×0.5 铺在右侧，几乎全被茶盘与水盂压住（只露一条窄边），不改尺寸。
   const teaClothPos = new THREE.Vector3(1.7, 1.194, -0.15 + SET_Z)
   const waterPotPos = new THREE.Vector3(1.78, 1.27, 0.28 + SET_Z)
-  const teaPickPos = new THREE.Vector3(1.68, 1.211, -0.15 + SET_Z)
+  // 茶拨：旧坐标 (1.68, 1.211, -0.85) 落在茶巾（z -1.1..-0.6）之外，等于悬在桌面上方，
+  // 且大半被水盂挡住，看着像斜插着浮空。现平放在茶盘前沿空处，圆心 y = 盘面 1.235 + 半径 0.016。
+  const teaPickPos = new THREE.Vector3(0.85, 1.251, 0.62 + SET_Z)
   const teacupLiquidPos = new THREE.Vector3(0, 0.2, 0)
   // 品茗杯液面（分茶时上升，喝茶时减少）。
   // 只让被端起的那一只（第 2 只，正对相机）变浅，三只同时变空不像真喝茶。
@@ -175,8 +178,9 @@ export function createSceneLayout(
   })
   const kettlePos = new THREE.Vector3(-1.25, 1.465, SET_Z)
   const kettleScale = new THREE.Vector3(0.24, 0.24, 0.24)
-  const kettleLidPos = new THREE.Vector3(0, 1.55, 0)
-  const knobPos = new THREE.Vector3(0, 1.84, 0)
+  // 壶盖圆心：盖沿要压在壶口（局部 y 1.60、半径 0.625）上，球冠沿高 0.125 → 圆心 y = 1.60 - 0.125
+  const kettleLidPos = new THREE.Vector3(0, 1.475, 0)
+  const knobPos = new THREE.Vector3(0, 1.8, 0)
   const spoutPos = new THREE.Vector3(1.35, 1.05, 0)
   const handlePos = new THREE.Vector3(-1.35, 0.95, 0)
   const stovePos = new THREE.Vector3(-1.25, 1.19, SET_Z)

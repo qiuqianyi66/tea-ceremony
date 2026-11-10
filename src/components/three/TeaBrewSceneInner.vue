@@ -698,9 +698,10 @@ onRender(({ delta, elapsed }) => {
       <TresLatheGeometry :args="[potPts, 48]" />
       <TresMeshStandardMaterial :color="'#8a6b48'" :roughness="0.6" :metalness="0.05" :map="zishaTex" :bump-map="potBump" :bump-scale="0.05" :env-map-intensity="0.55" />
     </TresMesh>
-    <!-- 壶盖：盖径 1.06 略大于壶口 1.05，落在壶沿上（旧 0.62 正好等于壶身收口，只盖住那个小孔） -->
+    <!-- 壶盖：盖沿落在壶口（壶身收口 0.62 / y 1.62），旧版盖径 1.06 悬在收口上方 0.06，
+         盖与壶肩之间露一圈缝隙、看着像浮着。现按球冠反算：半径 0.72、θ=60°→ 盖沿半径 0.625、高 0.125 -->
     <TresMesh :position="kettleLidPos" :scale="[1, 0.35, 1]" :cast-shadow="true">
-      <TresSphereGeometry :args="[1.06, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2.6]" />
+      <TresSphereGeometry :args="[0.72, 24, 12, 0, Math.PI * 2, 0, 1.05]" />
       <TresMeshStandardMaterial :color="'#8a6b48'" :roughness="0.6" :metalness="0.05" :map="zishaTex" :bump-map="potBump" :bump-scale="0.05" :env-map-intensity="0.55" />
     </TresMesh>
     <TresMesh :position="knobPos" :cast-shadow="true">
@@ -909,9 +910,9 @@ onRender(({ delta, elapsed }) => {
     <TresMeshStandardMaterial :color="'#2a3540'" :roughness="0.95" :env-map-intensity="0.15" />
   </TresMesh>
 
-  <!-- 中景道具：茶拨（竹制，平放在茶巾上）——圆柱轴沿 +Y，先用 Z 轴转 90° 放倒，再由 Y 轴偏航 -->
-  <TresMesh :position="teaPickPos" :rotation="[0, 0.6, Math.PI / 2]" :cast-shadow="true">
-    <TresCylinderGeometry :args="[0.012, 0.012, 0.4, 8]" />
+  <!-- 中景道具：茶拨（竹制，平放在茶盘前沿）——圆柱轴沿 +Y，先用 Z 轴转 90° 放倒 -->
+  <TresMesh :position="teaPickPos" :rotation="[0, 0.15, Math.PI / 2]" :cast-shadow="true">
+    <TresCylinderGeometry :args="[0.018, 0.014, 0.34, 8]" />
     <TresMeshStandardMaterial :color="'#b8956a'" :roughness="0.55" :env-map-intensity="0.35" />
   </TresMesh>
 
