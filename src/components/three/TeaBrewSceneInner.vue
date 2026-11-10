@@ -160,10 +160,10 @@ const {
   waterPotPos,
   teaPickPos,
   teacupLiquidPos,
-  teacupLiquidScale,
+  teacupLiquidScaleAt,
   teacupLiquidOpacity,
-  teacupDrinkOffset,
-  teacupDrinkRotation,
+  teacupDrinkOffsetAt,
+  teacupDrinkRotationAt,
   pourOutStreamPos,
   fairnessStreamPos,
   kettlePos,
@@ -542,7 +542,9 @@ onRender(({ delta, elapsed }) => {
   // 关键约束：手只落在器物的外侧，不许沉进壶身/碗身（旧值 1.5/-0.35 正好压在壶壁上）
   // 壶柄世界坐标 = kettlePos + handlePos*0.24 ≈ (-1.57, 1.69, -0.7)，手取柄外侧前方
   if (anim.drink.value > 0.1) {
-    handTarget.set(1.5, 1.4 - anim.drink.value * 0.15, -0.3 - anim.drink.value * 0.35)
+    // 品饮：手随杯子一起抬，只手抬杯不动会让杯子看起来浮在半空；
+    // x 落在杯左侧一点，别让手掌把杯子挡住（挡住就看不见在喝）
+    handTarget.set(1.5, 1.4 + anim.drink.value * 0.08, -0.3 - anim.drink.value * 0.5)
   } else if (anim.fairnessPour.value > 0.1) {
     handTarget.set(0.45, 1.4, -0.18)
   } else if (anim.pourOut.value > 0.1) {
@@ -862,9 +864,9 @@ onRender(({ delta, elapsed }) => {
   <TresGroup
     v-for="(pos, i) in teacupPositions"
     :key="i"
-    :position="pos.clone().add(teacupDrinkOffset)"
+    :position="pos.clone().add(teacupDrinkOffsetAt(i))"
     :scale="teacupScale"
-    :rotation="teacupDrinkRotation"
+    :rotation="teacupDrinkRotationAt(i)"
   >
     <!-- 杯身（黑釉：釉面 clearcoat + IBL 微光） -->
     <TresMesh :cast-shadow="true">
@@ -879,7 +881,7 @@ onRender(({ delta, elapsed }) => {
       />
     </TresMesh>
     <!-- 杯内茶汤（分茶时上升，喝茶时减少） -->
-    <TresMesh :position="teacupLiquidPos" :scale="teacupLiquidScale">
+    <TresMesh :position="teacupLiquidPos" :scale="teacupLiquidScaleAt(i)">
       <TresCylinderGeometry :args="[0.32, 0.34, 0.04, 32]" />
       <TresMeshStandardMaterial
         :color="props.soupColor"

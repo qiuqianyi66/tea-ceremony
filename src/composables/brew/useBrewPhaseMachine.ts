@@ -12,6 +12,12 @@ import { BrewPhase } from '@/types/brewing'
  * 对外契约：BrewView 模板绑定的 ref/函数原样暴露，行为逐字不变。
  */
 
+/**
+ * 出汤结束后在 DONE 段停留的时长：留给「分茶 → 品饮」两段动画。
+ * 数值依据 useBrewAnimation 的阻尼系数：分茶约 0.5s 过 70% 才起品饮，品饮再约 1.5s 到七成。
+ */
+export const FAIRNESS_DWELL_MS = 2400
+
 export function useBrewPhaseMachine() {
   const router = useRouter()
   const brew = useBrewStore()
@@ -29,6 +35,8 @@ export function useBrewPhaseMachine() {
   let rinseInterval: number | null = null
   let steepStartedAt: number | null = null
   let outflowTimer: ReturnType<typeof setTimeout> | null = null
+  // 出汤动画结束到「分茶 + 品饮」演完之间的停留（见 stopSteeping 注释）
+  let fairnessTimer: ReturnType<typeof setTimeout> | null = null
 
   const rinseCountdown = ref(0)
   const isPouringOut = ref(false)
@@ -139,16 +147,30 @@ export function useBrewPhaseMachine() {
     audio.playPourTea(1.5) // 出汤声
     isPouringOut.value = true
     if (outflowTimer) clearTimeout(outflowTimer)
-    // 出汤动画 1.8s 后自动推进下一泡或捧杯收尾，不等用户再点「出汤完成」。
-    // 流程：煮水自动 → 醒茶自动倒计时 → READY 拖一次注水 → 浸泡 → 出汤全自动。
+    // 出汤动画 1.8s 后结束；随后在 DONE 段停 2.4s 让分茶与品饮演完，再推进下一泡或捧杯收尾。
+    // 流程：煮水自动 → 醒茶自动倒计时 → READY 拖一次注水 → 浸泡 → 出汤全自动 → 分茶/品饮。
+    // 停留时长取自 useBrewAnimation 的实际时序：fairnessPour 约 0.5s 过 70% 才起 drink，
+    // drink 再约 1.5s 到七成，2.4s 够两款动画都看见，又不至于让整泡变得滞重。
     outflowTimer = setTimeout(() => {
       isPouringOut.value = false
       outflowTimer = null
-      handleMainAction()
+      if (brewState.phase !== BrewPhase.DONE) {
+        handleMainAction()
+        return
+      }
+      fairnessTimer = setTimeout(() => {
+        fairnessTimer = null
+        handleMainAction()
+      }, FAIRNESS_DWELL_MS)
     }, 1800)
   }
 
   function handleMainAction() {
+    // 停留期内用户自己点了「继续冲泡」，以点击为准：撤掉待触发的推进，避免走两次
+    if (fairnessTimer) {
+      clearTimeout(fairnessTimer)
+      fairnessTimer = null
+    }
     const phase = brewState.phase
 
     if (phase === BrewPhase.IDLE) {
@@ -176,6 +198,7 @@ export function useBrewPhaseMachine() {
     // 清理本状态机持有的全部定时器（粒子/音效清理在 useBrewAtmosphere）
     if (warmTimer) clearTimeout(warmTimer)
     if (outflowTimer) clearTimeout(outflowTimer)
+    if (fairnessTimer) clearTimeout(fairnessTimer)
     if (finaleTimer) clearTimeout(finaleTimer)
     if (steepInterval) clearInterval(steepInterval)
     if (rinseInterval) clearInterval(rinseInterval)
