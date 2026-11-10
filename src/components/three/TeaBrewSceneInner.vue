@@ -162,6 +162,7 @@ const {
   teacupLiquidPos,
   teacupLiquidScaleAt,
   teacupLiquidOpacity,
+  teacupLiquidRotationAt,
   teacupDrinkOffsetAt,
   teacupDrinkRotationAt,
   pourOutStreamPos,
@@ -926,9 +927,13 @@ onRender(({ delta, elapsed }) => {
         :env-map-intensity="1.0"
       />
     </TresMesh>
-    <!-- 杯内茶汤（分茶时上升，喝茶时减少） -->
-    <TresMesh :position="teacupLiquidPos" :scale="teacupLiquidScaleAt(i)">
-      <TresCylinderGeometry :args="[0.32, 0.34, 0.04, 32]" />
+    <!-- 杯内茶汤（分茶时上升，喝茶时减少）：半径收在杯口内，倾斜时反向保持水平 -->
+    <TresMesh
+      :position="teacupLiquidPos"
+      :scale="teacupLiquidScaleAt(i)"
+      :rotation="teacupLiquidRotationAt(i)"
+    >
+      <TresCylinderGeometry :args="[0.25, 0.27, 0.04, 32]" />
       <TresMeshStandardMaterial
         :color="props.soupColor"
         :roughness="0.06"
@@ -981,17 +986,17 @@ onRender(({ delta, elapsed }) => {
     />
   </TresMesh>
 
-  <!-- 分茶水流（公道杯→品茗杯，分茶动画） -->
+  <!-- 分茶水流（公道杯→品茗杯，分茶动画）：喝茶开始后淡出，避免水流柱一直横在杯与手之间 -->
   <TresMesh
     :position="fairnessStreamPos"
     :rotation="[0, 0, Math.PI / 2]"
-    :visible="anim.fairnessPour.value > 0.05"
+    :visible="anim.fairnessPour.value > 0.05 && anim.drink.value < 0.9"
   >
     <TresCylinderGeometry :args="[0.015, 0.025, 0.9, 8]" />
     <TresMeshBasicMaterial
       :color="props.soupColor"
       :transparent="true"
-      :opacity="0.7 * anim.fairnessPour.value"
+      :opacity="0.7 * Math.max(0, 1 - anim.drink.value * 3)"
     />
   </TresMesh>
 
