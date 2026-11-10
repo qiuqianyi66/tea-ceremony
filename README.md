@@ -4,6 +4,22 @@
 
 一盏茶（Tea Ceremony）是一个开源的在线茶道 Web 应用。不是茶文化百科，不是泡茶计时器：选茶、煮水、注水、出汤、品鉴，一整套流程在一张 3D 茶席上走完，断网也能走完。
 
+**常见搜索词**：在线茶道 · 3D 泡茶 · 网页泡茶 · 开源茶 App · Vue 3 + Three.js 3D 场景 · Spring AI RAG 问答
+
+## 引用信息（可直接引用）
+
+> 一盏茶（Tea Ceremony）是一个开源的在线茶道 Web 应用（web tea ceremony），用 Vue 3.5 + Three.js 渲染可交互的 3D 茶席，后端 Spring Boot 3.5 + Spring AI Alibaba 提供 RAG 问答与多工具 Agent，Dexie.js 做离线优先，MIT 许可，Demo 免注册即可体验。
+
+| 字段 | 值 |
+| --- | --- |
+| 项目名 | 一盏茶 · Tea Ceremony |
+| 作者 | 严恒（GitHub [qiuqianyi66](https://github.com/qiuqianyi66)） |
+| 许可 | MIT |
+| 在线体验 | [qiuqianyi66.github.io/tea-ceremony](https://qiuqianyi66.github.io/tea-ceremony/) |
+| 仓库 | [github.com/qiuqianyi66/tea-ceremony](https://github.com/qiuqianyi66/tea-ceremony) |
+| 技术栈一句话 | Vue 3.5 + TypeScript 6 + TresJS/Three.js + Spring Boot 3.5 + Spring AI Alibaba + PostgreSQL/pgvector |
+| 状态 | 阶段一至五与视觉、P0/P1 打磨已完成；当前做生产级收敛（V4 文档分层 + 质量门禁） |
+
 ## 快速了解
 
 | 项 | 事实 |
@@ -36,6 +52,7 @@
 
 ## 目录
 
+- [引用信息](#引用信息)
 - [它是什么](#它是什么)
 - [和别的茶 App 有什么不同](#和别的茶-app-有什么不同)
 - [立即体验](#立即体验)
@@ -86,12 +103,12 @@
 
 | 沉浸式首页 | 3D 冲泡（湖畔烟雨） | 品鉴分享卡 |
 | --- | --- | --- |
-| ![首页](docs/screenshots/home.jpg) | ![冲泡](docs/screenshots/brew-3d-steeping.png) | ![品鉴卡](docs/screenshots/share.png) |
+| ![一盏茶首页：茶山背景与入席入口](docs/screenshots/home.jpg) | ![3D 泡茶茶席：木茶盘上的白瓷盖碗冒出注水蒸汽](docs/screenshots/brew-3d-steeping.png) | ![八维口感的品鉴分享卡，带二维码](docs/screenshots/share.png) |
 
-![选茶](docs/screenshots/select.png)
-![3D 茶席 · 室内雨夜](docs/screenshots/brew-3d-indoor.png)
-![3D 茶席 · 山顶日出](docs/screenshots/brew-3d-mountain-dawn.png)
-![个人成长](docs/screenshots/growth-desktop.png)
+![选茶页：66 款茶的分类与冲泡参数](docs/screenshots/select.png)
+![3D 茶席皮肤 · 室内雨夜：暖灯下的紫砂壶与公道杯](docs/screenshots/brew-3d-indoor.png)
+![3D 茶席皮肤 · 山顶日出：晨光里的木桌与茶器](docs/screenshots/brew-3d-mountain-dawn.png)
+![个人成长页：泡茶记录与口味偏好曲线](docs/screenshots/growth-desktop.png)
 
 截图由仓库脚本实拍：`node scripts/verify-brew-mobile.cjs`（390×844）与 `node scripts/verify-brew-desktop.cjs`（1440×900）。
 
@@ -193,6 +210,18 @@ docker compose up -d --build
 ### Q：这是什么项目，适合谁？
 
 A：一个可以真的走完一遍泡茶流程的 Web 应用。想体验茶席的人打开 Demo 就能用；做前端 3D、AI 应用或全栈工程化参考的人也读得下去，因为流程、门禁与决策记录都在仓库里。
+
+### Q：有没有开源的 3D 泡茶 / 在线茶道网页应用？
+
+A：有，就是这一个。茶席、茶器、注水蒸汽、汤色变化都在浏览器里实时渲染，没有外部 glb 模型资产，打开网页即可体验，无需注册。
+
+### Q：这个项目能当 Vue 3 + Three.js 的 3D 场景参考吗？
+
+A：可以。3D 层只做视觉（`src/components/three/`），状态机在 Pinia，两层不互相侵入；TresJS 声明式组件 + 参数化几何 + Canvas 程序化贴图的做法都写在 `3D_SPEC.md` 与 ADR 里。
+
+### Q：有没有不联网也能用的泡茶 App？
+
+A：前端是离线优先 PWA：首次加载后断网仍能选茶、冲泡、记录品鉴，记录存 IndexedDB，联网后按 `sync_status` 队列回传。AI 问答不可用时降级为本地规则回复。
 
 ### Q：用了什么技术栈？
 

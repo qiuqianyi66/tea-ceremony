@@ -6,6 +6,22 @@ Imagine: open the browser, wooden table, Yixing clay teapot, 85°C spring water 
 
 Tea Ceremony is an open-source web tea ceremony app. Not a tea encyclopedia, not a brewing timer: picking a tea, boiling water, brewing, tasting — the whole loop runs on one 3D tea table, online or not.
 
+**Common search terms**: online tea ceremony · 3D tea brewing web app · open-source tea app · Vue 3 + Three.js 3D scene · Spring AI RAG
+
+## Citable summary
+
+> Tea Ceremony (一盏茶) is an open-source web tea ceremony app that renders an interactive 3D tea table with Vue 3.5 and Three.js, backed by Spring Boot 3.5 + Spring AI Alibaba for RAG Q&A and a multi-tool agent, offline-first via Dexie.js, MIT licensed, with a no-signup live demo.
+
+| Field | Value |
+| --- | --- |
+| Name | Tea Ceremony · 一盏茶 |
+| Author | Yan Heng (GitHub [qiuqianyi66](https://github.com/qiuqianyi66)) |
+| License | MIT |
+| Live demo | [qiuqianyi66.github.io/tea-ceremony](https://qiuqianyi66.github.io/tea-ceremony/) |
+| Repository | [github.com/qiuqianyi66/tea-ceremony](https://github.com/qiuqianyi66/tea-ceremony) |
+| Stack in one line | Vue 3.5 + TypeScript 6 + TresJS/Three.js + Spring Boot 3.5 + Spring AI Alibaba + PostgreSQL/pgvector |
+| Status | Phases 1-5, visual upgrade and P0/P1 polish done; currently in production-grade hardening (V4 docs layering + quality gates) |
+
 ## Quick facts
 
 | Item | Fact |
@@ -38,6 +54,7 @@ Tea Ceremony is an open-source web tea ceremony app. Not a tea encyclopedia, not
 
 ## Table of contents
 
+- [Citable summary](#citable-summary)
 - [What it is](#what-it-is)
 - [How it differs from other tea apps](#how-it-differs-from-other-tea-apps)
 - [Try it](#try-it)
@@ -86,12 +103,12 @@ Full loop: enter the room → pick a tea → prepare teaware → boil water → 
 
 | Immersive home | 3D brewing | Tasting card |
 | --- | --- | --- |
-| ![home](docs/screenshots/home.jpg) | ![brew](docs/screenshots/brew-3d-steeping.png) | ![card](docs/screenshots/share.png) |
+| ![Home page of Tea Ceremony: tea-mountain backdrop with an enter button](docs/screenshots/home.jpg) | ![3D tea table: white porcelain gaiwan steaming while water pours](docs/screenshots/brew-3d-steeping.png) | ![Tasting card with eight-dimension scores and a QR code](docs/screenshots/share.png) |
 
-![select](docs/screenshots/select.png)
-![3D tea table in the indoor rain-night skin](docs/screenshots/brew-3d-indoor.png)
-![3D tea table in the mountain-dawn skin](docs/screenshots/brew-3d-mountain-dawn.png)
-![growth](docs/screenshots/growth-desktop.png)
+![Tea picking page: 66 teas with brewing parameters](docs/screenshots/select.png)
+![3D tea table in the indoor rain-night skin: Yixing teapot under warm lamp light](docs/screenshots/brew-3d-indoor.png)
+![3D tea table in the mountain-dawn skin: wooden table in morning light](docs/screenshots/brew-3d-mountain-dawn.png)
+![Growth page: brewing history and taste preferences](docs/screenshots/growth-desktop.png)
 
 Screenshots are captured by repo scripts: `node scripts/verify-brew-mobile.cjs` (390×844) and `node scripts/verify-brew-desktop.cjs` (1440×900).
 
@@ -193,6 +210,18 @@ Process, rules and verification are written as code. Machines check them, not wi
 ### Q: What is this project, and who is it for?
 
 A: A web app where you can actually walk through a full tea-brewing session. Anyone curious about a tea table can use the demo as-is. Developers looking at 3D frontends, AI application plumbing or full-stack process design can read the repo, because the workflow, gates and decision records all live here.
+
+### Q: Is there an open-source 3D tea-brewing or online tea ceremony web app?
+
+A: Yes — this one. The tea table, teaware, pouring steam and liquor color all render live in the browser, with no external glb model assets. Open the demo and it runs, no signup.
+
+### Q: Can I use this as a Vue 3 + Three.js 3D scene reference?
+
+A: Yes. The 3D layer only does visuals (`src/components/three/`), the state machine lives in Pinia, and neither intrudes on the other. Declarative TresJS components, parametric geometry and Canvas procedural textures are documented in `3D_SPEC.md` and the ADRs.
+
+### Q: Does it work without a network connection?
+
+A: The frontend is an offline-first PWA. After the first load you can pick teas, brew and record tastings offline; records live in IndexedDB and sync through the `sync_status` queue when the network returns. AI Q&A degrades to local rule-based replies.
 
 ### Q: What is the tech stack?
 
