@@ -79,6 +79,16 @@ const isHeadless = computed(
 // 环境皮肤：湖畔烟雨为默认（雨雾氛围最出片，也与项目茶山资产最接近）
 const brewSkin = ref<BrewSkinId>('lake-rain')
 
+// 首进冲泡页时 three 首次编译着色器会同步占住主线程 ~1.7s。3D 若与页面挂载同一帧内开编，
+// 浏览器连本页 DOM 都来不及画（实测整片空白 ~2.3s 后茶席一次性出现）。所以页面外壳先出，
+// 3D 延到下一个绘制周期之后再挂：代价是茶席晚出现约 0.25s，换来编译期间屏幕上有页面与底衬。
+const isSceneMounted = ref(false)
+onMounted(() => {
+  window.setTimeout(() => {
+    isSceneMounted.value = true
+  }, 250)
+})
+
 // 阶段编排 watch（原 BrewView 内联逻辑，逐字保留）：离 HEATING 停升温；
 // 自动进 WARMING 时走 0.8s 注水动画再完成温杯；每次阶段切换同步粒子音效。
 watch(
@@ -110,8 +120,15 @@ onMounted(() => {
 <template>
   <div class="brew-dark min-h-[100dvh] p-4 sm:p-8 flex flex-col items-center relative overflow-hidden z-0">
     <!-- 3D 真实感茶席背景（状态机 / 手势 / 音频不受影响；headless 回退 CSS 插画） -->
-    <TeaBrewScene3D
+    <div
       v-if="!isHeadless"
+      class="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center overflow-hidden bg-[#1c1612]"
+      aria-hidden="true"
+    >
+      <p class="text-sm tracking-[0.3em] text-[#E8E2D8]/60">茶席布置中</p>
+    </div>
+    <TeaBrewScene3D
+      v-if="!isHeadless && isSceneMounted"
       :phase="brewState.phase"
       :soup-color="soupColor"
       :current-temp="brewState.currentTemp"
@@ -183,7 +200,7 @@ onMounted(() => {
     <!-- ======== 主按钮 ======== -->
     <button
       @click="handleMainAction"
-      :disabled="brewState.phase === BrewPhase.HEATING || brewState.phase === BrewPhase.RINSING || brewState.phase === BrewPhase.WARMING"
+      :disabled="brewState.phase === BrewPhase.HEATING || brewState.phase === BrewPhase.RINSING || brewState.phase === BrewPhase.WARMING || isPouringOut"
       class="mt-4 px-10 py-4 rounded-lg text-xl transition-all duration-300"
       :class="isIdle && !store.selectedTeaWare
         ? 'bg-[#E8E2D8] text-[#B5AC9C] cursor-not-allowed'
@@ -191,7 +208,7 @@ onMounted(() => {
           ? 'bg-[var(--color-tea-gold)] text-white hover:bg-[#B89450]'
           : 'bg-[var(--color-wood)] text-[var(--color-cream)] hover:bg-[var(--color-wood-light)]'"
     >
-      {{ mainActionLabel }}
+      {{ isPouringOut ? '出汤中…' : mainActionLabel }}
     </button>
 
     <!-- ======== 返回备器调整（仅煮水阶段，流程推进后不再回退以免状态错乱）======== -->
