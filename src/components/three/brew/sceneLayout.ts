@@ -159,6 +159,13 @@ export function createSceneLayout(
     0,
     0,
   ]
+  // 茶汤反向旋转：真实液体不随杯身倾斜，反向抵消杯身倾角，液面保持水平；
+  // 否则薄液片随杯倾斜后边缘戳出杯外，画面里像一根横穿手掌的杆。
+  const teacupLiquidRotationAt = (index: number): [number, number, number] => [
+    index === DRINK_CUP_INDEX ? -0.18 * smoothstep(anim.drink.value) : 0,
+    0,
+    0,
+  ]
 
   // 出汤水流位置：盖碗碗口到公道杯中心的中点（出汤动画）
   const pourOutStreamPos = computed(() => {
@@ -245,6 +252,7 @@ export function createSceneLayout(
     teacupLiquidOpacity,
     teacupDrinkOffsetAt,
     teacupDrinkRotationAt,
+    teacupLiquidRotationAt,
     pourOutStreamPos,
     fairnessStreamPos,
     kettlePos,
