@@ -9,7 +9,7 @@
 
 import { useLoop, useTresContext } from '@tresjs/core'
 import * as THREE from 'three'
-import { computed, onMounted, onUnmounted, ref, shallowRef, toRef, watch } from 'vue'
+import { computed, inject, onMounted, onUnmounted, ref, shallowRef, toRef, watch } from 'vue'
 import porcelainUrl from '@/assets/blue-white-porcelain.jpg'
 import zishaUrl from '@/assets/zisha-albedo.jpg'
 import { smoothstep, useBrewAnimation } from '@/composables/useBrewAnimation'
@@ -191,15 +191,60 @@ const { points: teaLeavesObj, velocities: teaLeavesVelocities } = createTeaLeave
 const teaLeavesPoints = shallowRef<THREE.Points>(teaLeavesObj)
 
 onMounted(() => {
-  const renderer = (sceneCtx.renderer as { instance?: THREE.WebGLRenderer }).instance
+  const manager = sceneCtx.renderer as {
+    instance?: THREE.WebGLRenderer
+    advance?: () => void
+  }
+  const renderer = manager.instance
   setupRenderPipeline(sceneCtx.scene.value, renderer, keyLight.value, SET_Z)
   applySkin(BREW_SKINS[props.skin ?? 'lake-rain'])
   syncViewportAspect()
   window.addEventListener('resize', syncViewportAspect)
+  void prewarmShaders(manager)
 })
+
+// 着色器预热：首帧实测有 ~1.7s 同步编译长任务（probe-longtask 1734ms、screencast 最大帧间隔 1789ms）。
+// 父组件把渲染模式初始化为 manual，先拦掉 manual 的 100ms 自动首帧，compileAsync 走
+// KHR_parallel_shader_compile 把全部程序并行编译完，再放行首帧并切回 always。
+const renderMode = inject<{ value: 'manual' | 'on-demand' | 'always' } | null>(
+  'brewRenderMode',
+  null,
+)
+let restoreRender: (() => void) | null = null
+
+async function prewarmShaders(manager: { instance?: THREE.WebGLRenderer; advance?: () => void }) {
+  const gl = manager.instance
+  const camera = sceneCtx.camera.activeCamera.value
+  // headless（on-demand）或没有 compileAsync 的环境：不预热，保持旧行为。
+  if (!gl || !camera || renderMode?.value !== 'manual' || typeof gl.compileAsync !== 'function') {
+    if (renderMode && renderMode.value === 'manual') renderMode.value = 'always'
+    return
+  }
+  const originalRender = gl.render.bind(gl)
+  let shadersReady = false
+  gl.render = ((...args: Parameters<THREE.WebGLRenderer['render']>) => {
+    if (shadersReady) originalRender(...args)
+  }) as THREE.WebGLRenderer['render']
+  restoreRender = () => {
+    gl.render = originalRender as THREE.WebGLRenderer['render']
+  }
+  try {
+    await gl.compileAsync(sceneCtx.scene.value, camera)
+    shadersReady = true
+    // 同一同步序列内先挂一帧、再切 always：always 下 notifyFrameRendered 会保留 frames=1，循环持续。
+    manager.advance?.()
+    renderMode.value = 'always'
+  } catch (e) {
+    shadersReady = true
+    restoreRender()
+    renderMode.value = 'always'
+    console.warn('[TeaBrewScene] 着色器预热失败，按普通首帧渲染', e)
+  }
+}
 
 onUnmounted(() => {
   window.removeEventListener('resize', syncViewportAspect)
+  restoreRender?.()
 })
 
 // ==================== 渲染管线：ACES 色调映射 + 软阴影 + 程序化 IBL ====================

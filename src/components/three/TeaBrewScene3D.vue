@@ -10,7 +10,7 @@
  */
 
 import { TresCanvas } from '@tresjs/core'
-import { computed } from 'vue'
+import { computed, provide, ref } from 'vue'
 import type { BrewPhase } from '@/types/brewing'
 import type { BrewSkinId } from './brewSkins'
 import TeaBrewSceneInner from './TeaBrewSceneInner.vue'
@@ -21,6 +21,11 @@ const isHeadless = computed(() => {
   // Chrome UA 已不含 "HeadlessChrome"，需结合 navigator.webdriver 检测。
   return navigator.webdriver === true || /HeadlessChrome/i.test(navigator.userAgent)
 })
+
+// 着色器预热：真实浏览器先 manual（不自动渲染），场景内 compileAsync 完成后再切 always。
+// headless 保持 on-demand 旧行为，不参与预热。
+const renderMode = ref<'manual' | 'on-demand' | 'always'>(isHeadless.value ? 'on-demand' : 'manual')
+provide('brewRenderMode', renderMode)
 
 defineProps<{
   phase: BrewPhase
@@ -41,7 +46,7 @@ defineProps<{
       :antialias="true"
       :alpha="false"
       :shadows="true"
-      :render-mode="isHeadless ? 'on-demand' : 'always'"
+      :render-mode="renderMode"
     >
       <TeaBrewSceneInner
         :phase="phase"
