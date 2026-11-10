@@ -38,7 +38,9 @@ const router = createRouter({
       path: '/brew',
       name: 'brew',
       component: () => import('../views/BrewView.vue'),
-      meta: { requiresTea: true },
+      // 冲泡页首帧要等 three 编译着色器（~1.7s）：页面淡入会在这段主线程忙碌里卡在近乎全透明，
+      // 用户看到的是先空白再硬切。这一页直接进场，让外壳先画出来。
+      meta: { requiresTea: true, instant: true },
     },
     {
       path: '/taste',
