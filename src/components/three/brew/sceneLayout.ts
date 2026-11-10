@@ -126,34 +126,36 @@ export function createSceneLayout(
     new THREE.Vector3(1.5, TRAY_TOP_Y, 0.05 + SET_Z),
     new THREE.Vector3(1.2, TRAY_TOP_Y, -0.42 + SET_Z),
   ]
+  // 品饮只端起正对相机的那一只；三只同时抬起/同时见底不像真人喝茶
+  const DRINK_CUP_INDEX = 1
   // 中景道具：茶席后移后桌面中景偏空，补茶巾/水盂/茶拨/杯托丰富层次。
   // 均位于右侧品茗杯区，不挡左侧注水流与放茶动画（3D_SPEC：只做视觉层）。
   const teaClothPos = new THREE.Vector3(1.7, 1.194, -0.15 + SET_Z)
   const waterPotPos = new THREE.Vector3(1.78, 1.27, 0.28 + SET_Z)
   const teaPickPos = new THREE.Vector3(1.68, 1.211, -0.15 + SET_Z)
   const teacupLiquidPos = new THREE.Vector3(0, 0.2, 0)
-  // 品茗杯液面（分茶时上升，喝茶时减少）
-  const teacupLiquidScale = computed(() => {
+  // 品茗杯液面（分茶时上升，喝茶时减少）。
+  // 只让被端起的那一只（第 2 只，正对相机）变浅，三只同时变空不像真喝茶。
+  const teacupLiquidScaleAt = (index: number) => {
     const poured = 0.1 + smoothstep(anim.fairnessPour.value) * 0.7
-    const drunk = smoothstep(anim.drink.value) * 0.3
+    const drunk = index === DRINK_CUP_INDEX ? smoothstep(anim.drink.value) * 0.3 : 0
     return new THREE.Vector3(1, Math.max(0.05, poured - drunk), 1)
-  })
+  }
   const teacupLiquidOpacity = computed(() => Math.min(1, anim.fairnessPour.value * 2))
-  // 品茗杯喝茶时的位移偏移（向上+向相机方向）
-  const teacupDrinkOffset = computed(
-    () =>
-      new THREE.Vector3(
-        0,
-        0.25 * smoothstep(anim.drink.value),
-        -0.15 * smoothstep(anim.drink.value),
-      ),
-  )
-  // 品茗杯喝茶时的旋转（向后倾斜模拟端起）
-  const teacupDrinkRotation = computed<[number, number, number]>(() => [
-    0.15 * smoothstep(anim.drink.value),
+  // 品茗杯喝茶时的位移偏移：只抬 0.8cm 级的距离，手在旁边一起抬，
+  // 抬 0.25 会让杯子离开盘面浮在半空（攒够停留时长后一眼就能看见）。
+  const teacupDrinkOffsetAt = (index: number) =>
+    new THREE.Vector3(
+      0,
+      index === DRINK_CUP_INDEX ? 0.1 * smoothstep(anim.drink.value) : 0,
+      index === DRINK_CUP_INDEX ? -0.06 * smoothstep(anim.drink.value) : 0,
+    )
+  // 品茗杯喝茶时的旋转（向后倾斜模拟端起），同样只作用于被端起的那一只
+  const teacupDrinkRotationAt = (index: number): [number, number, number] => [
+    index === DRINK_CUP_INDEX ? 0.18 * smoothstep(anim.drink.value) : 0,
     0,
     0,
-  ])
+  ]
 
   // 出汤水流位置：盖碗碗口到公道杯中心的中点（出汤动画）
   const pourOutStreamPos = computed(() => {
@@ -235,10 +237,10 @@ export function createSceneLayout(
     waterPotPos,
     teaPickPos,
     teacupLiquidPos,
-    teacupLiquidScale,
+    teacupLiquidScaleAt,
     teacupLiquidOpacity,
-    teacupDrinkOffset,
-    teacupDrinkRotation,
+    teacupDrinkOffsetAt,
+    teacupDrinkRotationAt,
     pourOutStreamPos,
     fairnessStreamPos,
     kettlePos,
