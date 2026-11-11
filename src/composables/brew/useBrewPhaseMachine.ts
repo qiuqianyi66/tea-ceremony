@@ -14,9 +14,9 @@ import { BrewPhase } from '@/types/brewing'
 
 /**
  * 出汤结束后在 DONE 段停留的时长：留给「分茶 → 品饮」两段动画。
- * 数值依据 useBrewAnimation 的阻尼系数：分茶约 0.5s 过 70% 才起品饮，品饮再约 1.5s 到七成。
+ * 数值依据 useBrewAnimation 的阻尼系数：分茶约 0.5s 过 70% 才起品饮，品饮再约 1.2s 到七成，1800ms 可覆盖完整动作且不额外空等。
  */
-export const FAIRNESS_DWELL_MS = 2400
+export const FAIRNESS_DWELL_MS = 1800
 
 export function useBrewPhaseMachine() {
   const router = useRouter()
