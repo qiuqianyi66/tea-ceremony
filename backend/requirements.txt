@@ -1,4 +1,4 @@
-fastapi==0.115.0
+fastapi==0.162.0
 uvicorn==0.54.0
 sqlalchemy==2.0.54
 asyncpg==0.32.0
@@ -17,10 +17,10 @@ sentry-sdk==2.69.1
 # P1-1 request_id 透传 + JSON 结构化日志（12-factor XI）
 asgi-correlation-id==5.0.1
 python-json-logger==4.2.0
-# starlette 显式锁定：fastapi 0.115 约束 <0.39，但避免依赖解析时被意外升到不兼容版本
-starlette==0.38.6
+# starlette 显式锁定：fastapi 0.162 要求 1.x，固定 1.10.0 避免解析漂移
+starlette==1.10.0
 # P1-2 Prometheus /metrics（SRE 四信号）
-prometheus-fastapi-instrumentator==7.1.0
+prometheus-fastapi-instrumentator==8.1.0
 # P1-11 生产多 worker（FastAPI 官方推荐 gunicorn + UvicornWorker）
 gunicorn==26.2.0
 # P1-13 AI 代理熔断（连续 5 次失败后 30s 快速降级，防上游故障雪崩）
