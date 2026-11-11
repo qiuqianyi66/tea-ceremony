@@ -152,6 +152,7 @@ const {
   fairnessLiquidPos,
   fairnessLiquidScale,
   fairnessLiquidOpacity,
+  fairnessLiquidRotation,
   fairnessRotation,
   teacupScale,
   teacupPts,
@@ -894,9 +895,13 @@ onRender(({ delta, elapsed }) => {
         :env-map-intensity="1.2"
       />
     </TresMesh>
-    <!-- 杯内茶汤（出汤时上升，分茶时下降） -->
-    <TresMesh :position="fairnessLiquidPos" :scale="fairnessLiquidScale">
-      <TresCylinderGeometry :args="[0.38, 0.4, 0.05, 32]" />
+    <!-- 杯内茶汤（出汤时上升，分茶时下降）：杯身倾斜时反向旋转保持水平 -->
+    <TresMesh
+      :position="fairnessLiquidPos"
+      :scale="fairnessLiquidScale"
+      :rotation="fairnessLiquidRotation"
+    >
+      <TresCylinderGeometry :args="[0.36, 0.38, 0.05, 32]" />
       <TresMeshStandardMaterial
         :color="props.soupColor"
         :roughness="0.06"
