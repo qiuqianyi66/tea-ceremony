@@ -8,6 +8,8 @@ aiosqlite==0.22.1
     # via -r requirements-dev.txt
 alembic==1.20.1
     # via -r requirements.txt
+annotated-doc==0.0.6
+    # via fastapi
 annotated-types==0.8.0
     # via pydantic
 anyio==4.15.1
@@ -16,7 +18,7 @@ anyio==4.15.1
     #   starlette
 asgi-correlation-id==5.0.1
     # via -r requirements.txt
-asyncpg==0.30.0
+asyncpg==0.32.0
     # via -r requirements.txt
 bandit==1.9.4
     # via -r requirements-dev.txt
@@ -54,7 +56,7 @@ defusedxml==0.7.1
     # via py-serializable
 ecdsa==0.19.2
     # via python-jose
-fastapi==0.115.0
+fastapi==0.162.0
     # via -r requirements.txt
 filelock==4.0.7
     # via cachecontrol
@@ -91,6 +93,8 @@ mdurl==0.1.2
     # via markdown-it-py
 msgpack==1.2.3
     # via cachecontrol
+opentelemetry-api==1.45.2
+    # via fastapi
 packageurl-python==0.17.6
     # via cyclonedx-python-lib
 packaging==26.3
@@ -112,13 +116,13 @@ pluggy==1.6.0
     # via pytest
 prometheus-client==0.26.0
     # via prometheus-fastapi-instrumentator
-prometheus-fastapi-instrumentator==7.1.0
+prometheus-fastapi-instrumentator==8.1.0
     # via -r requirements.txt
 psycopg2-binary==2.9.13
     # via -r requirements.txt
 py-serializable==2.1.0
     # via cyclonedx-python-lib
-pyasn1==0.4.8
+pyasn1==0.6.5
     # via
     #   python-jose
     #   rsa
@@ -142,11 +146,11 @@ pytest==9.1.1
     # via
     #   -r requirements-dev.txt
     #   pytest-asyncio
-pytest-asyncio==1.4.0
+pytest-asyncio==1.4.1
     # via -r requirements-dev.txt
-python-dotenv==1.2.2
+python-dotenv==1.2.4
     # via -r requirements.txt
-python-jose[cryptography]==3.4.0
+python-jose[cryptography]==3.5.0
     # via -r requirements.txt
 python-json-logger==4.2.0
     # via -r requirements.txt
@@ -166,7 +170,7 @@ rich==15.0.0
     #   pip-audit
 rsa==4.9.1
     # via python-jose
-ruff==0.17.1
+ruff==0.17.3
     # via -r requirements-dev.txt
 sentry-sdk==2.69.1
     # via -r requirements.txt
@@ -178,7 +182,7 @@ sqlalchemy==2.0.54
     # via
     #   -r requirements.txt
     #   alembic
-starlette==0.38.6
+starlette==1.10.0
     # via
     #   -r requirements.txt
     #   asgi-correlation-id
@@ -196,17 +200,22 @@ typing-extensions==4.16.0
     #   anyio
     #   cyclonedx-python-lib
     #   fastapi
+    #   opentelemetry-api
     #   pydantic
     #   pydantic-core
     #   pytest-asyncio
     #   sqlalchemy
+    #   starlette
+    #   typing-inspection
+typing-inspection==0.4.5
+    # via fastapi
 tzdata==2026.4
     # via pydantic
 urllib3==2.8.0
     # via
     #   requests
     #   sentry-sdk
-uvicorn==0.30.0
+uvicorn==0.54.0
     # via -r requirements.txt
 
 # The following packages are considered to be unsafe in a requirements file:
