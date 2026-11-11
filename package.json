@@ -52,7 +52,7 @@
     "pinia": "^4.1.0",
     "qrcode": "^1.5.4",
     "three": "^0.186.0",
-    "vue": "^3.5.40",
+    "vue": "^3.5.45",
     "vue-router": "^5.4.0",
     "vuedraggable": "^4.1.0",
     "web-vitals": "^6.2.3"
