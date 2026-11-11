@@ -103,6 +103,12 @@ export function createSceneLayout(
     return new THREE.Vector3(1, Math.max(0.05, poured - pouredOut), 1)
   })
   const fairnessLiquidOpacity = computed(() => Math.min(1, anim.pourOut.value * 2))
+  // 茶汤反向旋转：分茶时杯身绕 z 倾斜，液面反向抵消保持水平，避免薄片随杯侧转露出杯外。
+  const fairnessLiquidRotation = computed<[number, number, number]>(() => [
+    0,
+    0,
+    -0.45 * smoothstep(anim.fairnessPour.value),
+  ])
   // 公道杯旋转（分茶时向品茗杯倾斜）
   const fairnessRotation = computed<[number, number, number]>(() => [
     0,
@@ -240,6 +246,7 @@ export function createSceneLayout(
     fairnessLiquidPos,
     fairnessLiquidScale,
     fairnessLiquidOpacity,
+    fairnessLiquidRotation,
     fairnessRotation,
     teacupScale,
     teacupPts,
