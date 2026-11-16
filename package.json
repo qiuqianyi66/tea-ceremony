@@ -69,7 +69,7 @@
     "@vitest/coverage-v8": "^5.1.0",
     "@vue/test-utils": "^2.5.1",
     "@vue/tsconfig": "^0.9.1",
-    "fake-indexeddb": "^6.2.5",
+    "fake-indexeddb": "^6.2.8",
     "jsdom": "^30.1.2",
     "npm-run-all2": "^9.0.2",
     "rollup-plugin-visualizer": "^7.1.1",
