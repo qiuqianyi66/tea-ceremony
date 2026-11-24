@@ -176,23 +176,10 @@
 npm run quality       # 提交前必跑（含 redlines/harness/预算/探针选择器）
 npm run dev           # 开发服务器 http://localhost:5173
 npm run test:e2e      # Playwright E2E（改了流程/路由）
-node scripts/verify-gardens.cjs    # 3D 茶园四园晴雨截图，期望 ERRORS: []
-node scripts/verify-pavilion.cjs   # 茶亭验证
-node scripts/scan-emoji.cjs        # 禁 emoji 扫描
-node scripts/verify-icons.cjs      # lucide 图标渲染审计
-node scripts/verify-brew-mobile.cjs  # 冲泡页移动端触控（≥44px、无横向滚动）
-node scripts/verify-brew-desktop.cjs  # 冲泡页 1440 宽屏 3D 茶席截图（断言 canvas 真挂载、无横向滚动）
-node scripts/audit-touch.cjs       # 全局触控目标审计
-node scripts/eval-harness.cjs <切片> [--verify]  # harness 七维确定性评测（每切片必跑，总分<60 或安全违规阻断；不传 --verify 则代码正确性维记 0 分；报告 docs/agent-eval/）
-node scripts/verify-harness.cjs    # harness 一致性体检（ADR/CI job/技能数/路径/wiki 四件套/子代理/审查页/changes 门禁），期望 ERRORS: []，CI 门禁
-node scripts/audit-redlines.cjs    # 红线机械化审计（替代 red-line-auditor；R2/7/8/9/10/11/12/14），期望 ERRORS: []，CI 门禁
-node scripts/audit-wiki-drift.cjs  # wiki 契约漂移审计（替代 consistency-verifier；api-contract 端点 vs 代码路由双向核对），期望 ERRORS: []，CI 门禁
-node scripts/add-doc-meta.cjs      # docs 元信息头批量补齐（新文档缺 frontmatter 时跑）
-node scripts/audit-context-budget.cjs  # 常驻上下文预算体检（估算 token；超预算即 error，防 AGENTS.md / 规则层重新膨胀），期望 ERRORS: []
-cd backend && python -m py_compile main.py                  # 后端语法（旧 FastAPI，过渡期；main.py 在 backend/ 根）
-cd backend && .\.venv\Scripts\python.exe -m pytest tests -q     # 后端全量（旧 FastAPI，过渡期）
-# 后端重写完成后替换为：cd backend && mvn -q test              # 后端全量（Spring Boot）
+cd backend && .\.venv\Scripts\python.exe -m pytest tests -q   # 旧 FastAPI 全量（过渡期）；重写完成后改 mvn -q test
 ```
+
+其余脚本（3D 截图 / 图标 / 触控 / eval-harness / 各审计 / 元信息头）完整用途与命令见 `scripts/README.md`，不在常驻层重复。
 
 部署（Docker Compose 编排，后端重写后启用）：全流程见 `DEPLOY.md`；旧 Windows 原生脚本（`scripts/deploy-backend.ps1` / `update-backend.ps1` / `install-windows-service.ps1` / `backup-postgres.ps1`）保留参考。依赖双锁定：前端 `package-lock.json`；后端重写后 `pom.xml` + lock 管理。
 

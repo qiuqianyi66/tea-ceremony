@@ -16,6 +16,7 @@ last_updated: 2026-10-11
 - 任务收尾（功能/bug/重构合并后、会话结束前）扫 6 类找**环境改进点**：Navigation / Automated checks / Coding standards / Global AGENTS.md / Tool economy / No-ops。
 - 核心分叉：**机械错误 → 加确定性检查**（脚本/lint/CI job）；**判断错误 → 补规则**。默认「写检查优于写规则」。
 - 只改环境（脚本/规则/导航指针），**不改业务代码**。
+- 改环境自身（规则/技能/门禁）时走「Harness 自改对照门」：先取基线、k≥2、分面编辑、leave-one-out。
 
 ## 为什么建这个技能（而不是在 AGENTS.md 堆规则）
 
@@ -38,6 +39,7 @@ last_updated: 2026-10-11
 3. 候选是否 ≤3 项且按严重度排序——贪多等于没做。
 4. 有没有动业务代码（本技能只动环境）。
 5. 经验证据是否 ≥3 条才谈晋升 §13，否则只记 `docs/plans/patterns.md` 候选。
+6. 改规则/技能/门禁时是否留了改前基线，并做过停用复跑（leave-one-out）而非只看改后变绿。
 
 ## 怎么知道它在生效
 
